@@ -1,0 +1,14 @@
+{
+  "id": "20260718-g-del-s-incompleteness-theorem-951fe5",
+  "date": "2026-07-18T10:11:11.158757",
+  "title": "G\u00f6del's Incompleteness Theorems: The Limits of Proof",
+  "question": "Can mathematics ever fully prove its own consistency, or is every formal system doomed to leave truths unreachable?",
+  "summary": "Kurt G\u00f6del showed that any sufficiently powerful formal system contains true statements it cannot prove, and cannot prove its own consistency. The discovery still ripples through logic, computer science, and our sense of what knowledge can be.",
+  "tags": [
+    "mathematics",
+    "logic",
+    "philosophy",
+    "epistemology",
+    "computer-science"
+  ]
+}
