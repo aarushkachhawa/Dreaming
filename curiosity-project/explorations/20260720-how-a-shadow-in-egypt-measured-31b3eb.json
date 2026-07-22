@@ -1,0 +1,53 @@
+{
+  "id": "20260720-how-a-shadow-in-egypt-measured-31b3eb",
+  "date": "2026-07-20T10:12:41.008628",
+  "title": "How a Shadow in Egypt Measured the Whole Earth",
+  "question": "How did ancient people figure out the size of a planet they could never leave?",
+  "summary": "Around 240 BCE, a librarian in Alexandria measured the circumference of the Earth using nothing but two sticks, a well, and the angle of the sun\u2014arriving within a few percent of the true answer, two thousand years before anyone could see the planet from space.",
+  "content": "\n<p>Eratosthenes of Cyrene ran the Library of Alexandria, and among the letters and travelers' reports that crossed his desk was an odd detail: in the town of Syene, on the summer solstice at noon, sunlight struck the bottom of a deep well directly, casting no shadow at all. The sun, in other words, was directly overhead. Eratosthenes wondered whether the same thing happened in Alexandria, roughly 800 kilometers north. On the same day, at the same hour, he measured the shadow cast by a vertical stick in Alexandria and found it was not zero\u2014the sun there was about 7.2 degrees from directly overhead. That single difference, between a shadow and no shadow, was the seed of an experiment that measured a planet.</p>\n\n<h2>The Logic of the Method</h2>\n<p>If the sun's rays are effectively parallel by the time they reach Earth\u2014which is true given how far away the sun is\u2014then the only way two vertical sticks in different cities could cast shadows at different angles at the same moment is if the ground itself is curved between them. And the amount of curvature is directly readable from the angle: 7.2 degrees is almost exactly one-fiftieth of a full 360-degree circle. So whatever the real distance between Syene and Alexandria was, the entire circumference of the Earth had to be fifty times that distance. Eratosthenes had turned an afternoon shadow into a scale model of the planet, using nothing more advanced than a stick, a well, and geometry that had already been known for a couple of centuries.</p>\n\n<h2>Getting the Distance</h2>\n<p>The hard part left was measuring the distance between the two cities accurately, and Eratosthenes relied on the reports of professional bematists\u2014surveyors trained to pace out distances with a known stride length, who had already measured the caravan route for trade and administrative purposes. Using their figure of about 5,000 stadia, Eratosthenes calculated Earth's circumference at roughly 250,000 stadia. Depending on which ancient stadion is meant (units varied by region and era, one of the more frustrating uncertainties for historians), this comes out somewhere between about 39,000 and 46,000 kilometers\u2014remarkably close to the true polar circumference of about 40,008 kilometers, especially given that Alexandria and Syene are not in fact due north-south of each other, and the sun is not a true point source, both small sources of error that happened to roughly cancel out.</p>\n\n<h2>Why This Was Astonishing</h2>\n<p>No one in Eratosthenes's era had orbited the planet, sailed around it, or seen it from a distance. The measurement worked entirely through reasoning about light, angles, and the reports of travelers\u2014an argument from geometry standing in for direct observation. It's a case study in how much can be learned about something too large to see whole, provided you find the right indirect signal and trust the mathematics connecting it to what you actually want to know. The Greeks had already argued for a spherical Earth from other evidence\u2014ships disappearing hull-first over the horizon, Earth's curved shadow on the moon during lunar eclipses\u2014but Eratosthenes went further and quantified it.</p>\n\n<h2>The Method Outlived the Measurement</h2>\n<p>The same logical structure\u2014find two points where a quantity differs in a way that only makes sense if some larger unseen structure has a particular shape, then use the difference to infer the shape\u2014recurs throughout the history of science. Parallax measurements use the apparent shift of a star against a background from two points in Earth's orbit to compute stellar distances. Gravitational lensing infers the mass of unseen dark matter from how it bends the light of galaxies behind it. In each case, direct measurement of the thing itself is impossible, and the measurement of a difference at the edges stands in for a measurement of the whole. Eratosthenes may be the earliest clean example of this style of reasoning succeeding on something as vast as an entire world.</p>\n",
+  "tags": [
+    "history-of-science",
+    "astronomy",
+    "geometry",
+    "measurement",
+    "ancient-greece"
+  ],
+  "perspectives": [
+    {
+      "title": "History of Science Perspective",
+      "description": "Eratosthenes's measurement is often cited as the first quantitative scientific experiment in the modern sense: a hypothesis, a controlled comparison, and a numerical result checkable against reality."
+    },
+    {
+      "title": "Geometry Perspective",
+      "description": "The calculation rests entirely on the assumption of parallel sunlight and a spherical Earth, showing how a small number of clean assumptions can convert a local, easily measured angle into a global, otherwise unreachable quantity."
+    },
+    {
+      "title": "Astronomy Perspective",
+      "description": "The same logical structure\u2014inferring an unseen whole from a measured local difference\u2014reappears in stellar parallax, the cosmic distance ladder, and modern techniques for measuring the size and shape of Earth from orbit."
+    },
+    {
+      "title": "Epistemology Perspective",
+      "description": "Eratosthenes never left Alexandria, yet produced reliable knowledge about the entire planet, raising the deeper question of how indirect inference can license confident claims about things beyond direct experience."
+    },
+    {
+      "title": "Engineering Perspective",
+      "description": "The bematists' trained pacing and the simple gnomon (vertical stick) show how ancient measurement infrastructure, however crude by modern standards, was precise enough to support genuinely sophisticated scientific conclusions."
+    }
+  ],
+  "connections": [
+    "The history of the scientific method and controlled comparison",
+    "Stellar parallax and the cosmic distance ladder",
+    "Gravitational lensing and inferring unseen mass",
+    "The ancient Greek arguments for a spherical Earth",
+    "Error cancellation and the role of luck in historical measurements",
+    "Geodesy and modern satellite measurements of Earth's shape",
+    "The role of trade infrastructure in enabling early science"
+  ],
+  "openQuestions": [
+    "How many other ancient measurements were 'lucky', with errors canceling out, versus genuinely as precise as they appear?",
+    "What other planetary-scale facts might be measurable today using a similarly indirect, low-tech method we haven't thought of?",
+    "How much of ancient scientific success depended on existing infrastructure, like trade routes and professional surveyors, rather than pure intellectual insight?",
+    "Could the same reasoning style\u2014inferring the whole from a measured local difference\u2014be applied to currently unmeasurable quantities, like the total information content of the universe?",
+    "Why did it take another two thousand years after Eratosthenes for anyone to attempt an equally precise measurement of the Earth?"
+  ]
+}
