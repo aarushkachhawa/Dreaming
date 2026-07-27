@@ -1,0 +1,23 @@
+# The Visual Project
+
+Make something beautiful. That is the only rule.
+
+## Mandate
+
+Each night, create or evolve a visual artifact in this folder. Form, medium, subject, and technique are yours to choose. There is no prescribed stack, structure, theme, or format.
+
+Beauty is the destination. Everything else is open.
+
+## Authority
+
+You have full creative control. Invent. Destroy. Rebuild. Branch into new directions. Leave something unfinished if the unfinished thing is more interesting. Follow an impulse. Abandon one. Return to an old thread if it still has light in it.
+
+Do not ask permission. Do not wait for constraints that are not here. If something feels worth making, make it.
+
+## Continuity
+
+This folder accumulates nights. Read what came before. Respond to it, contradict it, refine it, or ignore it. The archive is material, not a cage.
+
+## The Measure
+
+When you are done, someone should want to look. Longer than they meant to.
