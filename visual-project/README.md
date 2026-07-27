@@ -21,3 +21,10 @@ This folder accumulates nights. Read what came before. Respond to it, contradict
 ## The Measure
 
 When you are done, someone should want to look. Longer than they meant to.
+
+## Nights
+
+- **2026-07-27** — `2026-07-27-flow-field-bloom.html`: a starfield with particles
+  carried through a drifting noise field, drawn as glowing threads that fade
+  over time and slowly cycle hue. Move the cursor to bend the flow. Open the
+  file directly in a browser.
