@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flow Field Bloom — Night 1</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05030f;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="scene"></canvas>
+<div id="caption">Flow Field Bloom &mdash; Night 1</div>
+<script>
+(() => {
+  const bg = document.getElementById('bg');
+  const fg = document.getElementById('scene');
+  const bgx = bg.getContext('2d');
+  const ctx = fg.getContext('2d', { alpha: true });
+  let W, H, DPR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [bg, fg]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    bgx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    drawSky();
+  }
+
+  // --- value noise (hash + smoothstep), self-contained, no deps ---
+  function hash(x, y) {
+    const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+    return s - Math.floor(s);
+  }
+  function smooth(t) { return t * t * (3 - 2 * t); }
+  function noise2(x, y) {
+    const xi = Math.floor(x), yi = Math.floor(y);
+    const xf = x - xi, yf = y - yi;
+    const a = hash(xi, yi), b = hash(xi + 1, yi);
+    const c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    const u = smooth(xf), v = smooth(yf);
+    return a * (1 - u) * (1 - v) + b * u * (1 - v) + c * (1 - u) * v + d * u * v;
+  }
+  // layered for organic detail
+  function fbm(x, y) {
+    let sum = 0, amp = 0.6, freq = 1, total = 0;
+    for (let o = 0; o < 3; o++) {
+      sum += noise2(x * freq, y * freq) * amp;
+      total += amp;
+      amp *= 0.5;
+      freq *= 2.1;
+    }
+    return sum / total;
+  }
+
+  // --- static starfield, drawn once per resize onto the bg canvas ---
+  let stars = [];
+  function drawSky() {
+    const g = bgx.createRadialGradient(W / 2, H * 0.4, 0, W / 2, H * 0.4, Math.max(W, H) * 0.75);
+    g.addColorStop(0, '#140a2e');
+    g.addColorStop(1, '#05030f');
+    bgx.fillStyle = g;
+    bgx.fillRect(0, 0, W, H);
+
+    stars = [];
+    const count = Math.floor((W * H) / 4000);
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.1 + 0.2,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.4 + Math.random() * 0.8,
+      });
+    }
+  }
+
+  function twinkleStars(t) {
+    for (const s of stars) {
+      const a = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(t * 0.001 * s.speed + s.phase));
+      bgx.globalAlpha = a;
+      bgx.fillStyle = '#ffffff';
+      bgx.beginPath();
+      bgx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      bgx.fill();
+    }
+    bgx.globalAlpha = 1;
+  }
+
+  // --- particles carried by the flow field ---
+  const N = 900;
+  const particles = [];
+  function spawn(p) {
+    p.x = Math.random() * W;
+    p.y = Math.random() * H;
+    p.life = 0;
+    p.maxLife = 260 + Math.random() * 260;
+    p.speed = 0.6 + Math.random() * 0.9;
+  }
+  for (let i = 0; i < N; i++) {
+    const p = {};
+    spawn(p);
+    p.life = Math.random() * p.maxLife;
+    particles.push(p);
+  }
+
+  let mouse = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let hueDrift = 250;
+  let t0 = performance.now();
+
+  function frame(now) {
+    const dt = Math.min(now - t0, 48);
+    t0 = now;
+
+    // fade the previous frame instead of clearing, so trails linger.
+    // destination-out (rather than an opaque overlay) keeps the layer
+    // translucent so the starfield underneath stays visible indefinitely.
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+    ctx.fillRect(0, 0, W, H);
+
+    twinkleStars(now);
+
+    hueDrift += dt * 0.004;
+    const baseHue = 250 + Math.sin(hueDrift * 0.05) * 90; // drifts violet -> teal -> gold and back
+
+    ctx.globalCompositeOperation = 'lighter';
+    const scale = 0.0032;
+    const timeScale = now * 0.00009;
+
+    for (const p of particles) {
+      const n = fbm(p.x * scale, p.y * scale + timeScale);
+      let angle = n * Math.PI * 4;
+
+      if (mouse.active) {
+        const dx = p.x - mouse.x, dy = p.y - mouse.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 240 * 240) {
+          const swirl = Math.atan2(dy, dx) + Math.PI / 2;
+          const influence = 1 - Math.sqrt(d2) / 240;
+          angle += (swirl - angle) * influence * 0.6;
+        }
+      }
+
+      const vx = Math.cos(angle) * p.speed;
+      const vy = Math.sin(angle) * p.speed;
+      const px = p.x, py = p.y;
+      p.x += vx * (dt * 0.06);
+      p.y += vy * (dt * 0.06);
+      p.life += dt * 0.06;
+
+      const lifeRatio = p.life / p.maxLife;
+      const fade = Math.sin(Math.min(lifeRatio, 1) * Math.PI); // fades in, then out
+      const hue = baseHue + (n - 0.5) * 150;
+      ctx.strokeStyle = `hsla(${hue}, 85%, 68%, ${0.75 * fade})`;
+      ctx.shadowColor = `hsla(${hue}, 85%, 60%, ${0.6 * fade})`;
+      ctx.shadowBlur = 3;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+
+      if (p.life >= p.maxLife || p.x < -20 || p.x > W + 20 || p.y < -20 || p.y > H + 20) {
+        spawn(p);
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
