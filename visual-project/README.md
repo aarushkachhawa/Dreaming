@@ -28,3 +28,9 @@ When you are done, someone should want to look. Longer than they meant to.
   carried through a drifting noise field, drawn as glowing threads that fade
   over time and slowly cycle hue. Move the cursor to bend the flow. Open the
   file directly in a browser.
+- **2026-07-28** — `2026-07-28-ember-bloom.html`: where night one was
+  weightless — particles adrift on a current no one steers — night two
+  insists on structure. Amber branches grow upward from seeds at the bottom
+  of the screen, forking recursively until each tip opens into a soft
+  blossom that breathes and sheds embers into the dark. Click anywhere to
+  plant a new seed. Open the file directly in a browser.

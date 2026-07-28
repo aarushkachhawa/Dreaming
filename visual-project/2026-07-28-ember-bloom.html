@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ember Bloom — Night 2</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0a0603;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 230, 200, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 230, 200, 0.4);
+  }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="structure"></canvas>
+<canvas id="fx"></canvas>
+<div id="caption">Ember Bloom &mdash; Night 2 &middot; touch the dark to plant a seed</div>
+<script>
+(() => {
+  const bg = document.getElementById('bg');
+  const structure = document.getElementById('structure');
+  const fx = document.getElementById('fx');
+  const bgx = bg.getContext('2d');
+  const sx = structure.getContext('2d');
+  const ctx = fx.getContext('2d', { alpha: true });
+  let W, H, DPR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [bg, structure, fx]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    bgx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    sx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    drawSky();
+  }
+
+  // --- warm void backdrop with a few drifting dust motes ---
+  let dust = [];
+  function drawSky() {
+    const g = bgx.createRadialGradient(W * 0.5, H * 1.05, 0, W * 0.5, H * 1.05, Math.max(W, H) * 0.95);
+    g.addColorStop(0, '#231005');
+    g.addColorStop(1, '#08050a');
+    bgx.clearRect(0, 0, W, H);
+    bgx.fillStyle = g;
+    bgx.fillRect(0, 0, W, H);
+
+    dust = [];
+    const count = Math.floor((W * H) / 9000);
+    for (let i = 0; i < count; i++) {
+      dust.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1 + 0.3,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.3 + Math.random() * 0.5,
+        drift: (Math.random() - 0.5) * 0.02,
+      });
+    }
+
+    // clearing the structure layer on resize means growth restarts —
+    // acceptable, a resize is rare and the regrowth is part of the show
+    sx.clearRect(0, 0, W, H);
+    branches.length = 0;
+    blossoms.length = 0;
+    seedTimer = 0;
+    plantSeeds(6);
+  }
+
+  function drawDust(t) {
+    for (const d of dust) {
+      const a = 0.12 + 0.18 * (0.5 + 0.5 * Math.sin(t * 0.0006 * d.speed + d.phase));
+      bgx.globalAlpha = a;
+      bgx.fillStyle = '#ffd9a8';
+      bgx.beginPath();
+      bgx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+      bgx.fill();
+      d.y -= 0.02;
+      d.x += d.drift;
+      if (d.y < -5) d.y = H + 5;
+    }
+    bgx.globalAlpha = 1;
+  }
+
+  // --- branching growth ---
+  const MAX_DEPTH = 6;
+  const GROW_SPEED = 0.085; // px per ms, roughly
+  const BRANCH_CAP = 900; // keeps a long-running session from accumulating unbounded blossoms
+  let branches = [];
+  let blossoms = [];
+  let embers = [];
+  let hueBase = 28; // warm amber
+  let totalBranchesCreated = 0;
+
+  function makeBranch(x, y, angle, length, depth, hue) {
+    totalBranchesCreated++;
+    return {
+      x, y, angle, length, depth, hue,
+      grown: 0,
+      done: false,
+      delay: depth === 0 ? 0 : 120 + Math.random() * 260,
+    };
+  }
+
+  function plantSeeds(n) {
+    if (totalBranchesCreated >= BRANCH_CAP) return;
+    for (let i = 0; i < n; i++) {
+      const x = W * (0.12 + 0.76 * Math.random());
+      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+      const length = 90 + Math.random() * 70;
+      branches.push(makeBranch(x, H + 4, angle, length, 0, hueBase + (Math.random() - 0.5) * 20));
+    }
+  }
+
+  function plantAt(x, y) {
+    if (totalBranchesCreated >= BRANCH_CAP) return;
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+    const length = 70 + Math.random() * 50;
+    branches.push(makeBranch(x, y, angle, length, 0, hueBase + Math.random() * 60 - 10));
+  }
+
+  function tipOf(br) {
+    return {
+      x: br.x + Math.cos(br.angle) * br.grown,
+      y: br.y + Math.sin(br.angle) * br.grown,
+    };
+  }
+
+  function finishBranch(br) {
+    const tip = tipOf(br);
+    sx.strokeStyle = `hsla(${br.hue}, 78%, ${62 - br.depth * 4}%, 0.85)`;
+    sx.shadowColor = `hsla(${br.hue}, 85%, 55%, 0.5)`;
+    sx.shadowBlur = 4;
+    sx.lineWidth = Math.max(0.6, 3.2 - br.depth * 0.45);
+    sx.lineCap = 'round';
+    sx.beginPath();
+    sx.moveTo(br.x, br.y);
+    sx.lineTo(tip.x, tip.y);
+    sx.stroke();
+
+    if (br.depth < MAX_DEPTH && totalBranchesCreated < BRANCH_CAP && Math.random() > 0.06) {
+      const nChildren = br.depth < 2 ? (Math.random() > 0.5 ? 2 : 1) : (Math.random() > 0.7 ? 2 : 1);
+      for (let i = 0; i < nChildren; i++) {
+        const spread = 0.35 + Math.random() * 0.45;
+        const childAngle = br.angle + (i === 0 ? -1 : 1) * spread * (0.5 + Math.random() * 0.7);
+        const childLength = br.length * (0.68 + Math.random() * 0.15);
+        if (childLength < 6) continue;
+        branches.push(makeBranch(tip.x, tip.y, childAngle, childLength, br.depth + 1, br.hue + (Math.random() - 0.5) * 14));
+      }
+    } else {
+      blossoms.push({
+        x: tip.x, y: tip.y,
+        hue: br.hue + 20 + Math.random() * 30,
+        phase: Math.random() * Math.PI * 2,
+        r: 2 + Math.random() * 2.2,
+        emberTimer: Math.random() * 900,
+      });
+    }
+  }
+
+  function spawnEmber(x, y, hue) {
+    embers.push({
+      x, y,
+      vx: (Math.random() - 0.5) * 0.12,
+      vy: -0.25 - Math.random() * 0.35,
+      life: 0,
+      maxLife: 2200 + Math.random() * 1800,
+      hue,
+      r: 0.6 + Math.random() * 1.1,
+    });
+  }
+
+  let seedTimer = 0;
+
+  function step(dt, now) {
+    // grow active branches
+    for (let i = branches.length - 1; i >= 0; i--) {
+      const br = branches[i];
+      if (br.delay > 0) {
+        br.delay -= dt;
+        continue;
+      }
+      const speed = GROW_SPEED * (1 + br.depth * 0.12);
+      br.grown += speed * dt;
+      if (br.grown >= br.length) {
+        br.grown = br.length;
+        finishBranch(br);
+        branches.splice(i, 1);
+      } else {
+        const tip = tipOf(br);
+        ctx.strokeStyle = `hsla(${br.hue}, 80%, 60%, 0.9)`;
+        ctx.shadowColor = `hsla(${br.hue}, 90%, 60%, 0.6)`;
+        ctx.shadowBlur = 5;
+        ctx.lineWidth = Math.max(0.6, 3.2 - br.depth * 0.45);
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(br.x, br.y);
+        ctx.lineTo(tip.x, tip.y);
+        ctx.stroke();
+      }
+    }
+
+    // blossoms: gentle pulse + occasional embers
+    for (const b of blossoms) {
+      const pulse = 0.55 + 0.45 * Math.sin(now * 0.0018 + b.phase);
+      const rad = b.r * (1 + pulse * 0.6);
+      const grad = ctx.createRadialGradient(b.x, b.y, 0, b.x, b.y, rad * 5);
+      grad.addColorStop(0, `hsla(${b.hue}, 95%, 78%, ${0.55 * pulse + 0.25})`);
+      grad.addColorStop(1, `hsla(${b.hue}, 95%, 60%, 0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, rad * 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      b.emberTimer -= dt;
+      if (b.emberTimer <= 0) {
+        spawnEmber(b.x, b.y, b.hue);
+        b.emberTimer = 1400 + Math.random() * 2600;
+      }
+    }
+
+    // embers rising and fading
+    for (let i = embers.length - 1; i >= 0; i--) {
+      const e = embers[i];
+      e.life += dt;
+      e.x += e.vx * dt * 0.06;
+      e.y += e.vy * dt * 0.06;
+      e.vx += (Math.random() - 0.5) * 0.01;
+      if (e.life >= e.maxLife) {
+        embers.splice(i, 1);
+        continue;
+      }
+      const lifeRatio = e.life / e.maxLife;
+      const fade = Math.sin(Math.min(lifeRatio, 1) * Math.PI);
+      ctx.fillStyle = `hsla(${e.hue}, 95%, 72%, ${0.8 * fade})`;
+      ctx.shadowColor = `hsla(${e.hue}, 95%, 65%, ${0.6 * fade})`;
+      ctx.shadowBlur = 4;
+      ctx.beginPath();
+      ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // occasionally let a fresh seed take root on its own
+    seedTimer -= dt;
+    if (seedTimer <= 0 && branches.length < 40) {
+      plantSeeds(1);
+      seedTimer = 3000 + Math.random() * 5000;
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  window.addEventListener('pointerdown', (e) => {
+    plantAt(e.clientX, e.clientY);
+  });
+
+  let t0 = performance.now();
+  function frame(now) {
+    const dt = Math.min(now - t0, 48);
+    t0 = now;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+
+    drawDust(now);
+    step(dt, now);
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
