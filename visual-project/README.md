@@ -28,3 +28,12 @@ When you are done, someone should want to look. Longer than they meant to.
   carried through a drifting noise field, drawn as glowing threads that fade
   over time and slowly cycle hue. Move the cursor to bend the flow. Open the
   file directly in a browser.
+
+- **2026-07-29** — `2026-07-29-mitotic-bloom.html`: a Gray-Scott reaction-diffusion
+  simulation — cells nucleate, split, and grow into coral-like branching tissue
+  entirely from a chemical feed/kill rule, no two runs alike. Colored through a
+  deep ink → violet → coral → molten-gold gradient with a soft bloom pass.
+  The feed and kill rates themselves drift slowly over minutes, so the tissue's
+  character (dividing spots vs. dense labyrinth) keeps shifting long after it
+  first fills the screen. Move the cursor to stir new growth into the bath,
+  click to drop a fresh colony. Open the file directly in a browser.
