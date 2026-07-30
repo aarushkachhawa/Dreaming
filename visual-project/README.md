@@ -37,3 +37,13 @@ When you are done, someone should want to look. Longer than they meant to.
   character (dividing spots vs. dense labyrinth) keeps shifting long after it
   first fills the screen. Move the cursor to stir new growth into the bath,
   click to drop a fresh colony. Open the file directly in a browser.
+
+- **2026-07-30** — `2026-07-30-auroral-wake.html`: first departure from canvas
+  2D into a raw WebGL fragment shader — domain-warped fractal noise (three
+  layers of fbm feeding into each other, Iñigo Quilez's warp technique)
+  rendered as drifting aurora curtains over a hashed, twinkling starfield.
+  No simulation state, no particles — every frame is the noise field evaluated
+  fresh at a slowly advancing time offset, so the ribbons fold and braid
+  continuously rather than scroll. Move the cursor to pull the curtains'
+  warp center toward it; click to send a brief, tight ripple through the
+  field where you clicked. Open the file directly in a browser.
