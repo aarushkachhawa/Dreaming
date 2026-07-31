@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Twin Currents — Night 3</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05030f;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Twin Currents &mdash; Night 3 &mdash; move to call them, click to seed a colony</div>
+<script>
+(() => {
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  // Simulation runs on a low-res trail grid; visible canvases just scale it
+  // up, the same trick as Night 2 — keeps thousands of agents cheap per frame.
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  let W, H, DPR, nx, ny;
+  let trailA, trailB, tmpA, tmpB;
+  let Xm1, Xp1, Ym1, Yp1;
+  let img;
+  let agentsX, agentsY, agentsAng, agentsSpecies;
+  let agentCount;
+
+  function wrap(v, n) {
+    v %= n;
+    return v < 0 ? v + n : v;
+  }
+
+  function initGrid() {
+    nx = 220;
+    ny = Math.max(100, Math.min(170, Math.round(nx * (H / W))));
+    off.width = nx;
+    off.height = ny;
+    img = offCtx.createImageData(nx, ny);
+
+    const n = nx * ny;
+    trailA = new Float32Array(n);
+    trailB = new Float32Array(n);
+    tmpA = new Float32Array(n);
+    tmpB = new Float32Array(n);
+
+    Xm1 = new Int32Array(nx);
+    Xp1 = new Int32Array(nx);
+    for (let x = 0; x < nx; x++) {
+      Xm1[x] = (x - 1 + nx) % nx;
+      Xp1[x] = (x + 1) % nx;
+    }
+    Ym1 = new Int32Array(ny);
+    Yp1 = new Int32Array(ny);
+    for (let y = 0; y < ny; y++) {
+      Ym1[y] = (y - 1 + ny) % ny;
+      Yp1[y] = (y + 1) % ny;
+    }
+
+    // kept sparse relative to grid area: dense agent coverage combined with
+    // trail memory saturates every cell and washes the piece out to white
+    agentCount = Math.min(3000, Math.round(nx * ny * 0.09));
+    agentsX = new Float32Array(agentCount);
+    agentsY = new Float32Array(agentCount);
+    agentsAng = new Float32Array(agentCount);
+    agentsSpecies = new Uint8Array(agentCount);
+    for (let i = 0; i < agentCount; i++) {
+      agentsX[i] = Math.random() * nx;
+      agentsY[i] = Math.random() * ny;
+      agentsAng[i] = Math.random() * Math.PI * 2;
+      agentsSpecies[i] = i < agentCount / 2 ? 0 : 1;
+    }
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initGrid();
+  }
+
+  // --- physarum-style sensing agents: two species, each drawn to its own
+  // trail and mildly wary of the other's, laid over a shared diffusing field ---
+  const SPEED = 0.62;
+  const DEPOSIT = 0.35; // per-visit increment, clamped below — keeps trails
+                        // bounded regardless of agent density or run length
+  let sensorDist = 6.5, sensorAngle = 0.5, turnAngle = 0.34;
+
+  function sampleAt(arr, x, y) {
+    const xi = wrap(Math.round(x), nx);
+    const yi = wrap(Math.round(y), ny);
+    return arr[yi * nx + xi];
+  }
+
+  function stepAgents() {
+    for (let i = 0; i < agentCount; i++) {
+      const ang = agentsAng[i];
+      const x = agentsX[i], y = agentsY[i];
+      const species = agentsSpecies[i];
+      const own = species === 0 ? trailA : trailB;
+      const rival = species === 0 ? trailB : trailA;
+
+      const cl = ang - sensorAngle, cc = ang, cr = ang + sensorAngle;
+      const sL = sampleAt(own, x + Math.cos(cl) * sensorDist, y + Math.sin(cl) * sensorDist)
+               - sampleAt(rival, x + Math.cos(cl) * sensorDist, y + Math.sin(cl) * sensorDist) * 0.35;
+      const sC = sampleAt(own, x + Math.cos(cc) * sensorDist, y + Math.sin(cc) * sensorDist)
+               - sampleAt(rival, x + Math.cos(cc) * sensorDist, y + Math.sin(cc) * sensorDist) * 0.35;
+      const sR = sampleAt(own, x + Math.cos(cr) * sensorDist, y + Math.sin(cr) * sensorDist)
+               - sampleAt(rival, x + Math.cos(cr) * sensorDist, y + Math.sin(cr) * sensorDist) * 0.35;
+
+      let newAng = ang;
+      if (sC >= sL && sC >= sR) {
+        newAng = ang + (Math.random() - 0.5) * 0.06;
+      } else if (sL > sR) {
+        newAng = ang - turnAngle;
+      } else if (sR > sL) {
+        newAng = ang + turnAngle;
+      } else {
+        newAng = ang + (Math.random() - 0.5) * turnAngle * 2;
+      }
+
+      const nx_ = wrap(x + Math.cos(newAng) * SPEED, nx);
+      const ny_ = wrap(y + Math.sin(newAng) * SPEED, ny);
+
+      agentsX[i] = nx_;
+      agentsY[i] = ny_;
+      agentsAng[i] = newAng;
+
+      const gi = (wrap(Math.round(ny_), ny)) * nx + wrap(Math.round(nx_), nx);
+      const v = own[gi] + DEPOSIT;
+      own[gi] = v > 1 ? 1 : v;
+    }
+  }
+
+  function diffuseDecay(src, dst, decay) {
+    for (let y = 0; y < ny; y++) {
+      const ym1 = Ym1[y] * nx, yp1 = Yp1[y] * nx, row = y * nx;
+      for (let x = 0; x < nx; x++) {
+        const xm1 = Xm1[x], xp1 = Xp1[x];
+        const i = row + x;
+        const avg = (src[row + xm1] + src[row + xp1] + src[ym1 + x] + src[yp1 + x] + src[i]) * 0.2;
+        dst[i] = avg * decay;
+      }
+    }
+  }
+
+  // shared dark background; each species blooms toward its own accent, and
+  // where both currents overlap the sum pushes toward warm white
+  const bg = [4, 3, 14];
+  const STOPS_A = [ // deep indigo -> electric cyan
+    [0.00, 4, 3, 14],
+    [0.30, 10, 40, 70],
+    [0.62, 20, 140, 190],
+    [1.00, 130, 240, 255],
+  ];
+  const STOPS_B = [ // deep plum -> warm coral
+    [0.00, 4, 3, 14],
+    [0.30, 55, 12, 40],
+    [0.62, 170, 45, 60],
+    [1.00, 255, 175, 120],
+  ];
+  function paletteInto(rgb, stops, t) {
+    if (t <= 0) { rgb[0] = stops[0][1]; rgb[1] = stops[0][2]; rgb[2] = stops[0][3]; return; }
+    if (t >= 1) { const s = stops[stops.length - 1]; rgb[0] = s[1]; rgb[1] = s[2]; rgb[2] = s[3]; return; }
+    for (let k = 0; k < stops.length - 1; k++) {
+      const a = stops[k], b = stops[k + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const f = (t - a[0]) / (b[0] - a[0]);
+        rgb[0] = a[1] + (b[1] - a[1]) * f;
+        rgb[1] = a[2] + (b[2] - a[2]) * f;
+        rgb[2] = a[3] + (b[3] - a[3]) * f;
+        return;
+      }
+    }
+  }
+
+  const rgbA = [0, 0, 0], rgbB = [0, 0, 0];
+  function render() {
+    const data = img.data;
+    for (let i = 0, p = 0; i < trailA.length; i++, p += 4) {
+      const va = trailA[i] / (trailA[i] + 0.18);
+      const vb = trailB[i] / (trailB[i] + 0.18);
+      paletteInto(rgbA, STOPS_A, va);
+      paletteInto(rgbB, STOPS_B, vb);
+      let r = rgbA[0] + rgbB[0] - bg[0];
+      let g = rgbA[1] + rgbB[1] - bg[1];
+      let b = rgbA[2] + rgbB[2] - bg[2];
+      data[p] = r < 0 ? 0 : r > 255 ? 255 : r;
+      data[p + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
+      data[p + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+      data[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = 'high';
+    baseCtx.drawImage(off, 0, 0, nx, ny, 0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.filter = 'blur(12px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.globalAlpha = 0.5;
+    glowCtx.drawImage(off, 0, 0, nx, ny, -18, -18, W + 36, H + 36);
+    glowCtx.restore();
+  }
+
+  // --- cursor calls both currents toward it; click seeds a fresh colony ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const gx = (e.clientX / W) * nx;
+    const gy = (e.clientY / H) * ny;
+    const species = Math.random() < 0.5 ? 0 : 1;
+    const start = species === 0 ? 0 : Math.floor(agentCount / 2);
+    const count = Math.floor(agentCount / 2);
+    for (let k = 0; k < 260; k++) {
+      const idx = start + Math.floor(Math.random() * count);
+      agentsX[idx] = wrap(gx + (Math.random() - 0.5) * 6, nx);
+      agentsY[idx] = wrap(gy + (Math.random() - 0.5) * 6, ny);
+      agentsAng[idx] = Math.random() * Math.PI * 2;
+    }
+  });
+
+  function callCursor() {
+    if (!mouse.active) return;
+    const gx = wrap(Math.round((mouse.x / W) * nx), nx);
+    const gy = wrap(Math.round((mouse.y / H) * ny), ny);
+    const r = 3;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const x = wrap(gx + dx, nx);
+        const y = wrap(gy + dy, ny);
+        const i = y * nx + x;
+        trailA[i] = Math.min(1, trailA[i] + 0.4);
+        trailB[i] = Math.min(1, trailB[i] + 0.4);
+      }
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let paramDrift = 0;
+  function frame() {
+    paramDrift += 1;
+    // sensing geometry drifts slowly — currents slide between tight braided
+    // veins and loose, wide-swept arcs over the course of minutes
+    sensorAngle = 0.5 + Math.sin(paramDrift * 0.0006) * 0.18;
+    turnAngle = 0.34 + Math.sin(paramDrift * 0.00037 + 2.1) * 0.12;
+
+    callCursor();
+    stepAgents();
+    diffuseDecay(trailA, tmpA, 0.88);
+    diffuseDecay(trailB, tmpB, 0.88);
+    [trailA, tmpA] = [tmpA, trailA];
+    [trailB, tmpB] = [tmpB, trailB];
+    render();
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

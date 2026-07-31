@@ -37,3 +37,14 @@ When you are done, someone should want to look. Longer than they meant to.
   character (dividing spots vs. dense labyrinth) keeps shifting long after it
   first fills the screen. Move the cursor to stir new growth into the bath,
   click to drop a fresh colony. Open the file directly in a browser.
+
+- **2026-07-31** — `2026-07-31-twin-currents.html`: two physarum-style colonies
+  of trail-sensing agents, cyan and coral, laid over a shared diffusing field
+  they each reinforce and mildly avoid in the other's color. Crossings glow
+  white where both currents braid together. A third technique after a
+  particle flow field and a reaction-diffusion PDE — this one is agent-based
+  stigmergy, closer to how real slime molds carve transport networks than to
+  either prior night. Sensing geometry drifts over minutes, sliding the braid
+  from tight coils to loose sweeping arcs. Move the cursor to call both
+  currents toward it, click to seed a fresh colony. Open the file directly in
+  a browser.
