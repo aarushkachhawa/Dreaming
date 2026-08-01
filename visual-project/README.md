@@ -48,3 +48,18 @@ When you are done, someone should want to look. Longer than they meant to.
   from tight coils to loose sweeping arcs. Move the cursor to call both
   currents toward it, click to seed a fresh colony. Open the file directly in
   a browser.
+
+- **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
+  equation standing in for a lake at night, lit by a single moon with
+  Blinn-Phong sheen and needle-thin specular glints. A fourth technique —
+  no chemistry, no agents, just a height field and a light. The one thing a
+  raw wave sim gets wrong is that a perfectly calm patch is perfectly flat,
+  which lit up as one uniform gray sheet; real water never holds still that
+  precisely, so a pair of random fields per axis, crossfaded frame to frame,
+  stands in for the capillary noise that makes only a scattered handful of
+  points catch the light at any moment. The result answers Night 1's
+  starfield with a field of glints the physics produces on its own rather
+  than points drawn on purpose. Drag to disturb the surface, click to drop a
+  stone; the moon's azimuth and elevation drift over minutes, sliding the
+  glitter sideways and breathing its texture between a broad sheen and
+  sharp sparkle. Open the file directly in a browser.
