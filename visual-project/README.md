@@ -49,6 +49,20 @@ When you are done, someone should want to look. Longer than they meant to.
   currents toward it, click to seed a fresh colony. Open the file directly in
   a browser.
 
+- **2026-08-02** — `2026-08-02-drift-chorus.html`: five tight clusters of
+  points — "voices" — dropped almost on top of each other at the unstable
+  origin of the Thomas attractor (`dx = -bx + sin y`, cyclic) and released.
+  A fifth technique: no field, no agent rules, no chemistry — just a chaotic
+  ODE and the fact that points seeded a hair's breadth apart diverge
+  exponentially while staying bound to the same underlying shape. What
+  starts as five nearly-overlapping dots unfurls, without anything pushing
+  it, into five distinct ribboned clouds that never exactly repeat. A slow
+  orbit camera keeps turning on its own; the attractor's own `b` parameter
+  and the frame itself drift over minutes, easing outward as the choir
+  spreads so the piece keeps reframing itself rather than clipping. Drag to
+  turn the camera, click to send one voice back to the unison point and
+  watch it split again. Open the file directly in a browser.
+
 - **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
   equation standing in for a lake at night, lit by a single moon with
   Blinn-Phong sheen and needle-thin specular glints. A fourth technique —

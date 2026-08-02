@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drift Chorus — Night 5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #04030a;
+    overflow: hidden;
+    cursor: grab;
+  }
+  body.dragging { cursor: grabbing; }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #glow {
+    filter: blur(9px);
+    mix-blend-mode: screen;
+    opacity: 0.9;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="trail"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Drift Chorus &mdash; Night 5 &mdash; drag to turn, click to recall a voice to unison</div>
+<script>
+(() => {
+  // A fifth technique, and the first with no field at all: no noise, no
+  // agents, no grid — just five tight clusters of points ("voices") dropped
+  // near the same spot and released into the Thomas attractor, a chaotic ODE
+  //   dx = (-b*x + sin(y)) dt,  dy = (-b*y + sin(z)) dt,  dz = (-b*z + sin(x)) dt
+  // Every previous night built structure up from a field or a swarm of
+  // interacting agents; this one starts from perfect unison — every particle
+  // in a voice begins on almost the same point — and structure *emerges*
+  // purely from each trajectory's sensitivity to its own tiny starting
+  // offset. A chorus that opens on one note and, without anyone singing a
+  // different part on purpose, drifts into five clouds of harmony that never
+  // quite repeat. Clicking calls one voice back to the unison point, so you
+  // can watch the split happen again.
+  const trailCanvas = document.getElementById('trail');
+  const glowCanvas = document.getElementById('glow');
+  const trailCtx = trailCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  let W, H, DPR;
+
+  function clamp01(t) { return t < 0 ? 0 : t > 1 ? 1 : t; }
+
+  // --- the choir: five voices, each a tight cluster near the origin ---
+  const GROUPS = 5;
+  const PER_GROUP = 600;
+  const N = GROUPS * PER_GROUP;
+  const HUES = [268, 190, 6, 50, 328]; // violet, cyan, coral, gold, magenta
+
+  const px = new Float32Array(N);
+  const py = new Float32Array(N);
+  const pz = new Float32Array(N);
+  const group = new Uint8Array(N);
+
+  // The origin is an exact fixed point of the system (sin(0) = 0 on every
+  // term), so a voice seeded precisely there would sit frozen forever —
+  // every cluster needs a small jitter just to leave the equilibrium.
+  function seedGroup(g, cx, cy, cz) {
+    const start = g * PER_GROUP;
+    for (let k = 0; k < PER_GROUP; k++) {
+      const i = start + k;
+      px[i] = cx + (Math.random() - 0.5) * 0.02;
+      py[i] = cy + (Math.random() - 0.5) * 0.02;
+      pz[i] = cz + (Math.random() - 0.5) * 0.02;
+      group[i] = g;
+    }
+  }
+
+  for (let g = 0; g < GROUPS; g++) {
+    seedGroup(g, 0.05 * (g - 2), 0.03 * (g % 3), 0.04 * ((g + 1) % 4));
+  }
+
+  // b drifts slowly across minutes through the attractor's chaotic band,
+  // so the choir's shape keeps loosening and retying long after it forms.
+  let bParam = 0.19;
+
+  function stepAttractor(dt) {
+    for (let i = 0; i < N; i++) {
+      const x = px[i], y = py[i], z = pz[i];
+      px[i] = x + (-bParam * x + Math.sin(y)) * dt;
+      py[i] = y + (-bParam * y + Math.sin(z)) * dt;
+      pz[i] = z + (-bParam * z + Math.sin(x)) * dt;
+    }
+  }
+
+  // Run the choir forward silently before the first frame so it has already
+  // spread from the seed point onto the attractor's true shape, rather than
+  // opening on a bare dot that takes a few seconds on-screen to bloom.
+  const WARMUP_STEPS = 6000;
+  const WARMUP_DT = 0.008;
+  for (let s = 0; s < WARMUP_STEPS; s++) stepAttractor(WARMUP_DT);
+
+  // A single stray point can sit far outside where the choir actually
+  // lives, and calibrating off the true max shrinks everyone else down to
+  // a speck to make room for one outlier. The 85th-percentile radius is a
+  // steadier stand-in for "how big the choir actually looks" — the rare
+  // point beyond it just drifts past the frame edge and gets skipped.
+  const radiusScratch = new Float32Array(N);
+  function typicalRadius() {
+    for (let i = 0; i < N; i++) {
+      radiusScratch[i] = Math.sqrt(px[i] * px[i] + py[i] * py[i] + pz[i] * pz[i]);
+    }
+    const sorted = Array.from(radiusScratch).sort((a, b) => a - b);
+    return Math.max(0.4, sorted[Math.floor(sorted.length * 0.85)]);
+  }
+
+  let calibRadius = typicalRadius();
+  let worldScale = 1;
+  let targetWorldScale = 1;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [trailCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    trailCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    trailCtx.fillStyle = '#04030a';
+    trailCtx.fillRect(0, 0, W, H);
+    // orthographic scale: fit the choir's typical radius to ~40% of the
+    // shorter side. Recomputed on resize, and eased toward a refreshed
+    // target continuously below, so the frame slowly pulls back as the
+    // voices spread rather than clipping them once they outgrow it.
+    targetWorldScale = (Math.min(W, H) * 0.4) / calibRadius;
+    if (worldScale === 1) worldScale = targetWorldScale;
+  }
+
+  // --- orbit camera: azimuth auto-drifts forever, drag adds a lasting offset ---
+  let baseAzimuth = 0.6;
+  let baseElevation = 0.35;
+  let dragging = false, moved = false, downX = 0, downY = 0, downAz = 0, downEl = 0;
+
+  window.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    moved = false;
+    downX = e.clientX;
+    downY = e.clientY;
+    downAz = baseAzimuth;
+    downEl = baseElevation;
+    document.body.classList.add('dragging');
+  });
+  window.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - downX, dy = e.clientY - downY;
+    if (Math.hypot(dx, dy) > 4) moved = true;
+    baseAzimuth = downAz + dx * 0.006;
+    baseElevation = Math.max(-1.3, Math.min(1.3, downEl - dy * 0.005));
+  });
+  window.addEventListener('pointerup', (e) => {
+    if (dragging && !moved) {
+      // a plain click/tap: recall the nearest voice to unison
+      const g = Math.floor(Math.random() * GROUPS);
+      seedGroup(g, 0.05 * (g - 2), 0.03 * (g % 3), 0.04 * ((g + 1) % 4));
+    }
+    dragging = false;
+    document.body.classList.remove('dragging');
+  });
+  window.addEventListener('pointerleave', () => {
+    dragging = false;
+    document.body.classList.remove('dragging');
+  });
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let t = 0;
+  function frame() {
+    t += 1;
+
+    // parameter and camera both drift on their own clocks, independent of
+    // any interaction, so the piece keeps changing with no one watching
+    bParam = 0.185 + Math.sin(t * 0.00013) * 0.025;
+    const azimuth = baseAzimuth + t * 0.00035;
+    const elevation = baseElevation + Math.sin(t * 0.00021) * 0.1;
+
+    for (let s = 0; s < 4; s++) stepAttractor(0.008);
+
+    // every couple of seconds, re-read how far the choir has actually
+    // spread and ease the framing toward it — a slow, continuous pullback
+    // rather than a fixed frame set once at the start
+    if (t % 150 === 0) {
+      calibRadius = typicalRadius();
+      targetWorldScale = (Math.min(W, H) * 0.4) / calibRadius;
+    }
+    worldScale += (targetWorldScale - worldScale) * 0.02;
+
+    // fade the previous frame instead of clearing it: trails, not snapshots
+    trailCtx.fillStyle = 'rgba(4, 3, 10, 0.16)';
+    trailCtx.fillRect(0, 0, W, H);
+    glowCtx.clearRect(0, 0, W, H);
+
+    const cosA = Math.cos(azimuth), sinA = Math.sin(azimuth);
+    const cosE = Math.cos(elevation), sinE = Math.sin(elevation);
+    const cx = W / 2, cy = H / 2;
+
+    for (let i = 0; i < N; i++) {
+      // rotate around Y (azimuth), then around X (elevation)
+      const x1 = px[i] * cosA - pz[i] * sinA;
+      const z1 = px[i] * sinA + pz[i] * cosA;
+      const y2 = py[i] * cosE - z1 * sinE;
+      const z2 = py[i] * sinE + z1 * cosE;
+
+      const sx = cx + x1 * worldScale;
+      const sy = cy - y2 * worldScale;
+      if (sx < -20 || sx > W + 20 || sy < -20 || sy > H + 20) continue;
+
+      const depth = clamp01((z2 + calibRadius) / (2 * calibRadius));
+      const hue = HUES[group[i]];
+      const sat = 50 + depth * 30;
+      const light = 28 + depth * 42;
+      const r = (0.5 + 1.5 * depth) * DPR;
+
+      trailCtx.fillStyle = `hsla(${hue}, ${sat}%, ${light}%, ${0.5 + 0.4 * depth})`;
+      trailCtx.fillRect(sx - r, sy - r, r * 2, r * 2);
+
+      if (depth > 0.6) {
+        const gr = r * 3.2;
+        glowCtx.fillStyle = `hsla(${hue}, ${sat}%, ${Math.min(85, light + 20)}%, ${0.35 * depth})`;
+        glowCtx.beginPath();
+        glowCtx.arc(sx, sy, gr, 0, Math.PI * 2);
+        glowCtx.fill();
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
