@@ -49,6 +49,21 @@ When you are done, someone should want to look. Longer than they meant to.
   currents toward it, click to seed a fresh colony. Open the file directly in
   a browser.
 
+- **2026-08-03** — `2026-08-03-three-body-waltz.html`: a fifth technique —
+  rigid-body mechanics instead of a field or a swarm. Three massive suns
+  chase each other under full mutual Newtonian gravity, the classic
+  three-body problem, chaotic and never quite repeating, held on-screen by
+  a gentle harmonic tether so the dance never flings itself into the void.
+  Around them, nearly a thousand massless stardust particles ride the
+  suns' combined field — test masses that feel gravity but exert none, the
+  same trick real orbital-mechanics sims use to render thousands of orbits
+  cheaply — colored by speed from deep indigo to white-hot as they whip
+  through perihelion. The gravitational constant itself drifts over
+  minutes, sliding the whole system between tight fast spirals and loose
+  wide sweeps. Move the cursor to bend nearby orbits toward it, click to
+  drop a comet that swings through, tugs the suns off their rhythm, and
+  burns away after a few seconds. Open the file directly in a browser.
+
 - **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
   equation standing in for a lake at night, lit by a single moon with
   Blinn-Phong sheen and needle-thin specular glints. A fourth technique —
