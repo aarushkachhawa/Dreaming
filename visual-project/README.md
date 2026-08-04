@@ -49,6 +49,22 @@ When you are done, someone should want to look. Longer than they meant to.
   currents toward it, click to seed a fresh colony. Open the file directly in
   a browser.
 
+- **2026-08-04** — `2026-08-04-starling-hour.html`: a sixth technique —
+  emergent flocking instead of a field, a chemical rule, stigmergy, or a
+  central force. Roughly 550 starlings, each aware only of its handful of
+  nearest neighbors, apply three local rules — steer away if too close,
+  match the neighborhood's heading, steer toward its center — and the
+  folding, roiling sheet of a real murmuration falls out of that with no
+  global coordination at all. Set against a dusk gradient sliding from
+  near-black zenith to ember horizon, with a fixed field of fading stars
+  overhead. The flocking weights drift over minutes, sliding the mass
+  between a tight swirling knot and a loose sweeping sheet, and the whole
+  flock loosely commutes toward a slow-wandering roost point so it drifts
+  across the sky rather than just orbiting in place. Move the cursor to
+  open a hole in the flock as it flees your presence, click to loose a
+  hawk that cuts a path through and scatters everything nearby before
+  fading out. Open the file directly in a browser.
+
 - **2026-08-03** — `2026-08-03-three-body-waltz.html`: a fifth technique —
   rigid-body mechanics instead of a field or a swarm. Three massive suns
   chase each other under full mutual Newtonian gravity, the classic

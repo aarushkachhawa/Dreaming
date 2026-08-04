@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Starling Hour — Night 6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060f;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 235, 220, 0.4);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Starling Hour &mdash; Night 6 &mdash; move to open a hole in the flock, click to loose a hawk</div>
+<script>
+(() => {
+  // A sixth technique after a noise-driven flow field, a Gray-Scott reaction,
+  // physarum stigmergy, a lit wave equation, and full N-body gravity: this one
+  // has no field, no chemistry, no central force at all. Each bird only ever
+  // looks at its handful of nearest neighbors — steer to match their heading,
+  // steer toward their center, steer away if too close — and the roiling,
+  // folding sheet of a murmuration falls straight out of that, the same way
+  // it does for real starlings at dusk. Nothing here is told to swirl; it
+  // just does.
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  let W, H, DPR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    buildStars();
+    buildSky();
+  }
+
+  // --- dusk sky: a cached gradient plus a fixed field of stars ---
+  let skyGradient;
+  function buildSky() {
+    skyGradient = ctx.createLinearGradient(0, 0, 0, H);
+    skyGradient.addColorStop(0, '#05060f');
+    skyGradient.addColorStop(0.5, '#130f26');
+    skyGradient.addColorStop(0.8, '#33192c');
+    skyGradient.addColorStop(1, '#5f3320');
+  }
+
+  let stars = [];
+  function buildStars() {
+    const n = Math.floor((W * H) / 5200);
+    stars = [];
+    for (let i = 0; i < n; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.62,
+        r: Math.random() * 1.2 + 0.3,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.0006 + Math.random() * 0.0012,
+      });
+    }
+  }
+
+  // --- the flock ---
+  const N = 560;
+  const PERCEPTION = 52;
+  const SEP_RADIUS = 19;
+  const MAX_SPEED = 3.1;
+  const MIN_SPEED = 1.5;
+  const MAX_FORCE = 0.09;
+  const EDGE_MARGIN = 90;
+
+  let bx, by, bvx, bvy, bpx, bpy, bsize;
+
+  function initFlock() {
+    bx = new Float32Array(N);
+    by = new Float32Array(N);
+    bvx = new Float32Array(N);
+    bvy = new Float32Array(N);
+    bpx = new Float32Array(N);
+    bpy = new Float32Array(N);
+    bsize = new Float32Array(N);
+    const cx = W * 0.5, cy = H * 0.4;
+    for (let i = 0; i < N; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.random() * Math.min(W, H) * 0.2;
+      bx[i] = cx + Math.cos(a) * r;
+      by[i] = cy + Math.sin(a) * r;
+      const sp = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+      bvx[i] = Math.cos(a + Math.PI / 2) * sp;
+      bvy[i] = Math.sin(a + Math.PI / 2) * sp;
+      bpx[i] = bx[i]; bpy[i] = by[i];
+      bsize[i] = 2.6 + Math.random() * 2.6;
+    }
+  }
+
+  // --- spatial hash grid, rebuilt each frame for neighbor queries ---
+  let grid = [], gridCols = 1, gridRows = 1;
+  const cellSize = PERCEPTION;
+  function buildGrid() {
+    gridCols = Math.max(1, Math.ceil(W / cellSize));
+    gridRows = Math.max(1, Math.ceil(H / cellSize));
+    const total = gridCols * gridRows;
+    if (grid.length !== total) {
+      grid = new Array(total);
+      for (let i = 0; i < total; i++) grid[i] = [];
+    } else {
+      for (let i = 0; i < total; i++) grid[i].length = 0;
+    }
+    for (let i = 0; i < N; i++) {
+      const gx = Math.min(gridCols - 1, Math.max(0, (bx[i] / cellSize) | 0));
+      const gy = Math.min(gridRows - 1, Math.max(0, (by[i] / cellSize) | 0));
+      grid[gy * gridCols + gx].push(i);
+    }
+  }
+
+  // --- pointer: a phantom presence the flock instinctively avoids ---
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+
+  // --- hawks: transient predators spawned by clicking ---
+  let hawks = [];
+  function spawnHawk(px, py) {
+    const edge = Math.floor(Math.random() * 4);
+    let sx, sy;
+    if (edge === 0) { sx = -60; sy = Math.random() * H; }
+    else if (edge === 1) { sx = W + 60; sy = Math.random() * H; }
+    else if (edge === 2) { sx = Math.random() * W; sy = -60; }
+    else { sx = Math.random() * W; sy = H + 60; }
+    const dx = px - sx, dy = py - sy;
+    const d = Math.hypot(dx, dy) || 1;
+    const speed = 4.2 + Math.random() * 1.4;
+    hawks.push({
+      x: sx, y: sy,
+      vx: (dx / d) * speed, vy: (dy / d) * speed,
+      born: perfNow, life: 4200,
+    });
+  }
+  window.addEventListener('pointerdown', (e) => spawnHawk(e.clientX, e.clientY));
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  let perfNow = 0;
+  let wAlign = 1, wCoh = 0.8, wSep = 1.7;
+  let roostX = 0, roostY = 0;
+
+  function step() {
+    perfNow += 16.7;
+
+    // the flock's collective mood drifts over minutes: a tight swirling knot
+    // at one extreme, a loose sweeping sheet at the other
+    const swirl = 0.5 + 0.5 * Math.sin(perfNow * 0.00007);
+    wAlign = 0.65 + swirl * 0.75;
+    wCoh = 0.5 + swirl * 0.6;
+    wSep = 2.0 - swirl * 0.6;
+
+    // a slow-wandering roost point the flock loosely commutes toward,
+    // so the whole mass drifts across the sky rather than just orbiting
+    roostX = W * 0.5 + Math.sin(perfNow * 0.00003) * W * 0.3;
+    roostY = H * 0.4 + Math.cos(perfNow * 0.000021 + 1.1) * H * 0.16;
+
+    hawks = hawks.filter((h) => perfNow - h.born < h.life);
+    for (const h of hawks) { h.x += h.vx; h.y += h.vy; }
+
+    buildGrid();
+
+    for (let i = 0; i < N; i++) {
+      bpx[i] = bx[i]; bpy[i] = by[i];
+
+      let sepX = 0, sepY = 0;
+      let aliX = 0, aliY = 0;
+      let cohX = 0, cohY = 0;
+      let count = 0;
+
+      const gx = Math.min(gridCols - 1, Math.max(0, (bx[i] / cellSize) | 0));
+      const gy = Math.min(gridRows - 1, Math.max(0, (by[i] / cellSize) | 0));
+
+      for (let oy = -1; oy <= 1; oy++) {
+        const ny = gy + oy;
+        if (ny < 0 || ny >= gridRows) continue;
+        for (let ox = -1; ox <= 1; ox++) {
+          const nx = gx + ox;
+          if (nx < 0 || nx >= gridCols) continue;
+          const bucket = grid[ny * gridCols + nx];
+          for (let k = 0; k < bucket.length; k++) {
+            const j = bucket[k];
+            if (j === i) continue;
+            const dx = bx[i] - bx[j], dy = by[i] - by[j];
+            const d2 = dx * dx + dy * dy;
+            if (d2 > PERCEPTION * PERCEPTION || d2 < 0.0001) continue;
+            const d = Math.sqrt(d2);
+            if (d < SEP_RADIUS) {
+              const f = (SEP_RADIUS - d) / SEP_RADIUS;
+              sepX += (dx / d) * f;
+              sepY += (dy / d) * f;
+            }
+            aliX += bvx[j]; aliY += bvy[j];
+            cohX += bx[j]; cohY += by[j];
+            count++;
+          }
+        }
+      }
+
+      let ax = 0, ay = 0;
+
+      if (count > 0) {
+        aliX /= count; aliY /= count;
+        const aliD = Math.hypot(aliX, aliY) || 1;
+        ax += (aliX / aliD) * MAX_SPEED * wAlign * 0.05;
+        ay += (aliY / aliD) * MAX_SPEED * wAlign * 0.05;
+
+        cohX /= count; cohY /= count;
+        ax += (cohX - bx[i]) * 0.0016 * wCoh;
+        ay += (cohY - by[i]) * 0.0016 * wCoh;
+      }
+      ax += sepX * 0.045 * wSep;
+      ay += sepY * 0.045 * wSep;
+
+      // weak pull toward the wandering roost point
+      const rdx = roostX - bx[i], rdy = roostY - by[i];
+      const rd = Math.hypot(rdx, rdy) || 1;
+      ax += (rdx / rd) * 0.012;
+      ay += (rdy / rd) * 0.012;
+
+      // pointer: a presence to flee, opening a hole in the sheet
+      if (pointer.active) {
+        const dx = bx[i] - pointer.x, dy = by[i] - pointer.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 140 * 140) {
+          const d = Math.sqrt(d2) || 1;
+          const f = (140 - d) / 140;
+          ax += (dx / d) * f * 0.9;
+          ay += (dy / d) * f * 0.9;
+        }
+      }
+
+      // hawks: a stronger, more urgent flee
+      for (const h of hawks) {
+        const dx = bx[i] - h.x, dy = by[i] - h.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < 130 * 130) {
+          const d = Math.sqrt(d2) || 1;
+          const f = (130 - d) / 130;
+          ax += (dx / d) * f * 1.6;
+          ay += (dy / d) * f * 1.6;
+        }
+      }
+
+      // soft steer away from the screen edges, keeps the flock in frame
+      if (bx[i] < EDGE_MARGIN) ax += ((EDGE_MARGIN - bx[i]) / EDGE_MARGIN) * 0.12;
+      if (bx[i] > W - EDGE_MARGIN) ax -= ((bx[i] - (W - EDGE_MARGIN)) / EDGE_MARGIN) * 0.12;
+      if (by[i] < EDGE_MARGIN) ay += ((EDGE_MARGIN - by[i]) / EDGE_MARGIN) * 0.12;
+      if (by[i] > H - EDGE_MARGIN) ay -= ((by[i] - (H - EDGE_MARGIN)) / EDGE_MARGIN) * 0.12;
+
+      const aMag = Math.hypot(ax, ay);
+      if (aMag > MAX_FORCE) {
+        ax = (ax / aMag) * MAX_FORCE;
+        ay = (ay / aMag) * MAX_FORCE;
+      }
+
+      bvx[i] += ax; bvy[i] += ay;
+      let sp = Math.hypot(bvx[i], bvy[i]) || 1;
+      const clamped = Math.min(MAX_SPEED, Math.max(MIN_SPEED, sp));
+      bvx[i] = (bvx[i] / sp) * clamped;
+      bvy[i] = (bvy[i] / sp) * clamped;
+
+      bx[i] += bvx[i];
+      by[i] += bvy[i];
+
+      if (bx[i] < -30) bx[i] = -30;
+      if (bx[i] > W + 30) bx[i] = W + 30;
+      if (by[i] < -30) by[i] = -30;
+      if (by[i] > H + 30) by[i] = H + 30;
+    }
+  }
+
+  function render() {
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.fillStyle = '#fff8ec';
+    for (const s of stars) {
+      const tw = 0.55 + 0.45 * Math.sin(perfNow * s.speed + s.phase);
+      const fade = 1 - s.y / (H * 0.62);
+      ctx.globalAlpha = tw * fade * 0.75;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    for (let i = 0; i < N; i++) {
+      const heading = Math.atan2(bvy[i], bvx[i]);
+      const size = bsize[i];
+      const t = Math.min(1, Math.max(0, by[i] / H));
+      const r = 26 + t * 190;
+      const g = 26 + t * 90;
+      const b = 46 - t * 20;
+
+      const speed = Math.hypot(bvx[i], bvy[i]);
+      const stretch = Math.min(1, (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED));
+      if (stretch > 0.35) {
+        ctx.strokeStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${0.28 * stretch})`;
+        ctx.lineWidth = size * 0.5;
+        ctx.beginPath();
+        ctx.moveTo(bpx[i], bpy[i]);
+        ctx.lineTo(bx[i], by[i]);
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.translate(bx[i], by[i]);
+      ctx.rotate(heading);
+      ctx.fillStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, 0.88)`;
+      ctx.beginPath();
+      ctx.moveTo(size * 1.7, 0);
+      ctx.lineTo(-size * 0.9, size * 0.65);
+      ctx.lineTo(-size * 0.4, 0);
+      ctx.lineTo(-size * 0.9, -size * 0.65);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    step();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', () => { resize(); });
+  resize();
+  initFlock();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
