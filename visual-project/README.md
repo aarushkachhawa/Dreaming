@@ -64,6 +64,21 @@ When you are done, someone should want to look. Longer than they meant to.
   drop a comet that swings through, tugs the suns off their rhythm, and
   burns away after a few seconds. Open the file directly in a browser.
 
+- **2026-08-05** — `2026-08-05-veil-function.html`: a sixth technique, and
+  the first with no field, no swarm, and no forces at all — a de Jong
+  strange attractor, a single point folded through four sines and cosines
+  millions of times until it forgets everywhere it hasn't been and reveals
+  the one shape it's condemned to trace. At load, a short search rejects
+  the boring parameter sets (dull loops, formless fog) and keeps the first
+  rich weave it finds; forty-six parallel points then trace it at once,
+  colored by the direction of each step through a teal → violet → rose →
+  amber wheel, with a soft leading-edge glow riding just ahead of the
+  accumulating trail. The four parameters drift slowly on their own and
+  bend further toward the cursor, so the weave keeps reshaping itself
+  without ever fully repeating. Move the cursor to warp it, click to let
+  this weave dissolve into a freshly discovered one. Open the file
+  directly in a browser.
+
 - **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
   equation standing in for a lake at night, lit by a single moon with
   Blinn-Phong sheen and needle-thin specular glints. A fourth technique —

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Veil Function — Night 6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #04030a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Veil Function &mdash; Night 6 &mdash; move to warp the weave, click to dream a new attractor</div>
+<script>
+(() => {
+  // A sixth technique after a noise-driven flow field, a Gray-Scott reaction,
+  // physarum stigmergy, a lit wave equation, and Newtonian three-body gravity:
+  // this one has no field, no swarm, no forces at all. The de Jong map is four
+  // numbers fed through sin/cos and folded back into itself, over and over —
+  // a single point forgetting where it has been and discovering, iteration by
+  // iteration, the one shape it is condemned to trace forever. Almost every
+  // random (a, b, c, d) gives a dull loop or a formless fog, so a short search
+  // at load time rejects the boring ones and keeps the first rich weave it
+  // finds. The four parameters then drift slowly on their own and bend further
+  // toward wherever the cursor sits, so the weave never stops reshaping.
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  let W, H, DPR, cx, cy;
+  let refitTimer = 5200;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cx = W / 2;
+    cy = H / 2;
+    refitTimer = 200;
+  }
+
+  // the de Jong map: bounded in [-2, 2] on both axes for any real a, b, c, d,
+  // since each term is a difference of two values already clamped to [-1, 1]
+  function mapStep(x, y, a, b, c, d) {
+    return [Math.sin(a * y) - Math.cos(b * x), Math.sin(c * x) - Math.cos(d * y)];
+  }
+
+  function randomParams() {
+    return [
+      -3 + Math.random() * 6,
+      -3 + Math.random() * 6,
+      -3 + Math.random() * 6,
+      -3 + Math.random() * 6,
+    ];
+  }
+
+  // run a throwaway trajectory and report how much of the [-2,2]^2 plane it
+  // actually fills — a cheap stand-in for "is this attractor interesting"
+  const GRID = 28;
+  function probe(a, b, c, d, warm, sample) {
+    let x = (Math.random() - 0.5) * 0.1;
+    let y = (Math.random() - 0.5) * 0.1;
+    for (let i = 0; i < warm; i++) {
+      const [nx, ny] = mapStep(x, y, a, b, c, d);
+      x = nx; y = ny;
+    }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    const seen = new Uint8Array(GRID * GRID);
+    let occupied = 0;
+    for (let i = 0; i < sample; i++) {
+      const [nx, ny] = mapStep(x, y, a, b, c, d);
+      x = nx; y = ny;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      const gx = Math.min(GRID - 1, Math.max(0, (((x + 2) / 4) * GRID) | 0));
+      const gy = Math.min(GRID - 1, Math.max(0, (((y + 2) / 4) * GRID) | 0));
+      const idx = gy * GRID + gx;
+      if (!seen[idx]) { seen[idx] = 1; occupied++; }
+    }
+    return { minX, maxX, minY, maxY, richness: occupied / (GRID * GRID) };
+  }
+
+  function findRichParams() {
+    let best = null, bestScore = -1;
+    for (let tries = 0; tries < 50; tries++) {
+      const [a, b, c, d] = randomParams();
+      const p = probe(a, b, c, d, 400, 2200);
+      const w = p.maxX - p.minX, h = p.maxY - p.minY;
+      if (w < 0.4 || h < 0.4) continue;
+      if (p.richness > bestScore) { bestScore = p.richness; best = { a, b, c, d, ...p }; }
+      if (p.richness > 0.22) break;
+    }
+    return best || { a: -2, b: -2, c: -1.2, d: 2, minX: -2, maxX: 2, minY: -2, maxY: 2 };
+  }
+
+  // --- camera: fits the visible weave to the screen, refit lerped in smoothly ---
+  let tScale = 1, tOx = 0, tOy = 0;
+  let targetScale = 1, targetOx = 0, targetOy = 0;
+  function setFitTarget(bbox, immediate) {
+    const w = Math.max(0.3, bbox.maxX - bbox.minX);
+    const h = Math.max(0.3, bbox.maxY - bbox.minY);
+    const bcx = (bbox.minX + bbox.maxX) / 2;
+    const bcy = (bbox.minY + bbox.maxY) / 2;
+    const s = (Math.min(W, H) * 0.86) / Math.max(w, h);
+    targetScale = s;
+    targetOx = cx - bcx * s;
+    targetOy = cy - bcy * s;
+    if (immediate) { tScale = targetScale; tOx = targetOx; tOy = targetOy; }
+  }
+
+  // --- parameters: a random base, slow drift, and a pointer-driven warp ---
+  let baseA, baseB, baseC, baseD;
+  let curA, curB, curC, curD;
+  let perfNow = 0;
+
+  function driftedParams() {
+    const t = perfNow;
+    let a = baseA + Math.sin(t * 0.00006) * 0.5 + Math.sin(t * 0.000037 + 1.1) * 0.22;
+    let b = baseB + Math.sin(t * 0.00005 + 2.2) * 0.5 + Math.sin(t * 0.000041 + 0.4) * 0.22;
+    let c = baseC + Math.sin(t * 0.000045 + 3.1) * 0.4 + Math.sin(t * 0.000033 + 2.6) * 0.2;
+    let d = baseD + Math.sin(t * 0.000055 + 0.7) * 0.4 + Math.sin(t * 0.00003 + 4.0) * 0.2;
+    if (pointer.active) {
+      const dx = Math.max(-1, Math.min(1, (pointer.x - cx) / (W / 2)));
+      const dy = Math.max(-1, Math.min(1, (pointer.y - cy) / (H / 2)));
+      a += dy * 0.55; b += dx * 0.55; c += dx * 0.35; d += dy * 0.35;
+    }
+    return [a, b, c, d];
+  }
+
+  // --- walkers: many parallel points tracing the same attractor at once ---
+  const N_WALKERS = 46;
+  const STEPS_PER_FRAME = 34;
+  const BATCH = N_WALKERS * STEPS_PER_FRAME;
+  let wx, wy;
+  const sx = new Float32Array(BATCH), sy = new Float32Array(BATCH);
+  const cr = new Float32Array(BATCH), cg = new Float32Array(BATCH);
+  const cb = new Float32Array(BATCH), ca = new Float32Array(BATCH);
+  let freshCount = 0;
+  const gx = new Float32Array(N_WALKERS), gy = new Float32Array(N_WALKERS);
+  const gr = new Float32Array(N_WALKERS), gg = new Float32Array(N_WALKERS), gb = new Float32Array(N_WALKERS);
+
+  function initWalkers() {
+    wx = new Float64Array(N_WALKERS);
+    wy = new Float64Array(N_WALKERS);
+    for (let i = 0; i < N_WALKERS; i++) {
+      wx[i] = (Math.random() - 0.5) * 0.2;
+      wy[i] = (Math.random() - 0.5) * 0.2;
+    }
+    for (let k = 0; k < 300; k++) {
+      for (let i = 0; i < N_WALKERS; i++) {
+        const [nx, ny] = mapStep(wx[i], wy[i], curA, curB, curC, curD);
+        wx[i] = nx; wy[i] = ny;
+      }
+    }
+  }
+
+  function reseed() {
+    const found = findRichParams();
+    baseA = found.a; baseB = found.b; baseC = found.c; baseD = found.d;
+    curA = baseA; curB = baseB; curC = baseC; curD = baseD;
+    setFitTarget(found, true);
+    // fresh walkers start near the origin and rejoin the veil over the next
+    // second or so as the frame loop carries them onto the new shape —
+    // the old weave keeps fading underneath rather than snapping away
+    wx = new Float64Array(N_WALKERS);
+    wy = new Float64Array(N_WALKERS);
+    for (let i = 0; i < N_WALKERS; i++) {
+      wx[i] = (Math.random() - 0.5) * 0.2;
+      wy[i] = (Math.random() - 0.5) * 0.2;
+    }
+  }
+
+  // teal -> violet -> rose -> amber -> teal, keyed by the step's direction
+  const STOPS = [
+    [0.00, 46, 226, 210],
+    [0.30, 142, 110, 235],
+    [0.55, 235, 110, 170],
+    [0.80, 255, 176, 92],
+    [1.00, 46, 226, 210],
+  ];
+  function veilColor(angle, speed) {
+    const t = (angle + Math.PI) / (Math.PI * 2);
+    let i = 0;
+    while (i < STOPS.length - 2 && t > STOPS[i + 1][0]) i++;
+    const s0 = STOPS[i], s1 = STOPS[i + 1];
+    const f = (t - s0[0]) / (s1[0] - s0[0] || 1);
+    const r = s0[1] + (s1[1] - s0[1]) * f;
+    const g = s0[2] + (s1[2] - s0[2]) * f;
+    const b = s0[3] + (s1[3] - s0[3]) * f;
+    const sp = Math.min(1, speed / 2.2);
+    return [r, g, b, 0.10 + sp * 0.20];
+  }
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', () => reseed());
+
+  function simulate() {
+    perfNow += 16.7;
+
+    const [ta, tb, tc, td] = driftedParams();
+    curA += (ta - curA) * 0.035;
+    curB += (tb - curB) * 0.035;
+    curC += (tc - curC) * 0.035;
+    curD += (td - curD) * 0.035;
+
+    tScale += (targetScale - tScale) * 0.02;
+    tOx += (targetOx - tOx) * 0.02;
+    tOy += (targetOy - tOy) * 0.02;
+
+    refitTimer -= 16.7;
+    if (refitTimer <= 0) {
+      refitTimer = 5200;
+      const p = probe(curA, curB, curC, curD, 250, 1400);
+      if (p.maxX - p.minX > 0.25 && p.maxY - p.minY > 0.25) setFitTarget(p, false);
+    }
+
+    let n = 0;
+    for (let i = 0; i < N_WALKERS; i++) {
+      let x = wx[i], y = wy[i];
+      for (let k = 0; k < STEPS_PER_FRAME; k++) {
+        const nx = Math.sin(curA * y) - Math.cos(curB * x);
+        const ny = Math.sin(curC * x) - Math.cos(curD * y);
+        const dx = nx - x, dy = ny - y;
+        const angle = Math.atan2(dy, dx);
+        const speed = Math.hypot(dx, dy);
+        x = nx; y = ny;
+        const px = x * tScale + tOx;
+        const py = y * tScale + tOy;
+        const [r, g, b, a] = veilColor(angle, speed);
+        sx[n] = px; sy[n] = py;
+        cr[n] = r; cg[n] = g; cb[n] = b; ca[n] = a;
+        if (k === STEPS_PER_FRAME - 1) {
+          gx[i] = px; gy[i] = py; gr[i] = r; gg[i] = g; gb[i] = b;
+        }
+        n++;
+      }
+      wx[i] = x; wy[i] = y;
+    }
+    freshCount = n;
+  }
+
+  function render() {
+    baseCtx.fillStyle = 'rgba(4, 3, 10, 0.05)';
+    baseCtx.fillRect(0, 0, W, H);
+
+    baseCtx.save();
+    baseCtx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < freshCount; i++) {
+      baseCtx.fillStyle = `rgba(${cr[i] | 0}, ${cg[i] | 0}, ${cb[i] | 0}, ${ca[i].toFixed(3)})`;
+      baseCtx.fillRect(sx[i], sy[i], 1.15, 1.15);
+    }
+    baseCtx.restore();
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < N_WALKERS; i++) {
+      const grad = glowCtx.createRadialGradient(gx[i], gy[i], 0, gx[i], gy[i], 9);
+      grad.addColorStop(0, `rgba(${gr[i] | 0}, ${gg[i] | 0}, ${gb[i] | 0}, 0.55)`);
+      grad.addColorStop(1, `rgba(${gr[i] | 0}, ${gg[i] | 0}, ${gb[i] | 0}, 0)`);
+      glowCtx.fillStyle = grad;
+      glowCtx.beginPath();
+      glowCtx.arc(gx[i], gy[i], 9, 0, Math.PI * 2);
+      glowCtx.fill();
+    }
+    glowCtx.restore();
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  reseed();
+  initWalkers();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
