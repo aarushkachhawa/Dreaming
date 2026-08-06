@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sand and Silence — Night 7</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Sand and Silence &mdash; Night 7 &mdash; move to strike the plate, click to change the chord</div>
+<script>
+(() => {
+  // A seventh technique, and the first built on standing waves rather than
+  // motion through a field: a square plate rings at two superposed modes at
+  // once, and thousands of grains that started scattered at random hunt for
+  // the lines where the plate does not move at all. Loud spots jostle them
+  // away; the lines of true silence are the only place they can come to
+  // rest. No two mode pairs draw the same figure, and every strike of the
+  // plate — a click, or the slow automatic restrike every minute or so —
+  // dissolves one figure and lets the grains rediscover the next.
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  let W, H, DPR, cx, cy, S;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cx = W / 2;
+    cy = H / 2;
+    S = Math.min(W, H) * 0.42;
+  }
+
+  // --- the plate: two Chladni mode pairs summed, free-edge square membrane ---
+  // phi(u,v) = w0 * [cos(n0 pi u) cos(m0 pi v) - cos(m0 pi u) cos(n0 pi v)]
+  //          + w1 * [cos(n1 pi u) cos(m1 pi v) - cos(m1 pi u) cos(n1 pi v)]
+  // zeros of phi are the nodal lines — the only places on the plate that
+  // never move regardless of the phase of vibration.
+  function fieldAt(u, v, n0, m0, n1, m1, w0, w1) {
+    const p0 = Math.cos(n0 * Math.PI * u) * Math.cos(m0 * Math.PI * v)
+             - Math.cos(m0 * Math.PI * u) * Math.cos(n0 * Math.PI * v);
+    const p1 = Math.cos(n1 * Math.PI * u) * Math.cos(m1 * Math.PI * v)
+             - Math.cos(m1 * Math.PI * u) * Math.cos(n1 * Math.PI * v);
+    return w0 * p0 + w1 * p1;
+  }
+
+  function randInt(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+  function newModePair() {
+    let n = randInt(2, 9), m = randInt(2, 9);
+    while (m === n) m = randInt(2, 9);
+    return [n, m];
+  }
+
+  let n0 = 3, m0 = 5, n1 = 4, m1 = 7;
+  let w0 = 0.75, w1 = 0.55;
+  let tn0 = n0, tm0 = m0, tn1 = n1, tm1 = m1, tw0 = w0, tw1 = w1;
+  let perfNow = 0;
+  let restrikeTimer = 8000;
+
+  function restrike() {
+    [tn0, tm0] = newModePair();
+    [tn1, tm1] = newModePair();
+    tw0 = 0.45 + Math.random() * 0.55;
+    tw1 = 0.35 + Math.random() * 0.55;
+    restrikeTimer = 46000 + Math.random() * 20000;
+    // a fresh strike jolts every grain loose so the old figure visibly
+    // dissolves instead of the new one just creeping in underneath it
+    for (let i = 0; i < N; i++) {
+      vu[i] += (Math.random() - 0.5) * 0.05;
+      vv[i] += (Math.random() - 0.5) * 0.05;
+    }
+  }
+
+  // --- grains: scattered sand hunting for the plate's lines of silence ---
+  const N = 5200;
+  const pu = new Float32Array(N), pv = new Float32Array(N);
+  const vu = new Float32Array(N), vv = new Float32Array(N);
+  const energy = new Float32Array(N);
+
+  function initGrains() {
+    for (let i = 0; i < N; i++) {
+      pu[i] = (Math.random() - 0.5) * 2;
+      pv[i] = (Math.random() - 0.5) * 2;
+    }
+  }
+
+  const EPS = 0.02;
+  const SETTLE_SPEED = 0.0075;
+  const JITTER_SPEED = 0.012;
+  const DAMP = 0.82;
+  const EXCITE_PUSH = 0.07;
+  const EXCITE_SIGMA = 0.18;
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', () => restrike());
+
+  function simulate() {
+    perfNow += 16.7;
+    const t = perfNow;
+
+    n0 += (tn0 - n0) * 0.01; m0 += (tm0 - m0) * 0.01;
+    n1 += (tn1 - n1) * 0.01; m1 += (tm1 - m1) * 0.01;
+    w0 += (tw0 - w0) * 0.02; w1 += (tw1 - w1) * 0.02;
+
+    restrikeTimer -= 16.7;
+    if (restrikeTimer <= 0) restrike();
+
+    const eN0 = n0 + Math.sin(t * 0.00013) * 0.05;
+    const eM0 = m0 + Math.sin(t * 0.00017 + 2.1) * 0.05;
+    const eN1 = n1 + Math.sin(t * 0.00021 + 1.0) * 0.05;
+    const eM1 = m1 + Math.sin(t * 0.00019 + 3.3) * 0.05;
+
+    const pointerActive = pointer.active;
+    const pu0 = (pointer.x - cx) / S;
+    const pv0 = (pointer.y - cy) / S;
+    const sigma2 = 2 * EXCITE_SIGMA * EXCITE_SIGMA;
+
+    for (let i = 0; i < N; i++) {
+      const u = pu[i], v = pv[i];
+      const phi = fieldAt(u, v, eN0, eM0, eN1, eM1, w0, w1);
+      const phiU = fieldAt(u + EPS, v, eN0, eM0, eN1, eM1, w0, w1);
+      const phiV = fieldAt(u, v + EPS, eN0, eM0, eN1, eM1, w0, w1);
+      const a = Math.abs(phi);
+      let gu = (Math.abs(phiU) - a) / EPS;
+      let gv = (Math.abs(phiV) - a) / EPS;
+      const gmag = Math.hypot(gu, gv) + 1e-6;
+
+      const loudness = Math.min(1, a * 0.9);
+      const step = SETTLE_SPEED * loudness;
+      vu[i] += -(gu / gmag) * step;
+      vv[i] += -(gv / gmag) * step;
+
+      const jitter = JITTER_SPEED * loudness;
+      vu[i] += (Math.random() - 0.5) * 2 * jitter;
+      vv[i] += (Math.random() - 0.5) * 2 * jitter;
+
+      let excite = 0;
+      if (pointerActive) {
+        const du = u - pu0, dv = v - pv0;
+        const d2 = du * du + dv * dv;
+        if (d2 < sigma2 * 6) {
+          const falloff = Math.exp(-d2 / sigma2);
+          const dist = Math.sqrt(d2) + 1e-6;
+          vu[i] += (du / dist) * EXCITE_PUSH * falloff;
+          vv[i] += (dv / dist) * EXCITE_PUSH * falloff;
+          excite = falloff;
+        }
+      }
+
+      vu[i] *= DAMP;
+      vv[i] *= DAMP;
+      let nu = u + vu[i];
+      let nv = v + vv[i];
+      if (nu > 1) { nu = 1; vu[i] *= -0.3; }
+      else if (nu < -1) { nu = -1; vu[i] *= -0.3; }
+      if (nv > 1) { nv = 1; vv[i] *= -0.3; }
+      else if (nv < -1) { nv = -1; vv[i] *= -0.3; }
+      pu[i] = nu; pv[i] = nv;
+
+      energy[i] = Math.min(1, loudness + excite * 0.85);
+    }
+  }
+
+  const COLD = [176, 205, 255];
+  const HOT = [255, 168, 78];
+  function render() {
+    ctx.fillStyle = 'rgba(5, 6, 10, 0.30)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < N; i++) {
+      const e = energy[i];
+      const r = COLD[0] + (HOT[0] - COLD[0]) * e;
+      const g = COLD[1] + (HOT[1] - COLD[1]) * e;
+      const b = COLD[2] + (HOT[2] - COLD[2]) * e;
+      const al = 0.14 + e * 0.5;
+      ctx.fillStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${al.toFixed(3)})`;
+      ctx.fillRect(cx + pu[i] * S, cy + pv[i] * S, 1.3, 1.3);
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(cx - S - 6, cy - S - 6, (S + 6) * 2, (S + 6) * 2);
+    if (pointer.active) {
+      ctx.strokeStyle = 'rgba(255, 200, 140, 0.10)';
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, EXCITE_SIGMA * S, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  initGrains();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -79,6 +79,21 @@ When you are done, someone should want to look. Longer than they meant to.
   this weave dissolve into a freshly discovered one. Open the file
   directly in a browser.
 
+- **2026-08-06** — `2026-08-06-sand-and-silence.html`: a seventh technique,
+  and the first built on standing waves rather than motion through a field.
+  A square plate rings at two superposed Chladni mode pairs at once —
+  cos(nπu)cos(mπv) − cos(mπu)cos(nπv), summed twice with drifting integers —
+  and thousands of grains that start scattered at random hunt by gradient
+  descent and jitter for the lines where the plate never moves at all: loud
+  antinodes jostle them away, and only true silence lets them come to rest.
+  Grains glow molten copper while still loud and cool to pale moonlit silver
+  once settled, so the figure's formation reads as a literal cooling. No two
+  mode pairs draw the same figure, and every strike — a click, or the slow
+  automatic restrike every minute or so — dissolves one figure and lets the
+  grains rediscover the next. Move the cursor to strike the plate locally and
+  scatter the grains nearest it, click to change the chord entirely. Open the
+  file directly in a browser.
+
 - **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
   equation standing in for a lake at night, lit by a single moon with
   Blinn-Phong sheen and needle-thin specular glints. A fourth technique —
