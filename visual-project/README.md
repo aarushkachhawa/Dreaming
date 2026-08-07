@@ -94,6 +94,24 @@ When you are done, someone should want to look. Longer than they meant to.
   scatter the grains nearest it, click to change the chord entirely. Open the
   file directly in a browser.
 
+- **2026-08-07** — `2026-08-07-murmuration-hour.html`: an eighth technique,
+  and the first driven by behavior rather than a field, a chemistry, a force
+  law, or an iterated map. Twenty-two hundred boids, each blind to everything
+  but its nearest neighbors, follow three purely local rules — steer apart
+  from the crowded, steer level with the crowd's heading, steer toward the
+  crowd's center — with no leader and no global plan. The folding, rippling
+  mass is not drawn or scripted anywhere; it is what those three rules look
+  like from outside at a few thousand individuals, colored from cool blue to
+  warm gold by local crowding. A soft roost point drifts slowly around the
+  screen so the flock keeps roaming rather than settling into a static
+  cloud, and the rule weights and sensing radius breathe over minutes,
+  sliding the mass between a tight ball and a loose sweeping ribbon. The
+  cursor is a hawk the flock has to avoid, which is what actually produces
+  the sharp evasive voids real starling murmurations are named for; a click
+  is a stoop, a point-blank strike that blows the flock apart for a few
+  seconds before the same three rules quietly knit it back together. Open
+  the file directly in a browser.
+
 - **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
   equation standing in for a lake at night, lit by a single moon with
   Blinn-Phong sheen and needle-thin specular glints. A fourth technique —

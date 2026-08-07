@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Murmuration Hour — Night 8</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060c;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Murmuration Hour &mdash; Night 8 &mdash; move to become the hawk, click to stoop</div>
+<script>
+(() => {
+  // An eighth technique, and the first driven by behavior rather than a field,
+  // a chemistry, a force law, or an iterated map: thousands of individual
+  // boids, each blind to everything but its nearest neighbors, following
+  // three local rules (steer apart from the crowded, steer level with the
+  // crowd's heading, steer toward the crowd's center) with no leader and no
+  // global plan. The murmuration itself, the folding, rippling mass, is not
+  // drawn or scripted anywhere; it is what those three rules look like from
+  // outside at a few thousand individuals. A soft roost point keeps the flock
+  // roaming the sky rather than drifting off it. The cursor is a hawk the
+  // flock has to avoid, which is what actually produces the sharp evasive
+  // waves real starling murmurations are named for; a click is a stoop, a
+  // point-blank strike that blows the flock apart for a few seconds before
+  // the same three rules quietly knit it back together.
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  let W, H, DPR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  // --- starfield, static and faint ---
+  let stars = [];
+  function makeStars() {
+    const count = Math.round((W * H) / 5200);
+    stars = new Array(count);
+    for (let i = 0; i < count; i++) {
+      stars[i] = {
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.1 + 0.2,
+        a: Math.random() * 0.35 + 0.08,
+        tw: Math.random() * 0.0008 + 0.0002,
+        ph: Math.random() * Math.PI * 2,
+      };
+    }
+  }
+
+  // --- flock ---
+  const N = 2200;
+  const px = new Float32Array(N), py = new Float32Array(N);
+  const vx = new Float32Array(N), vy = new Float32Array(N);
+  const density = new Float32Array(N);
+
+  function initFlock() {
+    const cx = W / 2, cy = H / 2;
+    for (let i = 0; i < N; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const rad = Math.sqrt(Math.random()) * Math.min(W, H) * 0.28;
+      px[i] = cx + Math.cos(ang) * rad;
+      py[i] = cy + Math.sin(ang) * rad * 0.6;
+      const a = Math.random() * Math.PI * 2;
+      vx[i] = Math.cos(a) * 1.2;
+      vy[i] = Math.sin(a) * 1.2;
+    }
+  }
+
+  const BASE_R = 46;
+  const MAX_SPEED = 3.4;
+  const MIN_SPEED = 1.3;
+  const MAX_FORCE = 0.09;
+  const EDGE_MARGIN = 90;
+
+  const cellSize = BASE_R * 1.3;
+  let gridCols, gridRows, grid;
+
+  function rebuildGrid() {
+    gridCols = Math.max(1, Math.ceil(W / cellSize));
+    gridRows = Math.max(1, Math.ceil(H / cellSize));
+    const cells = gridCols * gridRows;
+    grid = new Array(cells);
+    for (let i = 0; i < cells; i++) grid[i] = [];
+    for (let i = 0; i < N; i++) {
+      let cx = (px[i] / cellSize) | 0;
+      let cy = (py[i] / cellSize) | 0;
+      if (cx < 0) cx = 0; else if (cx >= gridCols) cx = gridCols - 1;
+      if (cy < 0) cy = 0; else if (cy >= gridRows) cy = gridRows - 1;
+      grid[cy * gridCols + cx].push(i);
+    }
+  }
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', (e) => stoop(e.clientX, e.clientY));
+
+  function stoop(sx, sy) {
+    const R = 230, R2 = R * R;
+    for (let i = 0; i < N; i++) {
+      const dx = px[i] - sx, dy = py[i] - sy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < R2) {
+        const d = Math.sqrt(d2) + 1e-6;
+        const k = (1 - d / R) * 6.5;
+        vx[i] += (dx / d) * k + (Math.random() - 0.5) * 1.4;
+        vy[i] += (dy / d) * k + (Math.random() - 0.5) * 1.4;
+      }
+    }
+  }
+
+  let perfNow = 0;
+  let roostX, roostY;
+
+  function simulate() {
+    perfNow += 16.7;
+    const t = perfNow;
+
+    roostX = W * 0.5 + Math.sin(t * 0.00011) * W * 0.26;
+    roostY = H * 0.42 + Math.cos(t * 0.00008 + 1.3) * H * 0.2;
+
+    const R = BASE_R * (0.82 + 0.32 * Math.sin(t * 0.00004 + 0.6));
+    const R2 = R * R;
+    const sepR = R * 0.42, sepR2 = sepR * sepR;
+    const wSep = 1.5 * (0.85 + 0.5 * Math.sin(t * 0.00007));
+    const wAlign = 1.05 * (0.8 + 0.45 * Math.sin(t * 0.00009 + 1.7));
+    const wCoh = 0.9 * (0.8 + 0.5 * Math.sin(t * 0.00005 + 3.1));
+    const wRoost = 0.018;
+
+    rebuildGrid();
+
+    const panicR = 190, panicR2 = panicR * panicR;
+    const pointerActive = pointer.active;
+
+    for (let i = 0; i < N; i++) {
+      const x = px[i], y = py[i];
+      let cx = (x / cellSize) | 0;
+      let cy = (y / cellSize) | 0;
+      if (cx < 0) cx = 0; else if (cx >= gridCols) cx = gridCols - 1;
+      if (cy < 0) cy = 0; else if (cy >= gridRows) cy = gridRows - 1;
+
+      let sepX = 0, sepY = 0;
+      let alX = 0, alY = 0;
+      let cohX = 0, cohY = 0;
+      let n = 0;
+
+      for (let gy = cy - 1; gy <= cy + 1; gy++) {
+        if (gy < 0 || gy >= gridRows) continue;
+        for (let gx = cx - 1; gx <= cx + 1; gx++) {
+          if (gx < 0 || gx >= gridCols) continue;
+          const bucket = grid[gy * gridCols + gx];
+          for (let k = 0; k < bucket.length; k++) {
+            const j = bucket[k];
+            if (j === i) continue;
+            const dx = x - px[j], dy = y - py[j];
+            const d2 = dx * dx + dy * dy;
+            if (d2 > R2 || d2 < 1e-6) continue;
+            n++;
+            alX += vx[j]; alY += vy[j];
+            cohX += px[j]; cohY += py[j];
+            if (d2 < sepR2) {
+              const d = Math.sqrt(d2) + 1e-6;
+              const k2 = (1 - d / sepR);
+              sepX += (dx / d) * k2;
+              sepY += (dy / d) * k2;
+            }
+          }
+        }
+      }
+
+      density[i] = Math.min(1, n / 14);
+
+      let ax = 0, ay = 0;
+      if (n > 0) {
+        ax += sepX * wSep;
+        ay += sepY * wSep;
+        ax += (alX / n - vx[i]) * (wAlign * 0.06);
+        ay += (alY / n - vy[i]) * (wAlign * 0.06);
+        ax += (cohX / n - x) * (wCoh * 0.0022);
+        ay += (cohY / n - y) * (wCoh * 0.0022);
+      }
+
+      ax += (roostX - x) * wRoost * 0.01;
+      ay += (roostY - y) * wRoost * 0.01;
+
+      if (pointerActive) {
+        const dx = x - pointer.x, dy = y - pointer.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < panicR2) {
+          const d = Math.sqrt(d2) + 1e-6;
+          const k3 = (1 - d / panicR);
+          const push = k3 * k3 * 0.55;
+          ax += (dx / d) * push;
+          ay += (dy / d) * push;
+          ax += (-dy / d) * push * 0.6;
+          ay += (dx / d) * push * 0.6;
+        }
+      }
+
+      if (x < EDGE_MARGIN) ax += (EDGE_MARGIN - x) * 0.004;
+      else if (x > W - EDGE_MARGIN) ax -= (x - (W - EDGE_MARGIN)) * 0.004;
+      if (y < EDGE_MARGIN) ay += (EDGE_MARGIN - y) * 0.004;
+      else if (y > H - EDGE_MARGIN) ay -= (y - (H - EDGE_MARGIN)) * 0.004;
+
+      const amag = Math.hypot(ax, ay);
+      if (amag > MAX_FORCE) {
+        ax = (ax / amag) * MAX_FORCE;
+        ay = (ay / amag) * MAX_FORCE;
+      }
+
+      let nvx = vx[i] + ax;
+      let nvy = vy[i] + ay;
+      const speed = Math.hypot(nvx, nvy) + 1e-6;
+      const clamped = Math.min(MAX_SPEED, Math.max(MIN_SPEED, speed));
+      nvx = (nvx / speed) * clamped;
+      nvy = (nvy / speed) * clamped;
+      vx[i] = nvx; vy[i] = nvy;
+
+      let nx = x + nvx, ny = y + nvy;
+      if (nx < -20) nx = -20; else if (nx > W + 20) nx = W + 20;
+      if (ny < -20) ny = -20; else if (ny > H + 20) ny = H + 20;
+      px[i] = nx; py[i] = ny;
+    }
+  }
+
+  const COOL = [104, 128, 190];
+  const WARM = [255, 205, 132];
+
+  function render() {
+    ctx.fillStyle = 'rgba(5, 6, 12, 0.20)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    const t = perfNow;
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      const tw = 0.6 + 0.4 * Math.sin(t * s.tw + s.ph);
+      ctx.fillStyle = `rgba(255, 255, 255, ${(s.a * tw).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < N; i++) {
+      const d = density[i];
+      const r = COOL[0] + (WARM[0] - COOL[0]) * d;
+      const g = COOL[1] + (WARM[1] - COOL[1]) * d;
+      const b = COOL[2] + (WARM[2] - COOL[2]) * d;
+      const spd = Math.hypot(vx[i], vy[i]);
+      const len = 3.2 + spd * 2.6;
+      const dx = (vx[i] / (spd + 1e-6)) * len;
+      const dy = (vy[i] / (spd + 1e-6)) * len;
+      const al = 0.28 + d * 0.42;
+      ctx.strokeStyle = `rgba(${r | 0}, ${g | 0}, ${b | 0}, ${al.toFixed(3)})`;
+      ctx.lineWidth = 1.15;
+      ctx.beginPath();
+      ctx.moveTo(px[i] - dx, py[i] - dy);
+      ctx.lineTo(px[i] + dx * 0.6, py[i] + dy * 0.6);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    if (pointer.active) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 180, 130, 0.10)';
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, 190, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', () => {
+    resize();
+    makeStars();
+  });
+  resize();
+  makeStars();
+  initFlock();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
