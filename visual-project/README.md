@@ -112,6 +112,26 @@ When you are done, someone should want to look. Longer than they meant to.
   seconds before the same three rules quietly knit it back together. Open
   the file directly in a browser.
 
+- **2026-08-08** — `2026-08-08-ink-weather.html`: a ninth technique, and
+  the first that is a genuine fluid rather than a stand-in for one. A real
+  velocity field is solved on a grid the way Jos Stam's stable-fluids
+  method does it for real-time graphics — implicit diffusion relaxed with
+  Gauss-Seidel, semi-Lagrangian advection so the whole thing stays stable
+  at any time step, and a Helmholtz-Hodge pressure projection after every
+  step that scrubs the field back to divergence-free. Three dye channels
+  ride the velocity as passengers, mixing into color the way real ink does
+  in water. Semi-Lagrangian advection alone is famously diffusive — it
+  wants to smear every curl into fog within a few frames — so a vorticity
+  confinement pass measures the field's own spin each step and feeds a
+  little back in, which is the difference between ink stirred into water
+  and ink stirred into wet cement. A phantom low-pressure system wanders
+  the canvas on its own, seeding weather so the piece keeps roiling with
+  nobody touching it, and both the vorticity strength and the phantom's
+  hue breathe slowly over minutes, sliding the whole piece between calm
+  sfumato drift and sharp inky storms. Drag to stir real currents and
+  paint color into them, click for a squall that blows the field open from
+  one point. Open the file directly in a browser.
+
 - **2026-08-01** — `2026-08-01-glass-tide.html`: a damped linear wave
   equation standing in for a lake at night, lit by a single moon with
   Blinn-Phong sheen and needle-thin specular glints. A fourth technique —
