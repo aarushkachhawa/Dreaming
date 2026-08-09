@@ -146,3 +146,22 @@ When you are done, someone should want to look. Longer than they meant to.
   stone; the moon's azimuth and elevation drift over minutes, sliding the
   glitter sideways and breathing its texture between a broad sheen and
   sharp sparkle. Open the file directly in a browser.
+
+- **2026-08-09** — `2026-08-09-stepped-leader.html`: a tenth technique,
+  diffusion-limited aggregation standing in for a dielectric breakdown.
+  Hundreds of independent random walkers drift near a single charged seed
+  at the screen's center; the instant a walker brushes an existing branch
+  it freezes there and becomes part of it, one step further out. No
+  walker steers and no branch is designed — the fractal, forked shape is
+  just what a great many blind walks look like once they can only ever
+  join what already exists, the same blind search real lightning uses to
+  find ground. A fractal cluster's reach grows far slower than its point
+  count, so rather than chase full-screen coverage the leader runs for
+  about forty seconds, long enough to sprawl into a dense, many-armed
+  tree colored from molten center to cool tips, with the occasional
+  glinting spark traced root to tip along the branches already grown.
+  Then the whole thing fires: a return-stroke flash sweeps through, the
+  frame burns white, fades to black, and a fresh leader starts over from
+  the seed with a new color. Move the cursor to curve nearby growth
+  toward it, click to drop a ground charge that pulls the nearest branch
+  in fast. Open the file directly in a browser.
