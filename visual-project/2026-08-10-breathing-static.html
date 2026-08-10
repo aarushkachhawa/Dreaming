@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Breathing Static — Night 11</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05040d;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Breathing Static &mdash; Night 11 &mdash; move to feed, click to seed a colony</div>
+<script>
+(() => {
+  // An eleventh technique, and the first built from a generalized cellular
+  // automaton rather than a field, a chemistry, a swarm, or an iterated map:
+  // Stephen Rafler's SmoothLife, which takes Conway's Game of Life and
+  // smooths every hard edge in it — discrete cells become a continuous
+  // density, the fixed grid of eight neighbors becomes two concentric
+  // radii, and the rigid birth/survival counts become a soft threshold
+  // curve. Every tick, each point asks two purely geometric questions: how
+  // full is my immediate neighborhood (m, the inner disk) and how full is
+  // the ring just beyond it (n)? A sigmoid turns those two numbers into a
+  // smoothly graded verdict — grow, hold, or fade — that stands in for
+  // Life's "three neighbors births you, two or three keeps you alive."
+  // Night 2's reaction-diffusion also grew organic shapes from a local
+  // rule, but through a chemical feed/kill law diffusing across a grid;
+  // this has no chemistry and no diffusion equation at all, only a
+  // convolution and a threshold, reapplied to its own output forever.
+  // Seeded with nothing but scattered noise, the same blob-and-membrane
+  // ecology that lives in Conway's Life re-emerges in continuous form,
+  // self-organized rather than hand-built. Move the cursor to leave a
+  // trickle of nutrient a nearby colony can grow toward, click to seed a
+  // fresh colony outright; the width of the birth threshold breathes over
+  // minutes, sliding the whole field between delicate lace-thin membranes
+  // and dense, boiling mats. Open the file directly in a browser.
+
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  // Offscreen low-res grid the automaton actually runs on; the visible
+  // canvases just scale it up.
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  let W, H, DPR, nx, ny;
+  let A, Anext, img;
+
+  // --- kernel: an inner disk (m, "myself") and an outer ring (n, "my
+  // neighbors"), built once as offset lists so every cell reuses them. ---
+  const RA = 3, RR = 10;
+  let innerDX, innerDY, outerDX, outerDY, innerCount, outerCount;
+  (function buildKernel() {
+    const idx = [], idy = [], odx = [], ody = [];
+    const ra2 = RA * RA, rr2 = RR * RR;
+    for (let dy = -RR; dy <= RR; dy++) {
+      for (let dx = -RR; dx <= RR; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 <= ra2) { idx.push(dx); idy.push(dy); }
+        else if (d2 <= rr2) { odx.push(dx); ody.push(dy); }
+      }
+    }
+    innerDX = Int32Array.from(idx); innerDY = Int32Array.from(idy);
+    outerDX = Int32Array.from(odx); outerDY = Int32Array.from(ody);
+    innerCount = innerDX.length;
+    outerCount = outerDX.length;
+  })();
+
+  function seedBlob(cx, cy, r) {
+    cx = Math.round(cx); cy = Math.round(cy); r = Math.round(r);
+    const r2 = r * r;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        const v = 0.55 + Math.random() * 0.45 * (1 - d2 / r2);
+        if (v > A[i]) A[i] = v;
+      }
+    }
+  }
+
+  function initGrid() {
+    nx = 110;
+    ny = Math.max(70, Math.min(150, Math.round(nx * (H / W))));
+    off.width = nx;
+    off.height = ny;
+    img = offCtx.createImageData(nx, ny);
+
+    const n = nx * ny;
+    A = new Float32Array(n);
+    Anext = new Float32Array(n);
+
+    const blobCount = Math.max(10, Math.round((nx * ny) / 850));
+    for (let b = 0; b < blobCount; b++) {
+      seedBlob(Math.random() * nx, Math.random() * ny, 5 + Math.random() * 9);
+    }
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initGrid();
+  }
+
+  // --- SmoothLife transition: a soft version of Life's birth/survival
+  // rule, blended between a "birth" interval (when m is near empty) and a
+  // "survival" interval (when m is near full). ---
+  const ALPHA_N = 0.028, ALPHA_M = 0.147;
+  const B1 = 0.278, D1 = 0.267, D2 = 0.445;
+  let B2 = 0.365; // breathes slowly — widens and narrows the birth window
+
+  function sigma1(x, a, alpha) { return 1 / (1 + Math.exp(-(x - a) * 4 / alpha)); }
+  function sigma2(x, a, b, alpha) { return sigma1(x, a, alpha) * (1 - sigma1(x, b, alpha)); }
+  function sigmix(x, y, m) { return x + (y - x) * sigma1(m, 0.5, ALPHA_M); }
+
+  function step(dt) {
+    for (let y = 0; y < ny; y++) {
+      const row = y * nx;
+      for (let x = 0; x < nx; x++) {
+        const i = row + x;
+        let mSum = 0, nSum = 0;
+        for (let k = 0; k < innerCount; k++) {
+          let xx = x + innerDX[k]; if (xx < 0) xx += nx; else if (xx >= nx) xx -= nx;
+          let yy = y + innerDY[k]; if (yy < 0) yy += ny; else if (yy >= ny) yy -= ny;
+          mSum += A[yy * nx + xx];
+        }
+        for (let k = 0; k < outerCount; k++) {
+          let xx = x + outerDX[k]; if (xx < 0) xx += nx; else if (xx >= nx) xx -= nx;
+          let yy = y + outerDY[k]; if (yy < 0) yy += ny; else if (yy >= ny) yy -= ny;
+          nSum += A[yy * nx + xx];
+        }
+        const m = mSum / innerCount;
+        const n = nSum / outerCount;
+        const lo = sigmix(B1, D1, m);
+        const hi = sigmix(B2, D2, m);
+        const s = sigma2(n, lo, hi, ALPHA_N);
+        const rate = 2 * s - 1;
+        let v = A[i] + dt * rate;
+        Anext[i] = v < 0 ? 0 : v > 1 ? 1 : v;
+      }
+    }
+    const tmp = A; A = Anext; Anext = tmp;
+  }
+
+  // deep-sea bioluminescence: ink -> teal glow -> violet -> hot magenta core
+  const STOPS = [
+    [0.00, 5, 4, 14],
+    [0.20, 8, 30, 50],
+    [0.42, 18, 130, 148],
+    [0.64, 96, 78, 205],
+    [0.84, 224, 88, 196],
+    [1.00, 255, 238, 248],
+  ];
+  function paletteInto(rgb, t) {
+    if (t <= 0) { rgb[0] = STOPS[0][1]; rgb[1] = STOPS[0][2]; rgb[2] = STOPS[0][3]; return; }
+    if (t >= 1) { const s = STOPS[STOPS.length - 1]; rgb[0] = s[1]; rgb[1] = s[2]; rgb[2] = s[3]; return; }
+    for (let k = 0; k < STOPS.length - 1; k++) {
+      const a = STOPS[k], b = STOPS[k + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const f = (t - a[0]) / (b[0] - a[0]);
+        rgb[0] = a[1] + (b[1] - a[1]) * f;
+        rgb[1] = a[2] + (b[2] - a[2]) * f;
+        rgb[2] = a[3] + (b[3] - a[3]) * f;
+        return;
+      }
+    }
+  }
+
+  const rgb = [0, 0, 0];
+  function render() {
+    const data = img.data;
+    for (let i = 0, p = 0; i < A.length; i++, p += 4) {
+      paletteInto(rgb, A[i]);
+      data[p] = rgb[0];
+      data[p + 1] = rgb[1];
+      data[p + 2] = rgb[2];
+      data[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = 'high';
+    baseCtx.drawImage(off, 0, 0, nx, ny, 0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.filter = 'blur(12px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.globalAlpha = 0.5;
+    glowCtx.drawImage(off, 0, 0, nx, ny, -18, -18, W + 36, H + 36);
+    glowCtx.restore();
+  }
+
+  // --- cursor feeds nutrient nearby, click seeds a fresh colony ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const gx = (e.clientX / W) * nx;
+    const gy = (e.clientY / H) * ny;
+    seedBlob(gx, gy, 7 + Math.random() * 4);
+  });
+
+  function feed() {
+    if (!mouse.active) return;
+    const gx = Math.floor((mouse.x / W) * nx);
+    const gy = Math.floor((mouse.y / H) * ny);
+    const r = 2;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const x = ((gx + dx) % nx + nx) % nx;
+        const y = ((gy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        A[i] = Math.min(1, A[i] + 0.06);
+      }
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let frameCount = 0;
+  let drift = 0;
+
+  function frame() {
+    frameCount++;
+    drift += 1;
+    // the birth threshold itself breathes, widening into lush, filled
+    // colonies and narrowing back into sparse, lace-thin membranes
+    B2 = 0.365 + Math.sin(drift * 0.00055) * 0.03;
+
+    feed();
+    step(0.22);
+    render();
+
+    if (frameCount % 240 === 0) {
+      let sum = 0, count = 0;
+      for (let i = 0; i < A.length; i += 31) { sum += A[i]; count++; }
+      if (sum / count < 0.03) {
+        const blobCount = Math.max(8, Math.round((nx * ny) / 900));
+        for (let b = 0; b < blobCount; b++) {
+          seedBlob(Math.random() * nx, Math.random() * ny, 5 + Math.random() * 9);
+        }
+      }
+    }
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

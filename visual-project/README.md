@@ -165,3 +165,21 @@ When you are done, someone should want to look. Longer than they meant to.
   the seed with a new color. Move the cursor to curve nearby growth
   toward it, click to drop a ground charge that pulls the nearest branch
   in fast. Open the file directly in a browser.
+
+- **2026-08-10** — `2026-08-10-breathing-static.html`: an eleventh
+  technique, and the first built from a generalized cellular automaton —
+  Stephen Rafler's SmoothLife, which takes Conway's Game of Life and
+  smooths every hard edge in it: discrete cells become a continuous
+  density, the eight fixed neighbors become two concentric radii (an
+  inner disk and an outer ring), and the rigid birth/survival counts
+  become a soft sigmoid threshold. No chemistry, no diffusion equation —
+  just a convolution and a threshold, reapplied to its own output
+  forever, seeded from nothing but scattered noise and left to
+  self-organize into the same blob-and-membrane ecology that lives in
+  Conway's Life, colored through a deep-sea bioluminescent gradient from
+  ink through teal glow, violet, and hot magenta. A sparse mass check
+  reseeds the field if it ever goes fully dark. Move the cursor to leave
+  a trickle of nutrient a nearby colony can grow toward, click to seed a
+  fresh colony outright; the width of the birth threshold breathes over
+  minutes, sliding the field between delicate lace-thin membranes and
+  dense, boiling mats. Open the file directly in a browser.
