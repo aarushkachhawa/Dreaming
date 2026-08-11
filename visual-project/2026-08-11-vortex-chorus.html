@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Vortex Chorus — Night 12</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #060309;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Vortex Chorus &mdash; Night 12 &mdash; move to pace it, click to plant a spiral</div>
+<script>
+(() => {
+  // A twelfth technique, and the first with no field, no chemistry, no
+  // agents, and no rigid grid rule — a lattice of coupled oscillators, the
+  // Kuramoto model, the same mathematics behind fireflies that flash in
+  // unison and a room of metronomes that walk themselves into sync once
+  // they share a wobbling table. Every cell keeps nothing but a phase, a
+  // position on its own private clock face, and a natural frequency slightly
+  // faster or slower than its neighbors'. Each tick every cell listens to
+  // its four neighbors and nudges its phase toward theirs, weighted only by
+  // how far out of step they are (a plain sine of the phase difference —
+  // no diffusion equation, no threshold, just "match the room"). Left alone
+  // this either locks into broad sheets that share a beat or, since every
+  // cell's honest clock never quite agrees, tears at the seams into
+  // spinning phase defects: point-like vortices where a full turn of color
+  // is crushed into a few pixels because the phase simply has nowhere else
+  // to go, then drags a spiral wave off itself forever after. Color reads
+  // the phase itself, wrapped once around a six-stop wheel the way a soap
+  // film reads the phase of light — so a settled patch glows one steady
+  // hue and a defect announces itself as a small rainbow knot. Coupling
+  // strength breathes over minutes, sliding the lattice between calm,
+  // near-locked sheets and a turbulent field dense with spinning defects.
+  // Move the cursor to become a local pacemaker, a metronome ticking
+  // slightly quicker than the rest, which sends target waves rippling
+  // outward the way a single confident clapper can pull a whole audience
+  // into rhythm; click to plant a full phase winding at that point and
+  // launch a spiral arm outright. Open the file directly in a browser.
+
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  let W, H, DPR, nx, ny;
+  let theta, thetaNext, omega, img;
+  let leftIdx, rightIdx, upIdx, downIdx;
+
+  const TWO_PI = Math.PI * 2;
+
+  // deterministic-ish pseudo-random normal via sum of uniforms (cheap, no
+  // heavy tails — keeps frequency spread bounded and tame)
+  function randn() {
+    let s = 0;
+    for (let k = 0; k < 4; k++) s += Math.random();
+    return (s - 2) / 1.0;
+  }
+
+  function initGrid() {
+    nx = 132;
+    ny = Math.max(70, Math.min(150, Math.round(nx * (H / W))));
+    off.width = nx;
+    off.height = ny;
+    img = offCtx.createImageData(nx, ny);
+
+    const n = nx * ny;
+    theta = new Float32Array(n);
+    thetaNext = new Float32Array(n);
+    omega = new Float32Array(n);
+
+    for (let i = 0; i < n; i++) {
+      theta[i] = Math.random() * TWO_PI;
+      omega[i] = randn() * OMEGA_SPREAD;
+    }
+
+    leftIdx = new Int32Array(nx);
+    rightIdx = new Int32Array(nx);
+    for (let x = 0; x < nx; x++) {
+      leftIdx[x] = (x - 1 + nx) % nx;
+      rightIdx[x] = (x + 1) % nx;
+    }
+    upIdx = new Int32Array(ny);
+    downIdx = new Int32Array(ny);
+    for (let y = 0; y < ny; y++) {
+      upIdx[y] = (y - 1 + ny) % ny;
+      downIdx[y] = (y + 1) % ny;
+    }
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initGrid();
+  }
+
+  const OMEGA_SPREAD = 0.16;
+  let K = 1.9; // coupling strength, breathes slowly in frame()
+  const DT = 0.08;
+
+  function step() {
+    for (let y = 0; y < ny; y++) {
+      const row = y * nx;
+      const rowUp = upIdx[y] * nx;
+      const rowDown = downIdx[y] * nx;
+      const xl = leftIdx, xr = rightIdx;
+      for (let x = 0; x < nx; x++) {
+        const i = row + x;
+        const th = theta[i];
+        const l = xl[x], r = xr[x];
+        // 8-neighbor Moore stencil for a smoother, more isotropic
+        // correlation length than a bare 4-neighbor cross gives
+        const coupling =
+          Math.sin(theta[row + l] - th) + Math.sin(theta[row + r] - th) +
+          Math.sin(theta[rowUp + x] - th) + Math.sin(theta[rowDown + x] - th) +
+          (Math.sin(theta[rowUp + l] - th) + Math.sin(theta[rowUp + r] - th) +
+           Math.sin(theta[rowDown + l] - th) + Math.sin(theta[rowDown + r] - th)) * 0.7071;
+        let v = th + DT * (omega[i] + K * coupling / 6.828);
+        v = v - TWO_PI * Math.floor(v / TWO_PI);
+        thetaNext[i] = v;
+      }
+    }
+    const tmp = theta; theta = thetaNext; thetaNext = tmp;
+  }
+
+  // phase read as thin-film interference color: indigo -> teal -> emerald
+  // -> amber -> crimson -> magenta -> back to indigo, cyclic
+  const STOPS = [
+    [0.00, 40, 32, 110],
+    [0.17, 24, 120, 168],
+    [0.34, 64, 200, 140],
+    [0.50, 232, 190, 70],
+    [0.67, 226, 78, 62],
+    [0.84, 200, 50, 168],
+    [1.00, 40, 32, 110],
+  ];
+  const rgb = [0, 0, 0];
+  function paletteInto(rgb, t) {
+    for (let k = 0; k < STOPS.length - 1; k++) {
+      const a = STOPS[k], b = STOPS[k + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const f = (t - a[0]) / (b[0] - a[0]);
+        rgb[0] = a[1] + (b[1] - a[1]) * f;
+        rgb[1] = a[2] + (b[2] - a[2]) * f;
+        rgb[2] = a[3] + (b[3] - a[3]) * f;
+        return;
+      }
+    }
+    const s = STOPS[STOPS.length - 1];
+    rgb[0] = s[1]; rgb[1] = s[2]; rgb[2] = s[3];
+  }
+
+  function render() {
+    const data = img.data;
+    for (let i = 0, p = 0; i < theta.length; i++, p += 4) {
+      const t = theta[i] / TWO_PI;
+      paletteInto(rgb, t);
+      data[p] = rgb[0];
+      data[p + 1] = rgb[1];
+      data[p + 2] = rgb[2];
+      data[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = 'high';
+    baseCtx.drawImage(off, 0, 0, nx, ny, 0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.filter = 'blur(14px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.globalAlpha = 0.4;
+    glowCtx.drawImage(off, 0, 0, nx, ny, -20, -20, W + 40, H + 40);
+    glowCtx.restore();
+  }
+
+  // --- cursor is a pacemaker; click plants a spiral winding ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  let pacePhase = 0;
+  const PACE_RATE = 0.5; // ticks faster than the lattice's own correlated sweep
+  const PACE_RADIUS = 9;
+  const PACE_STRENGTH = 3.2;
+
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const gx = (e.clientX / W) * nx;
+    const gy = (e.clientY / H) * ny;
+    const r = 8 + Math.random() * 3;
+    const chirality = Math.random() < 0.5 ? 1 : -1;
+    const r2 = r * r;
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = (Math.round(gx + dx) % nx + nx) % nx;
+        const y = (Math.round(gy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        const ang = Math.atan2(dy, dx) * chirality;
+        const w = 1 - Math.sqrt(d2) / r;
+        theta[i] = theta[i] + (ang - theta[i]) * w * 0.9;
+        theta[i] = ((theta[i] % TWO_PI) + TWO_PI) % TWO_PI;
+      }
+    }
+  });
+
+  function pace(dt) {
+    if (!mouse.active) return;
+    pacePhase += dt * PACE_RATE;
+    pacePhase -= TWO_PI * Math.floor(pacePhase / TWO_PI);
+    const gx = (mouse.x / W) * nx;
+    const gy = (mouse.y / H) * ny;
+    const r = PACE_RADIUS;
+    const r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        const falloff = 1 - Math.sqrt(d2) / r;
+        theta[i] += dt * PACE_STRENGTH * falloff * Math.sin(pacePhase - theta[i]);
+      }
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let drift = 0;
+  function frame() {
+    drift += 1;
+    // coupling breathes between near-locked calm and turbulent, defect-rich
+    K = 1.9 + Math.sin(drift * 0.00045) * 0.9;
+
+    pace(DT);
+    step();
+    render();
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

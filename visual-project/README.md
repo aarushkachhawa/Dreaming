@@ -166,6 +166,29 @@ When you are done, someone should want to look. Longer than they meant to.
   toward it, click to drop a ground charge that pulls the nearest branch
   in fast. Open the file directly in a browser.
 
+- **2026-08-11** — `2026-08-11-vortex-chorus.html`: a twelfth technique,
+  and the first with no field, no chemistry, no agents, and no rigid grid
+  rule — a lattice of Kuramoto oscillators, the mathematics behind
+  fireflies that flash in unison and a shelf of metronomes that walk
+  themselves into sync through a shared wobbling board. Every cell keeps
+  only a phase and a natural frequency slightly faster or slower than its
+  neighbors', and each tick nudges its phase toward the eight cells around
+  it by nothing more than a sine of the difference — no diffusion
+  equation, no threshold, just "match the room." Left alone this either
+  locks into broad sheets sharing a beat or, since every cell's honest
+  clock never quite agrees, tears at the seams into spinning phase
+  defects, point-like singularities that drag spiral waves off themselves
+  forever after. Color reads the phase itself around a six-stop cyclic
+  wheel the way a soap film reads the phase of light, so a locked sheet
+  glows one steady hue and a defect announces itself as a small rainbow
+  knot. Coupling strength breathes over minutes, sliding the lattice
+  between calm, near-locked color sweeps and a turbulent field dense with
+  spinning defects. Move the cursor to become a local pacemaker, ticking
+  slightly quicker than the rest and sending target waves rippling
+  outward the way one confident clapper pulls a whole audience into
+  rhythm; click to plant a full phase winding and launch a spiral arm
+  outright. Open the file directly in a browser.
+
 - **2026-08-10** — `2026-08-10-breathing-static.html`: an eleventh
   technique, and the first built from a generalized cellular automaton —
   Stephen Rafler's SmoothLife, which takes Conway's Game of Life and
