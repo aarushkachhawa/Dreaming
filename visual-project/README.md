@@ -206,3 +206,27 @@ When you are done, someone should want to look. Longer than they meant to.
   fresh colony outright; the width of the birth threshold breathes over
   minutes, sliding the field between delicate lace-thin membranes and
   dense, boiling mats. Open the file directly in a browser.
+
+- **2026-08-12** — `2026-08-12-vein-light.html`: a thirteenth technique,
+  and the first that grows by aiming rather than wandering or reinforcing.
+  Space colonization, the algorithm botanical graphics uses to fake tree
+  branches and leaf veins: a scattered field of auxin points stands in
+  for unclaimed light and water, and every growing tip looks only at the
+  auxin within its reach, walks toward the average direction of all of
+  it, and takes one short, exact step — no randomness in the step
+  itself, no trail to reinforce, just a greedy pull toward what's still
+  unclaimed. Night 10's lightning found ground by blind random walks
+  that happened to stick; night 3's currents carved paths by agents
+  reinforcing a shared trail. This is neither — every step is a
+  straight, deliberate reach, and the loop of reach-and-consume is what
+  turns a point cloud into something that looks unmistakably like a root
+  system or a leaf's veins without either being drawn on purpose. Three
+  to five roots start along the floor and climb into a field of auxin
+  scattered edge to edge, tapering from a mossy root color into pale
+  phosphor tips as each branch's own distance from the ground grows,
+  while slow gold sap-pulses trace root to tip along limbs already
+  grown. Once a generation exhausts its auxin it rests, sap still
+  moving, then dissolves back to black and a new one sprouts. Move the
+  cursor to bend new growth toward you like phototropism, click to water
+  a patch and wake a dormant or dissolving generation back into growth.
+  Open the file directly in a browser.
