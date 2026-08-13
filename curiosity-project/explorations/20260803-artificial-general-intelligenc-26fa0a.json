@@ -1,0 +1,53 @@
+{
+  "id": "20260803-artificial-general-intelligenc-26fa0a",
+  "date": "2026-08-03T10:11:14.015517",
+  "title": "Artificial General Intelligence: What Is Actually Missing?",
+  "question": "What separates today's powerful AI systems from genuine general intelligence?",
+  "summary": "Modern AI can write essays, pass exams, and generate art, yet still lacks something that lets a toddler learn faster from less. This explores what that something might be.",
+  "content": "\n<p>Large language models can pass the bar exam, write working code, and hold a fluent conversation about quantum field theory. And yet a two-year-old, who cannot do any of that, can learn to recognize a new animal from a single picture, understand that a ball rolling behind a couch still exists, and figure out how to stack blocks without ever having seen blocks stacked before. Something about general intelligence is still missing from our most capable systems, even as their surface performance becomes dazzling.</p>\n\n<h2>Narrow Brilliance, General Fragility</h2>\n<p>Today's AI is extraordinarily good at pattern completion within the distribution it was trained on, and often surprisingly fragile just outside it. A model can solve novel-looking word problems yet fail at a simple arithmetic variant it hasn't effectively memorized a pattern for. This gap between benchmark performance and robust, transferable understanding is the central puzzle of AGI research.</p>\n\n<h2>Candidate Missing Ingredients</h2>\n<p>Researchers point to several possible gaps. One is grounded world models: humans build an internal simulation of physics, causality, and other minds' intentions, and reason by running that simulation forward, not by retrieving a statistically likely continuation. Another is sample efficiency: a child needs far fewer examples than a model to generalize a concept, suggesting stronger built-in inductive biases about how the world works. A third is genuine goal-directed agency across long horizons, with the ability to notice when a plan has failed and revise the underlying model rather than just the next step. A fourth is the ability to know what you don't know, and to seek out exactly the information that would resolve that uncertainty.</p>\n\n<h2>Why This Matters</h2>\n<p>The stakes are not purely academic. If the missing ingredient is architectural, no amount of scaling current methods will close the gap, and a conceptual breakthrough is needed. If the missing ingredient is mostly about training data and embodiment, then AGI may be a matter of engineering scale plus better simulated or robotic environments. Which story is true changes how soon AGI arrives, what it looks like, and what risks it poses.</p>\n\n<h2>The Turing Test Was Never the Real Test</h2>\n<p>Passing as human in conversation, it turns out, was a much easier bar than actually possessing human-like general competence. Fluent language turned out to be separable from robust reasoning, embodied understanding, and common sense, which is itself a discovery about the structure of intelligence: language may be a thin, learnable veneer over deeper capacities that took evolution hundreds of millions of years to build.</p>\n",
+  "tags": [
+    "ai",
+    "cognitive-science",
+    "philosophy",
+    "computer-science",
+    "intelligence"
+  ],
+  "perspectives": [
+    {
+      "title": "Computer Science Perspective",
+      "description": "Scaling laws show performance improves predictably with data and compute, but critics argue this improves interpolation within the training distribution rather than genuine extrapolation to new kinds of problems."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Human infants arrive with strong priors about objects, agents, and causality baked in by evolution, letting them learn from vastly less data than any current model requires."
+    },
+    {
+      "title": "Philosophy Perspective",
+      "description": "The Chinese Room argument asks whether manipulating symbols according to rules, however sophisticated, ever amounts to understanding, or just a very convincing simulation of it."
+    },
+    {
+      "title": "Robotics Perspective",
+      "description": "Embodiment researchers argue intelligence is inseparable from having a body that acts on and is constrained by the physical world, meaning disembodied text prediction may hit a ceiling no dataset can fix."
+    },
+    {
+      "title": "Neuroscience Perspective",
+      "description": "The brain integrates perception, action, memory, and emotion in tightly looped, energy-efficient circuits quite unlike the feedforward, energy-hungry architectures of current large models."
+    }
+  ],
+  "connections": [
+    "The Turing Test and its limitations as a benchmark",
+    "The Chinese Room argument and symbol grounding",
+    "Embodied cognition and situated intelligence",
+    "Transfer learning and out-of-distribution generalization",
+    "Common sense reasoning and world models",
+    "The frame problem in classical AI",
+    "Consciousness and the hard problem of subjective experience"
+  ],
+  "openQuestions": [
+    "Is general intelligence a single capacity, or a bundle of separable skills we are mislabeling with one word?",
+    "Can scale alone produce robust world models, or is a new architecture required?",
+    "How would we even recognize AGI if it arrived gradually rather than as a single breakthrough?",
+    "Does genuine understanding require embodiment, or can it emerge from text and video alone?",
+    "What would it mean for an AI to know the boundaries of its own knowledge?"
+  ]
+}
