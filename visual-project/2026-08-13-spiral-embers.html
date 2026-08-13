@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spiral Embers — Night 14</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05040a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Spiral Embers &mdash; Night 14 &mdash; move to spark it, click to plant a rotor</div>
+<script>
+(() => {
+  // A fourteenth technique, and the first that is a bare discrete automaton
+  // with no field, no PDE, and no continuous phase — a cyclic cellular
+  // automaton (David Griffeath's rule, the same family behind the
+  // Greenberg-Hastings model of excitable tissue). Every cell holds nothing
+  // but an integer state 0..K-1 on a private clock with K ticks, and each
+  // step it advances to the next tick only if enough of its eight neighbors
+  // are already sitting one tick ahead of it — otherwise it waits. That is
+  // the entire rule: no diffusion equation (night 2, night 9), no convolved
+  // mass and sigmoid (night 11), no sine-coupled continuous phase (night
+  // 12) — just an integer comparing itself to a neighbor count. Left to run
+  // from pure noise, cells with nothing ahead of them stall while cells
+  // lucky enough to have a tick-ahead neighbor advance, and that asymmetry
+  // is enough on its own to spawn rotating cores: little pinwheels chasing
+  // their own tail around a point that can never quite catch up to itself.
+  // It is the same mechanism, translated to a grid of integers, that drives
+  // the real spiral waves seen in the Belousov-Zhabotinsky chemical
+  // reaction and in cardiac tissue mid-arrhythmia. Color reads each state
+  // as a point in an excitation cycle rather than a plain hue wheel: long
+  // dark rest, a fast climb through electric blue, a white-hot crest at the
+  // wavefront itself, then a slow ember cool-down through amber and
+  // burnt red back to black — so a locked field of rotors reads as
+  // lightning frozen mid-strike, tails smoldering behind each bright arc.
+  // The neighbor threshold breathes over minutes, sliding the lattice
+  // between many small fast-spinning cores and a few large slow ones. Move
+  // the cursor to lightly spark the medium, nudging nearby cells one tick
+  // ahead the way dragging a match through dry tinder catches unevenly and
+  // sends small ripples outward; click to write a full turn of the cycle
+  // around a point outright — a topological wind-up with nowhere to
+  // unwind except by spinning, which plants a rotor on the spot every
+  // time. Open the file directly in a browser.
+
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  const K = 16; // ticks in the cycle
+  const TWO_PI = Math.PI * 2;
+
+  let W, H, DPR, nx, ny;
+  let cur, next, img;
+  let leftIdx, rightIdx, upIdx, downIdx;
+
+  function initGrid() {
+    nx = 190;
+    ny = Math.max(70, Math.min(160, Math.round(nx * (H / W))));
+    off.width = nx;
+    off.height = ny;
+    img = offCtx.createImageData(nx, ny);
+
+    const n = nx * ny;
+    cur = new Uint8Array(n);
+    next = new Uint8Array(n);
+    for (let i = 0; i < n; i++) cur[i] = (Math.random() * K) | 0;
+
+    leftIdx = new Int32Array(nx);
+    rightIdx = new Int32Array(nx);
+    for (let x = 0; x < nx; x++) {
+      leftIdx[x] = (x - 1 + nx) % nx;
+      rightIdx[x] = (x + 1) % nx;
+    }
+    upIdx = new Int32Array(ny);
+    downIdx = new Int32Array(ny);
+    for (let y = 0; y < ny; y++) {
+      upIdx[y] = (y - 1 + ny) % ny;
+      downIdx[y] = (y + 1) % ny;
+    }
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initGrid();
+  }
+
+  let threshold = 1; // breathes slowly in frame()
+
+  function step() {
+    const th = Math.round(threshold);
+    for (let y = 0; y < ny; y++) {
+      const row = y * nx;
+      const rowUp = upIdx[y] * nx;
+      const rowDown = downIdx[y] * nx;
+      for (let x = 0; x < nx; x++) {
+        const i = row + x;
+        const l = leftIdx[x], r = rightIdx[x];
+        const s = cur[i];
+        const target = (s + 1) % K;
+        let count = 0;
+        if (cur[row + l] === target) count++;
+        if (cur[row + r] === target) count++;
+        if (cur[rowUp + x] === target) count++;
+        if (cur[rowDown + x] === target) count++;
+        if (cur[rowUp + l] === target) count++;
+        if (cur[rowUp + r] === target) count++;
+        if (cur[rowDown + l] === target) count++;
+        if (cur[rowDown + r] === target) count++;
+        next[i] = count >= th ? target : s;
+      }
+    }
+    const tmp = cur; cur = next; next = tmp;
+  }
+
+  // state read as an excitation cycle, not a plain hue wheel: long dark
+  // rest, a climb through electric blue, a white-hot wavefront crest, then
+  // an amber-to-burnt-red ember cool-down back to black
+  const STOPS = [
+    [0.00, 8, 6, 18],
+    [0.08, 20, 14, 62],
+    [0.22, 30, 110, 222],
+    [0.34, 120, 220, 255],
+    [0.42, 255, 255, 250],
+    [0.50, 255, 172, 60],
+    [0.62, 220, 70, 30],
+    [0.80, 90, 20, 20],
+    [1.00, 8, 6, 18],
+  ];
+  const rgb = [0, 0, 0];
+  function paletteInto(rgb, t) {
+    for (let k = 0; k < STOPS.length - 1; k++) {
+      const a = STOPS[k], b = STOPS[k + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const f = (t - a[0]) / (b[0] - a[0]);
+        rgb[0] = a[1] + (b[1] - a[1]) * f;
+        rgb[1] = a[2] + (b[2] - a[2]) * f;
+        rgb[2] = a[3] + (b[3] - a[3]) * f;
+        return;
+      }
+    }
+    const s = STOPS[STOPS.length - 1];
+    rgb[0] = s[1]; rgb[1] = s[2]; rgb[2] = s[3];
+  }
+
+  function render() {
+    const data = img.data;
+    for (let i = 0, p = 0; i < cur.length; i++, p += 4) {
+      paletteInto(rgb, cur[i] / K);
+      data[p] = rgb[0];
+      data[p + 1] = rgb[1];
+      data[p + 2] = rgb[2];
+      data[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = 'high';
+    baseCtx.drawImage(off, 0, 0, nx, ny, 0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.filter = 'blur(12px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.globalAlpha = 0.35;
+    glowCtx.drawImage(off, 0, 0, nx, ny, -16, -16, W + 32, H + 32);
+    glowCtx.restore();
+  }
+
+  // --- cursor sparks the medium; click plants a full rotor ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  const SPARK_RADIUS = 6;
+  const SPARK_CHANCE = 0.4;
+
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const gx = (e.clientX / W) * nx;
+    const gy = (e.clientY / H) * ny;
+    const r = 9 + Math.random() * 4;
+    const chirality = Math.random() < 0.5 ? 1 : -1;
+    const r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        const ang = Math.atan2(dy, dx) * chirality;
+        const t = ang / TWO_PI + 0.5; // full 0..1 wedge sweep = one wind-up
+        cur[i] = Math.floor(t * K) % K;
+      }
+    }
+  });
+
+  function spark() {
+    if (!mouse.active) return;
+    const gx = (mouse.x / W) * nx;
+    const gy = (mouse.y / H) * ny;
+    const r = SPARK_RADIUS, r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        const falloff = 1 - Math.sqrt(d2) / r;
+        if (Math.random() < falloff * SPARK_CHANCE) {
+          cur[i] = (cur[i] + 1) % K;
+        }
+      }
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  const STEP_MS = 1000 / 36; // fixed simulation rate, independent of display fps
+  let acc = 0;
+  let last = null;
+  let drift = 0;
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    let dt = ts - last;
+    last = ts;
+    if (dt > 250) dt = 250; // clamp after a tab-switch stall
+    acc += dt;
+
+    while (acc >= STEP_MS) {
+      drift += 1;
+      // neighbor threshold breathes between many small fast cores (low,
+      // where it starts so noise nucleates quickly) and a few large slow
+      // ones (high)
+      threshold = 1 + (0.5 - 0.5 * Math.cos(drift * 0.00035)) * 1.6;
+      spark();
+      step();
+      acc -= STEP_MS;
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -230,3 +230,32 @@ When you are done, someone should want to look. Longer than they meant to.
   cursor to bend new growth toward you like phototropism, click to water
   a patch and wake a dormant or dissolving generation back into growth.
   Open the file directly in a browser.
+
+- **2026-08-13** — `2026-08-13-spiral-embers.html`: a fourteenth
+  technique, and the first that is a bare discrete automaton with no
+  field, no PDE, and no continuous phase — a cyclic cellular automaton,
+  the Greenberg-Hastings rule behind textbook models of excitable tissue.
+  Every cell holds nothing but an integer on a private clock with a fixed
+  number of ticks, and each step it advances to the next tick only if
+  enough of its eight neighbors are already sitting one tick ahead of
+  it; otherwise it waits. No diffusion equation (nights 2 and 9), no
+  convolved mass and sigmoid (night 11), no sine-coupled continuous phase
+  (night 12) — just an integer comparing itself to a neighbor count. Left
+  to run from pure noise that asymmetry alone is enough to spawn rotating
+  cores, little pinwheels chasing their own tail around a point that can
+  never quite catch up to itself, the same mechanism, translated to a
+  grid of integers, that drives the real spiral waves seen in the
+  Belousov-Zhabotinsky chemical reaction and in cardiac tissue mid-
+  arrhythmia. Color reads each state as a point in an excitation cycle
+  rather than a plain hue wheel — long dark rest, a fast climb through
+  electric blue, a white-hot crest at the wavefront itself, then a slow
+  ember cool-down through amber and burnt red back to black — so a locked
+  field of rotors reads as lightning frozen mid-strike, tails smoldering
+  behind each bright arc. The neighbor threshold breathes over minutes,
+  sliding the lattice between many small fast-spinning cores and a few
+  large slow ones. Move the cursor to lightly spark the medium, nudging
+  nearby cells one tick ahead the way dragging a match through dry tinder
+  catches unevenly and sends small ripples outward; click to write a full
+  turn of the cycle around a point outright, a topological wind-up with
+  nowhere to unwind except by spinning, which plants a rotor on the spot
+  every time. Open the file directly in a browser.
