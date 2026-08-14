@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Feral Chemistry — Night 15</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #050308;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Feral Chemistry &mdash; Night 15 &mdash; move to pull nearby tribes in, click to reroll the chemistry</div>
+<script>
+(() => {
+  // A fifteenth technique, and the first with no field, no chemistry
+  // gradient, no alignment rule, and no growth-by-aiming — just typed
+  // particles and a matrix. Six tribes of particles each carry nothing but
+  // a species id; every pair within reach pushes or pulls according to one
+  // number, matrix[i][j], read from a K-by-K table that says how tribe i
+  // feels about tribe j. The table is asymmetric on purpose — tribe A can
+  // chase tribe B while B flees A, the same lopsided relationship a
+  // predator and prey share — and every particle still hard-repels anyone
+  // standing too close, tribe or not, so nothing collapses to a point.
+  // There is no shared field to deposit into (night 3's currents, night
+  // 9's ink) and no three tidy rules to average (night 8's murmuration);
+  // there is only this pairwise lookup, applied a few hundred thousand
+  // times a second, and out of it alone come rotating binaries, chains
+  // that chase their own tail, membranes one tribe builds to wall another
+  // out, and blooms that scatter the instant a chaser arrives. This is the
+  // "particle life" / "clusters" mechanic — an artificial chemistry with
+  // no chemistry equation in it at all, just relationships. The matrix
+  // itself drifts, one entry at a time, over minutes, so alliances that
+  // held for a while quietly sour or soften and the whole society keeps
+  // renegotiating itself. Move the cursor to draw nearby particles into a
+  // gentle orbit around it, click to burn the current matrix down and let
+  // a fresh set of relationships take over. Open the file directly in a
+  // browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  const TWO_PI = Math.PI * 2;
+  const K = 6; // tribes
+  const BETA = 0.28; // hard-repulsion core, fraction of rMax
+  const R_MAX = 68; // interaction cutoff, px
+
+  const HUES = [];
+  for (let i = 0; i < K; i++) HUES.push((i / K) * 360);
+
+  let W, H, DPR;
+  let N;
+  let px, py, vx, vy, sp; // Float32Array positions/velocities, Uint8Array species
+  let matrix; // Float32Array K*K, matrix[i*K+j] = how i feels about j
+
+  // spatial hash grid, rebuilt every physics step via counting sort
+  let cellSize, gCols, gRows, cellOf, order, cellStart, cellCount;
+
+  function randomizeMatrix() {
+    matrix = new Float32Array(K * K);
+    for (let i = 0; i < K * K; i++) matrix[i] = Math.random() * 2 - 1;
+  }
+
+  function initParticles() {
+    const area = W * H;
+    N = Math.max(900, Math.min(3200, Math.round(area / 850)));
+    px = new Float32Array(N);
+    py = new Float32Array(N);
+    vx = new Float32Array(N);
+    vy = new Float32Array(N);
+    sp = new Uint8Array(N);
+    for (let i = 0; i < N; i++) {
+      px[i] = Math.random() * W;
+      py[i] = Math.random() * H;
+      sp[i] = (Math.random() * K) | 0;
+    }
+  }
+
+  function initGrid() {
+    cellSize = R_MAX;
+    gCols = Math.max(1, Math.ceil(W / cellSize));
+    gRows = Math.max(1, Math.ceil(H / cellSize));
+    cellOf = new Int32Array(N);
+    order = new Int32Array(N);
+    cellStart = new Int32Array(gCols * gRows + 1);
+    cellCount = new Int32Array(gCols * gRows);
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = '#050308';
+    ctx.fillRect(0, 0, W, H);
+    initParticles();
+    initGrid();
+  }
+
+  function wrapDelta(d, size) {
+    if (d > size * 0.5) return d - size;
+    if (d < -size * 0.5) return d + size;
+    return d;
+  }
+
+  function forceFn(r, a) {
+    if (r < BETA) return r / BETA - 1;
+    if (r < 1) return a * (1 - Math.abs(2 * r - 1 - BETA) / (1 - BETA));
+    return 0;
+  }
+
+  function rebuildGrid() {
+    const nCells = gCols * gRows;
+    cellCount.fill(0);
+    for (let i = 0; i < N; i++) {
+      const cx = Math.min(gCols - 1, (px[i] / cellSize) | 0);
+      const cy = Math.min(gRows - 1, (py[i] / cellSize) | 0);
+      const c = cy * gCols + cx;
+      cellOf[i] = c;
+      cellCount[c]++;
+    }
+    let acc = 0;
+    for (let c = 0; c < nCells; c++) {
+      cellStart[c] = acc;
+      acc += cellCount[c];
+    }
+    cellStart[nCells] = acc;
+    const cursor = cellStart.slice(0, nCells);
+    for (let i = 0; i < N; i++) {
+      const c = cellOf[i];
+      order[cursor[c]++] = i;
+    }
+  }
+
+  const ACCEL_SCALE = 1400;
+  const FRICTION = 0.94;
+  const MAX_SPEED = 210;
+  const DT = 1 / 60;
+  const PULL_STRENGTH = 3.2;
+  const PULL_RADIUS = 220;
+
+  let pull = { x: -9999, y: -9999, active: false };
+
+  function step() {
+    rebuildGrid();
+    for (let i = 0; i < N; i++) {
+      const xi = px[i], yi = py[i], si = sp[i];
+      const cx = Math.min(gCols - 1, (xi / cellSize) | 0);
+      const cy = Math.min(gRows - 1, (yi / cellSize) | 0);
+      let ax = 0, ay = 0;
+
+      for (let oy = -1; oy <= 1; oy++) {
+        let ny = cy + oy;
+        if (ny < 0) ny += gRows; else if (ny >= gRows) ny -= gRows;
+        for (let ox = -1; ox <= 1; ox++) {
+          let nx = cx + ox;
+          if (nx < 0) nx += gCols; else if (nx >= gCols) nx -= gCols;
+          const c = ny * gCols + nx;
+          const start = cellStart[c], end = cellStart[c + 1];
+          for (let k = start; k < end; k++) {
+            const j = order[k];
+            if (j === i) continue;
+            const dx = wrapDelta(px[j] - xi, W);
+            const dy = wrapDelta(py[j] - yi, H);
+            const d2 = dx * dx + dy * dy;
+            if (d2 >= R_MAX * R_MAX || d2 < 1e-6) continue;
+            const d = Math.sqrt(d2);
+            const f = forceFn(d / R_MAX, matrix[si * K + sp[j]]);
+            const inv = f / d;
+            ax += dx * inv;
+            ay += dy * inv;
+          }
+        }
+      }
+
+      if (pull.active) {
+        const dx = wrapDelta(pull.x - xi, W);
+        const dy = wrapDelta(pull.y - yi, H);
+        const d2 = dx * dx + dy * dy;
+        if (d2 < PULL_RADIUS * PULL_RADIUS) {
+          const d = Math.sqrt(d2);
+          const inv = PULL_STRENGTH / Math.max(d, 40);
+          ax += dx * inv;
+          ay += dy * inv;
+        }
+      }
+
+      let nvx = (vx[i] + ax * ACCEL_SCALE * DT) * FRICTION;
+      let nvy = (vy[i] + ay * ACCEL_SCALE * DT) * FRICTION;
+      const speed = Math.hypot(nvx, nvy);
+      if (speed > MAX_SPEED) {
+        const s = MAX_SPEED / speed;
+        nvx *= s; nvy *= s;
+      }
+      vx[i] = nvx; vy[i] = nvy;
+    }
+
+    for (let i = 0; i < N; i++) {
+      let nx = px[i] + vx[i] * DT;
+      let ny = py[i] + vy[i] * DT;
+      if (nx < 0) nx += W; else if (nx >= W) nx -= W;
+      if (ny < 0) ny += H; else if (ny >= H) ny -= H;
+      px[i] = nx; py[i] = ny;
+    }
+  }
+
+  function render() {
+    ctx.fillStyle = 'rgba(5, 3, 8, 0.16)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < N; i++) {
+      const speed = Math.hypot(vx[i], vy[i]);
+      const light = 44 + Math.min(28, speed * 0.11);
+      const hue = HUES[sp[i]];
+      const x = px[i], y = py[i];
+
+      ctx.fillStyle = `hsla(${hue}, 80%, ${light}%, 0.16)`;
+      ctx.beginPath();
+      ctx.arc(x, y, 4.2, 0, TWO_PI);
+      ctx.fill();
+
+      ctx.fillStyle = `hsl(${hue}, 85%, ${Math.min(78, light + 22)}%)`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1.4, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    if (pull.active) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(pull.x, pull.y, PULL_RADIUS, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    if (rerollPulse > 0) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const r = (1 - rerollPulse) * 340;
+      ctx.strokeStyle = `rgba(255, 255, 255, ${0.22 * rerollPulse})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(rerollAt.x, rerollAt.y, r, 0, TWO_PI);
+      ctx.stroke();
+      ctx.restore();
+      rerollPulse -= 0.045;
+    }
+  }
+
+  // --- interaction: move pulls nearby tribes in, click rerolls chemistry ---
+  window.addEventListener('pointermove', (e) => {
+    pull.x = e.clientX;
+    pull.y = e.clientY;
+    pull.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pull.active = false));
+
+  let rerollPulse = 0;
+  let rerollAt = { x: 0, y: 0 };
+  window.addEventListener('pointerdown', (e) => {
+    randomizeMatrix();
+    rerollAt.x = e.clientX;
+    rerollAt.y = e.clientY;
+    rerollPulse = 1;
+  });
+
+  // matrix drifts slowly: one random entry nudged toward a fresh value
+  let driftTick = 0;
+  function driftMatrix() {
+    driftTick++;
+    if (driftTick % 40 !== 0) return;
+    const idx = (Math.random() * K * K) | 0;
+    const target = Math.random() * 2 - 1;
+    matrix[idx] += (target - matrix[idx]) * 0.35;
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    driftMatrix();
+    step();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  randomizeMatrix();
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

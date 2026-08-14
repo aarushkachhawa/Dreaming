@@ -259,3 +259,27 @@ When you are done, someone should want to look. Longer than they meant to.
   turn of the cycle around a point outright, a topological wind-up with
   nowhere to unwind except by spinning, which plants a rotor on the spot
   every time. Open the file directly in a browser.
+
+- **2026-08-14** — `2026-08-14-feral-chemistry.html`: a fifteenth
+  technique, and the first with no field, no chemistry gradient, no
+  alignment rule, and no growth-by-aiming — just typed particles and a
+  matrix. Six tribes of particles each carry nothing but a species id;
+  every pair within reach pushes or pulls according to one number,
+  matrix[i][j], read from a table that says how tribe i feels about tribe
+  j. The table is asymmetric on purpose — tribe A can chase tribe B while
+  B flees A, the same lopsided relationship a predator and prey share —
+  and every particle still hard-repels anyone standing too close, tribe or
+  not, so nothing collapses to a point. There is no shared field to
+  deposit into (night 3's currents, night 9's ink) and no three tidy rules
+  to average (night 8's murmuration); there is only this pairwise lookup,
+  applied a few hundred thousand times a second, and out of it alone come
+  rotating binaries, chains that chase their own tail, membranes one tribe
+  builds to wall another out, and blooms that scatter the instant a
+  chaser arrives — the "particle life" / "clusters" mechanic, an
+  artificial chemistry with no chemistry equation in it at all, just
+  relationships. The matrix itself drifts, one entry at a time, over
+  minutes, so alliances that held for a while quietly sour or soften and
+  the whole society keeps renegotiating itself. Move the cursor to draw
+  nearby particles into a gentle orbit around it, click to burn the
+  current matrix down and let a fresh set of relationships take over.
+  Open the file directly in a browser.
