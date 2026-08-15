@@ -1,0 +1,14 @@
+{
+  "id": "20260815-the-sorites-paradox-how-many-g-7edc7d",
+  "date": "2026-08-15T10:13:20.539396",
+  "title": "The Sorites Paradox: How Many Grains Make a Heap?",
+  "question": "If removing a single grain never turns a heap into a non-heap, how can a heap ever stop being a heap?",
+  "summary": "A children's-riddle-sounding puzzle about heaps of sand turns out to expose a real crack in classical logic: most of the words we use every day \u2014 tall, bald, rich, old, red \u2014 have no sharp boundary, and that vagueness resists every attempt to patch it with more precise definitions.",
+  "tags": [
+    "philosophy",
+    "logic",
+    "language",
+    "vagueness",
+    "epistemology"
+  ]
+}
