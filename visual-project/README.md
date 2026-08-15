@@ -259,3 +259,32 @@ When you are done, someone should want to look. Longer than they meant to.
   turn of the cycle around a point outright, a topological wind-up with
   nowhere to unwind except by spinning, which plants a rotor on the spot
   every time. Open the file directly in a browser.
+
+- **2026-08-15** — `2026-08-15-bough-grammar.html`: a fifteenth technique,
+  and the first built from a formal grammar rather than a field, a swarm, a
+  force law, or a cellular automaton. This is an L-system — Aristid
+  Lindenmayer's rewriting grammar, invented to model how a filament of algae
+  cells divides (an odd echo of night 2's literal cell-division
+  reaction-diffusion), later turned by Prusinkiewicz into a recipe for
+  procedural plants: replace every "F" in a string with a longer string,
+  over and over, then hand the finished string to a turtle that reads it
+  left to right — F to step forward and draw, + and - to turn, [ and ] to
+  push and pop a branch point on a stack. Three productions are chosen at
+  random for every F, five generations deep, so no two trees share a
+  skeleton. Nothing here wanders (night 10), reinforces a trail (night 3),
+  or seeks light one greedy step at a time (night 13, the closest
+  relative) — the entire branching structure exists as a finished sentence
+  before a single pixel is drawn, and the turtle is just reading it aloud.
+  What looks like growth is a reveal of that fixed sentence, letter by
+  letter; what looks like wind is the same fixed sentence re-read every
+  frame with a small breathing bias on the turtle's heading, stronger the
+  deeper the branch — the grammar never changes, only how it is spoken.
+  Bracket-nesting depth doubles as both structure and color: a bark-brown
+  trunk climbs through mossy jade into blossom pink and pale, glowing white
+  at the outermost twigs, where loose petals scatter and catch the bloom
+  pass, all set against a faint twinkling starfield. A small grove holds
+  three to six saplings at once, each aging on its own clock — grow, hold,
+  fade to black — and quietly reseeding itself elsewhere when it dies. Move
+  the cursor to bend nearby boughs toward it like sunlight; click to plant a
+  fresh tree, retiring the grove's oldest once it's full. Open the file
+  directly in a browser.

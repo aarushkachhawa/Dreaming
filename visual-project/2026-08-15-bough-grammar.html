@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bough Grammar — Night 15</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0a0710;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Bough Grammar &mdash; Night 15 &mdash; move to bend the boughs, click to plant a tree</div>
+<script>
+(() => {
+  // A fifteenth technique, and the first built from a formal grammar rather
+  // than a field, a swarm, a force law, or a cellular automaton. This is an
+  // L-system — Aristid Lindenmayer's rewriting grammar, invented to model
+  // how a filament of algae cells divides (an odd echo of night 2's literal
+  // cell-division reaction-diffusion), later turned by Prusinkiewicz into a
+  // recipe for procedural plants: replace every "F" in a string with a
+  // longer string, over and over, then hand the finished string to a turtle
+  // that reads it left to right — F to step forward and draw, + and - to
+  // turn, [ and ] to push and pop a branch point on a stack. Three
+  // productions (F->F[+F]F[-F]F, F->F[+F]F, F->F[-F]F) are chosen at random
+  // for every F, five generations deep, so no two trees share a skeleton.
+  // Nothing here wanders (night 10), reinforces a trail (night 3), or seeks
+  // light one greedy step at a time (night 13, the closest relative) — the
+  // entire branching structure exists as a finished sentence before a
+  // single pixel is drawn, and the turtle is just reading it aloud. What
+  // looks like growth is a reveal of that fixed sentence, letter by letter;
+  // what looks like wind is the same fixed sentence re-read every frame
+  // with a small breathing bias on the turtle's heading, stronger the
+  // deeper the branch — the grammar never changes, only how it is spoken.
+  // Bracket-nesting depth doubles as both structure and color: a bark-brown
+  // trunk climbs through mossy jade into blossom pink and pale, glowing
+  // white at the outermost twigs, where loose petals scatter and catch the
+  // bloom pass. A small grove holds three to five trees at once, each
+  // aging on its own clock — grow, hold, fade to black — and quietly
+  // reseeding itself elsewhere when it dies. Move the cursor to bend
+  // nearby boughs toward it like sunlight; click to plant a fresh tree,
+  // retiring the grove's oldest once it's full. Open the file directly in
+  // a browser.
+
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  const ANGLE_BASE = 25.7 * Math.PI / 180;
+  const SHRINK_LEN = 0.90;
+  const SHRINK_WIDTH = 0.80;
+  const ITERATIONS = 5;
+  const DEPTH_NORM = ITERATIONS;
+  const GROUND_Y_FRAC = 0.90;
+  const TARGET_COUNT = 4;
+  const MAX_COUNT = 6;
+  const KILL_FADE_MS = 1400;
+  const PRODUCTIONS = ['F[+F]F[-F]F', 'F[+F]F', 'F[-F]F'];
+
+  let W, H, DPR, baseWidthPx, bgGradient;
+  let trees = [];
+  let pendingReset = true;
+  let stars = [];
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    baseWidthPx = Math.max(3, Math.min(6.5, Math.min(W, H) * 0.008));
+    bgGradient = baseCtx.createLinearGradient(0, 0, 0, H);
+    bgGradient.addColorStop(0, '#07050d');
+    bgGradient.addColorStop(0.75, '#0a0710');
+    bgGradient.addColorStop(1, '#120b18');
+
+    const count = Math.round((W * H) / 9000);
+    stars = [];
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H * GROUND_Y_FRAC,
+        r: 0.4 + Math.random() * 1.1,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.0004 + Math.random() * 0.0006,
+        base: 0.15 + Math.random() * 0.35,
+      });
+    }
+    pendingReset = true;
+  }
+
+  function drawStars(ctx, t) {
+    ctx.save();
+    for (const s of stars) {
+      const tw = s.base + 0.25 * Math.sin(t * s.speed + s.phase);
+      ctx.fillStyle = `rgba(230, 226, 245, ${Math.max(0, tw)})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // --- the grammar: a random production replaces every F, ITERATIONS deep ---
+  function rewriteOnce(s) {
+    let out = '';
+    for (let i = 0; i < s.length; i++) {
+      out += s[i] === 'F' ? PRODUCTIONS[(Math.random() * 3) | 0] : s[i];
+    }
+    return out;
+  }
+
+  function generateSymbols(iterations) {
+    let s = 'F';
+    for (let k = 0; k < iterations; k++) {
+      s = rewriteOnce(s);
+      if (s.length > 8000) break;
+    }
+    return s;
+  }
+
+  // --- the turtle: reads the string once per call, drawing angle can be
+  // biased per-segment (sway/bend) without touching the structural heading,
+  // so the skeleton stays fixed while its rendered pose gently moves ---
+  function walk(symbols, step, bias, originX, originY, revealLimit) {
+    let x = originX, y = originY, ang = -Math.PI / 2, depth = 0;
+    const stack = [];
+    const segs = [];
+    let fCount = 0;
+    for (let i = 0; i < symbols.length; i++) {
+      const c = symbols[i];
+      if (c === 'F') {
+        if (fCount >= revealLimit) break;
+        const len = step(depth);
+        const drawAng = ang + (bias ? bias(depth) : 0);
+        const nx = x + Math.cos(drawAng) * len;
+        const ny = y + Math.sin(drawAng) * len;
+        segs.push({ x1: x, y1: y, x2: nx, y2: ny, depth });
+        x = nx; y = ny;
+        fCount++;
+      } else if (c === '+') {
+        ang += ANGLE_BASE;
+      } else if (c === '-') {
+        ang -= ANGLE_BASE;
+      } else if (c === '[') {
+        stack.push({ x, y, ang, depth });
+        depth++;
+      } else if (c === ']') {
+        const s = stack.pop();
+        if (s) { x = s.x; y = s.y; ang = s.ang; depth = s.depth; }
+      }
+    }
+    return { segs, fCount };
+  }
+
+  function unitStep(depth) { return Math.pow(SHRINK_LEN, depth); }
+
+  function makeTree(baseXFrac, now) {
+    let symbols = generateSymbols(ITERATIONS);
+    let sized = walk(symbols, unitStep, null, 0, 0, Infinity);
+    if (sized.fCount > 2200) {
+      symbols = generateSymbols(ITERATIONS - 1);
+      sized = walk(symbols, unitStep, null, 0, 0, Infinity);
+    }
+    let minX = 0, maxX = 0, minY = 0, maxY = 0;
+    for (const s of sized.segs) {
+      if (s.x1 < minX) minX = s.x1; if (s.x1 > maxX) maxX = s.x1;
+      if (s.x2 < minX) minX = s.x2; if (s.x2 > maxX) maxX = s.x2;
+      if (s.y1 < minY) minY = s.y1; if (s.y1 > maxY) maxY = s.y1;
+      if (s.y2 < minY) minY = s.y2; if (s.y2 > maxY) maxY = s.y2;
+    }
+    const unitHeight = Math.max(0.001, maxY - minY);
+    const unitWidth = Math.max(0.001, maxX - minX);
+    const targetHeight = H * (0.34 + Math.random() * 0.22);
+    let scale = targetHeight / unitHeight;
+    const maxWidthPx = W * 0.30;
+    if (unitWidth * scale > maxWidthPx) scale = maxWidthPx / unitWidth;
+    const centerX = (minX + maxX) / 2;
+    return {
+      symbols,
+      totalF: sized.fCount,
+      scale,
+      originX: baseXFrac * W - scale * centerX,
+      originY: H * GROUND_Y_FRAC,
+      baseXFrac,
+      seed: Math.random() * 1000,
+      plantedAt: now,
+      killedAt: null,
+      growDur: 6000 + Math.random() * 3000,
+      matureDur: 20000 + Math.random() * 18000,
+      fadeDur: 3500 + Math.random() * 1500,
+      alpha: 0,
+      growProgress: 0,
+      dead: false,
+    };
+  }
+
+  function spawnTree(now) {
+    let best = null, bestScore = -1;
+    for (let i = 0; i < 8; i++) {
+      const x = 0.08 + Math.random() * 0.84;
+      let minD = 1;
+      for (const t of trees) minD = Math.min(minD, Math.abs(t.baseXFrac - x));
+      if (minD > bestScore) { bestScore = minD; best = x; }
+    }
+    trees.push(makeTree(best, now));
+  }
+
+  function initForest(now) {
+    trees = [];
+    for (let i = 0; i < TARGET_COUNT; i++) spawnTree(now);
+  }
+
+  function updateTree(tree, now) {
+    if (tree.killedAt != null) {
+      const fadeAge = now - tree.killedAt;
+      tree.alpha = Math.max(0, 1 - fadeAge / KILL_FADE_MS);
+      tree.growProgress = 1;
+      tree.dead = fadeAge > KILL_FADE_MS;
+      return;
+    }
+    const age = now - tree.plantedAt;
+    if (age < tree.growDur) {
+      const raw = age / tree.growDur;
+      tree.growProgress = 1 - Math.pow(1 - raw, 3);
+      tree.alpha = Math.min(1, raw * 1.4);
+    } else if (age < tree.growDur + tree.matureDur) {
+      tree.growProgress = 1;
+      tree.alpha = 1;
+    } else if (age < tree.growDur + tree.matureDur + tree.fadeDur) {
+      tree.growProgress = 1;
+      const fadeAge = age - tree.growDur - tree.matureDur;
+      tree.alpha = 1 - fadeAge / tree.fadeDur;
+    } else {
+      tree.dead = true;
+    }
+  }
+
+  // bark -> moss -> blossom, keyed by bracket-nesting depth
+  const STOPS = [
+    [0.00, 48, 28, 22],
+    [0.18, 92, 46, 30],
+    [0.38, 70, 112, 72],
+    [0.58, 58, 150, 132],
+    [0.78, 232, 150, 190],
+    [0.92, 255, 210, 226],
+    [1.00, 255, 246, 236],
+  ];
+  const rgb = [0, 0, 0];
+  function paletteInto(rgb, t) {
+    t = Math.max(0, Math.min(1, t));
+    for (let k = 0; k < STOPS.length - 1; k++) {
+      const a = STOPS[k], b = STOPS[k + 1];
+      if (t >= a[0] && t <= b[0]) {
+        const f = (t - a[0]) / (b[0] - a[0]);
+        rgb[0] = a[1] + (b[1] - a[1]) * f;
+        rgb[1] = a[2] + (b[2] - a[2]) * f;
+        rgb[2] = a[3] + (b[3] - a[3]) * f;
+        return;
+      }
+    }
+    const s = STOPS[STOPS.length - 1];
+    rgb[0] = s[1]; rgb[1] = s[2]; rgb[2] = s[3];
+  }
+
+  let windStrength = 0.02;
+  let drift = 0;
+
+  function swayFor(seed) {
+    return (depth) => {
+      const amp = windStrength * Math.pow(Math.min(depth, DEPTH_NORM) / DEPTH_NORM, 1.4);
+      return amp * Math.sin(drift * 0.0009 + depth * 0.6 + seed);
+    };
+  }
+
+  function bendFor(tree) {
+    if (!mouse.active) return () => 0;
+    const dx = Math.max(-1, Math.min(1, (mouse.x - tree.originX) / (W * 0.5)));
+    return (depth) => dx * 0.16 * Math.pow(Math.min(depth, DEPTH_NORM) / DEPTH_NORM, 1.1);
+  }
+
+  function drawTree(ctx, glowCtx, tree) {
+    if (tree.alpha <= 0.002) return;
+    const sway = swayFor(tree.seed);
+    const bend = bendFor(tree);
+    const bias = (depth) => sway(depth) + bend(depth);
+    const step = (depth) => tree.scale * Math.pow(SHRINK_LEN, depth);
+    const revealLimit = tree.totalF * tree.growProgress;
+    const { segs } = walk(tree.symbols, step, bias, tree.originX, tree.originY, revealLimit);
+
+    const buckets = new Map();
+    for (const s of segs) {
+      const b = Math.min(DEPTH_NORM, s.depth);
+      if (!buckets.has(b)) buckets.set(b, []);
+      buckets.get(b).push(s);
+    }
+
+    for (const [depth, list] of buckets) {
+      const path = new Path2D();
+      for (const s of list) { path.moveTo(s.x1, s.y1); path.lineTo(s.x2, s.y2); }
+      paletteInto(rgb, depth / DEPTH_NORM);
+      const w = Math.max(0.6, baseWidthPx * Math.pow(SHRINK_WIDTH, depth));
+      ctx.strokeStyle = `rgba(${rgb[0] | 0}, ${rgb[1] | 0}, ${rgb[2] | 0}, ${tree.alpha})`;
+      ctx.lineWidth = w;
+      ctx.lineCap = 'round';
+      ctx.stroke(path);
+    }
+
+    if (tree.growProgress > 0.7) {
+      let dots = 0;
+      glowCtx.save();
+      for (const s of segs) {
+        if (s.depth < DEPTH_NORM) continue;
+        if (Math.random() > 0.22) continue;
+        if (dots++ > 40) break;
+        paletteInto(rgb, 1);
+        glowCtx.fillStyle = `rgba(${rgb[0] | 0}, ${rgb[1] | 0}, ${rgb[2] | 0}, ${tree.alpha * 0.9})`;
+        glowCtx.beginPath();
+        glowCtx.arc(s.x2, s.y2, 1.4 + Math.random() * 1.2, 0, Math.PI * 2);
+        glowCtx.fill();
+      }
+      glowCtx.restore();
+    }
+  }
+
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  function render() {
+    baseCtx.fillStyle = bgGradient;
+    baseCtx.fillRect(0, 0, W, H);
+    drawStars(baseCtx, drift);
+    off.width = W; off.height = H;
+    offCtx.clearRect(0, 0, W, H);
+    glowCtx.clearRect(0, 0, W, H);
+
+    for (const t of trees) drawTree(baseCtx, offCtx, t);
+
+    glowCtx.save();
+    glowCtx.filter = 'blur(6px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.drawImage(off, 0, 0);
+    glowCtx.restore();
+  }
+
+  // --- cursor bends nearby boughs; click plants a tree ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const now = lastTs;
+    if (trees.length >= MAX_COUNT) {
+      let oldest = trees[0];
+      for (const t of trees) {
+        if (t.killedAt == null && t.plantedAt < oldest.plantedAt) oldest = t;
+      }
+      if (oldest.killedAt == null) oldest.killedAt = now;
+    }
+    trees.push(makeTree(Math.max(0.06, Math.min(0.94, e.clientX / W)), now));
+  });
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let lastTs = 0;
+  function frame(ts) {
+    lastTs = ts;
+    if (pendingReset) { initForest(ts); pendingReset = false; }
+
+    const dt = Math.min(250, ts - (frame.prevTs || ts));
+    frame.prevTs = ts;
+    drift += dt;
+    windStrength = 0.02 + (0.5 - 0.5 * Math.cos(drift * 0.00012)) * 0.10;
+
+    for (const t of trees) updateTree(t, ts);
+    trees = trees.filter((t) => !t.dead);
+    while (trees.length < TARGET_COUNT) spawnTree(ts);
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
