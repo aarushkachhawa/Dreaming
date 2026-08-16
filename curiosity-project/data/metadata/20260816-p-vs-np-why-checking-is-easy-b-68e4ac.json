@@ -1,0 +1,14 @@
+{
+  "id": "20260816-p-vs-np-why-checking-is-easy-b-68e4ac",
+  "date": "2026-08-16T10:13:58.770342",
+  "title": "P vs NP: Why Checking Is Easy but Finding Is Hard",
+  "question": "Why is verifying a solution to a problem so much easier than discovering one in the first place \u2014 and could that gap someday close?",
+  "summary": "A tour of computer science's most famous unsolved problem: whether every question whose answer can be quickly checked can also be quickly solved, and what hangs on the answer.",
+  "tags": [
+    "mathematics",
+    "computer-science",
+    "complexity-theory",
+    "algorithms",
+    "philosophy"
+  ]
+}
