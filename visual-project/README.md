@@ -260,6 +260,33 @@ When you are done, someone should want to look. Longer than they meant to.
   nowhere to unwind except by spinning, which plants a rotor on the spot
   every time. Open the file directly in a browser.
 
+- **2026-08-16** — `2026-08-16-domain-frost.html`: a sixteenth technique,
+  and the first driven by thermodynamics rather than a field, a swarm, a
+  force law, or a rule table that fires the same way every time. A 2D
+  Ising spin lattice, updated by the Metropolis-Hastings algorithm: every
+  cell holds nothing but +1 or -1, and each proposed flip is accepted or
+  rejected by weighing its energy cost against a temperature — sometimes
+  taking an uphill move purely because chance says so. Night 12's Kuramoto
+  lattice and night 14's cyclic automaton were both deterministic; this
+  isn't — two runs from identical spins diverge immediately, since the
+  update is a coin flip weighted by the Boltzmann factor
+  min(1, exp(-dE/T)), the same statistic that governs slow-cooled steel
+  and real ferromagnets. No diffusion equation, no sigmoid, no
+  phase-coupling sine — just a Hamiltonian the noise is, on average,
+  sliding downhill. Coupling reaches all eight neighbors so domains
+  condense into rounded continents rather than blocky diamonds, colored
+  amber for spin up and deep indigo for spin down, with every fresh flip
+  flashing warm white and cooling back into its domain's hue over the
+  next second so the lattice reads as embers settling rather than a flat
+  two-color mosaic. Temperature breathes slowly across the critical point
+  (Tc ~ 2.269) over several minutes — well below it a few huge continents
+  lock in place, well above it dissolves into fine simmering static, and
+  crossing it directly produces critical opalescence, domains of every
+  size at once. Move the cursor to lay down a local field that pulls
+  nearby spins to align with it, like a magnet imposed on a ferromagnet;
+  click to quench a patch back to random noise and watch it recrystallize
+  with its own fresh color history. Open the file directly in a browser.
+
 - **2026-08-15** — `2026-08-15-bough-grammar.html`: a fifteenth technique,
   and the first built from a formal grammar rather than a field, a swarm, a
   force law, or a cellular automaton. This is an L-system — Aristid

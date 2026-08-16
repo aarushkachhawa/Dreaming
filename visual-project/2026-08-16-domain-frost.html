@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Domain Frost — Night 16</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05070c;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Domain Frost &mdash; Night 16 &mdash; move to magnetize, click to quench a patch</div>
+<script>
+(() => {
+  // A sixteenth technique, and the first driven by thermodynamics rather
+  // than a field, a swarm, a force law, a formal grammar, or a rule table
+  // that fires the same way every time. This is a 2D Ising spin lattice
+  // updated by the Metropolis-Hastings algorithm: every cell holds nothing
+  // but +1 or -1, and each proposed flip is accepted or rejected by
+  // weighing its energy cost against a temperature — sometimes accepting an
+  // uphill move purely because chance says so. Night 12's Kuramoto lattice
+  // and night 14's cyclic automaton were both deterministic — the same
+  // state always produces the same next state. This is not. Two runs from
+  // identical spins diverge immediately, because the update itself is a
+  // coin flip weighted by physics: flip probability is min(1, exp(-dE/T)),
+  // the Boltzmann factor that governs every real annealing process from
+  // slow-cooled steel to actual ferromagnets. No diffusion equation, no
+  // sigmoid threshold, no phase-coupling sine — just a Hamiltonian
+  // (E = -J * sum of neighbor products) that the noise is, on average,
+  // sliding downhill. Coupling reaches all eight neighbors, not just the
+  // orthogonal four, so domains condense into rounded continents instead of
+  // the blocky diamonds a plain von Neumann lattice would give. A
+  // freshly-flipped cell flashes warm white and cools back to its domain's
+  // steady hue over the following second, so the lattice reads as a field
+  // of embers settling rather than a static two-color mosaic — amber for
+  // spin up, deep indigo for spin down. Temperature breathes slowly across
+  // the critical point (Tc ~ 2.269 for this coupling) over several minutes:
+  // well below it the lattice locks into a few huge, slow-moving
+  // continents; well above it dissolves into fine simmering static; and
+  // passing directly through Tc produces critical opalescence, the
+  // textbook Ising signature where domains of every size from a single
+  // cell to half the screen coexist at once. Move the cursor to lay down a
+  // local magnetic field that pulls nearby spins to align with it, the way
+  // a real magnet imposed on a ferromagnet grows domains in its direction;
+  // click to quench a patch — scramble it back to random noise — and watch
+  // it recrystallize into fresh domains with their own color history. Open
+  // the file directly in a browser.
+
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  let W, H, DPR, nx, ny;
+  let spin, age, field, img;
+  let leftIdx, rightIdx, upIdx, downIdx;
+
+  function initGrid() {
+    nx = 200;
+    ny = Math.max(70, Math.min(150, Math.round(nx * (H / W))));
+    off.width = nx;
+    off.height = ny;
+    img = offCtx.createImageData(nx, ny);
+
+    const n = nx * ny;
+    spin = new Int8Array(n);
+    age = new Float32Array(n);
+    field = new Float32Array(n);
+    for (let i = 0; i < n; i++) spin[i] = Math.random() < 0.5 ? 1 : -1;
+
+    leftIdx = new Int32Array(nx);
+    rightIdx = new Int32Array(nx);
+    for (let x = 0; x < nx; x++) {
+      leftIdx[x] = (x - 1 + nx) % nx;
+      rightIdx[x] = (x + 1) % nx;
+    }
+    upIdx = new Int32Array(ny);
+    downIdx = new Int32Array(ny);
+    for (let y = 0; y < ny; y++) {
+      upIdx[y] = (y - 1 + ny) % ny;
+      downIdx[y] = (y + 1) % ny;
+    }
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initGrid();
+  }
+
+  const DIAG_W = 0.6;
+  let T = 2.0; // breathes across the critical point in frame()
+
+  function sweep(attempts) {
+    for (let k = 0; k < attempts; k++) {
+      const x = (Math.random() * nx) | 0;
+      const y = (Math.random() * ny) | 0;
+      const i = y * nx + x;
+      const l = leftIdx[x], r = rightIdx[x], u = upIdx[y], d = downIdx[y];
+      const rowU = u * nx, rowD = d * nx, row = y * nx;
+
+      const ortho = spin[row + l] + spin[row + r] + spin[rowU + x] + spin[rowD + x];
+      const diag = spin[rowU + l] + spin[rowU + r] + spin[rowD + l] + spin[rowD + r];
+      const nsum = ortho + diag * DIAG_W;
+
+      const s = spin[i];
+      const dE = 2 * s * (nsum + field[i]);
+      if (dE <= 0 || Math.random() < Math.exp(-dE / T)) {
+        spin[i] = -s;
+        age[i] = 0;
+      }
+    }
+  }
+
+  function ageAndDecay() {
+    const n = nx * ny;
+    for (let i = 0; i < n; i++) {
+      age[i] += 1;
+      field[i] *= 0.965;
+    }
+  }
+
+  // amber for spin up, deep indigo for spin down; freshly flipped cells
+  // flash warm white and cool back to their domain hue over ~a second
+  const WARM = [206, 118, 58];
+  const COOL = [26, 40, 92];
+  const SPARK = [255, 244, 214];
+
+  function render() {
+    const data = img.data;
+    const n = nx * ny;
+    for (let i = 0, p = 0; i < n; i++, p += 4) {
+      const base = spin[i] > 0 ? WARM : COOL;
+      const glowAmt = Math.max(0, 1 - age[i] * 0.045);
+      data[p] = base[0] + (SPARK[0] - base[0]) * glowAmt;
+      data[p + 1] = base[1] + (SPARK[1] - base[1]) * glowAmt;
+      data[p + 2] = base[2] + (SPARK[2] - base[2]) * glowAmt;
+      data[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = 'high';
+    baseCtx.drawImage(off, 0, 0, nx, ny, 0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.filter = 'blur(10px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.globalAlpha = 0.3;
+    glowCtx.drawImage(off, 0, 0, nx, ny, -14, -14, W + 28, H + 28);
+    glowCtx.restore();
+  }
+
+  // --- cursor magnetizes locally; click quenches a patch to noise ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  const FIELD_RADIUS = 11;
+  const FIELD_STRENGTH = 3.2;
+
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const gx = (e.clientX / W) * nx;
+    const gy = (e.clientY / H) * ny;
+    const r = 10 + Math.random() * 5;
+    const r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        spin[i] = Math.random() < 0.5 ? 1 : -1;
+        age[i] = 0;
+        field[i] *= 0.25;
+      }
+    }
+  });
+
+  function magnetize() {
+    if (!mouse.active) return;
+    const gx = (mouse.x / W) * nx;
+    const gy = (mouse.y / H) * ny;
+    const r = FIELD_RADIUS, r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        const falloff = 1 - Math.sqrt(d2) / r;
+        field[i] = Math.min(6, field[i] + FIELD_STRENGTH * falloff * 0.2);
+      }
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  const STEP_MS = 1000 / 30; // fixed simulation rate, independent of display fps
+  let acc = 0;
+  let last = null;
+  let drift = 0;
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    let dt = ts - last;
+    last = ts;
+    if (dt > 250) dt = 250; // clamp after a tab-switch stall
+    acc += dt;
+
+    while (acc >= STEP_MS) {
+      drift += 1;
+      // temperature breathes across the critical point (~2.269): well
+      // below it the lattice locks into a few huge slow continents, well
+      // above it dissolves into fine simmering static, and the crossing
+      // itself produces domains of every size at once
+      T = 1.55 + (0.5 - 0.5 * Math.cos(drift * 0.00028)) * 1.25;
+      magnetize();
+      sweep(Math.round(nx * ny * 0.55));
+      ageAndDecay();
+      acc -= STEP_MS;
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
