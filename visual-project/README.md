@@ -24,6 +24,29 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-17** — `2026-08-17-harmonic-vespers.html`: a seventeenth
+  technique, and the first with no field, no lattice, no grid, and no swarm
+  at all — a harmonograph, the Victorian drawing toy where two or three
+  pendulums, each swinging on its own axis, are linked to a single pen
+  through nothing but their combined motion. Four oscillator terms, two
+  steering x and two steering y, sum into one point's position every tick;
+  real harmonographs run down as friction eats the swing, so this one is
+  driven instead of merely damped, each amplitude relaxing toward a live
+  baseline that itself breathes slowly rather than toward silence, and each
+  frequency wandering by a slow random walk that drifts the pattern from
+  tight closed n-fold roses, whenever it wanders near a simple ratio, out
+  into denser quasi-periodic weaves that never quite close. Three pens ride
+  the same shared swing with their own small, independently-drifting
+  high-frequency chatter layered on top — the mechanical slop a real
+  three-pen rig would have — so three related but never-identical threads
+  braid and cross rather than tracing one exact line, fading from bright
+  core to twilight indigo-violet-rose-amber as each stroke ages, hue itself
+  reading the instantaneous direction of travel. Move the cursor to bend
+  the frequency ratio and stretch the rosette's aspect toward it; click to
+  strike the frame, a jolt that surges every pendulum's swing and often
+  kicks one frequency to a fresh nearby ratio before it settles back into a
+  new shape. Open the file directly in a browser.
+
 - **2026-07-27** — `2026-07-27-flow-field-bloom.html`: a starfield with particles
   carried through a drifting noise field, drawn as glowing threads that fade
   over time and slowly cycle hue. Move the cursor to bend the flow. Open the

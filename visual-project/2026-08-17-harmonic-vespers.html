@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Harmonic Vespers — Night 17</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #06050b;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="trail"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Harmonic Vespers &mdash; Night 17 &mdash; move to bend the ratio, click to strike the frame</div>
+<script>
+(() => {
+  // A seventeenth technique, and the first with no field, no lattice, no
+  // grid, and no swarm at all — a harmonograph, the Victorian drawing toy
+  // where two or three pendulums, each swinging on its own axis, are linked
+  // to a single pen through nothing but their combined motion. Four
+  // oscillator terms, two steering x and two steering y, sum into one
+  // point's position every tick. Real harmonographs run down as friction
+  // eats the swing; this one is driven rather than merely damped, each
+  // amplitude relaxing toward a live baseline that itself breathes slowly
+  // instead of toward silence, and each frequency wandering by a slow
+  // random walk that drifts the pattern from tight closed n-fold roses,
+  // whenever it wanders near a simple ratio, out into denser quasi-periodic
+  // weaves that never quite close. Three pens ride the same shared swing
+  // with their own small, independently-drifting high-frequency chatter
+  // layered on top — the mechanical slop a real three-pen rig would have —
+  // so three related but never-identical threads braid and cross rather
+  // than tracing one exact line, fading from bright core to twilight
+  // indigo-violet-rose-amber as each stroke ages, hue itself reading the
+  // instantaneous direction of travel. Move the cursor to bend the
+  // frequency ratio and stretch the rosette's aspect toward it; click to
+  // strike the frame, a jolt that surges every pendulum's swing and often
+  // kicks one frequency to a fresh nearby ratio before it settles back into
+  // a new shape. Open the file directly in a browser.
+
+  const trailCanvas = document.getElementById('trail');
+  const glowCanvas = document.getElementById('glow');
+  const trailCtx = trailCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  const TWO_PI = Math.PI * 2;
+
+  let W, H, DPR, cx, cy, maxR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [trailCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    trailCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cx = W / 2;
+    cy = H / 2;
+    maxR = Math.min(W, H) * 0.38;
+    trailCtx.fillStyle = '#06050b';
+    trailCtx.fillRect(0, 0, W, H);
+  }
+
+  // --- the four oscillator terms: two drive x, two drive y ---
+  function makeOsc(freq, ampFrac) {
+    return {
+      freq,
+      freqTarget: freq,
+      phase: Math.random() * TWO_PI,
+      ampFrac,           // fraction of maxR this term relaxes toward
+      ampBoost: 0,       // transient energy added by a click, decays away
+    };
+  }
+
+  const oscX = [makeOsc(0.081, 0.62), makeOsc(0.133, 0.34)];
+  const oscY = [makeOsc(0.104, 0.58), makeOsc(0.176, 0.30)];
+  const allOsc = [...oscX, ...oscY];
+
+  // small "nice" ratios a wandering frequency occasionally gets nudged
+  // toward, so the rosette passes through clean closed forms on its way
+  // between denser, never-quite-repeating weaves
+  const NICE_RATIOS = [2 / 3, 3 / 4, 3 / 5, 4 / 5, 5 / 6, 5 / 7, 2 / 5, 4 / 7];
+  const FREQ_MIN = 0.045, FREQ_MAX = 0.34;
+
+  function retarget(o, reference) {
+    if (Math.random() < 0.5 && reference) {
+      const ratio = NICE_RATIOS[(Math.random() * NICE_RATIOS.length) | 0];
+      o.freqTarget = Math.min(FREQ_MAX, Math.max(FREQ_MIN, reference.freq * ratio));
+    } else {
+      o.freqTarget = FREQ_MIN + Math.random() * (FREQ_MAX - FREQ_MIN);
+    }
+  }
+
+  let sinceRetarget = 0;
+
+  // --- three pens: same shared swing, each with its own small independent
+  // high-frequency chatter standing in for a real rig's mechanical slop ---
+  const PENS = [0, 1, 2].map((k) => ({
+    hueOffset: k * 46,
+    alpha: k === 0 ? 0.85 : 0.55,
+    width: k === 0 ? 1.6 : 1.1,
+    chatterX: { freq: 0.7 + Math.random() * 0.6, target: 0.7 + Math.random() * 0.6, phase: Math.random() * TWO_PI, amp: 6 + Math.random() * 10 },
+    chatterY: { freq: 0.7 + Math.random() * 0.6, target: 0.7 + Math.random() * 0.6, phase: Math.random() * TWO_PI, amp: 6 + Math.random() * 10 },
+    px: null,
+    py: null,
+  }));
+
+  let breathe = 0;      // slow phase driving the shared amplitude baseline
+  let aspectX = 1, aspectY = 1;   // cursor-driven elongation
+  let ratioBiasX = 0, ratioBiasY = 0; // cursor-driven frequency nudge
+
+  function stepChatter(c, dt) {
+    c.freq += (c.target - c.freq) * 0.4 * dt + (Math.random() - 0.5) * 0.05 * dt;
+    c.phase += c.freq * TWO_PI * dt;
+    if (Math.random() < 0.002) c.target = 0.5 + Math.random() * 1.2;
+  }
+
+  function stepOsc(o, dt, biasTarget) {
+    o.freqTarget = Math.min(FREQ_MAX, Math.max(FREQ_MIN, o.freqTarget + biasTarget));
+    o.freq += (o.freqTarget - o.freq) * 0.12 * dt + (Math.random() - 0.5) * 0.006 * dt;
+    o.freq = Math.min(FREQ_MAX, Math.max(FREQ_MIN, o.freq));
+    o.phase += o.freq * TWO_PI * dt;
+    o.ampBoost *= Math.pow(0.15, dt); // fast exponential decay back to baseline
+  }
+
+  function ampOf(o, aspect) {
+    const base = o.ampFrac * maxR * (0.72 + 0.28 * Math.sin(breathe + o.freq * 11));
+    return (base + o.ampBoost) * aspect;
+  }
+
+  function step(dt) {
+    breathe += 0.00035 * dt;
+    sinceRetarget += dt;
+    if (sinceRetarget > 22 + Math.random() * 26) {
+      sinceRetarget = 0;
+      const which = allOsc[(Math.random() * allOsc.length) | 0];
+      retarget(which, allOsc[(Math.random() * allOsc.length) | 0]);
+    }
+
+    stepOsc(oscX[0], dt, ratioBiasX * 0.02 * dt);
+    stepOsc(oscX[1], dt, ratioBiasX * 0.014 * dt);
+    stepOsc(oscY[0], dt, ratioBiasY * 0.02 * dt);
+    stepOsc(oscY[1], dt, ratioBiasY * 0.014 * dt);
+
+    const x = cx +
+      Math.sin(oscX[0].phase) * ampOf(oscX[0], aspectX) +
+      Math.sin(oscX[1].phase) * ampOf(oscX[1], aspectX);
+    const y = cy +
+      Math.sin(oscY[0].phase) * ampOf(oscY[0], aspectY) +
+      Math.sin(oscY[1].phase) * ampOf(oscY[1], aspectY);
+
+    const heads = [];
+    for (const pen of PENS) {
+      stepChatter(pen.chatterX, dt);
+      stepChatter(pen.chatterY, dt);
+      const px = x + Math.sin(pen.chatterX.phase) * pen.chatterX.amp;
+      const py = y + Math.sin(pen.chatterY.phase) * pen.chatterY.amp;
+
+      if (pen.px !== null) {
+        const dx = px - pen.px, dy = py - pen.py;
+        const angle = Math.atan2(dy, dx);
+        const t = (Math.sin(angle) + 1) / 2; // 0..1 sweep through the twilight gradient
+        trailCtx.strokeStyle = twilightColor(t, pen.hueOffset, pen.alpha);
+        trailCtx.lineWidth = pen.width;
+        trailCtx.lineCap = 'round';
+        trailCtx.beginPath();
+        trailCtx.moveTo(pen.px, pen.py);
+        trailCtx.lineTo(px, py);
+        trailCtx.stroke();
+      }
+      pen.px = px;
+      pen.py = py;
+      heads.push({ x: px, y: py, hue: pen.hueOffset });
+    }
+    return heads;
+  }
+
+  // deep indigo -> violet -> rose -> amber -> pale gold, a twilight sweep
+  const STOPS = [
+    [10, 8, 30], [70, 30, 120], [190, 60, 130], [230, 110, 70], [255, 205, 150],
+  ];
+  function twilightColor(t, hueOffset, alpha) {
+    const tt = ((t + hueOffset / 360) % 1 + 1) % 1;
+    const n = STOPS.length - 1;
+    const f = tt * n;
+    const i = Math.min(n - 1, f | 0);
+    const frac = f - i;
+    const a = STOPS[i], b = STOPS[i + 1];
+    const r = a[0] + (b[0] - a[0]) * frac;
+    const g = a[1] + (b[1] - a[1]) * frac;
+    const bl = a[2] + (b[2] - a[2]) * frac;
+    return `rgba(${r | 0}, ${g | 0}, ${bl | 0}, ${alpha})`;
+  }
+
+  function render(heads) {
+    // gentle overall fade so the archive of strokes ages toward black
+    trailCtx.fillStyle = 'rgba(6, 5, 11, 0.012)';
+    trailCtx.fillRect(0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.globalCompositeOperation = 'lighter';
+    for (const h of heads) {
+      const grad = glowCtx.createRadialGradient(h.x, h.y, 0, h.x, h.y, 16);
+      grad.addColorStop(0, 'rgba(255, 240, 225, 0.9)');
+      grad.addColorStop(1, 'rgba(255, 240, 225, 0)');
+      glowCtx.fillStyle = grad;
+      glowCtx.beginPath();
+      glowCtx.arc(h.x, h.y, 16, 0, TWO_PI);
+      glowCtx.fill();
+    }
+    glowCtx.restore();
+  }
+
+  // --- cursor bends the frequency ratio and the aspect; click strikes the frame ---
+  let mouse = { active: false };
+  window.addEventListener('pointermove', (e) => {
+    const nx = e.clientX / W - 0.5;
+    const ny = e.clientY / H - 0.5;
+    ratioBiasX = nx;
+    ratioBiasY = -ny;
+    aspectX = 1 + ny * 0.35;
+    aspectY = 1 - ny * 0.35 + nx * 0.1;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => {
+    ratioBiasX = 0;
+    ratioBiasY = 0;
+    aspectX = 1;
+    aspectY = 1;
+    mouse.active = false;
+  });
+  window.addEventListener('pointerdown', () => {
+    for (const o of allOsc) o.ampBoost += maxR * (0.18 + Math.random() * 0.12);
+    const struck = allOsc[(Math.random() * allOsc.length) | 0];
+    retarget(struck, allOsc[(Math.random() * allOsc.length) | 0]);
+    sinceRetarget = 0;
+  });
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  const STEP_MS = 1000 / 60; // fine sim rate so the traced curve stays smooth
+  let acc = 0;
+  let last = null;
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    let dtMs = ts - last;
+    last = ts;
+    if (dtMs > 250) dtMs = 250; // clamp after a tab-switch stall
+    acc += dtMs;
+
+    let heads = null;
+    while (acc >= STEP_MS) {
+      heads = step(STEP_MS / 1000);
+      acc -= STEP_MS;
+    }
+    if (heads) render(heads);
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
