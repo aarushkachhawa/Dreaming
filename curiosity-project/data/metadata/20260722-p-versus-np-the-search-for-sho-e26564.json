@@ -1,0 +1,14 @@
+{
+  "id": "20260722-p-versus-np-the-search-for-sho-e26564",
+  "date": "2026-07-22T10:11:41.777234",
+  "title": "P versus NP: The Search for Shortcuts",
+  "question": "Why is it so much easier to check a solution than to find one, and is that gap fundamental or just a failure of imagination?",
+  "summary": "A tour of the most important open problem in computer science: whether every problem whose solution can be quickly verified can also be quickly solved, and why a trillion dollars, a proof technique drought, and the security of the internet all hinge on the answer.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "complexity-theory",
+    "cryptography",
+    "p-vs-np"
+  ]
+}
