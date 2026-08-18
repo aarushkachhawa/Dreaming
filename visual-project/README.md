@@ -24,6 +24,29 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-18** — `2026-08-18-elective-affinities.html`: an eighteenth
+  technique, and the first governed by a law between kinds rather than one
+  universal rule. Thirteen hundred particles split into six species, and
+  every ordered pair of species carries its own signed number in a 6x6
+  affinity matrix — how strongly species A is drawn to species B, which
+  need not equal how B feels about A. Every particle always repels anything
+  closer than a short core radius, which is what keeps the swarm from
+  collapsing to a point; past that core, force ramps from the matrix's
+  signed value back to zero at the edge of a finite interaction radius, so
+  affinity only speaks at conversational range. The asymmetry is the whole
+  effect: one-sided craving produces chase-and-flee spirals, and mutual
+  liking condenses into drifting anemone-like colonies with trailing
+  tendrils of their constituent colors, a comet-bright core where the
+  densest crowding happens. The world wraps at its edges, a flat torus with
+  no walls to lean on, and a few entries of the matrix drift by a small
+  random walk every frame, so alliances that hold for a while quietly sour,
+  and rivalries soften, over the course of minutes. Move the cursor to
+  gather every species toward it at once, straining the six-way truce;
+  click to tear up the matrix entirely and write a fresh set of
+  relationships, which usually dissolves every existing colony and grows a
+  completely different society from the same soup. Open the file directly
+  in a browser.
+
 - **2026-08-17** — `2026-08-17-harmonic-vespers.html`: a seventeenth
   technique, and the first with no field, no lattice, no grid, and no swarm
   at all — a harmonograph, the Victorian drawing toy where two or three

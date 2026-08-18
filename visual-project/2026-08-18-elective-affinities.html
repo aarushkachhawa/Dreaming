@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Elective Affinities — Night 18</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #06060b;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Elective Affinities &mdash; Night 18 &mdash; move to gather, click to rewrite the law</div>
+<script>
+(() => {
+  // An eighteenth technique, and the first governed by a law between kinds
+  // rather than a single universal rule. Night 5's gravity pulled every
+  // mass the same way; night 8's boids all obeyed the same three local
+  // rules; night 3's physarum sensed one shared trail field. Here, thirteen
+  // hundred particles are split into six species, and every ordered pair
+  // of species carries its own signed number in a 6x6 affinity matrix — how
+  // strongly species A is drawn to (or repelled by) species B, which need
+  // not equal how B feels about A. A craving B while B recoils from A is
+  // exactly what produces the chase-and-flee spirals and orbiting
+  // satellite clusters this kind of simulation is known for, sometimes
+  // called particle life. Every pair closer than a short core radius always
+  // repels, regardless of species, which is what keeps the system from
+  // collapsing into a point; past that core, the force ramps from the
+  // matrix's signed value back down to zero at the edge of a finite
+  // interaction radius, so alliance and rivalry only matter at
+  // conversational range, never at a distance. The world wraps at its
+  // edges, a flat torus with no walls to lean on. A few entries of the
+  // matrix drift by a small random walk every frame, so alliances that hold
+  // for a while quietly sour, and rivalries soften, over the course of
+  // minutes. Move the cursor to gather every species toward it at once,
+  // straining the six-way truce; click to tear up the matrix entirely and
+  // write a fresh set of relationships, which is usually enough to dissolve
+  // every existing cluster and grow a completely different society from
+  // the same soup. Open the file directly in a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  let W, H, DPR;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  // --- species and their affinities ---
+  const S = 6;
+  const COLORS = [
+    [90, 224, 200],   // teal
+    [255, 108, 96],   // coral
+    [176, 120, 240],  // violet
+    [244, 186, 84],   // amber
+    [104, 128, 246],  // indigo
+    [140, 232, 150],  // mint
+  ];
+
+  let M = new Float32Array(S * S);
+  function reseedMatrix() {
+    for (let i = 0; i < S * S; i++) M[i] = Math.random() * 2 - 1;
+  }
+  reseedMatrix();
+
+  function driftMatrix() {
+    for (let k = 0; k < 3; k++) {
+      const idx = (Math.random() * S * S) | 0;
+      let v = M[idx] + (Math.random() - 0.5) * 0.012;
+      if (v > 1) v = 1; else if (v < -1) v = -1;
+      M[idx] = v;
+    }
+  }
+
+  // --- particles ---
+  const PER_SPECIES = 220;
+  const N = PER_SPECIES * S;
+  const px = new Float32Array(N), py = new Float32Array(N);
+  const vx = new Float32Array(N), vy = new Float32Array(N);
+  const spid = new Uint8Array(N);
+
+  function initParticles() {
+    for (let i = 0; i < N; i++) {
+      px[i] = Math.random() * W;
+      py[i] = Math.random() * H;
+      vx[i] = 0;
+      vy[i] = 0;
+      spid[i] = (i / PER_SPECIES) | 0;
+    }
+  }
+
+  const R = 70, R2 = R * R;
+  const BETA = 0.3;
+  const FORCE_SCALE = 0.34;
+  const FRICTION = 0.84;
+  const MAX_SPEED = 4.0;
+
+  const cellSize = R;
+  let gridCols, gridRows, grid;
+
+  function rebuildGrid() {
+    gridCols = Math.max(3, Math.ceil(W / cellSize));
+    gridRows = Math.max(3, Math.ceil(H / cellSize));
+    const cells = gridCols * gridRows;
+    if (!grid || grid.length !== cells) {
+      grid = new Array(cells);
+      for (let i = 0; i < cells; i++) grid[i] = [];
+    } else {
+      for (let i = 0; i < cells; i++) grid[i].length = 0;
+    }
+    for (let i = 0; i < N; i++) {
+      let cx = (px[i] / cellSize) | 0;
+      let cy = (py[i] / cellSize) | 0;
+      if (cx >= gridCols) cx = gridCols - 1;
+      if (cy >= gridRows) cy = gridRows - 1;
+      grid[cy * gridCols + cx].push(i);
+    }
+  }
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', () => reseedMatrix());
+
+  const GATHER_R = 240, GATHER_R2 = GATHER_R * GATHER_R;
+  const GATHER_STRENGTH = 0.16;
+
+  function simulate() {
+    driftMatrix();
+    rebuildGrid();
+
+    const pointerActive = pointer.active;
+    const halfW = W / 2, halfH = H / 2;
+
+    for (let i = 0; i < N; i++) {
+      const x = px[i], y = py[i];
+      const si = spid[i];
+      let cx = (x / cellSize) | 0;
+      let cy = (y / cellSize) | 0;
+      if (cx >= gridCols) cx = gridCols - 1;
+      if (cy >= gridRows) cy = gridRows - 1;
+
+      let ax = 0, ay = 0;
+
+      for (let oy = -1; oy <= 1; oy++) {
+        const gy = (cy + oy + gridRows) % gridRows;
+        for (let ox = -1; ox <= 1; ox++) {
+          const gx = (cx + ox + gridCols) % gridCols;
+          const bucket = grid[gy * gridCols + gx];
+          for (let k = 0; k < bucket.length; k++) {
+            const j = bucket[k];
+            if (j === i) continue;
+            // dx/dy point from i toward its neighbor, so a positive force
+            // (attraction) pulls i along +dx/+dy and a negative force
+            // (repulsion) pushes it the other way
+            let dx = px[j] - x;
+            let dy = py[j] - y;
+            if (dx > halfW) dx -= W; else if (dx < -halfW) dx += W;
+            if (dy > halfH) dy -= H; else if (dy < -halfH) dy += H;
+            const d2 = dx * dx + dy * dy;
+            if (d2 > R2 || d2 < 1e-6) continue;
+
+            const d = Math.sqrt(d2);
+            const rn = d / R;
+            let f;
+            if (rn < BETA) {
+              f = rn / BETA - 1;
+            } else {
+              const mij = M[si * S + spid[j]];
+              f = mij * (1 - Math.abs(2 * rn - 1 - BETA) / (1 - BETA));
+            }
+            ax += (dx / d) * f;
+            ay += (dy / d) * f;
+          }
+        }
+      }
+
+      ax *= FORCE_SCALE;
+      ay *= FORCE_SCALE;
+
+      if (pointerActive) {
+        const dx = pointer.x - x, dy = pointer.y - y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < GATHER_R2) {
+          const d = Math.sqrt(d2) + 1e-6;
+          const k = (1 - d / GATHER_R) * GATHER_STRENGTH;
+          ax += (dx / d) * k;
+          ay += (dy / d) * k;
+        }
+      }
+
+      let nvx = (vx[i] + ax) * FRICTION;
+      let nvy = (vy[i] + ay) * FRICTION;
+      const speed = Math.hypot(nvx, nvy);
+      if (speed > MAX_SPEED) {
+        nvx = (nvx / speed) * MAX_SPEED;
+        nvy = (nvy / speed) * MAX_SPEED;
+      }
+      vx[i] = nvx;
+      vy[i] = nvy;
+
+      let nx = x + nvx, ny = y + nvy;
+      nx = ((nx % W) + W) % W;
+      ny = ((ny % H) + H) % H;
+      px[i] = nx;
+      py[i] = ny;
+    }
+  }
+
+  function render() {
+    ctx.fillStyle = 'rgba(6, 6, 11, 0.16)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < N; i++) {
+      const c = COLORS[spid[i]];
+      const speed = Math.hypot(vx[i], vy[i]);
+      const alpha = 0.44 + Math.min(0.34, speed * 0.09);
+      const x = px[i], y = py[i];
+
+      ctx.fillStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${(alpha * 0.16).toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 3.6, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(${c[0]}, ${c[1]}, ${c[2]}, ${alpha.toFixed(3)})`;
+      ctx.beginPath();
+      ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    if (pointer.active) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, GATHER_R, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  initParticles();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
