@@ -24,6 +24,34 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-19** — `2026-08-19-thermal-groove.html`: a nineteenth technique,
+  and the first drawn from computational geometry rather than a field, a
+  swarm, a force law, an automaton, a grammar, or a coupled-oscillator
+  lattice. Thirty seed points tile the screen as a power diagram — a
+  weighted Voronoi tessellation where a pixel belongs to whichever seed
+  minimizes squared distance minus that seed's own signed weight, so a
+  cell can grow or shrink by adjusting a number rather than moving.
+  Every frame counts how many neighbors border each cell and nudges its
+  weight by the von Neumann-Mullins law, dA/dt proportional to (n - 6):
+  a cell with fewer than six sides is statistically doomed to lose
+  territory, a cell with more than six gains it, the same rule that
+  governs how real annealed metal and a glass of beer's foam both
+  coarsen into fewer, larger cells over time. When a cell's territory
+  closes to nothing, that seed is reborn as a fresh nucleus inside
+  whichever grain is currently largest — recrystallization, the way a
+  new grain seeds itself inside an old one under enough strain. Interiors
+  stay dark, jewel-deep color drawn from a fixed mineral palette; only
+  the seams glow warm gold, standing in for the thermal groove real
+  grain boundaries etch into a polished surface, and a newborn nucleus
+  flashes white before settling into its color. The growth rate itself
+  breathes slowly over minutes, sliding the lattice between a calm
+  simmer of many small grains and an aggressive sweep toward a few
+  giants. Move the cursor to warm a region, locally accelerating
+  boundary migration the way a torch speeds recrystallization; click to
+  force a fresh nucleus into existence wherever the weakest current
+  grain stands, tearing up whatever was there. Open the file directly in
+  a browser.
+
 - **2026-08-18** — `2026-08-18-elective-affinities.html`: an eighteenth
   technique, and the first governed by a law between kinds rather than one
   universal rule. Thirteen hundred particles split into six species, and

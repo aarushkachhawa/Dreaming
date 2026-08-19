@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Thermal Groove — Night 19</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Thermal Groove &mdash; Night 19 &mdash; move to warm a region, click to nucleate a grain</div>
+<script>
+(() => {
+  // A nineteenth technique, and the first drawn from computational geometry
+  // rather than a field, a swarm, a force law, an automaton, a grammar, or
+  // a coupled-oscillator lattice. This is a power diagram — a weighted
+  // Voronoi tessellation where every one of thirty seed points carries not
+  // just a position but a signed weight, and ownership of a pixel goes to
+  // whichever seed minimizes |p - seed|^2 - weight, not simply the nearest
+  // seed. Raising a seed's weight lets it claim territory from its
+  // neighbors without moving; this is exactly the mechanism real
+  // polycrystals and soap froths use to coarsen. Each frame counts how many
+  // other cells border each cell (its topological degree) and nudges every
+  // weight by the von Neumann-Mullins law, dA/dt proportional to (n - 6):
+  // a cell with fewer than six neighbors is doomed to lose area and a cell
+  // with more than six gains it, the same statistic that governs grain
+  // growth in slowly-annealed metal and the coarsening of a beer's foam.
+  // When a cell's territory closes to nothing it has topologically
+  // vanished (a T2 event); its seed is reborn inside whatever cell is
+  // currently largest, a fresh nucleus the way recrystallization seeds a
+  // new grain inside an old one. Cell interiors stay dark, jewel-deep
+  // colors; only the seams glow, standing in for the thermal groove real
+  // grain boundaries etch into a polished, annealed surface. Move the
+  // cursor to warm a region, locally boosting growth the way a torch
+  // speeds recrystallization; click to force a fresh nucleus into
+  // existence wherever the weakest current grain stands, a flash marking
+  // the birth. Open the file directly in a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const lowCanvas = document.createElement('canvas');
+  const lowCtx = lowCanvas.getContext('2d');
+
+  let W, H, cols, rows, CELL, owner, imgData, data;
+
+  const TARGET_CELLS = 18000;
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    CELL = Math.max(4, Math.sqrt((W * H) / TARGET_CELLS));
+    cols = Math.max(20, Math.ceil(W / CELL));
+    rows = Math.max(14, Math.ceil(H / CELL));
+
+    lowCanvas.width = cols;
+    lowCanvas.height = rows;
+    owner = new Int32Array(cols * rows);
+    imgData = lowCtx.createImageData(cols, rows);
+    data = imgData.data;
+  }
+
+  // --- seeds ---
+  const N = 30;
+  const sx = new Float64Array(N), sy = new Float64Array(N);
+  const weight = new Float64Array(N);
+  const hueR = new Uint8Array(N), hueG = new Uint8Array(N), hueB = new Uint8Array(N);
+  const birth = new Float64Array(N);
+  const lastGX = new Int32Array(N), lastGY = new Int32Array(N);
+  const area = new Int32Array(N);
+  const adj = new Uint8Array(N * N);
+
+  const PALETTE = [
+    [70, 130, 235],   // sapphire
+    [70, 205, 145],   // emerald
+    [225, 80, 95],    // ruby
+    [235, 185, 65],   // citrine
+    [175, 105, 225],  // amethyst
+    [90, 225, 215],   // aquamarine
+    [235, 145, 65],   // topaz
+  ];
+
+  let frameCount = 0;
+  let UNIT = 1000;
+
+  function spawnSeed(i, x, y, w) {
+    sx[i] = x; sy[i] = y;
+    weight[i] = w;
+    const c = PALETTE[(Math.random() * PALETTE.length) | 0];
+    hueR[i] = c[0]; hueG[i] = c[1]; hueB[i] = c[2];
+    birth[i] = frameCount;
+    lastGX[i] = (x / CELL) | 0;
+    lastGY[i] = (y / CELL) | 0;
+    area[i] = 0;
+  }
+
+  function initSeeds() {
+    for (let i = 0; i < N; i++) {
+      spawnSeed(i, Math.random() * W, Math.random() * H, 0);
+    }
+  }
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    let minA = Infinity, minI = 0;
+    for (let i = 0; i < N; i++) {
+      if (area[i] < minA) { minA = area[i]; minI = i; }
+    }
+    spawnSeed(minI, e.clientX, e.clientY, UNIT * 0.6);
+  });
+
+  const HEAT_R = 170, HEAT_R2 = HEAT_R * HEAT_R;
+  const DRIFT = 0.12;
+  const MIN_AGE_TO_DIE = 45;
+  const BASE_GROWTH = 0.0016;
+  const FLASH_FRAMES = 42;
+  let growthPhase = Math.random() * Math.PI * 2;
+
+  function simulate() {
+    frameCount++;
+    growthPhase += 0.0009;
+    const growthRate = BASE_GROWTH * (0.5 + 0.5 * Math.sin(growthPhase));
+    UNIT = (W * H) / N / Math.PI;
+    const BAND = CELL * 1.6;
+
+    area.fill(0);
+    adj.fill(0);
+
+    const halfW = W / 2, halfH = H / 2;
+    const leadR = 255, leadG = 228, leadB = 178;
+
+    for (let gy = 0; gy < rows; gy++) {
+      const py = gy * CELL + CELL * 0.5;
+      const rowBase = gy * cols;
+      for (let gx = 0; gx < cols; gx++) {
+        const px = gx * CELL + CELL * 0.5;
+        let best = 0, bestD2 = Infinity, second = Infinity;
+
+        for (let i = 0; i < N; i++) {
+          let dx = px - sx[i];
+          let dy = py - sy[i];
+          if (dx > halfW) dx -= W; else if (dx < -halfW) dx += W;
+          if (dy > halfH) dy -= H; else if (dy < -halfH) dy += H;
+          const d2 = dx * dx + dy * dy - weight[i];
+          if (d2 < bestD2) {
+            second = bestD2;
+            bestD2 = d2;
+            best = i;
+          } else if (d2 < second) {
+            second = d2;
+          }
+        }
+
+        const idx = rowBase + gx;
+        owner[idx] = best;
+        area[best]++;
+        lastGX[best] = gx;
+        lastGY[best] = gy;
+
+        if (gx > 0) {
+          const lo = owner[idx - 1];
+          if (lo !== best) { adj[best * N + lo] = 1; adj[lo * N + best] = 1; }
+        }
+        if (gy > 0) {
+          const to = owner[idx - cols];
+          if (to !== best) { adj[best * N + to] = 1; adj[to * N + best] = 1; }
+        }
+
+        const d1 = Math.sqrt(Math.max(bestD2, 0));
+        const gap = second - bestD2;
+        const edgeFactor = Math.max(0, Math.min(1, 1 - gap / (2 * d1 * BAND + 1)));
+
+        const rNorm = d1 / Math.sqrt(UNIT);
+        let bright = 0.22 + 0.30 * Math.exp(-rNorm * 1.3);
+
+        let r = hueR[best] * bright;
+        let g = hueG[best] * bright;
+        let b = hueB[best] * bright;
+
+        r += (leadR - r) * edgeFactor * 0.85;
+        g += (leadG - g) * edgeFactor * 0.85;
+        b += (leadB - b) * edgeFactor * 0.85;
+
+        const age = frameCount - birth[best];
+        if (age < FLASH_FRAMES) {
+          const flash = 1 - age / FLASH_FRAMES;
+          r += (255 - r) * flash;
+          g += (255 - g) * flash;
+          b += (255 - b) * flash;
+        }
+
+        const cIdx = idx * 4;
+        data[cIdx] = r;
+        data[cIdx + 1] = g;
+        data[cIdx + 2] = b;
+        data[cIdx + 3] = 255;
+      }
+    }
+
+    const heatActive = pointer.active;
+
+    for (let i = 0; i < N; i++) {
+      let n = 0;
+      const base = i * N;
+      for (let j = 0; j < N; j++) if (adj[base + j]) n++;
+
+      let dW = (n - 6) * UNIT * growthRate;
+
+      if (heatActive) {
+        let dx = pointer.x - sx[i];
+        let dy = pointer.y - sy[i];
+        if (dx > halfW) dx -= W; else if (dx < -halfW) dx += W;
+        if (dy > halfH) dy -= H; else if (dy < -halfH) dy += H;
+        const d2p = dx * dx + dy * dy;
+        if (d2p < HEAT_R2) {
+          const k = 1 - Math.sqrt(d2p) / HEAT_R;
+          dW += k * UNIT * 0.05;
+        }
+      }
+      weight[i] += dW;
+
+      sx[i] = ((sx[i] + (Math.random() - 0.5) * DRIFT) % W + W) % W;
+      sy[i] = ((sy[i] + (Math.random() - 0.5) * DRIFT) % H + H) % H;
+
+      const age = frameCount - birth[i];
+      if (age > MIN_AGE_TO_DIE && area[i] === 0) {
+        let maxA = -1, maxI = (i + 1) % N;
+        for (let k = 0; k < N; k++) {
+          if (k !== i && area[k] > maxA) { maxA = area[k]; maxI = k; }
+        }
+        const jitter = CELL * 4;
+        const nx = (((lastGX[maxI] * CELL) + (Math.random() - 0.5) * jitter) % W + W) % W;
+        const ny = (((lastGY[maxI] * CELL) + (Math.random() - 0.5) * jitter) % H + H) % H;
+        spawnSeed(i, nx, ny, UNIT * 0.35);
+      }
+    }
+  }
+
+  function render() {
+    lowCtx.putImageData(imgData, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(lowCanvas, 0, 0, cols, rows, 0, 0, W, H);
+
+    if (pointer.active) {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 220, 160, 0.10)';
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, HEAT_R, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  initSeeds();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
