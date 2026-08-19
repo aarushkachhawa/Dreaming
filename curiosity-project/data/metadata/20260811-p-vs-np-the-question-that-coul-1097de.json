@@ -1,0 +1,14 @@
+{
+  "id": "20260811-p-vs-np-the-question-that-coul-1097de",
+  "date": "2026-08-11T10:16:50.544938",
+  "title": "P vs NP: The Question That Could Break Cryptography",
+  "question": "Is every problem whose solution can be quickly checked also a problem that can be quickly solved?",
+  "summary": "A tour of computer science's most famous open problem \u2014 why it is so hard to answer, what it would mean if solved either way, and why so much of the modern world quietly depends on the answer being no.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "complexity-theory",
+    "cryptography",
+    "logic"
+  ]
+}
