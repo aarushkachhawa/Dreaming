@@ -1,0 +1,48 @@
+{
+  "id": "20260817-the-ship-of-theseus-and-the-pu-15f1d6",
+  "date": "2026-08-17T10:19:19.628047",
+  "title": "The Ship of Theseus and the Puzzle of Persistent Identity",
+  "question": "If every part of something is gradually replaced, is it still the same thing \u2014 and if you are made of different atoms than you were a decade ago, are you still you?",
+  "summary": "An ancient thought experiment about a ship rebuilt plank by plank turns out to be a live problem for biology, law, and personal identity: what makes something 'the same' over time isn't its material at all, but some pattern, continuity, or story we choose to track.",
+  "content": "\n<p>Plutarch describes a ship that the Athenians kept in the harbor as a memorial, replacing its rotting planks one by one as the years passed, until, plank by plank, nothing of the original timber remained. Is it still the ship of Theseus? Most people's intuition says yes \u2014 it's the same ship, just maintained. But philosophers added a twist: suppose someone collected every discarded plank and reassembled them, in their original arrangement, into a second ship. Now there are two candidates. Which one \u2014 if either \u2014 is the \"real\" ship of Theseus? The puzzle isn't really about ships. It's about what makes anything the same thing over time, when both its matter and its parts are constantly changing.</p>\n\n<h2>This Isn't Just a Puzzle About Boats</h2>\n<p>The human body replaces most of its cells on a rolling basis \u2014 skin every few weeks, the lining of the gut every few days, red blood cells every few months, and even much of the skeleton over roughly a decade. The specific atoms making up your body today are, to a significant extent, not the same atoms that made it up ten years ago. Yet you consider yourself the same person who existed then \u2014 same name, same memories (mostly), same sense of being a continuous \"I.\" What is doing the identity-preserving work, if not the material itself? Software offers an even starker version: is an app \"the same\" after every line of its original code has been rewritten across updates, if the name, purpose, and user base persist? Companies, rivers, languages, and nations face structurally identical questions.</p>\n\n<h2>Competing Answers</h2>\n<p>Philosophers have proposed several different criteria for what \"sameness over time\" actually tracks, and they don't all agree. A materialist answer says identity requires continuity of the same physical stuff \u2014 which fails immediately for the ship, the body, and the software, since all of them swap out their matter entirely. A structural or pattern-based answer says what matters isn't the material but the arrangement and organization being preserved through the replacement process \u2014 the ship counts as the same ship because each new plank slots into the same functional role as the one it replaced, in unbroken continuity. A psychological-continuity answer, favored by philosophers like Derek Parfit for personal identity specifically, locates the \"self\" not in the body's matter but in an overlapping chain of memories, intentions, and personality traits linking each moment to the next \u2014 you are \"the same person\" you were yesterday because today's you causally and psychologically connects to yesterday's, even though tomorrow's you may connect only weakly to the you of thirty years ago.</p>\n\n<h2>Where It Gets Genuinely Practical</h2>\n<p>These aren't just abstract puzzles. Legal systems constantly need workable answers: a corporation that has replaced every employee, product line, and building over decades is still bound by contracts it signed at founding. Courts treat rivers as the same legal entity even as every molecule of water passes through and out. Parfit used the continuity framework to argue that we should worry less about death than we intuitively do, since the \"self\" that survives from moment to moment is already a matter of degree and overlapping connection rather than an all-or-nothing metaphysical fact \u2014 a claim that reshapes how much weight personal identity should bear in ethics.</p>\n\n<h2>Why This Still Matters</h2>\n<p>The ship of Theseus resists a clean answer because it exposes a hidden assumption: that \"sameness\" is a single, well-defined relationship rather than several different, sometimes conflicting things we care about \u2014 material continuity, functional continuity, and narrative continuity \u2014 that happen to usually travel together but can, under gradual or radical replacement, come apart. Once they come apart, the question \"is it still the same thing?\" stops having one right answer and starts depending on which kind of sameness you were actually asking about.</p>\n",
+  "tags": [
+    "philosophy",
+    "metaphysics",
+    "identity",
+    "ethics",
+    "logic"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophical Perspective",
+      "description": "Different metaphysical theories of identity \u2014 material, structural/pattern-based, and psychological continuity \u2014 give different, sometimes conflicting verdicts on the same case."
+    },
+    {
+      "title": "Biological Perspective",
+      "description": "The body's near-total cellular and molecular turnover over a decade makes material continuity an unworkable basis for identity, pushing toward functional or organizational continuity instead."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Courts and contracts need pragmatic, workable rules for corporate, personal, and institutional identity that sidestep the metaphysics entirely by focusing on continuity of function and record."
+    },
+    {
+      "title": "Ethical Perspective",
+      "description": "Derek Parfit argued that treating personal identity as a matter of degree, rather than all-or-nothing, should change how much moral weight we place on future and past selves."
+    }
+  ],
+  "connections": [
+    "Personal identity and Derek Parfit's psychological continuity theory",
+    "The paradox of the heap (Sorites paradox) and vagueness",
+    "Teletransportation thought experiments and split-brain cases",
+    "Corporate personhood and legal continuity",
+    "Cellular turnover and the biology of the human body",
+    "Software versioning and the identity of evolving systems",
+    "Buddhist philosophy's rejection of a fixed, unchanging self"
+  ],
+  "openQuestions": [
+    "If two objects can both have equal claim to being the 'original,' does that mean identity over time is not a fact of the world but a choice of description?",
+    "Does psychological continuity actually solve the problem, or does it just relocate the same puzzle from matter to memory?",
+    "Should moral and legal responsibility track material, functional, or psychological continuity when they diverge \u2014 as in severe amnesia or personality change?",
+    "Is there a principled reason to prefer one theory of identity over another, or are they all just different useful fictions for different purposes?"
+  ]
+}
