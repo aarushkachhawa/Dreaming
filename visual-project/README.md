@@ -24,6 +24,30 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-20** — `2026-08-20-catenary-mend.html`: a twentieth technique,
+  and the first built from constraint dynamics rather than a field, a
+  swarm, a force law between particles, an automaton, a grammar, a
+  coupled-oscillator lattice, or a weighted tessellation — position-based
+  dynamics, the recipe real-time cloth, rope, and ragdoll physics use:
+  Verlet integration for motion, then a fixed number of passes iteratively
+  nudging every point back toward "stay this far from your neighbor."
+  Seven anchors ring an unseen frame; from a shared hub, seven spoke
+  chains of rigid links reach each anchor, and four rings of the same
+  links stitch adjacent spokes together at matching radii, an orb web's
+  capture spiral. Nothing computes a sag curve directly — gravity pulls
+  every free joint down each frame, the constraint solver pulls it back
+  to its neighbors' fixed distance, and the compromise between those two,
+  repeated, is a catenary the physics discovers rather than one anybody
+  drew. Wind is a single slowly wandering direction and a magnitude that
+  breathes between calm and gusty over minutes, felt more by the outer,
+  longer-lever silk than by the sheltered hub. Dew catches slow per-point
+  light along every strand, cooling and warming out of phase with itself.
+  Move the cursor to raise a gust that bends the nearest silk; click near
+  any strand to cut it — the two loose ends swing free on whatever
+  constraints remain — and the spider, resting at the hub, notices, walks
+  the web to the break, and spins the strand whole again, flashing warm
+  at the mend. Open the file directly in a browser.
+
 - **2026-08-19** — `2026-08-19-thermal-groove.html`: a nineteenth technique,
   and the first drawn from computational geometry rather than a field, a
   swarm, a force law, an automaton, a grammar, or a coupled-oscillator

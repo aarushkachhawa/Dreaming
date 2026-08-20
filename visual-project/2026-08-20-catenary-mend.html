@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Catenary Mend — Night 20</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Catenary Mend &mdash; Night 20 &mdash; move to stir the wind, click a strand to cut it and wait for the spider to mend it</div>
+<script>
+(() => {
+  // A twentieth technique, and the first built from constraint dynamics
+  // rather than a field, a swarm, a force law between particles, an
+  // automaton, a grammar, a coupled-oscillator lattice, or a weighted
+  // tessellation. This is position-based dynamics: Verlet integration for
+  // motion, then a fixed number of passes iteratively nudging every point
+  // back toward "stay this far from your neighbor" — the same recipe real-
+  // time cloth, rope, and ragdoll physics use, and here it spins a spider's
+  // orb web. Seven anchors ring an unseen frame; from a shared hub, seven
+  // spoke chains of rigid rigid-length links reach each anchor, and four
+  // rings of the same links stitch adjacent spokes together at matching
+  // radii, the capture spiral of a real web. Nothing here computes a sag
+  // curve directly — gravity pulls every free joint down each frame, the
+  // constraint solver pulls it back to its neighbors' fixed distance, and
+  // the compromise between those two, repeated, is a catenary the physics
+  // discovers rather than one anybody drew. Wind is a single slowly
+  // wandering direction and a magnitude that breathes between calm and
+  // gusty over minutes, felt more by the outer, longer-lever silk than by
+  // the sheltered hub. Dew catches slow per-point light along every strand,
+  // cooling and warming out of phase with itself. Move the cursor to raise
+  // a gust that bends the nearest silk; click near any strand to cut it —
+  // the two loose ends swing free on whatever constraints they have left —
+  // and the spider, resting at the hub, will notice, walk the web to the
+  // break, and spin the strand whole again, flashing warm at the mend the
+  // way a fresh nucleus or a fresh flip has flashed white on other nights
+  // here. Open the file directly in a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  let W, H;
+  let nodes = [];
+  let constraints = [];
+  let stars = [];
+  let frameCount = 0;
+  let windX = 0, windY = 0;
+  let windAngle = Math.random() * Math.PI * 2;
+  let windMagPhase = Math.random() * Math.PI * 2;
+
+  const NA = 7;
+  const SEG = 6;
+  const DAMPING = 0.965;
+  const GRAVITY = 0.055;
+  const GUST_R = 170, GUST_R2 = GUST_R * GUST_R, GUST_STRENGTH = 0.85;
+  const ITER = 6;
+  const CUT_THRESHOLD = 15;
+  const REPAIR_TIME = 55;
+  const PATROL_WAIT = 65;
+  const WIND_BASE = 0.10;
+  const STAR_COUNT = 140;
+
+  const repairQueue = [];
+  const mendFlashes = [];
+  const cutSparks = [];
+
+  const spider = { x: 0, y: 0, mode: 'rest', job: null, timer: 0, wigPhase: 0, patrolTarget: null };
+
+  function dist(a, b) {
+    return Math.hypot(a.x - b.x, a.y - b.y);
+  }
+
+  function buildWeb() {
+    nodes = [];
+    constraints = [];
+    repairQueue.length = 0;
+    mendFlashes.length = 0;
+    cutSparks.length = 0;
+
+    const cx = W * 0.5, cy = H * 0.46;
+    const rx = W * 0.40, ry = H * 0.40;
+    const baseRot = Math.random() * Math.PI * 2;
+
+    const hub = {
+      x: cx + (Math.random() - 0.5) * W * 0.05,
+      y: cy - H * 0.04 + (Math.random() - 0.5) * H * 0.04,
+      invMass: 1, windFactor: 0.15, phase: Math.random() * Math.PI * 2, isAnchor: false,
+    };
+    hub.px = hub.x; hub.py = hub.y;
+    nodes.push(hub);
+
+    const chains = [];
+    for (let k = 0; k < NA; k++) {
+      const ang = baseRot + (k / NA) * Math.PI * 2 + (Math.random() - 0.5) * (Math.PI * 2 / NA) * 0.4;
+      const rJitter = 0.8 + Math.random() * 0.35;
+      const ax = cx + Math.cos(ang) * rx * rJitter;
+      const ay = cy + Math.sin(ang) * ry * rJitter;
+      const chainIdx = [0];
+
+      for (let seg = 1; seg < SEG; seg++) {
+        const t = seg / SEG;
+        const x = hub.x + (ax - hub.x) * t + (Math.random() - 0.5) * 6;
+        const y = hub.y + (ay - hub.y) * t + (Math.random() - 0.5) * 6;
+        const node = { x, y, px: x, py: y, invMass: 1, windFactor: 0.25 + 0.8 * t, phase: Math.random() * Math.PI * 2, isAnchor: false };
+        nodes.push(node);
+        chainIdx.push(nodes.length - 1);
+      }
+
+      const anchorNode = { x: ax, y: ay, px: ax, py: ay, invMass: 0, windFactor: 0, phase: Math.random() * Math.PI * 2, isAnchor: true };
+      nodes.push(anchorNode);
+      chainIdx.push(nodes.length - 1);
+      chains.push(chainIdx);
+    }
+
+    for (let k = 0; k < NA; k++) {
+      for (let seg = 0; seg < SEG; seg++) {
+        const a = chains[k][seg], b = chains[k][seg + 1];
+        constraints.push({ a, b, rest: dist(nodes[a], nodes[b]), active: true, kind: 'spoke' });
+      }
+    }
+    for (let seg = 2; seg < SEG; seg++) {
+      for (let k = 0; k < NA; k++) {
+        const a = chains[k][seg], b = chains[(k + 1) % NA][seg];
+        constraints.push({ a, b, rest: dist(nodes[a], nodes[b]), active: true, kind: 'ring' });
+      }
+    }
+
+    spider.x = hub.x; spider.y = hub.y;
+    spider.mode = 'rest'; spider.job = null; spider.timer = 0;
+    spider.wigPhase = Math.random() * Math.PI * 2;
+  }
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    stars = [];
+    for (let i = 0; i < STAR_COUNT; i++) {
+      stars.push({ x: Math.random() * W, y: Math.random() * H * 0.8, r: 0.3 + Math.random() * 1.1, phase: Math.random() * Math.PI * 2 });
+    }
+    buildWeb();
+  }
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX;
+    pointer.y = e.clientY;
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', (e) => cutNear(e.clientX, e.clientY));
+
+  function distToSeg(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = len2 > 0 ? ((px - ax) * dx + (py - ay) * dy) / len2 : 0;
+    t = Math.max(0, Math.min(1, t));
+    const cx = ax + t * dx, cy = ay + t * dy;
+    return Math.hypot(px - cx, py - cy);
+  }
+
+  function cutNear(x, y) {
+    let best = -1, bestD = CUT_THRESHOLD;
+    for (let i = 0; i < constraints.length; i++) {
+      const c = constraints[i];
+      if (!c.active) continue;
+      const A = nodes[c.a], B = nodes[c.b];
+      const d = distToSeg(x, y, A.x, A.y, B.x, B.y);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    if (best >= 0) {
+      const c = constraints[best];
+      c.active = false;
+      const A = nodes[c.a], B = nodes[c.b];
+      cutSparks.push({ x: (A.x + B.x) / 2, y: (A.y + B.y) / 2, life: 18 });
+      repairQueue.push({ a: c.a, b: c.b, ref: c });
+    }
+  }
+
+  function integrate() {
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (n.invMass <= 0) continue;
+      const vx = (n.x - n.px) * DAMPING;
+      const vy = (n.y - n.py) * DAMPING;
+      let ax = windX * n.windFactor;
+      let ay = windY * n.windFactor + GRAVITY;
+      if (pointer.active) {
+        const dx = n.x - pointer.x, dy = n.y - pointer.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < GUST_R2) {
+          const d = Math.sqrt(d2) || 0.001;
+          const k = (1 - d / GUST_R) * GUST_STRENGTH;
+          ax += (dx / d) * k;
+          ay += (dy / d) * k;
+        }
+      }
+      const nx = n.x + vx + ax;
+      const ny = n.y + vy + ay;
+      n.px = n.x; n.py = n.y;
+      n.x = nx; n.y = ny;
+    }
+  }
+
+  function relax() {
+    for (let iter = 0; iter < ITER; iter++) {
+      for (let i = 0; i < constraints.length; i++) {
+        const c = constraints[i];
+        if (!c.active) continue;
+        const A = nodes[c.a], B = nodes[c.b];
+        const dx = B.x - A.x, dy = B.y - A.y;
+        const d = Math.hypot(dx, dy) || 0.0001;
+        const diff = (d - c.rest) / d;
+        const totalInv = A.invMass + B.invMass;
+        if (totalInv <= 0) continue;
+        const aFactor = A.invMass / totalInv, bFactor = B.invMass / totalInv;
+        const corrX = dx * diff, corrY = dy * diff;
+        A.x += corrX * aFactor;
+        A.y += corrY * aFactor;
+        B.x -= corrX * bFactor;
+        B.y -= corrY * bFactor;
+      }
+    }
+  }
+
+  function approach(sp, tx, ty, speed) {
+    const dx = tx - sp.x, dy = ty - sp.y;
+    const d = Math.hypot(dx, dy) || 0.0001;
+    const px = -dy / d, py = dx / d;
+    const wig = Math.sin(frameCount * 0.22 + sp.wigPhase) * Math.min(d, 50) * 0.12;
+    sp.x += dx * speed + px * wig * 0.05;
+    sp.y += dy * speed + py * wig * 0.05;
+    return d;
+  }
+
+  function updateSpider() {
+    const hub = nodes[0];
+    if (spider.mode === 'rest') {
+      spider.x = hub.x + Math.cos(frameCount * 0.011 + spider.wigPhase) * 7;
+      spider.y = hub.y + Math.sin(frameCount * 0.014 + spider.wigPhase) * 7;
+      if (repairQueue.length > 0) {
+        spider.job = repairQueue.shift();
+        spider.mode = 'walk';
+      } else if (Math.random() < 0.0006) {
+        const idx = 1 + ((Math.random() * (nodes.length - 2)) | 0);
+        spider.patrolTarget = nodes[idx];
+        spider.mode = 'patrol-out';
+      }
+    } else if (spider.mode === 'walk') {
+      const A = nodes[spider.job.a], B = nodes[spider.job.b];
+      const d = approach(spider, (A.x + B.x) / 2, (A.y + B.y) / 2, 0.09);
+      if (d < 9) { spider.mode = 'repair'; spider.timer = 0; }
+    } else if (spider.mode === 'repair') {
+      spider.timer++;
+      spider.x += (Math.random() - 0.5) * 0.6;
+      spider.y += (Math.random() - 0.5) * 0.6;
+      if (spider.timer > REPAIR_TIME) {
+        spider.job.ref.active = true;
+        mendFlashes.push({ x: spider.x, y: spider.y, life: 34 });
+        spider.job = null;
+        spider.mode = 'rest';
+      }
+    } else if (spider.mode === 'patrol-out') {
+      const d = approach(spider, spider.patrolTarget.x, spider.patrolTarget.y, 0.07);
+      if (d < 9) { spider.mode = 'patrol-wait'; spider.timer = 0; }
+    } else if (spider.mode === 'patrol-wait') {
+      spider.timer++;
+      if (spider.timer > PATROL_WAIT) spider.mode = 'patrol-back';
+    } else if (spider.mode === 'patrol-back') {
+      const d = approach(spider, hub.x, hub.y, 0.07);
+      if (d < 9) spider.mode = 'rest';
+    }
+  }
+
+  function simulate() {
+    frameCount++;
+    windAngle += (Math.random() - 0.5) * 0.012;
+    windMagPhase += 0.0006;
+    const windMag = WIND_BASE * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(windMagPhase)));
+    windX = Math.cos(windAngle) * windMag;
+    windY = Math.sin(windAngle) * windMag;
+
+    integrate();
+    relax();
+    updateSpider();
+
+    for (let i = mendFlashes.length - 1; i >= 0; i--) {
+      if (--mendFlashes[i].life <= 0) mendFlashes.splice(i, 1);
+    }
+    for (let i = cutSparks.length - 1; i >= 0; i--) {
+      if (--cutSparks[i].life <= 0) cutSparks.splice(i, 1);
+    }
+  }
+
+  function drawSpider() {
+    const s = spider;
+    const glow = s.mode === 'repair' ? 0.5 + 0.5 * Math.sin(s.timer * 0.3) : 0;
+    if (glow > 0) {
+      ctx.fillStyle = `rgba(255,225,170,${(glow * 0.35).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(s.x, s.y, 10 + glow * 6, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(40,22,16,0.85)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + frameCount * 0.03;
+      ctx.beginPath();
+      ctx.moveTo(s.x, s.y);
+      ctx.lineTo(s.x + Math.cos(a) * 5, s.y + Math.sin(a) * 5);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#2b160f';
+    ctx.beginPath(); ctx.arc(s.x, s.y, 3.4, 0, Math.PI * 2); ctx.fill();
+  }
+
+  function render() {
+    const bg = ctx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#04060a');
+    bg.addColorStop(1, '#0a0c15');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    const mx = W * 0.86, my = H * 0.16;
+    const mg = ctx.createRadialGradient(mx, my, 0, mx, my, Math.min(W, H) * 0.4);
+    mg.addColorStop(0, 'rgba(255,246,222,0.16)');
+    mg.addColorStop(1, 'rgba(255,246,222,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,248,230,0.55)';
+    ctx.beginPath(); ctx.arc(mx, my, 10, 0, Math.PI * 2); ctx.fill();
+
+    for (const s of stars) {
+      const tw = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(frameCount * 0.02 + s.phase));
+      ctx.fillStyle = `rgba(255,255,255,${(tw * 0.8).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    for (const c of constraints) {
+      if (!c.active) continue;
+      const A = nodes[c.a], B = nodes[c.b];
+      ctx.strokeStyle = c.kind === 'spoke' ? 'rgba(200,215,235,0.32)' : 'rgba(190,205,230,0.20)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(A.x, A.y);
+      ctx.lineTo(B.x, B.y);
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (n.isAnchor) continue;
+      const t = 0.5 + 0.5 * Math.sin(frameCount * 0.03 + n.phase);
+      const r = 190 + (255 - 190) * t, g = 210 + (225 - 210) * t, b = 235 + (170 - 235) * t;
+      ctx.fillStyle = `rgba(${r | 0},${g | 0},${b | 0},${(0.25 + 0.5 * t).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(n.x, n.y, 1.6, 0, Math.PI * 2); ctx.fill();
+    }
+
+    for (const s of cutSparks) {
+      const t = s.life / 18;
+      ctx.strokeStyle = `rgba(255,255,255,${(t * 0.8).toFixed(3)})`;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, (1 - t) * 16 + 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    for (const f of mendFlashes) {
+      const t = f.life / 34;
+      ctx.strokeStyle = `rgba(255,222,160,${(t * 0.9).toFixed(3)})`;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, (1 - t) * 20 + 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = `rgba(255,240,210,${(t * 0.6).toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(f.x, f.y, 3 * t + 1, 0, Math.PI * 2); ctx.fill();
+    }
+
+    drawSpider();
+
+    if (pointer.active) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, GUST_R, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
