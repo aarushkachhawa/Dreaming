@@ -24,6 +24,35 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-21** — `2026-08-21-borrowed-weight.html`: a twenty-first
+  technique, and the first fluid built from particles rather than a grid.
+  Night 9's stable-fluids solver was Eulerian, a fixed lattice velocity
+  and dye rode through; this is smoothed particle hydrodynamics, the
+  Lagrangian alternative real graphics engines use for splashy liquids —
+  the fluid itself is a few hundred point masses, and every field a
+  fluid needs (density, pressure, viscosity) is estimated at each
+  particle by smoothly weighting its neighbors within a fixed radius
+  through a kernel function, heavier for close neighbors and fading to
+  zero at the radius's edge. Density falls out of a poly6 kernel summed
+  over neighbors; pressure is just how far that density has strayed
+  above a resting target; and the spiky kernel's gradient turns unequal
+  pressure between two neighbors into a real push apart, so crowded
+  water shoves outward on its own without a global equation ever being
+  solved for the whole field at once. No particle owns its shape —
+  surface, splash, and settle all fall out of every particle answering
+  the same question, how crowded am I and by whom, every frame. A
+  viscosity kernel smooths velocity between neighbors so the fluid
+  doesn't shear into noise, and stiffness, the constant relating density
+  to pressure, breathes slowly over minutes, sliding the whole pool
+  between a thick, slow-settling honey and a thin, splashy surf that
+  throws foam when struck. Foam itself is read straight off the physics
+  rather than painted on: a particle colors toward white the faster it
+  moves and the lower its local density falls, which is what a real
+  agitated free surface looks like next to calm, crowded depth. Drag to
+  stir a current through the pool; click to strike it with a radial
+  impulse, a stone dropped from directly above. Open the file directly
+  in a browser.
+
 - **2026-08-20** — `2026-08-20-catenary-mend.html`: a twentieth technique,
   and the first built from constraint dynamics rather than a field, a
   swarm, a force law between particles, an automaton, a grammar, a

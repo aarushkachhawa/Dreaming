@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Borrowed Weight — Night 21</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05070a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Borrowed Weight &mdash; Night 21 &mdash; drag to stir the water, click to strike it, watch stiffness breathe between honey and surf</div>
+<script>
+(() => {
+  // A twenty-first technique, and the first fluid built from particles
+  // rather than a grid. Night 9's stable-fluids solver was Eulerian: a
+  // fixed lattice of cells that ink and velocity flowed through. This is
+  // smoothed particle hydrodynamics, the Lagrangian alternative real
+  // graphics engines use for splashy liquids — the fluid itself is a
+  // cloud of a few hundred point masses, and every field a fluid needs
+  // (density, pressure, viscosity) is estimated at each particle by
+  // smoothly weighting its neighbors within a fixed radius through a
+  // kernel function, heavier for close neighbors and fading to zero at
+  // the radius's edge. Density falls out of a poly6 kernel summed over
+  // neighbors; pressure is just how far that density has strayed above
+  // a resting target, via the simplest possible equation of state; and
+  // the spiky kernel's gradient turns unequal pressure between two
+  // neighbors into a real push apart, so crowded water shoves outward on
+  // its own without a global equation ever being solved for the whole
+  // field at once. No particle owns its shape — surface, splash, and
+  // settle all fall out of every particle answering the same question,
+  // "how crowded am I, and by whom," every frame. A viscosity kernel
+  // smooths velocity between neighbors so the fluid doesn't shear into
+  // noise, and stiffness (the gas constant relating density to pressure)
+  // breathes slowly over minutes, sliding the whole pool between a thick,
+  // slow-settling honey and a thin, splashy surf that throws foam when
+  // struck. Foam itself is read straight off the physics, not painted on:
+  // a particle colors toward white the faster it moves and the lower its
+  // local density falls, which is what a real free, agitated surface
+  // looks like next to calm, crowded depth. Drag to stir a current
+  // through the pool; click to strike it with a radial impulse, a stone
+  // dropped from directly above. Open the file directly in a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+
+  let W, H;
+  let particles = [];
+  let frameCount = 0;
+
+  const N = 640;
+  const H_SMOOTH = 24;
+  const H2 = H_SMOOTH * H_SMOOTH;
+  const MASS = 40;
+  const REST_DENSITY = 0.22;
+  const VISCOSITY = 1.5;
+  const GRAVITY = 0.32;
+  const WALL_DAMP = 0.35;
+  const SUBSTEPS = 2;
+  const DT = 1 / SUBSTEPS;
+  const VEL_DAMP = 0.99;
+  const MAX_SPEED = 60;
+
+  const POLY6 = 4 / (Math.PI * Math.pow(H_SMOOTH, 8));
+  const SPIKY_GRAD = 30 / (Math.PI * Math.pow(H_SMOOTH, 5));
+  const VISC_LAP = 40 / (Math.PI * Math.pow(H_SMOOTH, 5));
+
+  let stiffPhase = Math.random() * Math.PI * 2;
+  let gasConstant = 260;
+
+  let bounds = { left: 0, right: 0, floor: 0, top: 0 };
+  const cellSize = H_SMOOTH;
+  let grid = new Map();
+
+  const pointer = { x: -9999, y: -9999, px: -9999, py: -9999, active: false, vx: 0, vy: 0 };
+  const strikes = [];
+  const ripples = [];
+
+  function cellKey(cx, cy) {
+    return cx * 100003 + cy;
+  }
+
+  function buildGrid() {
+    grid.clear();
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      const cx = Math.floor(p.x / cellSize), cy = Math.floor(p.y / cellSize);
+      const key = cellKey(cx, cy);
+      let bucket = grid.get(key);
+      if (!bucket) { bucket = []; grid.set(key, bucket); }
+      bucket.push(i);
+    }
+  }
+
+  function forEachNeighbor(p, fn) {
+    const cx = Math.floor(p.x / cellSize), cy = Math.floor(p.y / cellSize);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const bucket = grid.get(cellKey(cx + dx, cy + dy));
+        if (!bucket) continue;
+        for (let k = 0; k < bucket.length; k++) fn(bucket[k]);
+      }
+    }
+  }
+
+  function seed() {
+    particles = [];
+    const cols = 28;
+    const rows = Math.ceil(N / cols);
+    const spacing = H_SMOOTH * 0.6;
+    const startX = bounds.left + (bounds.right - bounds.left) * 0.5 - (cols * spacing) / 2;
+    const startY = bounds.floor - rows * spacing - 20;
+    for (let i = 0; i < N; i++) {
+      const cx = i % cols, cy = Math.floor(i / cols);
+      const x = startX + cx * spacing + (Math.random() - 0.5) * 2;
+      const y = startY + cy * spacing + (Math.random() - 0.5) * 2;
+      particles.push({
+        x, y, vx: 0, vy: 0, density: REST_DENSITY, pressure: 0,
+        fx: 0, fy: 0, speed: 0,
+      });
+    }
+  }
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W;
+    canvas.height = H;
+    const marginX = Math.max(60, W * 0.12);
+    bounds.left = marginX;
+    bounds.right = W - marginX;
+    bounds.floor = H - Math.max(48, H * 0.08);
+    bounds.top = -H_SMOOTH * 4;
+    seed();
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    pointer.px = pointer.x; pointer.py = pointer.y;
+    pointer.x = e.clientX; pointer.y = e.clientY;
+    if (pointer.px > -9000) {
+      pointer.vx = pointer.x - pointer.px;
+      pointer.vy = pointer.y - pointer.py;
+    }
+    pointer.active = true;
+  });
+  window.addEventListener('pointerleave', () => (pointer.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    strikes.push({ x: e.clientX, y: e.clientY, life: 1 });
+    ripples.push({ x: e.clientX, y: e.clientY, life: 40, r: 4 });
+  });
+
+  function computeDensityPressure() {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      let density = 0;
+      forEachNeighbor(p, (j) => {
+        const q = particles[j];
+        const dx = p.x - q.x, dy = p.y - q.y;
+        const r2 = dx * dx + dy * dy;
+        if (r2 < H2) {
+          const diff = H2 - r2;
+          density += MASS * POLY6 * diff * diff * diff;
+        }
+      });
+      p.density = Math.max(density, REST_DENSITY * 0.5);
+      p.pressure = Math.max(gasConstant * (p.density - REST_DENSITY), 0);
+    }
+  }
+
+  function computeForces() {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      let fx = 0, fy = 0;
+      forEachNeighbor(p, (j) => {
+        if (j === i) return;
+        const q = particles[j];
+        const dx = p.x - q.x, dy = p.y - q.y;
+        const r2 = dx * dx + dy * dy;
+        if (r2 >= H2 || r2 < 1e-6) return;
+        const r = Math.sqrt(r2);
+        const dirx = dx / r, diry = dy / r;
+        const diff = H_SMOOTH - r;
+
+        const pressTerm = MASS * (p.pressure + q.pressure) / (2 * q.density);
+        const pressMag = SPIKY_GRAD * diff * diff * pressTerm;
+        fx += dirx * pressMag;
+        fy += diry * pressMag;
+
+        const viscMag = VISCOSITY * MASS * VISC_LAP * diff / q.density;
+        fx += (q.vx - p.vx) * viscMag;
+        fy += (q.vy - p.vy) * viscMag;
+      });
+      p.fx = fx; p.fy = fy;
+    }
+  }
+
+  function integrate() {
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      let ax = p.fx / p.density;
+      let ay = p.fy / p.density + GRAVITY;
+
+      if (pointer.active) {
+        const dx = p.x - pointer.x, dy = p.y - pointer.y;
+        const d2 = dx * dx + dy * dy;
+        const R = 90;
+        if (d2 < R * R) {
+          const d = Math.sqrt(d2) || 0.001;
+          const k = (1 - d / R) * 0.9;
+          ax += (pointer.vx || 0) * k * 0.35;
+          ay += (pointer.vy || 0) * k * 0.35;
+          ax += (dx / d) * k * 0.6;
+          ay += (dy / d) * k * 0.6;
+        }
+      }
+      for (const s of strikes) {
+        const dx = p.x - s.x, dy = p.y - s.y;
+        const d2 = dx * dx + dy * dy;
+        const R = 130;
+        if (d2 < R * R) {
+          const d = Math.sqrt(d2) || 0.001;
+          const k = (1 - d / R) * 9 * s.life;
+          ax += (dx / d) * k;
+          ay += (dy / d) * k;
+        }
+      }
+
+      p.vx = (p.vx + ax * DT) * VEL_DAMP;
+      p.vy = (p.vy + ay * DT) * VEL_DAMP;
+      const sp0 = Math.hypot(p.vx, p.vy);
+      if (sp0 > MAX_SPEED) { const k = MAX_SPEED / sp0; p.vx *= k; p.vy *= k; }
+      p.x += p.vx * DT;
+      p.y += p.vy * DT;
+
+      if (p.x < bounds.left) { p.x = bounds.left; p.vx *= -WALL_DAMP; }
+      if (p.x > bounds.right) { p.x = bounds.right; p.vx *= -WALL_DAMP; }
+      if (p.y > bounds.floor) { p.y = bounds.floor; p.vy *= -WALL_DAMP; }
+      if (p.y < bounds.top) { p.y = bounds.top; p.vy *= 0.2; }
+
+      p.speed = Math.hypot(p.vx, p.vy);
+    }
+  }
+
+  function simulate() {
+    frameCount++;
+    stiffPhase += 0.0016;
+    const t = 0.5 + 0.5 * Math.sin(stiffPhase);
+    gasConstant = 140 + t * 340;
+
+    for (let s = 0; s < SUBSTEPS; s++) {
+      buildGrid();
+      computeDensityPressure();
+      computeForces();
+      integrate();
+    }
+
+    for (let i = strikes.length - 1; i >= 0; i--) {
+      strikes[i].life *= 0.8;
+      if (strikes[i].life < 0.05) strikes.splice(i, 1);
+    }
+    for (let i = ripples.length - 1; i >= 0; i--) {
+      const r = ripples[i];
+      r.r += 5;
+      r.life--;
+      if (r.life <= 0) ripples.splice(i, 1);
+    }
+  }
+
+  function render() {
+    ctx.fillStyle = 'rgba(5,7,10,0.34)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = 'rgba(150,190,210,0.18)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(bounds.left, 0);
+    ctx.lineTo(bounds.left, bounds.floor);
+    ctx.lineTo(bounds.right, bounds.floor);
+    ctx.lineTo(bounds.right, 0);
+    ctx.stroke();
+
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < particles.length; i++) {
+      const p = particles[i];
+      const crowd = Math.min(1, p.density / (REST_DENSITY * 1.6));
+      const foam = Math.min(1, p.speed / 9 + (1 - crowd) * 0.5);
+
+      const deepR = 30, deepG = 90, deepB = 140;
+      const foamR = 235, foamG = 248, foamB = 255;
+      const r = deepR + (foamR - deepR) * foam;
+      const g = deepG + (foamG - deepG) * foam;
+      const b = deepB + (foamB - deepB) * foam;
+      const alpha = 0.55 + 0.35 * foam;
+
+      const rad = 5.2 + foam * 2.2;
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad);
+      grad.addColorStop(0, `rgba(${r | 0},${g | 0},${b | 0},${alpha.toFixed(3)})`);
+      grad.addColorStop(1, `rgba(${r | 0},${g | 0},${b | 0},0)`);
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    for (const r of ripples) {
+      const t = r.life / 40;
+      ctx.strokeStyle = `rgba(210,235,245,${(t * 0.5).toFixed(3)})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.ellipse(r.x, r.y, r.r, r.r * 0.35, 0, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    if (pointer.active) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+      ctx.beginPath();
+      ctx.arc(pointer.x, pointer.y, 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
