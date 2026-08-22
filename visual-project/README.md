@@ -24,6 +24,40 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-22** — `2026-08-22-ember-genome.html`: a twenty-second technique,
+  and the first that renders through a persistent histogram rather than
+  drawing points or cells directly. This is Scott Draves' fractal flame
+  algorithm: a chaos game played by a handful of randomly chosen contractive
+  affine maps, each also bent through one or two nonlinear "variations" —
+  sinusoidal, spherical, swirl, horseshoe, polar, and kin — before landing.
+  Night 6's de Jong attractor is the closest relative, a single deterministic
+  map iterated millions of times to reveal the one shape it's condemned to
+  trace; this has no single map and no determinism, since every step chooses
+  one of four or five maps at random, weighted, so different regions of the
+  plane are folded by entirely different rules and the resulting attractor
+  reads as a collage of several logics rather than one repeated gesture.
+  Nothing is drawn as a stroke — every landed point casts one vote into a
+  density buffer that a slow decay keeps alive rather than clearing, so the
+  shape a viewer sees is a long exposure, brightness read as log(votes) and
+  gamma-corrected the way a real long-exposure photograph of sparks or
+  fireworks compresses an enormous dynamic range into something a screen can
+  hold. Color is carried as memory rather than looked up from position: each
+  step blends the hue of whichever map just fired halfway into a running
+  color state, so adjacent regions worked by different maps bleed into each
+  other the way real flame-fractal renderers get their painterly, never-flat
+  gradients. At load, candidate genomes — the sets of maps, weights, and
+  variation blends — are synthesized and rejected if the shape they trace
+  collapses to a point, blows off the canvas, or merely scribbles a thin
+  line across an otherwise empty bounding box, an echo of Night 6's own
+  search for a rich parameter set, until one survives with real coverage.
+  Left alone, every map's linear part quietly rotates on its own slow,
+  independent clock, breathing the fixed genome's shape without ever
+  becoming a different genome. Move the cursor to tug every map's
+  translation gently toward it, warping the whole attractor at once; click
+  to burn the genome down — a fast fade against the slow-adapting brightness
+  floor that keeps the decay honest — and grow a freshly discovered one from
+  scratch. Open the file directly in a browser.
+
 - **2026-08-21** — `2026-08-21-borrowed-weight.html`: a twenty-first
   technique, and the first fluid built from particles rather than a grid.
   Night 9's stable-fluids solver was Eulerian, a fixed lattice velocity

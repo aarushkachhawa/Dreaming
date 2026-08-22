@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ember Genome — Night 22</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #030303;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="buffer" style="display:none;"></canvas>
+<canvas id="scene"></canvas>
+<div id="caption">Ember Genome &mdash; Night 22 &mdash; move to warp the flame, click to mutate its genome, watch it breathe between mutations</div>
+<script>
+(() => {
+  // A twenty-second technique, and the first that renders through a
+  // persistent histogram rather than drawing points or cells directly. This
+  // is Scott Draves' fractal flame algorithm: a chaos game played by a
+  // handful of randomly chosen contractive affine maps, each also bent
+  // through one or two nonlinear "variations" (sinusoidal, spherical,
+  // swirl, horseshoe, polar, and kin) before landing. Night 6's de Jong
+  // attractor was the closest relative — a single deterministic map, iterated
+  // millions of times, revealing the one shape it's condemned to trace. This
+  // has no single map and no determinism: every step, one of four or five
+  // maps is chosen at random, weighted, so different regions of the plane
+  // are folded by entirely different rules, and the resulting attractor is
+  // a collage of several logics rather than one repeated gesture. Nothing
+  // is drawn as a stroke; every landed point casts one vote into a density
+  // buffer, which a slow decay keeps alive rather than clearing, so the
+  // shape a viewer sees is a long exposure — brightness reads as log(votes),
+  // gamma-corrected the way real long-exposure photographs of sparks and
+  // fireworks compress an enormous dynamic range into something a screen can
+  // hold. Color is not looked up from position but carried as memory: each
+  // step blends the hue of whichever map just fired halfway into a running
+  // color state, so adjacent regions worked by different maps bleed into
+  // each other exactly the way real flame-fractal renderers get their
+  // painterly, never-flat gradients. At load, candidate genomes — the sets
+  // of maps, weights, and variation blends — are synthesized and rejected
+  // if the shape they trace collapses to a point or blows off the canvas,
+  // an echo of Night 6's own search for a rich parameter set, until one
+  // survives. Left alone, every map's linear part quietly rotates on its
+  // own slow, independent clock, breathing the fixed genome's shape without
+  // ever becoming a different genome. Move the cursor to tug every map's
+  // translation gently toward it, warping the whole attractor at once;
+  // click to burn the genome down — a fast fade — and grow a freshly
+  // discovered one from scratch. Open the file directly in a browser.
+
+  const scene = document.getElementById('scene');
+  const sctx = scene.getContext('2d');
+  const buf = document.getElementById('buffer');
+  const bctx = buf.getContext('2d');
+
+  let W, H, iw, ih;
+  let hCount, hR, hG, hB;
+  let imageData, pixels;
+
+  const VARFUNCS = {
+    linear: (x, y) => [x, y],
+    sinusoidal: (x, y) => [Math.sin(x), Math.sin(y)],
+    spherical: (x, y) => { const r2 = x * x + y * y + 1e-9; return [x / r2, y / r2]; },
+    swirl: (x, y) => { const r2 = x * x + y * y; const s = Math.sin(r2), c = Math.cos(r2); return [x * s - y * c, x * c + y * s]; },
+    horseshoe: (x, y) => { const r = Math.sqrt(x * x + y * y) + 1e-9; return [(x - y) * (x + y) / r, 2 * x * y / r]; },
+    polar: (x, y) => { const th = Math.atan2(y, x); const r = Math.sqrt(x * x + y * y); return [th / Math.PI, r - 1]; },
+    handkerchief: (x, y) => { const r = Math.sqrt(x * x + y * y); const th = Math.atan2(y, x); return [r * Math.sin(th + r), r * Math.cos(th - r)]; },
+    heart: (x, y) => { const r = Math.sqrt(x * x + y * y); const th = Math.atan2(y, x); return [r * Math.sin(th * r), -r * Math.cos(th * r)]; },
+    disc: (x, y) => { const th = Math.atan2(y, x); const r = Math.sqrt(x * x + y * y); const p = Math.PI * r; return [(th / Math.PI) * Math.sin(p), (th / Math.PI) * Math.cos(p)]; },
+    diamond: (x, y) => { const th = Math.atan2(y, x); const r = Math.sqrt(x * x + y * y); return [Math.sin(th) * Math.cos(r), Math.cos(th) * Math.sin(r)]; },
+    ex: (x, y) => {
+      const r = Math.sqrt(x * x + y * y); const th = Math.atan2(y, x);
+      const n0 = Math.sin(th + r), n1 = Math.cos(th - r);
+      const m0 = n0 * n0 * n0 * r, m1 = n1 * n1 * n1 * r;
+      return [m0 + m1, m0 - m1];
+    },
+    fisheye: (x, y) => { const r = Math.sqrt(x * x + y * y); const coeff = 2 / (r + 1); return [coeff * y, coeff * x]; },
+    bent: (x, y) => [x < 0 ? x * 2 : x, y < 0 ? y * 0.5 : y],
+    julia: (x, y) => {
+      const r = Math.sqrt(Math.sqrt(x * x + y * y));
+      const th = Math.atan2(y, x) * 0.5 + (Math.random() < 0.5 ? 0 : Math.PI);
+      return [r * Math.cos(th), r * Math.sin(th)];
+    },
+  };
+  const VARNAMES = Object.keys(VARFUNCS);
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  function hsl2rgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+    return [r + m, g + m, b + m];
+  }
+
+  let flame = null;
+  let mapScale = 1, mapCX = 0, mapCY = 0;
+  let hueBase = 0;
+  let time = 0;
+  let maxDEma = 5;
+
+  function makeRawTransform() {
+    let a = rand(-1, 1), b = rand(-1, 1) * 0.8, c = rand(-1, 1) * 0.8, d = rand(-1, 1);
+    // keep it roughly contractive so the chaos game converges to an attractor
+    const norm = Math.sqrt(a * a + b * b + c * c + d * d);
+    const target = rand(0.55, 1.05);
+    const k = target / (norm || 1);
+    a *= k; b *= k; c *= k; d *= k;
+    const e = rand(-1, 1), f = rand(-1, 1);
+    const nVar = 1 + (Math.random() < 0.5 ? 0 : 1);
+    const chosen = shuffle(VARNAMES).slice(0, nVar);
+    let wsum = 0;
+    const vars = chosen.map((fn) => { const w = rand(0.3, 1); wsum += w; return { fn, w }; });
+    vars.forEach((v) => (v.w /= wsum));
+    return {
+      baseA: a, baseB: b, baseC: c, baseD: d, e, f,
+      a, b, c, d,
+      weight: rand(0.5, 1.6),
+      vars,
+      rotPhase: Math.random() * Math.PI * 2,
+      rotSpeed: rand(0.00003, 0.00009),
+      rotAmount: rand(0.08, 0.22),
+      warpX: 0, warpY: 0,
+    };
+  }
+
+  function applyVariations(t, x, y) {
+    let ox = 0, oy = 0;
+    for (const v of t.vars) {
+      const [vx, vy] = VARFUNCS[v.fn](x, y);
+      ox += vx * v.w; oy += vy * v.w;
+    }
+    return [ox, oy];
+  }
+
+  function stepPoint(state, transforms, cumWeights, totalWeight) {
+    const r = Math.random() * totalWeight;
+    let i = 0;
+    while (i < cumWeights.length - 1 && cumWeights[i] < r) i++;
+    const t = transforms[i];
+    const nx = t.a * state.x + t.b * state.y + t.e + t.warpX;
+    const ny = t.c * state.x + t.d * state.y + t.f + t.warpY;
+    const [ox, oy] = applyVariations(t, nx, ny);
+    if (!isFinite(ox) || !isFinite(oy)) { state.x = rand(-0.5, 0.5); state.y = rand(-0.5, 0.5); return null; }
+    state.x = ox; state.y = oy;
+    const ci = i / Math.max(1, transforms.length - 1);
+    state.c = (state.c + ci) * 0.5;
+    return state;
+  }
+
+  function synthesizeFlame() {
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const n = 4 + Math.floor(Math.random() * 2);
+      const transforms = [];
+      for (let i = 0; i < n; i++) transforms.push(makeRawTransform());
+      const cumWeights = [];
+      let acc = 0;
+      for (const t of transforms) { acc += t.weight; cumWeights.push(acc); }
+      const totalWeight = acc;
+
+      let state = { x: rand(-0.5, 0.5), y: rand(-0.5, 0.5), c: 0.5 };
+      let ok = true;
+      for (let i = 0; i < 400; i++) {
+        if (!stepPoint(state, transforms, cumWeights, totalWeight)) { ok = false; break; }
+      }
+      if (!ok) continue;
+
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+      const probe = [];
+      let bad = false;
+      const PROBE_N = 6000;
+      for (let i = 0; i < PROBE_N; i++) {
+        if (!stepPoint(state, transforms, cumWeights, totalWeight)) { bad = true; break; }
+        if (Math.abs(state.x) > 60 || Math.abs(state.y) > 60) { bad = true; break; }
+        if (state.x < minX) minX = state.x;
+        if (state.x > maxX) maxX = state.x;
+        if (state.y < minY) minY = state.y;
+        if (state.y > maxY) maxY = state.y;
+        if (i >= 400) probe.push(state.x, state.y);
+      }
+      if (bad) continue;
+      const rangeX = maxX - minX, rangeY = maxY - minY;
+      if (!(rangeX > 0.08) || !(rangeY > 0.08)) continue;
+      if (rangeX > 40 || rangeY > 40) continue;
+
+      // Reject shapes that are technically non-degenerate but visually threadbare —
+      // a fine scribble filling almost none of its own bounding box. Bin the probe
+      // points into a coarse occupancy grid and require a real spread of coverage.
+      const GRID = 24;
+      const seen = new Uint8Array(GRID * GRID);
+      let filled = 0;
+      for (let i = 0; i < probe.length; i += 2) {
+        const gx = Math.min(GRID - 1, Math.max(0, Math.floor(((probe[i] - minX) / (rangeX || 1)) * GRID)));
+        const gy = Math.min(GRID - 1, Math.max(0, Math.floor(((probe[i + 1] - minY) / (rangeY || 1)) * GRID)));
+        const idx = gy * GRID + gx;
+        if (!seen[idx]) { seen[idx] = 1; filled++; }
+      }
+      if (filled < GRID * GRID * 0.22) continue;
+
+      return { transforms, cumWeights, totalWeight, bbox: { minX, maxX, minY, maxY } };
+    }
+    // fallback: a tame, always-safe genome
+    const transforms = [
+      { baseA: 0.5, baseB: 0, baseC: 0, baseD: 0.5, a: 0.5, b: 0, c: 0, d: 0.5, e: 0.5, f: 0.5, weight: 1, vars: [{ fn: 'linear', w: 1 }], rotPhase: 0, rotSpeed: 0.00005, rotAmount: 0.1, warpX: 0, warpY: 0 },
+      { baseA: 0.5, baseB: 0, baseC: 0, baseD: 0.5, a: 0.5, b: 0, c: 0, d: 0.5, e: -0.5, f: 0.5, weight: 1, vars: [{ fn: 'linear', w: 1 }], rotPhase: 1, rotSpeed: 0.00006, rotAmount: 0.1, warpX: 0, warpY: 0 },
+      { baseA: 0.5, baseB: 0, baseC: 0, baseD: 0.5, a: 0.5, b: 0, c: 0, d: 0.5, e: 0, f: -0.5, weight: 1, vars: [{ fn: 'linear', w: 1 }], rotPhase: 2, rotSpeed: 0.00007, rotAmount: 0.1, warpX: 0, warpY: 0 },
+    ];
+    return { transforms, cumWeights: [1, 2, 3], totalWeight: 3, bbox: { minX: -1, maxX: 1, minY: -1, maxY: 1 } };
+  }
+
+  const walkers = [];
+  const WALKER_COUNT = 6;
+
+  function newGenome() {
+    flame = synthesizeFlame();
+    hueBase = Math.random() * 360;
+    const { minX, maxX, minY, maxY } = flame.bbox;
+    const rangeX = Math.max(0.08, maxX - minX);
+    const rangeY = Math.max(0.08, maxY - minY);
+    const margin = 0.86;
+    mapScale = Math.min((iw * margin) / rangeX, (ih * margin) / rangeY);
+    mapCX = (minX + maxX) / 2;
+    mapCY = (minY + maxY) / 2;
+    walkers.length = 0;
+    for (let i = 0; i < WALKER_COUNT; i++) {
+      walkers.push({ x: rand(-0.5, 0.5), y: rand(-0.5, 0.5), c: Math.random() });
+    }
+  }
+
+  function fadeHistogram(k) {
+    for (let i = 0; i < hCount.length; i++) {
+      hCount[i] *= k; hR[i] *= k; hG[i] *= k; hB[i] *= k;
+    }
+  }
+
+  function resize() {
+    W = window.innerWidth;
+    H = window.innerHeight;
+    scene.width = W; scene.height = H;
+
+    iw = Math.max(320, Math.min(760, Math.round(W * 0.55)));
+    ih = Math.round(iw * (H / W));
+    buf.width = iw; buf.height = ih;
+    hCount = new Float32Array(iw * ih);
+    hR = new Float32Array(iw * ih);
+    hG = new Float32Array(iw * ih);
+    hB = new Float32Array(iw * ih);
+    imageData = bctx.createImageData(iw, ih);
+    pixels = imageData.data;
+    for (let i = 3; i < pixels.length; i += 4) pixels[i] = 255;
+
+    if (!flame) newGenome();
+    else {
+      const { minX, maxX, minY, maxY } = flame.bbox;
+      const rangeX = Math.max(0.08, maxX - minX);
+      const rangeY = Math.max(0.08, maxY - minY);
+      const margin = 0.86;
+      mapScale = Math.min((iw * margin) / rangeX, (ih * margin) / rangeY);
+    }
+  }
+
+  const pointer = { x: -9999, y: -9999, active: false };
+  let warpTargetX = 0, warpTargetY = 0;
+  let warpX = 0, warpY = 0;
+
+  window.addEventListener('pointermove', (e) => {
+    pointer.x = e.clientX; pointer.y = e.clientY;
+    pointer.active = true;
+    const ix = (pointer.x / W) * iw, iy = (pointer.y / H) * ih;
+    warpTargetX = (ix - iw / 2) / mapScale;
+    warpTargetY = (iy - ih / 2) / mapScale;
+  });
+  window.addEventListener('pointerleave', () => { pointer.active = false; warpTargetX = 0; warpTargetY = 0; });
+  window.addEventListener('pointerdown', () => {
+    fadeHistogram(0.12);
+    newGenome();
+  });
+
+  function simulate() {
+    time++;
+    const lerpK = pointer.active ? 0.02 : 0.01;
+    warpX += (warpTargetX - warpX) * lerpK;
+    warpY += (warpTargetY - warpY) * lerpK;
+
+    const transforms = flame.transforms;
+    for (const t of transforms) {
+      const rot = Math.sin(t.rotPhase + time * t.rotSpeed) * t.rotAmount;
+      const cr = Math.cos(rot), sr = Math.sin(rot);
+      t.a = cr * t.baseA - sr * t.baseC;
+      t.b = cr * t.baseB - sr * t.baseD;
+      t.c = sr * t.baseA + cr * t.baseC;
+      t.d = sr * t.baseB + cr * t.baseD;
+      t.warpX = warpX * 0.16;
+      t.warpY = warpY * 0.16;
+    }
+
+    fadeHistogram(0.986);
+
+    const itersPerWalker = Math.round((iw * ih * 0.045) / WALKER_COUNT);
+    for (const w of walkers) {
+      let px = w.x, py = w.y, pc = w.c;
+      for (let n = 0; n < itersPerWalker; n++) {
+        const r = Math.random() * flame.totalWeight;
+        let i = 0;
+        while (i < flame.cumWeights.length - 1 && flame.cumWeights[i] < r) i++;
+        const t = transforms[i];
+        const nx = t.a * px + t.b * py + t.e + t.warpX;
+        const ny = t.c * px + t.d * py + t.f + t.warpY;
+        const [ox, oy] = applyVariations(t, nx, ny);
+        if (!isFinite(ox) || !isFinite(oy)) { px = rand(-0.4, 0.4); py = rand(-0.4, 0.4); continue; }
+        px = ox; py = oy;
+        pc = (pc + i / Math.max(1, transforms.length - 1)) * 0.5;
+
+        if (n > 4) {
+          const gx = Math.round(iw / 2 + (px - mapCX) * mapScale);
+          const gy = Math.round(ih / 2 + (py - mapCY) * mapScale);
+          if (gx >= 0 && gx < iw && gy >= 0 && gy < ih) {
+            const idx = gy * iw + gx;
+            const [cr2, cg2, cb2] = hsl2rgb(hueBase + pc * 300, 0.72, 0.55);
+            hCount[idx] += 1;
+            hR[idx] += cr2;
+            hG[idx] += cg2;
+            hB[idx] += cb2;
+          }
+        }
+      }
+      w.x = px; w.y = py; w.c = pc;
+    }
+  }
+
+  function render() {
+    let observedMax = 1e-6;
+    for (let i = 0; i < hCount.length; i++) {
+      const d = hCount[i];
+      if (d > observedMax) observedMax = d;
+    }
+    // A slow-adapting reference rather than the frame's own max: renormalizing to the
+    // instantaneous max every frame would let a fading histogram fade its own ceiling
+    // just as fast, so the ratio (and the on-screen brightness) never actually drops.
+    maxDEma = maxDEma * 0.985 + observedMax * 0.015;
+    const logMax = Math.log(maxDEma + 1);
+    const invGamma = 1 / 1.7;
+
+    for (let i = 0, p = 0; i < hCount.length; i++, p += 4) {
+      const cnt = hCount[i];
+      if (cnt <= 0.02) {
+        pixels[p] = pixels[p] * 0.9;
+        pixels[p + 1] = pixels[p + 1] * 0.9;
+        pixels[p + 2] = pixels[p + 2] * 0.9;
+        continue;
+      }
+      const logD = Math.log(cnt + 1) / logMax;
+      const bright = Math.pow(Math.min(1, logD), invGamma);
+      const avgR = hR[i] / cnt, avgG = hG[i] / cnt, avgB = hB[i] / cnt;
+      pixels[p] = Math.min(255, avgR * bright * 255);
+      pixels[p + 1] = Math.min(255, avgG * bright * 255);
+      pixels[p + 2] = Math.min(255, avgB * bright * 255);
+    }
+    bctx.putImageData(imageData, 0, 0);
+
+    sctx.fillStyle = '#030303';
+    sctx.fillRect(0, 0, W, H);
+    sctx.imageSmoothingEnabled = true;
+    sctx.drawImage(buf, 0, 0, iw, ih, 0, 0, W, H);
+
+    const vgn = sctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.25, W / 2, H / 2, Math.max(W, H) * 0.72);
+    vgn.addColorStop(0, 'rgba(0,0,0,0)');
+    vgn.addColorStop(1, 'rgba(0,0,0,0.55)');
+    sctx.fillStyle = vgn;
+    sctx.fillRect(0, 0, W, H);
+
+    if (pointer.active) {
+      sctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      sctx.beginPath();
+      sctx.arc(pointer.x, pointer.y, 3, 0, Math.PI * 2);
+      sctx.stroke();
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  function frame() {
+    simulate();
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
