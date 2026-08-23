@@ -24,6 +24,33 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-23** — `2026-08-23-tallow-bloom.html`: a twenty-third technique,
+  and the first rendered rather than simulated — no canvas pixel buffer, no
+  agents stepping frame to frame, just a WebGL fragment shader raymarching a
+  signed distance field once per pixel, every frame, from scratch. Seven
+  spheres, smoothly unioned by Inigo Quilez's polynomial smooth-min so they
+  melt into one another rather than intersecting in hard seams, sit inside a
+  gentle domain warp that keeps the whole mass faintly astir even when
+  nothing else is changing. No path tracing, no light transport — this is
+  the raymarcher's usual bag of cheats standing in for real light: soft
+  shadows from a second march toward the key light, ambient occlusion from
+  five samples stepped out along the normal, a Fresnel rim term for the
+  glint along every silhouette. Color comes from two overlaid sine fields
+  wrapped through the surface position, cocoa dark where they cancel, pale
+  gold where they align, standing in for the way real dipped candles show
+  darker and lighter wax in the same pour depending on how the layers
+  settled — this project's second material to carry its history as visible
+  striation, after Night 13's grown vasculature, though nothing here grew;
+  it was placed and merged. Each sphere also breathes on its own slow,
+  independent sine clock, a candle mass never quite at rest even between
+  reshapes. Move the cursor to orbit the eye around the mass and catch the
+  light differently, click to melt the whole cluster toward a freshly
+  chosen set of centers and radii over a few seconds — the old shape isn't
+  discarded so much as absorbed, the new targets picked while the last
+  ones are still mid-arrival, the way real wax never fully forgets the pour
+  before it. Left alone, it reshapes itself on the same slow clock every
+  minute or so. Open the file directly in a browser.
+
 - **2026-08-22** — `2026-08-22-ember-genome.html`: a twenty-second technique,
   and the first that renders through a persistent histogram rather than
   drawing points or cells directly. This is Scott Draves' fractal flame
