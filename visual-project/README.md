@@ -24,6 +24,41 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-24** — `2026-08-24-entropy-loom.html`: a twenty-fourth
+  technique, and the first governed by constraint satisfaction rather than
+  a field, a swarm, a force law, a formal grammar, a chaos game, or
+  thermodynamics — wave function collapse, the procedural-generation
+  algorithm that treats a grid the way quantum mechanics treats a
+  wavefunction: every cell starts in superposition, holding every tile it
+  could still become, and each step picks the cell with the fewest
+  remaining possibilities, forces it to one of them at random, and
+  propagates that choice outward, discarding whatever no longer fits at
+  every neighbor in a spreading wave of constraint. There is no physics
+  here and no biology — sixteen edge-matching tiles (blank, straight,
+  corner, T, cross, stub, each in every rotation a wire's continuity
+  demands) are the entire alphabet, and the loom's only law is that two
+  touching edges must agree, both wire or both empty, or neither tile may
+  sit there. Most collapses cascade for free: forcing one ambiguous cell
+  often leaves its neighbors only one legal answer, which forces their
+  neighbors in turn, so certainty spreads in bursts rather than one cell
+  at a time. When propagation ever strands a cell with no legal tile left
+  — a real failure mode of this algorithm without backtracking — the loom
+  doesn't unwind its choices to fix it; it just seizes on a fresh tile
+  against the rules and keeps going, a small white scar left in the weave
+  where the pattern disagrees with itself. Finished wire cells fade from a
+  white spark to a hue drawn from a slow spatial field, so the tapestry
+  reads as differently-dyed thread rather than one uniform color, and a
+  handful of glowing pulses ride the settled network end to end, turning
+  at every junction, the way current finds its own path through a
+  finished circuit. Cells still in superposition flicker faintly, brighter
+  the fewer options remain, a visible hum of undecided potential just
+  ahead of the solved wavefront. Move the cursor to unravel the thread it
+  passes over, freeing a few cells back into superposition so the loom
+  re-decides them; click to unravel a wider patch outright and watch the
+  wave resolve it fresh. Left alone, the loom quietly frays and reweaves
+  a random patch of its own every minute or so. Open the file directly in
+  a browser.
+
 - **2026-08-23** — `2026-08-23-tallow-bloom.html`: a twenty-third technique,
   and the first rendered rather than simulated — no canvas pixel buffer, no
   agents stepping frame to frame, just a WebGL fragment shader raymarching a

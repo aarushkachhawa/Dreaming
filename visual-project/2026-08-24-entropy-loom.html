@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Entropy Loom — Night 24</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #06070a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Entropy Loom &mdash; Night 24 &mdash; move to fray a thread &middot; click to unravel a patch</div>
+<script>
+(() => {
+  // A twenty-fourth technique, and the first governed by constraint
+  // satisfaction rather than a field, a swarm, a force law, a formal
+  // grammar, a chaos game, or thermodynamics — wave function collapse, the
+  // procedural-generation algorithm that treats a grid the way quantum
+  // mechanics treats a wavefunction: every cell starts in superposition,
+  // holding every tile it could still become, and each step picks the cell
+  // with the fewest remaining possibilities, forces it to one of them at
+  // random, and propagates that choice outward, discarding whatever no
+  // longer fits at every neighbor in a spreading wave of constraint. There
+  // is no physics here and no biology — sixteen edge-matching tiles (blank,
+  // straight, corner, T, cross, stub, each in every rotation a wire's
+  // continuity demands) are the entire alphabet, and the loom's only law is
+  // that two touching edges must agree, both wire or both empty, or neither
+  // tile may sit there. Most collapses cascade for free: forcing one
+  // ambiguous cell often leaves its neighbors only one legal answer, which
+  // forces their neighbors in turn, so certainty spreads in bursts rather
+  // than one cell at a time. When propagation ever strands a cell with no
+  // legal tile left — a real failure mode of this algorithm without
+  // backtracking — the loom doesn't unwind its choices to fix it; it just
+  // seizes on a fresh tile against the rules and keeps going, a small
+  // white scar left in the weave where the pattern disagrees with itself.
+  // Finished wire cells fade from a white spark to a hue drawn from a slow
+  // spatial field, so the tapestry reads as differently-dyed thread rather
+  // than one uniform color, and a handful of glowing pulses ride the
+  // settled network end to end, turning at every junction, the way current
+  // finds its own path through a finished circuit. Cells still in
+  // superposition flicker faintly, brighter the fewer options remain, a
+  // visible hum of undecided potential just ahead of the solved wavefront.
+  // Move the cursor to unravel the thread it passes over, freeing a few
+  // cells back into superposition so the loom re-decides them; click to
+  // unravel a wider patch outright and watch the wave resolve it fresh.
+  // Left alone, the loom quietly frays and reweaves a random patch of its
+  // own every minute or so. Open the file directly in a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const caption = document.getElementById('caption');
+
+  // ---- tile alphabet -----------------------------------------------------
+  const DIRS = [
+    { dx: 0, dy: -1, idx: 0, opp: 2 }, // N
+    { dx: 1, dy: 0, idx: 1, opp: 3 },  // E
+    { dx: 0, dy: 1, idx: 2, opp: 0 },  // S
+    { dx: -1, dy: 0, idx: 3, opp: 1 }, // W
+  ];
+  function rot(e) { return [e[3], e[0], e[1], e[2]]; }
+
+  const BASE_TILES = [
+    { edges: [0, 0, 0, 0], weight: 22.0 }, // blank
+    { edges: [1, 0, 1, 0], weight: 1.8 },  // straight
+    { edges: [1, 1, 0, 0], weight: 1.4 },  // corner
+    { edges: [1, 1, 0, 1], weight: 0.45 }, // T
+    { edges: [1, 1, 1, 1], weight: 0.12 }, // cross
+    { edges: [1, 0, 0, 0], weight: 1.6 },  // stub
+  ];
+
+  const TILES = [];
+  {
+    const seen = new Set();
+    for (const b of BASE_TILES) {
+      let e = b.edges.slice();
+      for (let r = 0; r < 4; r++) {
+        const key = e.join('');
+        if (!seen.has(key)) {
+          seen.add(key);
+          TILES.push({ edges: e.slice(), weight: b.weight });
+        }
+        e = rot(e);
+      }
+    }
+  }
+  const N = TILES.length;
+  const WEIGHTS = TILES.map(t => t.weight);
+  const TOTAL_WEIGHT = WEIGHTS.reduce((a, b) => a + b, 0);
+
+  const COMPAT = []; // COMPAT[dir][a*N+b] = 1 if tile b may sit in direction dir from tile a
+  for (let d = 0; d < 4; d++) {
+    const arr = new Uint8Array(N * N);
+    const dir = DIRS[d];
+    for (let a = 0; a < N; a++) {
+      for (let b = 0; b < N; b++) {
+        arr[a * N + b] = TILES[a].edges[dir.idx] === TILES[b].edges[dir.opp] ? 1 : 0;
+      }
+    }
+    COMPAT.push(arr);
+  }
+
+  function weightedRandomFull() {
+    let r = Math.random() * TOTAL_WEIGHT;
+    for (let t = 0; t < N; t++) {
+      r -= WEIGHTS[t];
+      if (r <= 0) return t;
+    }
+    return N - 1;
+  }
+  function weightedRandomFromMask(i) {
+    let total = 0;
+    for (let t = 0; t < N; t++) if (opts[i * N + t]) total += WEIGHTS[t];
+    let r = Math.random() * total;
+    for (let t = 0; t < N; t++) {
+      if (!opts[i * N + t]) continue;
+      r -= WEIGHTS[t];
+      if (r <= 0) return t;
+    }
+    for (let t = N - 1; t >= 0; t--) if (opts[i * N + t]) return t;
+    return 0;
+  }
+
+  // ---- palette: a field of differently-dyed thread ----------------------
+  const STOPS = [
+    [230, 55, 46], // indigo
+    [190, 60, 50], // teal
+    [150, 50, 46], // jade
+    [40, 78, 55],  // amber
+    [340, 50, 50], // rose
+  ];
+  function paletteColor(t, alpha) {
+    const n = STOPS.length;
+    const f = (((t % 1) + 1) % 1) * n;
+    const i0 = Math.floor(f) % n;
+    const i1 = (i0 + 1) % n;
+    const lt = f - Math.floor(f);
+    const s0 = STOPS[i0], s1 = STOPS[i1];
+    const h = s0[0] + (((s1[0] - s0[0] + 540) % 360) - 180) * lt;
+    const s = s0[1] + (s1[1] - s0[1]) * lt;
+    const l = s0[2] + (s1[2] - s0[2]) * lt;
+    return `hsla(${h}, ${s}%, ${l}%, ${alpha})`;
+  }
+  function hueAt(x, y) {
+    const a = Math.sin(x * 0.055 + y * 0.021) * 0.5 + 0.5;
+    const b = Math.sin(x * 0.014 - y * 0.048 + 1.7) * 0.5 + 0.5;
+    return a * 0.6 + b * 0.4;
+  }
+
+  // ---- grid state ---------------------------------------------------------
+  let W, H, DPR, cols, rows, cellW, cellH;
+  let opts, count, collapsed, tileIdx, birth, glitch, hueField;
+  let queueBuf, inQueue;
+  let active, wireSet, wireArr, wireDirty;
+  let cacheCanvas, cacheCtx, noisePattern;
+  let recentBirths, pulses;
+  let doneAt, lastAutoUnravel, lastTrickle;
+
+  function idx(x, y) { return y * cols + x; }
+
+  function buildNoisePattern() {
+    const n = document.createElement('canvas');
+    n.width = 128; n.height = 128;
+    const nctx = n.getContext('2d');
+    const img = nctx.createImageData(128, 128);
+    for (let i = 0; i < img.data.length; i += 4) {
+      const v = (Math.random() * 255) | 0;
+      img.data[i] = v; img.data[i + 1] = v; img.data[i + 2] = v; img.data[i + 3] = 16;
+    }
+    nctx.putImageData(img, 0, 0);
+    return ctx.createPattern(n, 'repeat');
+  }
+
+  function buildGrid() {
+    DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+    W = Math.floor(window.innerWidth * DPR);
+    H = Math.floor(window.innerHeight * DPR);
+    canvas.width = W;
+    canvas.height = H;
+
+    const target = 34 * DPR;
+    cols = Math.max(20, Math.round(W / target));
+    rows = Math.max(12, Math.round(H / target));
+    cellW = W / cols;
+    cellH = H / rows;
+
+    const cells = cols * rows;
+    opts = new Uint8Array(cells * N);
+    count = new Uint8Array(cells);
+    collapsed = new Uint8Array(cells);
+    tileIdx = new Int16Array(cells).fill(-1);
+    birth = new Float32Array(cells).fill(-10);
+    glitch = new Uint8Array(cells);
+    hueField = new Float32Array(cells);
+    queueBuf = [];
+    inQueue = new Uint8Array(cells);
+    active = new Set();
+    wireSet = new Set();
+    wireArr = [];
+    wireDirty = true;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const i = idx(x, y);
+        for (let t = 0; t < N; t++) opts[i * N + t] = 1;
+        count[i] = N;
+        active.add(i);
+        hueField[i] = hueAt(x, y);
+      }
+    }
+
+    cacheCanvas = document.createElement('canvas');
+    cacheCanvas.width = W; cacheCanvas.height = H;
+    cacheCtx = cacheCanvas.getContext('2d');
+    cacheCtx.fillStyle = '#06070a';
+    cacheCtx.fillRect(0, 0, W, H);
+
+    recentBirths = [];
+    pulses = [];
+    for (let k = 0; k < 10; k++) pulses.push({ i: -1, ni: -1, d: -1, t: 0, speed: 1.1 + Math.random() * 1.0 });
+
+    doneAt = -1;
+    lastAutoUnravel = 0;
+    lastTrickle = 0;
+    noisePattern = buildNoisePattern();
+  }
+
+  // ---- collapse + propagation ---------------------------------------------
+  function finalizeCell(i, t, clock) {
+    collapsed[i] = 1;
+    tileIdx[i] = t;
+    birth[i] = clock;
+    active.delete(i);
+    paintCell(i);
+    const e = TILES[t].edges;
+    if (e[0] || e[1] || e[2] || e[3]) {
+      wireSet.add(i);
+      wireDirty = true;
+      recentBirths.push(i);
+    } else {
+      wireSet.delete(i);
+      wireDirty = true;
+    }
+  }
+
+  function forceSeize(i, clock) {
+    const t = weightedRandomFull();
+    for (let t2 = 0; t2 < N; t2++) opts[i * N + t2] = t2 === t ? 1 : 0;
+    count[i] = 1;
+    glitch[i] = 1;
+    finalizeCell(i, t, clock);
+  }
+
+  function propagateFrom(seed, clock) {
+    queueBuf.length = 0;
+    queueBuf.push(seed);
+    inQueue[seed] = 1;
+    let qi = 0;
+    while (qi < queueBuf.length) {
+      const i = queueBuf[qi++];
+      inQueue[i] = 0;
+      const x = i % cols, y = (i / cols) | 0;
+      for (let d = 0; d < 4; d++) {
+        const dir = DIRS[d];
+        const nx = x + dir.dx, ny = y + dir.dy;
+        if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+        const ni = idx(nx, ny);
+        if (collapsed[ni]) continue;
+        const compatArr = COMPAT[d];
+        let changed = false;
+        for (let b = 0; b < N; b++) {
+          const bBit = ni * N + b;
+          if (!opts[bBit]) continue;
+          let ok = false;
+          for (let a = 0; a < N; a++) {
+            if (opts[i * N + a] && compatArr[a * N + b]) { ok = true; break; }
+          }
+          if (!ok) { opts[bBit] = 0; count[ni]--; changed = true; }
+        }
+        if (!changed) continue;
+        if (count[ni] === 0) {
+          forceSeize(ni, clock);
+          if (!inQueue[ni]) { queueBuf.push(ni); inQueue[ni] = 1; }
+        } else if (count[ni] === 1) {
+          let t = -1;
+          for (let b = 0; b < N; b++) if (opts[ni * N + b]) { t = b; break; }
+          finalizeCell(ni, t, clock);
+          if (!inQueue[ni]) { queueBuf.push(ni); inQueue[ni] = 1; }
+        } else {
+          if (!inQueue[ni]) { queueBuf.push(ni); inQueue[ni] = 1; }
+        }
+      }
+    }
+  }
+
+  function collapseOne(clock) {
+    let minCount = Infinity;
+    let cands = [];
+    active.forEach(i => {
+      const c = count[i];
+      if (c < 1) return;
+      if (c < minCount) { minCount = c; cands = [i]; }
+      else if (c === minCount) cands.push(i);
+    });
+    if (!cands.length) return false;
+    const i = cands[(Math.random() * cands.length) | 0];
+    const t = weightedRandomFromMask(i);
+    for (let t2 = 0; t2 < N; t2++) opts[i * N + t2] = t2 === t ? 1 : 0;
+    count[i] = 1;
+    finalizeCell(i, t, clock);
+    propagateFrom(i, clock);
+    return true;
+  }
+
+  function unravelPatch(cx, cy, radius) {
+    const r2 = radius * radius;
+    for (let y = Math.max(0, cy - radius); y <= Math.min(rows - 1, cy + radius); y++) {
+      for (let x = Math.max(0, cx - radius); x <= Math.min(cols - 1, cx + radius); x++) {
+        if ((x - cx) * (x - cx) + (y - cy) * (y - cy) > r2) continue;
+        const i = idx(x, y);
+        for (let t = 0; t < N; t++) opts[i * N + t] = 1;
+        count[i] = N;
+        collapsed[i] = 0;
+        glitch[i] = 0;
+        tileIdx[i] = -1;
+        active.add(i);
+        if (wireSet.delete(i)) wireDirty = true;
+        eraseCell(i);
+      }
+    }
+    doneAt = -1;
+  }
+
+  // ---- rendering ------------------------------------------------------
+  function cellRect(i) {
+    const x = i % cols, y = (i / cols) | 0;
+    return { px: x * cellW, py: y * cellH };
+  }
+
+  function eraseCell(i) {
+    const { px, py } = cellRect(i);
+    cacheCtx.fillStyle = '#06070a';
+    cacheCtx.fillRect(px - 1, py - 1, cellW + 2, cellH + 2);
+  }
+
+  function paintCell(i) {
+    eraseCell(i);
+    const t = tileIdx[i];
+    if (t < 0) return;
+    const { px, py } = cellRect(i);
+    const edges = TILES[t].edges;
+    const wire = edges[0] || edges[1] || edges[2] || edges[3];
+    const cx = px + cellW / 2, cy = py + cellH / 2;
+
+    if (!wire) {
+      cacheCtx.fillStyle = paletteColor(hueField[i], glitch[i] ? 0.05 : 0.028);
+      cacheCtx.fillRect(px, py, cellW, cellH);
+      return;
+    }
+
+    const hue = paletteColor(hueField[i], 0.9);
+    cacheCtx.strokeStyle = hue;
+    cacheCtx.lineWidth = Math.max(1.4, cellW * 0.11);
+    cacheCtx.lineCap = 'round';
+    cacheCtx.shadowColor = hue;
+    cacheCtx.shadowBlur = cellW * 0.5;
+
+    cacheCtx.beginPath();
+    if (edges[0]) { cacheCtx.moveTo(cx, cy); cacheCtx.lineTo(cx, py); }
+    if (edges[1]) { cacheCtx.moveTo(cx, cy); cacheCtx.lineTo(px + cellW, cy); }
+    if (edges[2]) { cacheCtx.moveTo(cx, cy); cacheCtx.lineTo(cx, py + cellH); }
+    if (edges[3]) { cacheCtx.moveTo(cx, cy); cacheCtx.lineTo(px, cy); }
+    cacheCtx.stroke();
+    cacheCtx.shadowBlur = 0;
+
+    cacheCtx.fillStyle = 'rgba(255,255,255,0.85)';
+    cacheCtx.beginPath();
+    cacheCtx.arc(cx, cy, cellW * 0.06, 0, Math.PI * 2);
+    cacheCtx.fill();
+  }
+
+  // ---- pulses: current finding its own path through the settled net ----
+  function pulseNeighborOptions(i, excludeDir) {
+    const t = tileIdx[i];
+    if (t < 0) return [];
+    const edges = TILES[t].edges;
+    const x = i % cols, y = (i / cols) | 0;
+    const outs = [];
+    for (let d = 0; d < 4; d++) {
+      if (d === excludeDir || !edges[d]) continue;
+      const dir = DIRS[d];
+      const nx = x + dir.dx, ny = y + dir.dy;
+      if (nx < 0 || nx >= cols || ny < 0 || ny >= rows) continue;
+      const ni = idx(nx, ny);
+      if (!wireSet.has(ni)) continue;
+      outs.push({ d, ni });
+    }
+    return outs;
+  }
+
+  function trySpawn(p) {
+    if (wireDirty) { wireArr = Array.from(wireSet); wireDirty = false; }
+    if (!wireArr.length) return;
+    const i = wireArr[(Math.random() * wireArr.length) | 0];
+    const opts2 = pulseNeighborOptions(i, -1);
+    if (!opts2.length) return;
+    const choice = opts2[(Math.random() * opts2.length) | 0];
+    p.i = i; p.d = choice.d; p.ni = choice.ni; p.t = 0;
+  }
+
+  function updatePulses(dt) {
+    for (const p of pulses) {
+      if (p.ni < 0) { trySpawn(p); continue; }
+      if (!collapsed[p.ni] || !wireSet.has(p.i)) { p.ni = -1; continue; }
+      p.t += dt * p.speed;
+      if (p.t >= 1) {
+        const enteredFrom = DIRS[p.d].opp;
+        const opts2 = pulseNeighborOptions(p.ni, enteredFrom);
+        p.i = p.ni;
+        if (!opts2.length) { p.ni = -1; p.t = 0; continue; }
+        const choice = opts2[(Math.random() * opts2.length) | 0];
+        p.d = choice.d; p.ni = choice.ni; p.t = 0;
+      }
+    }
+  }
+
+  function drawPulses() {
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const p of pulses) {
+      if (p.ni < 0) continue;
+      const a = cellRect(p.i), b = cellRect(p.ni);
+      const ax = a.px + cellW / 2, ay = a.py + cellH / 2;
+      const bx = b.px + cellW / 2, by = b.py + cellH / 2;
+      const x = ax + (bx - ax) * p.t, y = ay + (by - ay) * p.t;
+      const rad = cellW * 0.9;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      g.addColorStop(0, 'rgba(255,255,255,0.95)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ---- frame ---------------------------------------------------------
+  const FLASH_DUR = 0.55;
+
+  function render(clock) {
+    ctx.drawImage(cacheCanvas, 0, 0);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    active.forEach(i => {
+      const c = count[i];
+      const frac = 1 - c / N;
+      if (frac <= 0.001) return;
+      const { px, py } = cellRect(i);
+      const cx = px + cellW / 2, cy = py + cellH / 2;
+      const flick = 0.5 + 0.5 * Math.sin(clock * 9 + i * 12.9);
+      const alpha = Math.min(0.5, frac * 0.55) * (0.6 + 0.4 * flick);
+      ctx.fillStyle = `rgba(210,225,255,${alpha})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(1, cellW * 0.09), 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let k = recentBirths.length - 1; k >= 0; k--) {
+      const i = recentBirths[k];
+      const age = clock - birth[i];
+      if (age > FLASH_DUR) { recentBirths.splice(k, 1); continue; }
+      const f = 1 - age / FLASH_DUR;
+      const { px, py } = cellRect(i);
+      const cx = px + cellW / 2, cy = py + cellH / 2;
+      ctx.fillStyle = `rgba(255,255,255,${f * f * 0.85})`;
+      ctx.beginPath();
+      ctx.arc(cx, cy, cellW * 0.55 * f + cellW * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    drawPulses();
+
+    ctx.fillStyle = noisePattern;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  function cellFromClient(clientX, clientY) {
+    const r = canvas.getBoundingClientRect();
+    const px = ((clientX - r.left) / r.width) * W;
+    const py = ((clientY - r.top) / r.height) * H;
+    const cx = Math.floor(px / cellW);
+    const cy = Math.floor(py / cellH);
+    return { cx: Math.max(0, Math.min(cols - 1, cx)), cy: Math.max(0, Math.min(rows - 1, cy)) };
+  }
+
+  let clockNow = 0;
+  window.addEventListener('pointermove', (e) => {
+    const { cx, cy } = cellFromClient(e.clientX, e.clientY);
+    if (clockNow - lastTrickle > 0.09) {
+      lastTrickle = clockNow;
+      if (Math.random() < 0.6) unravelPatch(cx, cy, 1);
+    }
+  });
+  window.addEventListener('pointerdown', (e) => {
+    const { cx, cy } = cellFromClient(e.clientX, e.clientY);
+    unravelPatch(cx, cy, 6);
+  });
+  window.addEventListener('resize', buildGrid);
+
+  let start = null;
+  function frame(tms) {
+    if (start === null) start = tms;
+    const clock = (tms - start) / 1000;
+    const dt = Math.min(0.05, clock - clockNow);
+    clockNow = clock;
+
+    if (doneAt < 0) {
+      const bursts = 4 + ((Math.random() * 5) | 0);
+      for (let k = 0; k < bursts; k++) {
+        if (!collapseOne(clock)) { doneAt = clock; break; }
+      }
+    } else if (clock - lastAutoUnravel > 45 + Math.random() * 30) {
+      const rx = (Math.random() * cols) | 0, ry = (Math.random() * rows) | 0;
+      unravelPatch(rx, ry, 6 + ((Math.random() * 8) | 0));
+      lastAutoUnravel = clock;
+    }
+
+    updatePulses(dt);
+    render(clock);
+
+    requestAnimationFrame(frame);
+  }
+
+  buildGrid();
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
