@@ -1,0 +1,53 @@
+{
+  "id": "20260809-the-ship-of-theseus-and-the-pu-c3e4aa",
+  "date": "2026-08-09T10:15:41.290707",
+  "title": "The Ship of Theseus and the Puzzle of Staying the Same",
+  "question": "If every part of you is eventually replaced, what makes you the same person you were ten years ago?",
+  "summary": "Your cells turn over, your beliefs shift, your memories decay and get rewritten&mdash;yet you feel continuously like one person. An exploration of what, if anything, actually persists.",
+  "content": "\n    <p>The ancient puzzle is simple to state: if a ship has every one of its planks replaced over time, is it still the same ship? The puzzle stops being a curiosity the moment you realize it describes you. Most of the atoms in your body are replaced within a decade. Your personality, opinions, and even the felt texture of your memories shift substantially over a lifetime. And yet you don't experience yourself as a sequence of different people&mdash;you experience one continuous \"I.\" What is that continuity actually tracking?</p>\n\n    <h2>Candidate Answers</h2>\n    <p>Philosophers have proposed several candidates for what makes you \"the same person\" over time. Bodily continuity says it's your physical organism, persisting through gradual change, the way a river stays \"the same river\" despite the water constantly flowing through it. Psychological continuity, following John Locke, says it's an overlapping chain of memories and mental states&mdash;you today remember being you yesterday, who remembers being you the day before, and so on back, even if you today share almost nothing in common with the you of thirty years ago. Narrative theories say identity is less a fact about the world and more a story you continuously construct and revise to make sense of a life.</p>\n\n    <p>Each candidate breaks under pressure. Bodily continuity struggles with total memory loss&mdash;is a person with severe amnesia still \"themselves\" in the sense that matters? Psychological continuity struggles with the fact that memory is not a fixed archive but an actively reconstructive process; you don't replay the past so much as regenerate a plausible version of it each time, meaning the \"chain\" connecting you to your younger self is made of links forged fresh, not preserved.</p>\n\n    <h2>Split-Brain and Fission Cases</h2>\n    <p>Thought experiments push the puzzle further. Imagine your brain is split and each half is transplanted into a different body, with each resulting person plausibly claiming to be you, remembering your life, sharing your values. There cannot be two of \"you\" in the sense of one continuous stream of experience&mdash;so which one is really you? Derek Parfit's answer was startling: neither, in the sense you assumed mattered. What matters for survival isn't strict identity at all, he argued, but psychological continuity and connectedness&mdash;a matter of degree, not an all-or-nothing fact. If he's right, the question \"am I the same person?\" may be malformed, smuggling in an assumption (that identity is binary and further-fact-determined) that doesn't hold up.</p>\n\n    <h2>The Cell-Turnover Case, Revisited</h2>\n    <p>Biologically, the \"ship of Theseus\" framing undersells how strange the replacement actually is. Different tissues turn over at wildly different rates&mdash;the lining of your gut every few days, your skeleton over roughly a decade, and (notably) most neurons in your cerebral cortex do not turn over at all, persisting your whole life while much of their molecular machinery is replaced piecemeal. So the \"planks\" of the ship aren't replaced all at once or uniformly; identity, if it's tracking anything physical, is tracking a pattern of organization sustained through flux, not a fixed material substrate.</p>\n\n    <h2>Why This Isn't Just Academic</h2>\n    <p>The puzzle has teeth in real decisions: how much should a person be held responsible today for a crime committed by a very different version of themselves decades ago? Should an advance directive written by a healthy person bind the incapacitated person they later became, who may have different values? If mind-uploading or gradual neural replacement ever becomes real, does the uploaded pattern count as you continuing, or as you ending and a copy beginning? These aren't answerable by more neuroscience alone&mdash;they hinge on which theory of persistence, if any, is actually tracking something real.</p>\n    ",
+  "tags": [
+    "philosophy",
+    "personal-identity",
+    "psychology",
+    "neuroscience",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Analytic Philosophy Perspective",
+      "description": "Derek Parfit argued that personal identity is not what matters for survival&mdash;psychological continuity and connectedness, which admit of degrees, are what we actually care about, even though identity itself may be all-or-nothing or ill-defined."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Cellular turnover happens at vastly different rates across tissues, and long-lived neurons persist for life even as their component molecules are replaced&mdash;identity tracks organizational pattern, not material continuity."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Memory is reconstructive rather than archival: each act of remembering rebuilds the past using present cues and beliefs, meaning the 'chain' of psychological continuity is continuously rewritten, not simply preserved."
+    },
+    {
+      "title": "Legal and Ethical Perspective",
+      "description": "Criminal responsibility, contracts, and advance medical directives all implicitly assume a persisting person across time, yet philosophical accounts of identity struggle to justify holding a present self fully accountable for a past self's radically different choices."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "The doctrine of anatta ('non-self') independently arrives at a similar conclusion to Parfit: what we call a persisting self is a convenient label for a causally connected but ever-changing stream of physical and mental events, not a fixed underlying entity."
+    }
+  ],
+  "connections": [
+    "Derek Parfit's Reasons and Persons and the ethics of future selves",
+    "The Buddhist concept of anatta and the illusion of a fixed self",
+    "Memory reconsolidation and the reconstructive theory of memory",
+    "Mind uploading and the philosophy of digital continuity",
+    "The Sorites paradox and vagueness in gradual-change puzzles",
+    "Split-brain patients and the unity of consciousness",
+    "Narrative identity theory in psychology"
+  ],
+  "openQuestions": [
+    "If psychological continuity comes in degrees, is there any principled point at which 'enough change' means a genuinely different person exists?",
+    "Should moral and legal responsibility track strict personal identity, or something more like Parfit's degreed psychological connectedness?",
+    "Does a perfect, gradual neuron-by-neuron replacement (biological or synthetic) preserve identity in a way that instantaneous whole-brain duplication does not, and if so, why does the pace of change matter?",
+    "Is the felt sense of being one continuous 'I' evidence of a real persisting fact, or a compelling illusion generated by an unreliable, reconstructive memory system?",
+    "Do split-brain and fission thought experiments reveal something true and strange about ordinary identity, or are they too exotic to tell us anything about everyday persistence?"
+  ]
+}
