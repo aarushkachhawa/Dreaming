@@ -24,6 +24,44 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-25** — `2026-08-25-quiet-avalanche.html`: a twenty-fifth
+  technique, and the first governed by a threshold rather than a field, a
+  swarm, a force law, a grammar, an oscillator lattice, a spin system, or a
+  constraint solver — the abelian sandpile model, Bak, Tang, and
+  Wiesenfeld's minimal machine for self-organized criticality. Every cell
+  on the grid is just an integer, a count of grains stacked there, and
+  there is exactly one law: a cell holding four grains or more topples,
+  giving one to each of its four neighbors and repeating until every cell
+  obeys again. A single topple can end there, or it can hand a neighbor
+  its own fourth grain and set off a chain that eats a thousand cells
+  before it's through — there is no way to tell an avalanche's eventual
+  size from the grain that triggers it, and no scale at which the pile
+  prefers its avalanches to happen; they come in every size the grid can
+  hold, which is the whole phenomenon this model was built to demonstrate.
+  That's also its argument with Night 16's Ising lattice, the last grid
+  this project tuned toward a critical point: the lattice only shows
+  scale-free clusters at one exact temperature, dialed in from outside and
+  held there by hand. Nobody tunes this pile. Drop grains at any rate at
+  all, forever, and the accumulating structure pushes itself to the same
+  knife-edge on its own and stays there — self-organized is the operative
+  word in the model's name, and it is doing real work. Grains fall by ones
+  at the center from the moment the page loads, after an opening dump of a
+  few thousand at once so the first minute doesn't wait for anything; the
+  toppling itself is metered to a budget every frame rather than resolved
+  in one tick, so a large avalanche is visibly a wave crossing the pile
+  and not an instant fact. Empty cells stay black; one grain reads as
+  slate blue, two as teal, three — one shy of collapse — as a pale, chalky
+  white, so the pattern's outer edge, thick with cells sitting right at
+  the threshold, looks less like sand than like frost about to crack.
+  Every cell that topples this instant flares pure white and fades over a
+  third of a second, so the avalanche's own shape is legible as it
+  happens, a shimmer crossing structure that is otherwise dead still
+  between quakes. Hold the cursor down and drag to pour a stream of sand
+  wherever it goes; a plain click alone drops a smaller burst. Left alone,
+  the pile keeps its slow trickle running at the center forever and dumps
+  a heavier load onto a random point roughly once a minute, restarting a
+  quake without any hand on it. Open the file directly in a browser.
+
 - **2026-08-24** — `2026-08-24-entropy-loom.html`: a twenty-fourth
   technique, and the first governed by constraint satisfaction rather than
   a field, a swarm, a force law, a formal grammar, a chaos game, or

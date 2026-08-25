@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quiet Avalanche — Night 25</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #04060e;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Quiet Avalanche &mdash; Night 25 &mdash; hold and drag to pour sand &middot; click for a burst</div>
+<script>
+(() => {
+  // A twenty-fifth technique, and the first governed by a threshold rather
+  // than a field, a swarm, a force law, a grammar, an oscillator lattice, a
+  // spin system, or a constraint solver — the abelian sandpile model, Bak,
+  // Tang, and Wiesenfeld's minimal machine for self-organized criticality.
+  // Every cell on the grid is just an integer, a count of grains stacked
+  // there, and there is exactly one law: a cell holding four grains or more
+  // topples, giving one to each of its four neighbors and repeating until
+  // every cell obeys again. A single topple can end there, or it can hand a
+  // neighbor its own fourth grain and set off a chain that eats a thousand
+  // cells before it's through — there is no way to tell an avalanche's
+  // eventual size from the grain that triggers it, and no scale at which
+  // the pile prefers its avalanches to happen; they come in every size the
+  // grid can hold, which is the whole phenomenon this model was built to
+  // demonstrate. That's also its argument with Night 16's Ising lattice,
+  // the last grid this project tuned toward a critical point: the lattice
+  // only shows scale-free clusters at one exact temperature, dialed in
+  // from outside and held there by hand. Nobody tunes this pile. Drop
+  // grains at any rate at all, forever, and the accumulating structure
+  // pushes itself to the same knife-edge on its own and stays there —
+  // self-organized is the operative word in the model's name, and it is
+  // doing real work. Grains fall by ones at the center from the moment the
+  // page loads, after an opening dump of a few thousand at once so the
+  // first minute doesn't wait for anything; the toppling itself is metered
+  // to a budget every frame rather than resolved in one tick, so a large
+  // avalanche is visibly a wave crossing the pile and not an instant fact.
+  // Empty cells stay black; one grain reads as slate blue, two as teal,
+  // three — one shy of collapse — as a pale, chalky white, so the
+  // pattern's outer edge, thick with cells sitting right at the threshold,
+  // looks less like sand than like frost about to crack. Every cell that
+  // topples this instant flares pure white and fades over a third of a
+  // second, so the avalanche's own shape is legible as it happens, a
+  // shimmer crossing structure that is otherwise dead still between
+  // quakes. Hold the cursor down and drag to pour a stream of sand
+  // wherever it goes; a plain click alone drops a smaller burst. Left
+  // alone, the pile keeps its slow trickle running at the center forever
+  // and dumps a heavier load onto a random point roughly once a minute,
+  // restarting a quake without any hand on it. Open the file directly in
+  // a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const caption = document.getElementById('caption');
+
+  const BG = [4, 6, 14];
+  const H1 = [42, 58, 92];
+  const H2 = [45, 182, 178];
+  const H3 = [214, 240, 255];
+  const FLASH_DUR = 0.32;
+
+  let cols, rows, cx, cy;
+  let heights, inQueue, queue, lastTopple;
+  let imgData, data;
+  let start = null, clockNow = 0;
+  let lastTrickleFeed = 0, lastHoverFeed = 0, lastQuake = 0, quakeInterval = 45;
+  let holding = false, holdCell = { x: 0, y: 0 };
+
+  function idx(x, y) { return y * cols + x; }
+
+  function addGrain(x, y, amount) {
+    if (x < 0 || x >= cols || y < 0 || y >= rows) return;
+    const i = idx(x, y);
+    heights[i] += amount;
+    if (heights[i] >= 4 && !inQueue[i]) {
+      inQueue[i] = 1;
+      queue.push(i);
+    }
+  }
+
+  function stepBudget(budget, clock) {
+    let processed = 0;
+    while (queue.length && processed < budget) {
+      const i = queue.pop();
+      inQueue[i] = 0;
+      if (heights[i] < 4) continue;
+      const x = i % cols, y = (i / cols) | 0;
+      while (heights[i] >= 4) {
+        heights[i] -= 4;
+        lastTopple[i] = clock;
+        addGrain(x - 1, y, 1);
+        addGrain(x + 1, y, 1);
+        addGrain(x, y - 1, 1);
+        addGrain(x, y + 1, 1);
+        processed++;
+      }
+    }
+  }
+
+  function buildGrid() {
+    const targetCols = 220;
+    let cellPx = Math.max(2, window.innerWidth / targetCols);
+    cols = Math.max(60, Math.round(window.innerWidth / cellPx));
+    rows = Math.max(60, Math.round(window.innerHeight / cellPx));
+    if (rows > 380) {
+      cellPx = window.innerHeight / 380;
+      cols = Math.max(60, Math.round(window.innerWidth / cellPx));
+      rows = 380;
+    }
+
+    canvas.width = cols;
+    canvas.height = rows;
+
+    const cells = cols * rows;
+    heights = new Uint16Array(cells);
+    inQueue = new Uint8Array(cells);
+    queue = [];
+    lastTopple = new Float32Array(cells).fill(-1e9);
+    imgData = ctx.createImageData(cols, rows);
+    data = imgData.data;
+    for (let i = 3; i < data.length; i += 4) data[i] = 255;
+
+    cx = cols >> 1;
+    cy = rows >> 1;
+
+    lastTrickleFeed = 0;
+    lastHoverFeed = 0;
+    lastQuake = 0;
+    quakeInterval = 45 + Math.random() * 20;
+
+    addGrain(cx, cy, 5000);
+  }
+
+  function render(clock) {
+    const n = cols * rows;
+    for (let i = 0; i < n; i++) {
+      const h = heights[i];
+      let r, g, b;
+      if (h <= 0) { r = BG[0]; g = BG[1]; b = BG[2]; }
+      else if (h === 1) { r = H1[0]; g = H1[1]; b = H1[2]; }
+      else if (h === 2) { r = H2[0]; g = H2[1]; b = H2[2]; }
+      else { r = H3[0]; g = H3[1]; b = H3[2]; }
+
+      const age = clock - lastTopple[i];
+      if (age >= 0 && age < FLASH_DUR) {
+        const f = 1 - age / FLASH_DUR;
+        r += (255 - r) * f;
+        g += (255 - g) * f;
+        b += (255 - b) * f;
+      }
+
+      const o = i * 4;
+      data[o] = r; data[o + 1] = g; data[o + 2] = b;
+    }
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  function cellFromClient(clientX, clientY) {
+    const r = canvas.getBoundingClientRect();
+    const x = Math.floor(((clientX - r.left) / r.width) * cols);
+    const y = Math.floor(((clientY - r.top) / r.height) * rows);
+    return {
+      x: Math.max(0, Math.min(cols - 1, x)),
+      y: Math.max(0, Math.min(rows - 1, y)),
+    };
+  }
+
+  window.addEventListener('pointerdown', (e) => {
+    const c = cellFromClient(e.clientX, e.clientY);
+    addGrain(c.x, c.y, 700);
+    holding = true;
+    holdCell = c;
+  });
+  window.addEventListener('pointermove', (e) => {
+    const c = cellFromClient(e.clientX, e.clientY);
+    if (holding) {
+      holdCell = c;
+    } else if (clockNow - lastHoverFeed > 0.05) {
+      lastHoverFeed = clockNow;
+      addGrain(c.x, c.y, 1);
+    }
+  });
+  window.addEventListener('pointerup', () => { holding = false; });
+  window.addEventListener('pointerleave', () => { holding = false; });
+  window.addEventListener('pointercancel', () => { holding = false; });
+  window.addEventListener('resize', buildGrid);
+
+  const BUDGET = 6000;
+
+  function frame(tms) {
+    if (start === null) start = tms;
+    const clock = (tms - start) / 1000;
+    clockNow = clock;
+
+    if (clock - lastTrickleFeed > 0.05) {
+      lastTrickleFeed = clock;
+      addGrain(cx, cy, 1);
+    }
+    if (holding) addGrain(holdCell.x, holdCell.y, 6);
+
+    if (clock - lastQuake > quakeInterval) {
+      const ang = Math.random() * Math.PI * 2;
+      const rad = Math.random() * Math.min(cols, rows) * 0.25;
+      const rx = Math.max(0, Math.min(cols - 1, Math.round(cx + Math.cos(ang) * rad)));
+      const ry = Math.max(0, Math.min(rows - 1, Math.round(cy + Math.sin(ang) * rad)));
+      addGrain(rx, ry, 1800);
+      lastQuake = clock;
+      quakeInterval = 40 + Math.random() * 30;
+    }
+
+    stepBudget(BUDGET, clock);
+    render(clock);
+
+    requestAnimationFrame(frame);
+  }
+
+  buildGrid();
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
