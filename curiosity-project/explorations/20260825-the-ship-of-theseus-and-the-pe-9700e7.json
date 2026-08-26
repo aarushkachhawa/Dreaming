@@ -1,0 +1,53 @@
+{
+  "id": "20260825-the-ship-of-theseus-and-the-pe-9700e7",
+  "date": "2026-08-25T10:15:12.012357",
+  "title": "The Ship of Theseus and the Persistence of Identity",
+  "question": "If every part of you is replaced over time, in what sense are you still you?",
+  "summary": "An ancient puzzle about a rebuilt ship turns out to be a live question about atoms, memories, companies, and rivers that never stop being themselves while never staying the same.",
+  "content": "\n<p>Plutarch tells of a ship sailed by Theseus that the Athenians preserved for centuries, replacing each rotting plank as it wore out. Eventually every original timber was gone. Was it still the ship of Theseus? Thomas Hobbes sharpened the puzzle: suppose someone collected the discarded planks and reassembled them into a second ship. Which one, if either, is the real one?</p>\n\n<h2>It Is Not Really About Ships</h2>\n<p>The puzzle bites because it is secretly about you. The atoms in your body turn over almost completely across a decade; your skeleton rebuilds itself roughly every ten years, your gut lining every few days. The cells that made up the person who first read this sentence are, by the time you finish the paragraph, mostly still there, but statistically speaking, very little of the \"you\" from childhood remains at the level of matter. Yet no court, no friend, and no version of you disputes that you are the same person who was scolded for a specific mistake at age seven.</p>\n\n<h2>Three Candidates for What Persists</h2>\n<p>Philosophers have offered different answers for what makes something the \"same\" thing over time. A physical continuity view says identity tracks the material: same ship if enough original planks remain, which fails badly once every plank is gone. A structural or functional view says identity tracks the pattern, not the substance: the ship is the same because the design, the role, and the causal history of repair are continuous, plank-swap by plank-swap. A narrative or psychological view, applied to people rather than ships, says you are the same person because of an unbroken chain of memory and intention linking each moment to the next, even though no single memory needs to survive the whole chain.</p>\n\n<h2>Where It Gets Practical</h2>\n<p>This is not idle wordplay. Legal systems must decide whether a corporation that has replaced every employee, every asset, and every product line over fifty years is still liable for what it did decades ago (usually yes). Software systems face the same question under continuous deployment: is a codebase that has had every line rewritten still \"the same\" program, and does that matter for licensing or authorship? Medicine asks whether a patient with severe dementia, whose memories and personality have been substantially erased, is still the same person whose prior wishes should govern their care.</p>\n\n<h2>The River That Never Steps Twice</h2>\n<p>Heraclitus offered a different move: you cannot step into the same river twice, because new water is always flowing, and in some sense you cannot step into it even once, because you too have changed by the time your foot lands. Rather than treating this as a problem to solve, Heraclitus treated persistence itself as the illusion, with change as the only real constant. On this view, the question \"is it the same ship\" is malformed, since sameness was never anything more than a useful fiction laid over a river of replacement.</p>\n\n<h2>A Modern Twist: Teleportation and Copies</h2>\n<p>Thought experiments about teleporters sharpen the stakes further. If a machine scans your body, destroys the original, and builds an atom-for-atom duplicate elsewhere, did you travel, or did you die and get replaced by a copy who merely believes it is you? If the machine malfunctions and produces two copies instead of destroying the original, both copies will insist, with equal conviction and equal memory, that they are the real you. There may be no fact of the matter that settles it, which suggests that \"being the same person\" was never a single, sharp property waiting to be discovered, but a bundle of overlapping criteria that usually agree and occasionally, unsettlingly, come apart.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "consciousness",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Analytic Philosophy Perspective",
+      "description": "Identity over time is analyzed through necessary and sufficient conditions; philosophers like Derek Parfit argue what matters in survival is psychological continuity, not strict identity, dissolving the puzzle rather than solving it."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Organisms are metabolically dynamic patterns, not fixed collections of matter. An organism persists as a self-maintaining process, so cell turnover is not a threat to identity but the very mechanism of staying alive."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Law tracks identity through continuity of registration, obligations, and institutional recognition rather than material sameness, letting corporations, nations, and rivers of the same legal name persist despite total physical replacement."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "The doctrine of anatta (non-self) holds that the persisting, unified self is an illusion generated moment to moment by the five aggregates; the Ship of Theseus puzzle is, on this view, evidence against selfhood rather than a puzzle about it."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Version-controlled software makes the puzzle concrete: a repository is defined by continuous history and identifiers even as every line of code is eventually rewritten, mirroring the structural-continuity answer to personal identity."
+    }
+  ],
+  "connections": [
+    "Personal identity and Derek Parfit's psychological continuity theory",
+    "Buddhist anatta and the doctrine of no-self",
+    "The teleporter and duplication thought experiments",
+    "Corporate personhood and legal continuity",
+    "Cell turnover and the biology of the self",
+    "Heraclitus and the metaphysics of change",
+    "Software version control as a model of structural identity"
+  ],
+  "openQuestions": [
+    "Is identity a single fact about the world, or a bundle of loosely correlated criteria that we mistake for one thing?",
+    "If psychological continuity is what matters, does gradual memory loss (as in dementia) mean a person is gradually ceasing to exist?",
+    "Would a perfect atom-for-atom duplicate of you be you, or merely someone who believes they are you?",
+    "Do organizations, nations, and ecosystems have identity in the same sense that persons do, or only by useful analogy?",
+    "If nothing about you is materially continuous, what work is the word \"same\" actually doing when we call you the same person you were a decade ago?"
+  ]
+}
