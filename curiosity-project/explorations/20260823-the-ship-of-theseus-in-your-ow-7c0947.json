@@ -1,0 +1,48 @@
+{
+  "id": "20260823-the-ship-of-theseus-in-your-ow-7c0947",
+  "date": "2026-08-23T10:13:03.091654",
+  "title": "The Ship of Theseus in Your Own Body",
+  "question": "If nearly every atom in you is replaced over the years, what makes you the same person you were a decade ago?",
+  "summary": "Human bodies genuinely do replace most of their material over time, turning an ancient thought experiment about a repaired ship into a literal fact about every living person. What survives the replacement \u2014 and what that says about identity \u2014 depends on whether you locate 'you' in matter, pattern, memory, or an unbroken causal thread.",
+  "content": "\n<p>The ancient puzzle goes like this: a ship has every one of its planks gradually replaced over years of repair. Once none of the original wood remains, is it still the same ship? Philosophers have argued about it for over two thousand years, usually treating it as a fanciful hypothetical. It isn't. It is, quite literally, a description of you. Most of the atoms making up your body today are not the atoms that made it up ten years ago. Skin replaces itself roughly monthly, the lining of your gut within days, red blood cells within months, and even bone remodels itself substantially over a decade. The puzzle isn't hypothetical \u2014 it's biography.</p>\n\n<h2>What Doesn't Get Replaced</h2>\n<p>The one striking exception is neurons in much of the adult brain, particularly the cerebral cortex, which largely do not get replaced once you reach adulthood \u2014 though the molecules that make them up still turn over continuously. So even your \"permanent\" neurons are more like a pattern of activity sustained across a river of changing atoms than a fixed physical object. This makes the identity puzzle sharper, not easier: even the part of you that feels most stable is still material flux underneath a persisting structure.</p>\n\n<h2>Four Candidate Answers</h2>\n<p>Philosophers have offered several competing accounts of what makes present-you the same entity as past-you. The <strong>bodily continuity</strong> view says identity tracks the physical organism, atoms notwithstanding \u2014 much as a river remains \"the same river\" despite the water constantly flowing through it. The <strong>psychological continuity</strong> view, associated with John Locke, says what matters is an overlapping chain of memories and personality traits linking each moment to the next, even if no single memory reaches all the way back. The <strong>narrative</strong> view holds that identity is a story you construct and keep revising, closer to a novel's continuity than a physical object's. And a more radical view, associated with Derek Parfit, argues there is no deep further fact about identity at all \u2014 what matters isn't \"sameness\" but the degree of psychological connectedness between time-slices, which comes in degrees rather than being all-or-nothing.</p>\n\n<h2>Why the Stakes Are Not Just Academic</h2>\n<p>This isn't idle wordplay. It bears directly on how we think about responsibility for actions taken by a much younger version of oneself, on what we owe to a future self with dementia who may share none of your current memories, and on the ethics of radical life extension or mind uploading. If psychological continuity is what matters, then a person with severe amnesia has, in an important sense, ceased to exist even while their body persists \u2014 a genuinely unsettling implication that pushes many people back toward the bodily continuity view, whatever its own problems.</p>\n\n<h2>The Uploading Thought Experiment</h2>\n<p>Modern versions of the puzzle ask: if your brain were scanned neuron-by-neuron and the pattern reconstructed in software, would the resulting mind be you, or merely an exact copy that believes it's you? Gradual replacement, one neuron at a time, seems to preserve identity intuitively \u2014 it mirrors ordinary cellular turnover. But instantaneous duplication feels different, producing two candidates with equal claim to being \"you,\" which most theories of identity say is impossible for one person to become two. That asymmetry between gradual and sudden change seems to be doing a lot of intuitive work, and it isn't obvious it should.</p>\n\n<h2>A Working Answer, Held Loosely</h2>\n<p>The most defensible position may be that identity isn't a single fact waiting to be discovered but a practical concept we use for different purposes \u2014 legal, moral, personal \u2014 that don't all have to converge on the same boundary. The ship, and you, persist not because some essential substance survives replacement, but because there is an unbroken causal and structural thread connecting each state to the next, close enough in every adjacent link that no single point in the chain marks a death.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "biology",
+    "neuroscience",
+    "metaphysics"
+  ],
+  "perspectives": [
+    {
+      "title": "Analytic Philosophy",
+      "description": "Distinguishes bodily, psychological, and narrative theories of personal identity, and asks whether 'sameness' is a binary fact or a matter of degree."
+    },
+    {
+      "title": "Cell Biology",
+      "description": "Documents the literal turnover rates of human tissue, showing the thought experiment describes an ordinary physiological process rather than a hypothetical one."
+    },
+    {
+      "title": "Neuroscience",
+      "description": "Notes that most cortical neurons persist for life even as their constituent molecules turn over, complicating any simple 'atoms are replaced, so nothing persists' argument."
+    },
+    {
+      "title": "Law and Ethics",
+      "description": "Uses identity theory to reason about responsibility across time, informed consent for one's future self, and end-of-life decisions for patients with dementia."
+    }
+  ],
+  "connections": [
+    "Derek Parfit's work on personal identity and what matters in survival",
+    "John Locke's memory theory of personal identity",
+    "The biology of cellular turnover and tissue regeneration",
+    "Mind-uploading and the copy-versus-continuity problem",
+    "The Sorites paradox and vagueness in category boundaries",
+    "Buddhist anatta (non-self) as a philosophical parallel from a different tradition",
+    "Legal doctrines of culpability for crimes committed by one's past self"
+  ],
+  "openQuestions": [
+    "Is there a fact of the matter about personal identity, or only a set of practical conventions we apply for different purposes?",
+    "Does gradual replacement genuinely preserve identity in a way that sudden duplication does not, or is that just an intuition we haven't justified?",
+    "What should we owe, morally and legally, to a future self who may share almost none of our current memories or values?",
+    "If a mind were uploaded and the biological original destroyed, would the uploaded pattern be a continuation of the person, or their replacement?"
+  ]
+}
