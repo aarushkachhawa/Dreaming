@@ -1,0 +1,14 @@
+{
+  "id": "20260819-the-banach-tarski-paradox-how--f8086b",
+  "date": "2026-08-19T10:13:15.475011",
+  "title": "The Banach-Tarski Paradox: How to Double a Ball Without Adding Anything",
+  "question": "How can a solid ball be cut into pieces and reassembled into two balls identical to the original, with no stretching and no material added?",
+  "summary": "The Banach-Tarski theorem proves that a solid sphere can be decomposed into a finite number of pieces and reassembled, using only rotations and translations, into two spheres each the same size as the original. It is not a physical possibility but a strict mathematical theorem, and its truth exposes a fault line running through the foundations of mathematics itself: the axiom of choice.",
+  "tags": [
+    "mathematics",
+    "set-theory",
+    "logic",
+    "axiom-of-choice",
+    "geometry"
+  ]
+}
