@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Common Descent — Night 26</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="trail"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Common Descent &mdash; Night 26 &mdash; move to shake the frame &middot; click to reset the bundle</div>
+<script>
+(() => {
+  // A twenty-sixth technique, and the first with no field, no lattice, no
+  // swarm behavior, and no iterated map — a double pendulum, two rigid
+  // links pinned end to end at a fixed hinge, governed by nothing but exact
+  // Lagrangian mechanics: four coupled nonlinear ODEs, solved every frame by
+  // fourth-order Runge-Kutta. Night 5's three-body waltz was chaotic too,
+  // but that chaos came from an inverse-square force acting between bodies
+  // free to wander anywhere; this chaos comes from two links of fixed
+  // length that can only ever swing, and it is still enough. Two hundred
+  // and sixty pendulums share identical mass, identical arms, identical
+  // starting release near the top of their swing — upside down, the
+  // unstable equilibrium where the smallest push decides everything — and
+  // differ from one another only in their opening angle, spread across a
+  // bundle a fraction of a degree wide, tighter than the width the eye can
+  // resolve. For the first several seconds they swing as one: same tuck,
+  // same near-miss at the top, indistinguishable. Then, with no warning
+  // legible in advance, the bundle tears open — a rainbow assigned by
+  // starting order, invisible while every thread traced the same line,
+  // suddenly unspooling across the frame as each pendulum's private
+  // rounding error decides its own fate. That unspooling is the entire
+  // subject: this is the Lyapunov exponent made visible, not asserted.
+  // Every thread fades from bright core to spent trail with an additive
+  // blend, so wherever the bundle is still coherent the overlapping colors
+  // burn white, and only where it has genuinely diverged does the rainbow
+  // show through as separate hues. A faint charcoal double-arm — one
+  // pendulum drawn as itself rather than as a trace — swings at the
+  // bundle's exact center throughout, the literal linkage the whole
+  // rainbow is a portrait of. A slight drag bleeds energy from every swing,
+  // so the tumbling scatter that follows divergence isn't permanent: over
+  // the following minute the pendulums settle toward the calm, nearly
+  // linear regime near the bottom of their arc, where chaos is weak and
+  // the threads quietly braid back toward a shared rhythm, only to be
+  // struck back into their upside-down starting bundle by an automatic
+  // reset roughly every two minutes. Move the cursor to shake the frame,
+  // feeding a jolt of shared angular momentum into every pendulum alike,
+  // which does nothing to their relative spread but can rouse a settled
+  // bundle back into motion. Click to strike it outright: every pendulum
+  // snaps back to a fresh near-identical release and the whole descent,
+  // shared instant to private chaos, runs again from scratch. Open the
+  // file directly in a browser.
+
+  const trailCanvas = document.getElementById('trail');
+  const glowCanvas = document.getElementById('glow');
+  const trailCtx = trailCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+  const caption = document.getElementById('caption');
+
+  const TWO_PI = Math.PI * 2;
+  const N = 260;
+  const EPS = 0.001;        // opening-angle spread across the bundle, radians
+  const DAMP = 0.9998;      // per-substep energy bleed
+  const SUB_DT = 1 / 240;
+
+  let W, H, DPR, anchorX, anchorY, L, G;
+
+  const theta1 = new Float64Array(N);
+  const theta2 = new Float64Array(N);
+  const omega1 = new Float64Array(N);
+  const omega2 = new Float64Array(N);
+  const prevX2 = new Float64Array(N);
+  const prevY2 = new Float64Array(N);
+  const hue = new Float64Array(N);
+
+  let paletteOffset = 0;
+  let freshBundle = true; // suppress the first trail segment after any reset/resize
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [trailCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    trailCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    trailCtx.fillStyle = '#05050a';
+    trailCtx.fillRect(0, 0, W, H);
+
+    anchorX = W / 2;
+    anchorY = H * 0.4;
+    L = Math.min(W, H) * 0.165;
+    G = L * 8;
+    freshBundle = true;
+  }
+
+  function seedBundle() {
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    const base1 = dir * Math.PI * (0.975 + Math.random() * 0.02);
+    const base2 = (Math.random() * 2 - 1) * Math.PI * 0.7;
+    for (let i = 0; i < N; i++) {
+      theta1[i] = base1 + ((i / (N - 1)) - 0.5) * EPS;
+      theta2[i] = base2;
+      omega1[i] = 0;
+      omega2[i] = 0;
+      hue[i] = 190 + (i / (N - 1)) * 165;
+    }
+    paletteOffset = Math.random() * 60 - 30;
+    trailCtx.fillStyle = 'rgba(5, 5, 10, 0.9)';
+    trailCtx.fillRect(0, 0, W, H);
+    freshBundle = true;
+  }
+
+  // --- physics: equal unit masses, equal arm lengths, gravity G, arm L ---
+  let accA1 = 0, accA2 = 0;
+  function accel(t1, t2, w1, w2) {
+    const delta = t1 - t2;
+    const cosD = Math.cos(delta);
+    const sinD = Math.sin(delta);
+    const cos2d = Math.cos(2 * delta);
+    const den = L * (3 - cos2d);
+    const num1 = -G * 3 * Math.sin(t1) - G * Math.sin(t1 - 2 * t2)
+      - 2 * sinD * (w2 * w2 * L + w1 * w1 * L * cosD);
+    const num2 = 2 * sinD * (2 * L * w1 * w1 + 2 * G * Math.cos(t1) + L * w2 * w2 * cosD);
+    accA1 = num1 / den;
+    accA2 = num2 / den;
+  }
+
+  let tiltImpulse = 0;
+  let lastPointerX = null;
+
+  function stepAll(dt) {
+    for (let i = 0; i < N; i++) {
+      const t1 = theta1[i], t2 = theta2[i], w1 = omega1[i], w2 = omega2[i];
+
+      accel(t1, t2, w1, w2);
+      const k1t1 = w1, k1t2 = w2, k1w1 = accA1, k1w2 = accA2;
+
+      const t1b = t1 + 0.5 * dt * k1t1, t2b = t2 + 0.5 * dt * k1t2;
+      const w1b = w1 + 0.5 * dt * k1w1, w2b = w2 + 0.5 * dt * k1w2;
+      accel(t1b, t2b, w1b, w2b);
+      const k2t1 = w1b, k2t2 = w2b, k2w1 = accA1, k2w2 = accA2;
+
+      const t1c = t1 + 0.5 * dt * k2t1, t2c = t2 + 0.5 * dt * k2t2;
+      const w1c = w1 + 0.5 * dt * k2w1, w2c = w2 + 0.5 * dt * k2w2;
+      accel(t1c, t2c, w1c, w2c);
+      const k3t1 = w1c, k3t2 = w2c, k3w1 = accA1, k3w2 = accA2;
+
+      const t1d = t1 + dt * k3t1, t2d = t2 + dt * k3t2;
+      const w1d = w1 + dt * k3w1, w2d = w2 + dt * k3w2;
+      accel(t1d, t2d, w1d, w2d);
+      const k4t1 = w1d, k4t2 = w2d, k4w1 = accA1, k4w2 = accA2;
+
+      theta1[i] = t1 + (dt / 6) * (k1t1 + 2 * k2t1 + 2 * k3t1 + k4t1);
+      theta2[i] = t2 + (dt / 6) * (k1t2 + 2 * k2t2 + 2 * k3t2 + k4t2);
+      omega1[i] = (w1 + (dt / 6) * (k1w1 + 2 * k2w1 + 2 * k3w1 + k4w1) + tiltImpulse) * DAMP;
+      omega2[i] = (w2 + (dt / 6) * (k1w2 + 2 * k2w2 + 2 * k3w2 + k4w2) + tiltImpulse * 1.3) * DAMP;
+    }
+    tiltImpulse *= 0.85;
+  }
+
+  function render() {
+    trailCtx.fillStyle = 'rgba(5, 5, 10, 0.05)';
+    trailCtx.fillRect(0, 0, W, H);
+
+    trailCtx.globalCompositeOperation = 'lighter';
+    trailCtx.lineWidth = 1;
+    for (let i = 0; i < N; i++) {
+      const x1 = anchorX + L * Math.sin(theta1[i]);
+      const y1 = anchorY + L * Math.cos(theta1[i]);
+      const x2 = x1 + L * Math.sin(theta2[i]);
+      const y2 = y1 + L * Math.cos(theta2[i]);
+
+      if (!freshBundle) {
+        trailCtx.strokeStyle = `hsla(${(hue[i] + paletteOffset) % 360}, 78%, 62%, 0.5)`;
+        trailCtx.beginPath();
+        trailCtx.moveTo(prevX2[i], prevY2[i]);
+        trailCtx.lineTo(x2, y2);
+        trailCtx.stroke();
+      }
+      prevX2[i] = x2;
+      prevY2[i] = y2;
+    }
+    trailCtx.globalCompositeOperation = 'source-over';
+    freshBundle = false;
+
+    glowCtx.clearRect(0, 0, W, H);
+    const ref = N >> 1;
+    const rx1 = anchorX + L * Math.sin(theta1[ref]);
+    const ry1 = anchorY + L * Math.cos(theta1[ref]);
+    const rx2 = rx1 + L * Math.sin(theta2[ref]);
+    const ry2 = ry1 + L * Math.cos(theta2[ref]);
+
+    glowCtx.strokeStyle = 'rgba(220, 226, 240, 0.55)';
+    glowCtx.lineWidth = 1.4;
+    glowCtx.beginPath();
+    glowCtx.moveTo(anchorX, anchorY);
+    glowCtx.lineTo(rx1, ry1);
+    glowCtx.lineTo(rx2, ry2);
+    glowCtx.stroke();
+
+    glowCtx.fillStyle = 'rgba(220, 226, 240, 0.8)';
+    for (const [px, py, r] of [[anchorX, anchorY, 3], [rx1, ry1, 3], [rx2, ry2, 4]]) {
+      glowCtx.beginPath();
+      glowCtx.arc(px, py, r, 0, TWO_PI);
+      glowCtx.fill();
+    }
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    if (lastPointerX !== null) {
+      const dx = e.clientX - lastPointerX;
+      tiltImpulse += Math.max(-0.4, Math.min(0.4, dx * 0.0025));
+    }
+    lastPointerX = e.clientX;
+  });
+  window.addEventListener('pointerleave', () => { lastPointerX = null; });
+  window.addEventListener('pointerdown', () => { seedBundle(); });
+  window.addEventListener('resize', resize);
+
+  let lastReset = 0;
+  let resetInterval = 90 + Math.random() * 40;
+  let start = null;
+  let accumulator = 0;
+  const MAX_FRAME_DT = 0.05;
+
+  function frame(tms) {
+    if (start === null) start = tms;
+    const clock = (tms - start) / 1000;
+
+    if (clock - lastReset > resetInterval) {
+      seedBundle();
+      lastReset = clock;
+      resetInterval = 90 + Math.random() * 40;
+    }
+
+    accumulator += Math.min(MAX_FRAME_DT, 1 / 60);
+    let steps = 0;
+    while (accumulator >= SUB_DT && steps < 12) {
+      stepAll(SUB_DT);
+      accumulator -= SUB_DT;
+      steps++;
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  resize();
+  seedBundle();
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

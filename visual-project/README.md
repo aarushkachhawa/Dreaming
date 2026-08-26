@@ -24,6 +24,45 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-26** — `2026-08-26-common-descent.html`: a twenty-sixth
+  technique, and the first with no field, no lattice, no swarm behavior, and
+  no iterated map — a double pendulum, two rigid links pinned end to end at
+  a fixed hinge, governed by nothing but exact Lagrangian mechanics: four
+  coupled nonlinear ODEs, solved every frame by fourth-order Runge-Kutta.
+  Night 5's three-body waltz was chaotic too, but that chaos came from an
+  inverse-square force acting between bodies free to wander anywhere; this
+  chaos comes from two links of fixed length that can only ever swing, and
+  it is still enough. Two hundred and sixty pendulums share identical mass,
+  identical arms, identical starting release near the top of their
+  swing — upside down, the unstable equilibrium where the smallest push
+  decides everything — and differ from one another only in their opening
+  angle, spread across a bundle a fraction of a degree wide, tighter than
+  the width the eye can resolve. For the first several seconds they swing
+  as one: same tuck, same near-miss at the top, indistinguishable. Then,
+  with no warning legible in advance, the bundle tears open — a rainbow
+  assigned by starting order, invisible while every thread traced the same
+  line, suddenly unspooling across the frame as each pendulum's private
+  rounding error decides its own fate. That unspooling is the entire
+  subject: this is the Lyapunov exponent made visible, not asserted. Every
+  thread fades from bright core to spent trail with an additive blend, so
+  wherever the bundle is still coherent the overlapping colors burn white,
+  and only where it has genuinely diverged does the rainbow show through as
+  separate hues. A faint charcoal double-arm — one pendulum drawn as itself
+  rather than as a trace — swings at the bundle's exact center throughout,
+  the literal linkage the whole rainbow is a portrait of. A slight drag
+  bleeds energy from every swing, so the tumbling scatter that follows
+  divergence isn't permanent: over the following minute the pendulums
+  settle toward the calm, nearly linear regime near the bottom of their
+  arc, where chaos is weak and the threads quietly braid back toward a
+  shared rhythm, only to be struck back into their upside-down starting
+  bundle by an automatic reset roughly every two minutes. Move the cursor
+  to shake the frame, feeding a jolt of shared angular momentum into every
+  pendulum alike, which does nothing to their relative spread but can
+  rouse a settled bundle back into motion. Click to strike it outright:
+  every pendulum snaps back to a fresh near-identical release and the
+  whole descent, shared instant to private chaos, runs again from scratch.
+  Open the file directly in a browser.
+
 - **2026-08-25** — `2026-08-25-quiet-avalanche.html`: a twenty-fifth
   technique, and the first governed by a threshold rather than a field, a
   swarm, a force law, a grammar, an oscillator lattice, a spin system, or a
