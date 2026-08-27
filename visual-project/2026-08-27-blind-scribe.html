@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Blind Scribe — Night 27</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060b;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Blind Scribe &mdash; Night 27 &mdash; move to disturb the ground &middot; click to add a scribe</div>
+<script>
+(() => {
+  // A twenty-seventh technique, and the first that is an embodied automaton
+  // rather than a field one. Nights 11, 14, 16, and 25 all updated every
+  // cell on the grid at once from its neighbors' state; here almost every
+  // cell sits completely inert, and the only cells that ever change are the
+  // ones a traveling agent happens to visit. This is Langton's ant, Chris
+  // Langton's 1986 turmite, and its entire law fits in one sentence: on a
+  // white cell, turn right, flip it black, step forward; on a black cell,
+  // turn left, flip it white, step forward. Two symbols, four headings, no
+  // memory beyond the one cell underfoot. A single ant on an empty plane
+  // spends its first roughly ten thousand steps producing what looks
+  // exactly like noise, then, with no warning legible in advance, locks
+  // onto an unbounded diagonal "highway" — a 104-step figure it repeats
+  // forever and never again departs from. Night 10's diffusion-limited
+  // leader also looked like blind wandering resolving into structure, but
+  // its walkers were genuinely random; this ant is not random at all — same
+  // rule, same start, same every single step, always. The wandering only
+  // looks blind because deterministic complexity can outrun any hope of
+  // predicting it by watching, which is the opposite lesson from Night 10,
+  // arrived at by the opposite means. The board here holds a colony rather
+  // than one ant, twenty-eight scribes released at scattered points and
+  // headings, sharing a single grid the way Night 18's species shared one
+  // plane — and because they share it, one ant's mark is a real obstacle to
+  // any other ant that crosses it later, so solitary highways bend around
+  // each other, collide, and sometimes merge into a shared corridor that no
+  // single ant could have found alone. The grid wraps at its edges exactly
+  // like Night 18's, a torus with no boundary for a highway to run off of.
+  // A black cell is colored by whichever scribe last wrote it, full
+  // saturation while fresh; the instant it flips it flashes toward white
+  // and settles, and a cell turned back to empty doesn't go fully dark but
+  // holds a faint ashen memory of its last color, cooling out over several
+  // seconds the way Night 14's excited cells embered down after firing. The
+  // scribes themselves are unreachable — there is no mind in a turmite to
+  // steer — but the ground they read is not: move the cursor to scatter a
+  // handful of cells nearby, and any ant that later crosses the disturbed
+  // patch turns somewhere it otherwise wouldn't have. Click to release a
+  // fresh scribe at that point, in a random heading, its own new hue added
+  // to the colony. Left alone, the whole board erases itself and releases
+  // a brand new colony roughly every two minutes, before too many highways
+  // have locked into permanent, unchanging repetition. Open the file
+  // directly in a browser.
+
+  const canvas = document.getElementById('scene');
+  const ctx = canvas.getContext('2d');
+  const caption = document.getElementById('caption');
+
+  const BG = [5, 6, 11];
+  const FLASH_DUR = 0.28;
+  const ASH_DUR = 5.5;
+  const DX = [0, 1, 0, -1];
+  const DY = [-1, 0, 1, 0];
+  const MAX_ANTS = 44;
+  const STEPS_PER_ANT = 3;
+
+  let cols, rows;
+  let state, flipHue, lastFlip;
+  let imgData, data;
+  let ants = [];
+  let start = null, clockNow = 0;
+  let lastHover = 0, lastReset = 0, resetInterval = 110;
+  let hueCursor = 0;
+
+  function idx(x, y) { return y * cols + x; }
+
+  function hsl2rgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; } else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+    return [r + m, g + m, b + m];
+  }
+
+  function nextHue() {
+    hueCursor = (hueCursor + 137.508) % 360; // golden-angle spread
+    return hueCursor;
+  }
+
+  function spawnAnt(x, y, dir, hue) {
+    ants.push({ x, y, dir, hue });
+    if (ants.length > MAX_ANTS) ants.shift();
+  }
+
+  function seedColony() {
+    ants = [];
+    hueCursor = Math.random() * 360;
+    for (let i = 0; i < 28; i++) {
+      const x = (Math.random() * cols) | 0;
+      const y = (Math.random() * rows) | 0;
+      const dir = (Math.random() * 4) | 0;
+      spawnAnt(x, y, dir, nextHue());
+    }
+  }
+
+  function buildGrid() {
+    const targetCols = 220;
+    let cellPx = Math.max(2, window.innerWidth / targetCols);
+    cols = Math.max(60, Math.round(window.innerWidth / cellPx));
+    rows = Math.max(60, Math.round(window.innerHeight / cellPx));
+    if (rows > 300) {
+      cellPx = window.innerHeight / 300;
+      cols = Math.max(60, Math.round(window.innerWidth / cellPx));
+      rows = 300;
+    }
+
+    canvas.width = cols;
+    canvas.height = rows;
+
+    const cells = cols * rows;
+    state = new Uint8Array(cells);
+    flipHue = new Float32Array(cells);
+    lastFlip = new Float32Array(cells).fill(-1e9);
+    imgData = ctx.createImageData(cols, rows);
+    data = imgData.data;
+    for (let i = 3; i < data.length; i += 4) data[i] = 255;
+
+    lastReset = 0;
+    resetInterval = 100 + Math.random() * 40;
+    seedColony();
+  }
+
+  function stepAnt(a, clock) {
+    const i = idx(a.x, a.y);
+    if (state[i] === 0) {
+      a.dir = (a.dir + 1) & 3;
+      state[i] = 1;
+    } else {
+      a.dir = (a.dir + 3) & 3;
+      state[i] = 0;
+    }
+    flipHue[i] = a.hue;
+    lastFlip[i] = clock;
+    a.x = (a.x + DX[a.dir] + cols) % cols;
+    a.y = (a.y + DY[a.dir] + rows) % rows;
+  }
+
+  function render(clock) {
+    const n = cols * rows;
+    for (let i = 0; i < n; i++) {
+      let r = BG[0], g = BG[1], b = BG[2];
+      const age = clock - lastFlip[i];
+
+      if (state[i] === 1) {
+        const l = age < FLASH_DUR ? 0.78 - (age / FLASH_DUR) * 0.32 : 0.46;
+        const c = hsl2rgb(flipHue[i], 0.72, l);
+        r = c[0] * 255; g = c[1] * 255; b = c[2] * 255;
+      } else if (age >= 0 && age < FLASH_DUR) {
+        const f = 1 - age / FLASH_DUR;
+        r += (255 - r) * f; g += (255 - g) * f; b += (255 - b) * f;
+      } else if (age >= 0 && age < ASH_DUR) {
+        const f = 1 - (age - FLASH_DUR) / (ASH_DUR - FLASH_DUR);
+        const c = hsl2rgb(flipHue[i], 0.5, 0.16 * f);
+        r += c[0] * 255 * f; g += c[1] * 255 * f; b += c[2] * 255 * f;
+      }
+
+      const o = i * 4;
+      data[o] = r; data[o + 1] = g; data[o + 2] = b;
+    }
+
+    for (const a of ants) {
+      const o = idx(a.x, a.y) * 4;
+      const c = hsl2rgb(a.hue, 0.35, 0.92);
+      data[o] = c[0] * 255; data[o + 1] = c[1] * 255; data[o + 2] = c[2] * 255;
+    }
+
+    ctx.putImageData(imgData, 0, 0);
+  }
+
+  function cellFromClient(clientX, clientY) {
+    const r = canvas.getBoundingClientRect();
+    const x = Math.floor(((clientX - r.left) / r.width) * cols);
+    const y = Math.floor(((clientY - r.top) / r.height) * rows);
+    return {
+      x: Math.max(0, Math.min(cols - 1, x)),
+      y: Math.max(0, Math.min(rows - 1, y)),
+    };
+  }
+
+  window.addEventListener('pointermove', (e) => {
+    if (clockNow - lastHover < 0.045) return;
+    lastHover = clockNow;
+    const c = cellFromClient(e.clientX, e.clientY);
+    const hue = Math.random() * 360;
+    for (let k = 0; k < 5; k++) {
+      const x = Math.min(cols - 1, Math.max(0, c.x + ((Math.random() * 7) | 0) - 3));
+      const y = Math.min(rows - 1, Math.max(0, c.y + ((Math.random() * 7) | 0) - 3));
+      const i = idx(x, y);
+      state[i] = state[i] ? 0 : 1;
+      flipHue[i] = hue;
+      lastFlip[i] = clockNow;
+    }
+  });
+
+  window.addEventListener('pointerdown', (e) => {
+    const c = cellFromClient(e.clientX, e.clientY);
+    spawnAnt(c.x, c.y, (Math.random() * 4) | 0, nextHue());
+  });
+
+  window.addEventListener('resize', buildGrid);
+
+  function frame(tms) {
+    if (start === null) start = tms;
+    const clock = (tms - start) / 1000;
+    clockNow = clock;
+
+    for (const a of ants) {
+      for (let s = 0; s < STEPS_PER_ANT; s++) stepAnt(a, clock);
+    }
+
+    if (clock - lastReset > resetInterval) {
+      state.fill(0);
+      lastFlip.fill(-1e9);
+      lastReset = clock;
+      resetInterval = 100 + Math.random() * 40;
+      seedColony();
+    }
+
+    render(clock);
+    requestAnimationFrame(frame);
+  }
+
+  buildGrid();
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

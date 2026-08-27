@@ -24,6 +24,48 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-27** — `2026-08-27-blind-scribe.html`: a twenty-seventh
+  technique, and the first that is an embodied automaton rather than a
+  field one. Nights 11, 14, 16, and 25 all updated every cell on the grid
+  at once from its neighbors' state; here almost every cell sits
+  completely inert, and the only cells that ever change are the ones a
+  traveling agent happens to visit. This is Langton's ant, Chris Langton's
+  1986 turmite, and its entire law fits in one sentence: on a white cell,
+  turn right, flip it black, step forward; on a black cell, turn left,
+  flip it white, step forward. Two symbols, four headings, no memory
+  beyond the one cell underfoot. A single ant on an empty plane spends its
+  first roughly ten thousand steps producing what looks exactly like
+  noise, then, with no warning legible in advance, locks onto an unbounded
+  diagonal "highway" — a 104-step figure it repeats forever and never
+  again departs from. Night 10's diffusion-limited leader also looked like
+  blind wandering resolving into structure, but its walkers were genuinely
+  random; this ant is not random at all — same rule, same start, same
+  every single step, always. The wandering only looks blind because
+  deterministic complexity can outrun any hope of predicting it by
+  watching, which is the opposite lesson from Night 10, arrived at by the
+  opposite means. The board here holds a colony rather than one ant,
+  twenty-eight scribes released at scattered points and headings, sharing
+  a single grid the way Night 18's species shared one plane — and because
+  they share it, one ant's mark is a real obstacle to any other ant that
+  crosses it later, so solitary highways bend around each other, collide,
+  and sometimes merge into a shared corridor that no single ant could have
+  found alone. The grid wraps at its edges exactly like Night 18's, a
+  torus with no boundary for a highway to run off of. A black cell is
+  colored by whichever scribe last wrote it, full saturation while fresh;
+  the instant it flips it flashes toward white and settles, and a cell
+  turned back to empty doesn't go fully dark but holds a faint ashen
+  memory of its last color, cooling out over several seconds the way
+  Night 14's excited cells embered down after firing. The scribes
+  themselves are unreachable — there is no mind in a turmite to steer —
+  but the ground they read is not: move the cursor to scatter a handful of
+  cells nearby, and any ant that later crosses the disturbed patch turns
+  somewhere it otherwise wouldn't have. Click to release a fresh scribe at
+  that point, in a random heading, its own new hue added to the colony.
+  Left alone, the whole board erases itself and releases a brand new
+  colony roughly every two minutes, before too many highways have locked
+  into permanent, unchanging repetition. Open the file directly in a
+  browser.
+
 - **2026-08-26** — `2026-08-26-common-descent.html`: a twenty-sixth
   technique, and the first with no field, no lattice, no swarm behavior, and
   no iterated map — a double pendulum, two rigid links pinned end to end at
