@@ -24,6 +24,51 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-28** — `2026-08-28-slow-oracle.html`: a twenty-eighth
+  technique, and the first that is not a system evolving in place but a
+  spacetime diagram — the picture doesn't show a current state changing
+  over time, it prints the entire time-evolution as one growing image,
+  history read as a vertical axis rather than hidden inside the animation
+  loop. This is an elementary cellular automaton, Stephen Wolfram's
+  strictly one-dimensional cousin of every 2D grid rule this project has
+  run before it: a row of cells, each just 0 or 1, and the entire law that
+  produces the next row is a lookup table with eight entries — one for
+  every possible (left, self, right) triple — which means the whole
+  behavior of a rule fits in a single byte, 0 to 255, and is usually
+  written as that number. Night 27's turmite made the case that
+  determinism can still outrun any hope of predicting it by watching; this
+  makes the same case in the starkest form available, since nothing here
+  is hidden in an agent's position or a neighbor count threshold, only in
+  three bits and a table. Rule 30 is the extreme case: proven by nobody,
+  believed by everyone who has looked at its output, and used by
+  Mathematica itself as a source of random digits, despite being
+  perfectly, boringly deterministic underneath. Eight curated rules take
+  turns: 30's chaos, 90's Sierpinski gasket (Pascal's triangle read mod 2,
+  a fractal this project already met once as Night 15's fixed sentence,
+  arrived at here by pure arithmetic instead of a grammar), 110, proved
+  Turing-complete by Matthew Cook in 2004 — the smallest rule known
+  capable of universal computation — grown from sparse noise so its
+  gliders have room to collide, 184's ballistic particle model for traffic
+  flow grown from a half-dense row of "cars" so jams and free-flow regions
+  both appear, and four more for nested, xor, and turbulent character.
+  Each rule carries its own base hue, breathing a little wider or narrower
+  over a few minutes, and every row is born at the current hue, flashes
+  toward near-white, and cools into its settled color over a fraction of a
+  second before the whole image scrolls up to make room for the next —
+  which means the finished picture is a genuine growth-ring record of when
+  each row was made, the third technique after Night 13's vasculature and
+  Night 23's candle wax to carry its own history as visible striation,
+  though this one is a record of time rather than of position, since the
+  automaton never revisits a cell once drawn. The row is a torus, wrapping
+  left to right with no edge to run off of. Move the cursor near the
+  bottom to flip cells in the row still being computed, a hand-planted
+  defect that the rule will carry forward or erase on its own terms —
+  rule 30 usually shatters into new offshoot triangles, rule 90's mirror
+  symmetry usually swallows it whole; click to burn the current rule down
+  and start a fresh one from scratch. Left alone, the piece rotates to a
+  new curated rule on its own roughly every hundred seconds. Open the file
+  directly in a browser.
+
 - **2026-08-27** — `2026-08-27-blind-scribe.html`: a twenty-seventh
   technique, and the first that is an embodied automaton rather than a
   field one. Nights 11, 14, 16, and 25 all updated every cell on the grid

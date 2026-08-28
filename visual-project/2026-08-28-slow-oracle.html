@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>slow oracle</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #05060a; height: 100%; }
+  canvas { display: block; cursor: crosshair; }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<script>
+(function(){
+'use strict';
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+
+const RULES = [
+  { n: 30,  hue: 355, seed: 'single' },
+  { n: 90,  hue: 275, seed: 'single' },
+  { n: 110, hue: 190, seed: 'sparse' },
+  { n: 54,  hue: 140, seed: 'single' },
+  { n: 60,  hue: 320, seed: 'single' },
+  { n: 150, hue: 45,  seed: 'single' },
+  { n: 184, hue: 205, seed: 'half'   },
+  { n: 126, hue: 15,  seed: 'sparse' }
+];
+
+const CELL_CSS = 5;
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+let cellPx, cols;
+
+const state = {
+  ruleIdx: 0,
+  table: null,
+  row: null,
+  rowStartTime: 0,
+  lastAutoSwitch: 0,
+  mouseX: null,
+  lastFlipTime: 0
+};
+
+function ruleTable(n){
+  const t = new Uint8Array(8);
+  for(let i=0;i<8;i++) t[i] = (n>>i)&1;
+  return t;
+}
+
+function seedRow(mode){
+  const row = new Uint8Array(cols);
+  const mid = Math.floor(cols/2);
+  if(mode === 'single'){
+    row[mid] = 1;
+  } else if(mode === 'sparse'){
+    for(let i=0;i<cols;i++) if(Math.random() < 0.03) row[i] = 1;
+    row[mid] = 1;
+  } else if(mode === 'half'){
+    for(let i=0;i<cols;i++) if(Math.random() < 0.5) row[i] = 1;
+  }
+  return row;
+}
+
+function nextRow(row, table){
+  const n = row.length;
+  const out = new Uint8Array(n);
+  for(let i=0;i<n;i++){
+    const l = row[(i - 1 + n) % n];
+    const c = row[i];
+    const r = row[(i + 1) % n];
+    out[i] = table[(l<<2)|(c<<1)|r];
+  }
+  return out;
+}
+
+function bg(){
+  ctx.fillStyle = '#05060a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function resetAutomaton(idx, now){
+  state.ruleIdx = idx;
+  const r = RULES[idx];
+  state.table = ruleTable(r.n);
+  state.row = seedRow(r.seed);
+  state.rowStartTime = now;
+  bg();
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.8';
+  requestAnimationFrame(() => {
+    flashEl.style.transition = 'opacity 900ms ease-out';
+    flashEl.style.opacity = '0';
+  });
+}
+
+function resize(){
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+  cellPx = Math.max(2, Math.round(CELL_CSS * dpr));
+  cols = Math.max(4, Math.floor(canvas.width / cellPx));
+  const now = performance.now();
+  resetAutomaton(state.ruleIdx, now);
+  state.lastAutoSwitch = now;
+}
+
+function settleDuration(now){
+  const t = now * 0.00006;
+  return 385 + 265 * Math.sin(t);
+}
+
+function drawActiveRow(brightness, hue){
+  const y = canvas.height - cellPx;
+  ctx.fillStyle = '#05060a';
+  ctx.fillRect(0, y, canvas.width, cellPx);
+  const light = 28 + brightness * 60;
+  const sat = 45 + brightness * 30;
+  ctx.fillStyle = `hsl(${hue}, ${sat}%, ${light}%)`;
+  for(let i=0;i<cols;i++){
+    if(state.row[i]) ctx.fillRect(i*cellPx, y, cellPx-1, cellPx-1);
+  }
+}
+
+function pickNextRuleIdx(exclude){
+  let idx;
+  do { idx = Math.floor(Math.random()*RULES.length); } while(idx === exclude && RULES.length>1);
+  return idx;
+}
+
+canvas.addEventListener('mousemove', (e)=>{
+  state.mouseX = e.clientX * dpr;
+});
+canvas.addEventListener('touchmove', (e)=>{
+  if(e.touches && e.touches[0]) state.mouseX = e.touches[0].clientX * dpr;
+}, {passive:true});
+canvas.addEventListener('click', ()=>{
+  const now = performance.now();
+  resetAutomaton(pickNextRuleIdx(state.ruleIdx), now);
+  state.lastAutoSwitch = now;
+});
+
+window.addEventListener('resize', resize);
+
+function loop(now){
+  requestAnimationFrame(loop);
+
+  if(now - state.lastAutoSwitch > 100000){
+    resetAutomaton(pickNextRuleIdx(state.ruleIdx), now);
+    state.lastAutoSwitch = now;
+  }
+
+  if(state.mouseX !== null && now - state.lastFlipTime > 55){
+    const idx = Math.floor(state.mouseX / cellPx);
+    if(idx >= 0 && idx < cols && Math.random() < 0.6){
+      state.row[idx] ^= 1;
+    }
+    state.lastFlipTime = now;
+  }
+
+  const dur = settleDuration(now);
+  let t = (now - state.rowStartTime) / dur;
+
+  if(t >= 1){
+    ctx.drawImage(canvas, 0, -cellPx);
+    state.row = nextRow(state.row, state.table);
+    state.rowStartTime = now;
+    t = 0;
+  }
+
+  const rule = RULES[state.ruleIdx];
+  const hue = rule.hue + 20 * Math.sin(now * 0.00003);
+  const brightness = 1 - Math.min(1, t);
+  drawActiveRow(brightness, hue);
+}
+
+resize();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
