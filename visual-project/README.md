@@ -24,6 +24,42 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-29** — `2026-08-29-trail-memory.html`: a return to night 3's
+  ground rather than a new technique — the same agent-based stigmergy that
+  drove twin-currents' cyan and coral colonies, rebuilt from a single
+  species instead of two. Each of a few thousand agents senses the shared
+  trail field at three points ahead of it — dead centre and two points
+  angled slightly left and right — turns toward whichever reading is
+  strongest, steps forward, and deposits a small amount of pheromone where
+  it lands; the field itself blurs and evaporates every frame, so a path
+  only stays legible while agents keep walking it, and abandoned ground
+  fades back to black on its own. Night 3 ran two colonies racing for the
+  same canvas; this runs one at a time, but through six curated behavioral
+  characters — how far and how wide an agent's three sensors reach, how
+  sharply it is allowed to turn, how fast the trail evaporates — that turn
+  the identical rule into categorically different networks: tight
+  branching veins, a fibrous chaotic mesh, slow-flowing thick rivers,
+  blooming coral, fleeting sparse spores, an orderly lattice. Because
+  those six characters evaporate trail at wildly different rates, feeding
+  them all the same deposit amount would leave some a washed-out fog and
+  others a starved flicker; instead each preset's deposit is solved the
+  moment it is chosen, from its own evaporation rate and agent count, so
+  every character settles at roughly the same average brightness and only
+  its shape changes, never its exposure. Brightness itself is read through
+  a squared exponential rather than a linear one, which is what keeps
+  empty ground honestly black while overlapping paths still bloom toward
+  white — the same problem night 22's flame fractal solved with a
+  logarithm, solved here with a different curve because this field is
+  bounded rather than unbounded. Move the cursor near a colony and it
+  bends gently toward it, the nearest thing this rule has to a food
+  source; click to burn the current character down, in a soft flash, and
+  grow a fresh one from a freshly chosen seed pattern — scattered,
+  clustered near center, ringed, or gridded, so a coral colony always
+  starts from a huddle and a river always starts from a ring before a
+  single step is taken. Left alone, the colony holds its character for
+  about a minute and a half before dissolving into the next one on its
+  own. Open the file directly in a browser.
+
 - **2026-08-28** — `2026-08-28-slow-oracle.html`: a twenty-eighth
   technique, and the first that is not a system evolving in place but a
   spacetime diagram — the picture doesn't show a current state changing

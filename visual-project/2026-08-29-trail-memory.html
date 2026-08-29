@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>trail memory</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; background: #05060a; height: 100%; }
+  canvas { display: block; cursor: crosshair; image-rendering: -webkit-optimize-contrast; }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<script>
+(function(){
+'use strict';
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+const off = document.createElement('canvas');
+const offCtx = off.getContext('2d');
+
+const PRESETS = [
+  { name:'veins',   sensorAngle:0.35, sensorDist:9,  turnAngle:0.30, speed:1.0, decay:0.965, hue:190, seed:'scatter' },
+  { name:'coral',   sensorAngle:0.9,  sensorDist:5,  turnAngle:0.55, speed:0.8, decay:0.94,  hue:330, seed:'cluster' },
+  { name:'web',     sensorAngle:0.55, sensorDist:4,  turnAngle:0.8,  speed:1.3, decay:0.90,  hue:45,  seed:'scatter' },
+  { name:'river',   sensorAngle:0.25, sensorDist:12, turnAngle:0.18, speed:1.4, decay:0.975, hue:205, seed:'ring'    },
+  { name:'spore',   sensorAngle:0.7,  sensorDist:6,  turnAngle:0.5,  speed:0.9, decay:0.88,  hue:130, seed:'cluster' },
+  { name:'lattice', sensorAngle:0.45, sensorDist:7,  turnAngle:0.28, speed:1.1, decay:0.955, hue:275, seed:'grid'    }
+];
+
+// Target average trail mass at equilibrium (deposit rate is solved per-preset
+// so every preset settles at roughly the same brightness, however different
+// its evaporation rate is — only the network's shape changes, not its glow).
+const TARGET_AVG_MASS = 0.42;
+
+const CELL_CSS = 4;
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+let cellPx, gridW, gridH, agentCount;
+let trail, scratch, blurred, xs, ys, angles, lut;
+
+const state = {
+  presetIdx: 0,
+  lastAutoSwitch: 0,
+  mouseGX: null,
+  mouseGY: null,
+  deposit: 1,
+  decay: 0.95
+};
+
+function hue2rgb(p, q, t){
+  if(t<0) t+=1;
+  if(t>1) t-=1;
+  if(t<1/6) return p+(q-p)*6*t;
+  if(t<1/2) return q;
+  if(t<2/3) return p+(q-p)*(2/3-t)*6;
+  return p;
+}
+
+function hslToRgb(h, s, l){
+  h = ((h%1)+1)%1;
+  let r,g,b;
+  if(s===0){ r=g=b=l; }
+  else{
+    const q = l<0.5 ? l*(1+s) : l+s-l*s;
+    const p = 2*l-q;
+    r = hue2rgb(p,q,h+1/3);
+    g = hue2rgb(p,q,h);
+    b = hue2rgb(p,q,h-1/3);
+  }
+  return [Math.round(r*255), Math.round(g*255), Math.round(b*255)];
+}
+
+function buildLut(hue){
+  const l = new Uint8ClampedArray(256*3);
+  for(let i=0;i<256;i++){
+    const t = i/255;
+    const light = 0.02 + 0.72*Math.pow(t, 0.55);
+    const sat = 0.35 + 0.55*t;
+    const h = (hue + 26*t - 10) / 360;
+    const rgb = hslToRgb(h, sat, light);
+    l[i*3] = rgb[0]; l[i*3+1] = rgb[1]; l[i*3+2] = rgb[2];
+  }
+  return l;
+}
+
+function seedAgents(mode){
+  const perRow = Math.ceil(Math.sqrt(agentCount));
+  const cellW = gridW/perRow, cellH = gridH/perRow;
+  for(let i=0;i<agentCount;i++){
+    let gx, gy;
+    if(mode === 'scatter'){
+      gx = Math.random()*gridW; gy = Math.random()*gridH;
+    } else if(mode === 'cluster'){
+      gx = gridW/2 + (Math.random()-0.5)*gridW*0.25;
+      gy = gridH/2 + (Math.random()-0.5)*gridH*0.25;
+    } else if(mode === 'ring'){
+      const a = Math.random()*Math.PI*2;
+      const rad = Math.min(gridW, gridH)*0.32;
+      gx = gridW/2 + Math.cos(a)*rad;
+      gy = gridH/2 + Math.sin(a)*rad;
+    } else {
+      const cx = i % perRow, cy = Math.floor(i/perRow);
+      gx = (cx+0.5)*cellW + (Math.random()-0.5)*cellW*0.5;
+      gy = (cy+0.5)*cellH + (Math.random()-0.5)*cellH*0.5;
+    }
+    xs[i] = ((gx % gridW) + gridW) % gridW;
+    ys[i] = ((gy % gridH) + gridH) % gridH;
+    angles[i] = Math.random()*Math.PI*2;
+  }
+}
+
+function resetSim(idx, now){
+  state.presetIdx = idx;
+  const preset = PRESETS[idx];
+  trail.fill(0);
+  seedAgents(preset.seed);
+  lut = buildLut(preset.hue);
+  state.decay = preset.decay;
+  state.deposit = TARGET_AVG_MASS * gridW * gridH * (1 - preset.decay) / agentCount;
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.75';
+  requestAnimationFrame(() => {
+    flashEl.style.transition = 'opacity 1200ms ease-out';
+    flashEl.style.opacity = '0';
+  });
+  void now;
+}
+
+function resize(){
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = Math.floor(w*dpr);
+  canvas.height = Math.floor(h*dpr);
+  cellPx = Math.max(2, Math.round(CELL_CSS*dpr));
+  gridW = Math.max(8, Math.floor(canvas.width/cellPx));
+  gridH = Math.max(8, Math.floor(canvas.height/cellPx));
+  off.width = gridW; off.height = gridH;
+
+  trail = new Float32Array(gridW*gridH);
+  scratch = new Float32Array(gridW*gridH);
+  blurred = new Float32Array(gridW*gridH);
+  agentCount = Math.min(14000, Math.max(1500, Math.round(gridW*gridH*0.055)));
+  xs = new Float32Array(agentCount);
+  ys = new Float32Array(agentCount);
+  angles = new Float32Array(agentCount);
+
+  const now = performance.now();
+  resetSim(state.presetIdx, now);
+  state.lastAutoSwitch = now;
+}
+
+function blurTrail(){
+  for(let y=0;y<gridH;y++){
+    const row = y*gridW;
+    for(let x=0;x<gridW;x++){
+      const xm = x>0 ? x-1 : x;
+      const xp = x<gridW-1 ? x+1 : x;
+      scratch[row+x] = (trail[row+xm] + trail[row+x] + trail[row+xp]) * (1/3);
+    }
+  }
+  for(let x=0;x<gridW;x++){
+    for(let y=0;y<gridH;y++){
+      const ym = y>0 ? y-1 : y;
+      const yp = y<gridH-1 ? y+1 : y;
+      blurred[y*gridW+x] = (scratch[ym*gridW+x] + scratch[y*gridW+x] + scratch[yp*gridW+x]) * (1/3);
+    }
+  }
+}
+
+function sample(gx, gy){
+  const xi = ((Math.round(gx) % gridW) + gridW) % gridW;
+  const yi = ((Math.round(gy) % gridH) + gridH) % gridH;
+  return trail[yi*gridW + xi];
+}
+
+function stepAgents(preset){
+  const sAng = preset.sensorAngle, sDist = preset.sensorDist;
+  const turn = preset.turnAngle, speed = preset.speed, dep = state.deposit;
+  const mgx = state.mouseGX, mgy = state.mouseGY;
+  for(let i=0;i<agentCount;i++){
+    const x = xs[i], y = ys[i], ang = angles[i];
+
+    const cx = x + Math.cos(ang)*sDist, cy = y + Math.sin(ang)*sDist;
+    const lx = x + Math.cos(ang-sAng)*sDist, ly = y + Math.sin(ang-sAng)*sDist;
+    const rx = x + Math.cos(ang+sAng)*sDist, ry = y + Math.sin(ang+sAng)*sDist;
+    const c = sample(cx,cy), l = sample(lx,ly), r = sample(rx,ry);
+
+    let newAng;
+    if(c >= l && c >= r){
+      newAng = ang + (Math.random()-0.5)*0.12;
+    } else if(l > r){
+      newAng = ang - turn*(0.6+Math.random()*0.6);
+    } else if(r > l){
+      newAng = ang + turn*(0.6+Math.random()*0.6);
+    } else {
+      newAng = ang + (Math.random()<0.5 ? -1 : 1)*turn;
+    }
+
+    if(mgx !== null){
+      const dx = mgx-x, dy = mgy-y;
+      const d2 = dx*dx+dy*dy;
+      const rad = Math.min(gridW,gridH)*0.18;
+      if(d2 < rad*rad){
+        const target = Math.atan2(dy,dx);
+        let diff = target-newAng;
+        diff = Math.atan2(Math.sin(diff), Math.cos(diff));
+        newAng += diff*0.06;
+      }
+    }
+
+    let nx = x + Math.cos(newAng)*speed;
+    let ny = y + Math.sin(newAng)*speed;
+    nx = ((nx % gridW) + gridW) % gridW;
+    ny = ((ny % gridH) + gridH) % gridH;
+
+    xs[i] = nx; ys[i] = ny; angles[i] = newAng;
+    const idx = Math.floor(ny)*gridW + Math.floor(nx);
+    const v = trail[idx] + dep;
+    trail[idx] = v > 6 ? 6 : v;
+  }
+}
+
+function render(){
+  const decay = state.decay;
+  const img = offCtx.createImageData(gridW, gridH);
+  const buf = img.data;
+  for(let i=0;i<gridW*gridH;i++){
+    const v = blurred[i]*decay;
+    trail[i] = v;
+    const t = 1 - Math.exp(-v*v*1.8);
+    const o = (t*255)|0;
+    const li = o*3;
+    const p = i*4;
+    buf[p] = lut[li]; buf[p+1] = lut[li+1]; buf[p+2] = lut[li+2]; buf[p+3] = 255;
+  }
+  offCtx.putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(off, 0, 0, gridW, gridH, 0, 0, canvas.width, canvas.height);
+}
+
+function pickNextPreset(exclude){
+  let idx;
+  do { idx = Math.floor(Math.random()*PRESETS.length); } while(idx === exclude && PRESETS.length > 1);
+  return idx;
+}
+
+canvas.addEventListener('mousemove', (e)=>{
+  state.mouseGX = (e.clientX*dpr)/cellPx;
+  state.mouseGY = (e.clientY*dpr)/cellPx;
+});
+canvas.addEventListener('mouseleave', ()=>{
+  state.mouseGX = null; state.mouseGY = null;
+});
+canvas.addEventListener('touchmove', (e)=>{
+  if(e.touches && e.touches[0]){
+    state.mouseGX = (e.touches[0].clientX*dpr)/cellPx;
+    state.mouseGY = (e.touches[0].clientY*dpr)/cellPx;
+  }
+}, {passive:true});
+canvas.addEventListener('click', ()=>{
+  const now = performance.now();
+  resetSim(pickNextPreset(state.presetIdx), now);
+  state.lastAutoSwitch = now;
+});
+
+window.addEventListener('resize', resize);
+
+function loop(now){
+  requestAnimationFrame(loop);
+
+  if(now - state.lastAutoSwitch > 95000){
+    resetSim(pickNextPreset(state.presetIdx), now);
+    state.lastAutoSwitch = now;
+  }
+
+  stepAgents(PRESETS[state.presetIdx]);
+  blurTrail();
+  render();
+}
+
+resize();
+requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
