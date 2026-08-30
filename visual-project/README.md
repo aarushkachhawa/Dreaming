@@ -24,6 +24,39 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-30** — `2026-08-30-descartes-orchard.html`: a thirtieth
+  technique, and the first with no motion in the thing itself at all — no
+  field relaxing, no agent stepping, no wave propagating, no map iterating.
+  Three mutually tangent circles determine a fourth exactly, by Descartes'
+  1643 circle theorem: 2(k1²+k2²+k3²+k4²) = (k1+k2+k3+k4)², where curvature
+  k is signed inverse radius, negative for the one circle that contains the
+  other three rather than nesting among them. Solve that quadratic for the
+  unfilled gap in a cluster of four, and the pair of circles it just
+  finished tangent to bounds two fresh triples, each with its own gap.
+  Repeat and every gap of every gap fills, forever — an actual infinite
+  packing rather than a rendering trick standing in for one, all of it
+  implied the instant the first three circles are chosen. After the initial
+  solve, every child's curvature and center fall out of its parent triple
+  by simple linear arithmetic (Vieta's jump, the same trick that turns a
+  quadratic root-pair into a running recurrence), so the whole orchard
+  generates once, down to a curvature no bigger than a pixel, before a
+  single frame is drawn. Night 6's Chladni figures were the last piece
+  built on tangency and stillness rather than a field; this is what that
+  stillness looks like as pure recursive geometry instead of a resonance.
+  The only thing that moves afterward is the camera: an unscripted drift
+  inward toward a gap chosen for still having generations left beneath it,
+  holding once its own children fill the frame, then pulling back out to
+  see where in the whole orchard it had been standing, four times before
+  the entire packing dissolves and a new curvature pair grows a differently
+  proportioned one in its place. Color reads pure scale, not identity — hue
+  is a direct function of a circle's log2(radius), so the rainbow bands
+  visible at any moment are a ruler of how deep that moment's zoom has
+  gone, the same figure reappearing in the same colors at every level.
+  Move the cursor for a small parallax look, as if the orchard had depth
+  behind the glass; click to dissolve the whole packing and grow a fresh
+  one from a newly chosen curvature pair. Open the file directly in a
+  browser.
+
 - **2026-08-29** — `2026-08-29-trail-memory.html`: a return to night 3's
   ground rather than a new technique — the same agent-based stigmergy that
   drove twin-currents' cyan and coral colonies, rebuilt from a single

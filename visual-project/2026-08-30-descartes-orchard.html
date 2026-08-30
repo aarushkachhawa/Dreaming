@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Descartes' Orchard — Night 30</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="caption">Descartes&rsquo; Orchard &mdash; Night 30 &mdash; move to look around &middot; click for a new orchard</div>
+<script>
+(function(){
+'use strict';
+// A thirtieth technique, and the first with no motion of anything at all —
+// no field relaxing, no agent stepping, no wave propagating. Three mutually
+// tangent circles determine a fourth exactly, by Descartes' 1643 circle
+// theorem: 2(k1^2+k2^2+k3^2+k4^2) = (k1+k2+k3+k4)^2, where curvature k is
+// signed inverse radius (negative for a circle that contains the other
+// three rather than nesting among them). Solve that quadratic for the one
+// unfilled gap in a cluster of four, and the pair of circles it just
+// finished tangentially bounds two new triples, each with its own gap.
+// Repeat and every gap of every gap fills, forever, an actual infinite
+// packing rather than a rendering trick standing in for one, all of it
+// implied the instant the first three circles are chosen. Night 6's Chladni
+// figures were the last piece built on tangency and stillness rather than
+// a field; this is what the same stillness looks like as pure recursive
+// geometry instead of a resonance. Every child's curvature and center are
+// exact linear functions of its parent triple, so the whole orchard is
+// generated once, to a curvature no bigger than an on-screen pixel, and the
+// only thing that ever moves afterward is the camera: a slow unscripted
+// drift inward toward one gap chosen for still having generations left
+// beneath it, holding until its own children fill the frame, then pulling
+// back out to see where in the whole it was standing. Color reads pure
+// scale — hue is a direct function of log2(radius), so the rainbow bands
+// visible at any moment are a ruler of how deep that moment's zoom has
+// gone. Click to dissolve the whole packing and grow a new one from a
+// freshly chosen curvature pair; move the cursor for a small parallax
+// look, as if the orchard had depth beyond the glass. Open the file
+// directly in a browser.
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+const caption = document.getElementById('caption');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let width = 0, height = 0;
+function resize(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  baseScale = Math.min(width, height) * 0.47;
+}
+let baseScale = 1;
+window.addEventListener('resize', resize);
+
+// ---------- Descartes / Apollonian gasket math ----------
+
+function cmul(are, aim, bre, bim){ return [are*bre - aim*bim, are*bim + aim*bre]; }
+
+// Full complex Descartes solve: given three mutually tangent circles,
+// returns both fourth-circle solutions (curvature k, complex center z).
+function fullDescartes(c1, c2, c3){
+  const k1=c1.k, k2=c2.k, k3=c3.k;
+  const p12 = cmul(c1.re,c1.im, c2.re,c2.im);
+  const p23 = cmul(c2.re,c2.im, c3.re,c3.im);
+  const p13 = cmul(c1.re,c1.im, c3.re,c3.im);
+  const sumRe = k1*k2*p12[0] + k2*k3*p23[0] + k1*k3*p13[0];
+  const sumIm = k1*k2*p12[1] + k2*k3*p23[1] + k1*k3*p13[1];
+  const r = Math.hypot(sumRe, sumIm);
+  let sre = Math.sqrt(Math.max(0, (r+sumRe)/2));
+  let sim = Math.sqrt(Math.max(0, (r-sumRe)/2));
+  if(sumIm < 0) sim = -sim;
+  const kSum = k1+k2+k3;
+  const kRoot = 2*Math.sqrt(Math.max(0, k1*k2+k2*k3+k1*k3));
+  const k4p = kSum + kRoot, k4m = kSum - kRoot;
+  const baseRe = k1*c1.re + k2*c2.re + k3*c3.re;
+  const baseIm = k1*c1.im + k2*c2.im + k3*c3.im;
+  return {
+    a: { k: k4p, re: (baseRe+2*sre)/k4p, im: (baseIm+2*sim)/k4p },
+    b: { k: k4m, re: (baseRe-2*sre)/k4m, im: (baseIm-2*sim)/k4m }
+  };
+}
+
+// Vieta jump: the circle tangent to c1,c2,c3 other than the known cx.
+function otherCircle(c1, c2, c3, cx){
+  const k = 2*(c1.k+c2.k+c3.k) - cx.k;
+  const kzRe = 2*(c1.k*c1.re + c2.k*c2.re + c3.k*c3.re) - cx.k*cx.re;
+  const kzIm = 2*(c1.k*c1.im + c2.k*c2.im + c3.k*c3.im) - cx.k*cx.im;
+  return { k, re: kzRe/k, im: kzIm/k, depth: 0 };
+}
+
+const MIN_REL_RADIUS = 0.00085;
+const MAX_CIRCLES = 42000;
+
+function buildGasket(a){
+  const outer = { k:-1, re:0, im:0, depth:0 };
+  const b = a/(a-1);
+  const ra = 1/a, rb = 1/b;
+  const left  = { k:a, re:-(1-ra), im:0, depth:0 };
+  const right = { k:b, re: (1-rb), im:0, depth:0 };
+  const { a: top, b: bot } = fullDescartes(outer, left, right);
+  top.depth = 1; bot.depth = 1;
+
+  const circles = [left, right, top, bot];
+  const stack = [
+    [outer, left, right, top],
+    [outer, left, right, bot]
+  ];
+  while(stack.length && circles.length < MAX_CIRCLES){
+    const q = stack.pop();
+    const c1=q[0], c2=q[1], c3=q[2], c4=q[3];
+    const triples = [[c2,c3,c1],[c1,c3,c2],[c1,c2,c3]];
+    for(let i=0; i<3; i++){
+      const t = triples[i];
+      const n = otherCircle(t[0], t[1], c4, t[2]);
+      const relR = 1/Math.abs(n.k);
+      if(relR < MIN_REL_RADIUS) continue;
+      n.depth = c4.depth + 1;
+      circles.push(n);
+      if(circles.length >= MAX_CIRCLES) break;
+      stack.push([t[0], t[1], c4, n]);
+    }
+  }
+  return circles;
+}
+
+// ---------- scene state ----------
+
+let circles = [];
+let candidates = [];
+
+function pickCandidates(list){
+  const out = [];
+  for(let i=0; i<list.length; i++){
+    const c = list[i];
+    const relR = 1/Math.abs(c.k);
+    if(c.k > 0 && relR > 0.014 && relR < 0.085) out.push(c);
+  }
+  return out;
+}
+
+function newOrchard(){
+  const a = 1.8 + Math.random()*3.7;
+  circles = buildGasket(a);
+  candidates = pickCandidates(circles);
+}
+
+const cam = { re:0, im:0, scale:1 };
+const from = { re:0, im:0, scale:1 };
+const to   = { re:0, im:0, scale:1 };
+
+const CYCLE = { OVERVIEW:0, ZOOM_IN:1, HOLD:2, ZOOM_OUT:3 };
+let cyclePhase = CYCLE.OVERVIEW;
+let phaseT = 0;
+let cycleCount = 0;
+const DUR = { overview: 2600, zoomIn: 8200, hold: 4600, zoomOut: 6800 };
+
+function pickTarget(){
+  if(candidates.length === 0) return { re:0, im:0 };
+  return candidates[(Math.random()*candidates.length)|0];
+}
+let target = { re:0, im:0 };
+
+function beginZoomIn(){
+  target = pickTarget();
+  const relR = 1/Math.abs(target.k || 1);
+  const desiredScreenR = Math.min(width, height) * 0.4;
+  const zoom = Math.min(80, Math.max(6, desiredScreenR / (baseScale * relR)));
+  from.re = cam.re; from.im = cam.im; from.scale = cam.scale;
+  to.re = target.re; to.im = target.im; to.scale = zoom;
+  cyclePhase = CYCLE.ZOOM_IN;
+  phaseT = 0;
+}
+
+function beginZoomOut(){
+  from.re = cam.re; from.im = cam.im; from.scale = cam.scale;
+  to.re = 0; to.im = 0; to.scale = 1;
+  cyclePhase = CYCLE.ZOOM_OUT;
+  phaseT = 0;
+}
+
+function easeInOutCubic(t){
+  return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+}
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.9';
+  requestAnimationFrame(() => {
+    flashEl.style.transition = 'opacity 1.1s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+function reseed(){
+  flash();
+  newOrchard();
+  cam.re = 0; cam.im = 0; cam.scale = 1;
+  cyclePhase = CYCLE.OVERVIEW;
+  phaseT = 0;
+  cycleCount = 0;
+}
+
+// ---------- interaction ----------
+
+let mouseX = 0.5, mouseY = 0.5;
+let parX = 0, parY = 0;
+
+window.addEventListener('pointermove', (e) => {
+  mouseX = e.clientX / Math.max(1, width);
+  mouseY = e.clientY / Math.max(1, height);
+});
+
+window.addEventListener('pointerdown', () => {
+  reseed();
+});
+
+// ---------- render ----------
+
+function circleColor(c, hueShift){
+  const relR = 1 / c.k;
+  const logR = Math.log2(relR);
+  const hue = (((-logR) * 31 + hueShift) % 360 + 360) % 360;
+  const light = 46 + Math.min(10, Math.max(-10, (c.depth||0) * -0.6));
+  return `hsl(${hue.toFixed(1)}, 72%, ${light.toFixed(1)}%)`;
+}
+
+let lastT = performance.now();
+let hueShift = 0;
+
+function frame(now){
+  const dt = Math.min(64, now - lastT);
+  lastT = now;
+  hueShift += dt * 0.0035;
+
+  phaseT += dt;
+  if(cyclePhase === CYCLE.OVERVIEW && phaseT > DUR.overview){
+    beginZoomIn();
+  } else if(cyclePhase === CYCLE.ZOOM_IN){
+    const t = Math.min(1, phaseT / DUR.zoomIn);
+    const e = easeInOutCubic(t);
+    cam.re = from.re + (to.re-from.re)*e;
+    cam.im = from.im + (to.im-from.im)*e;
+    cam.scale = from.scale + (to.scale-from.scale)*e;
+    if(t >= 1){ cyclePhase = CYCLE.HOLD; phaseT = 0; }
+  } else if(cyclePhase === CYCLE.HOLD && phaseT > DUR.hold){
+    beginZoomOut();
+  } else if(cyclePhase === CYCLE.ZOOM_OUT){
+    const t = Math.min(1, phaseT / DUR.zoomOut);
+    const e = easeInOutCubic(t);
+    cam.re = from.re + (to.re-from.re)*e;
+    cam.im = from.im + (to.im-from.im)*e;
+    cam.scale = from.scale + (to.scale-from.scale)*e;
+    if(t >= 1){
+      cyclePhase = CYCLE.OVERVIEW; phaseT = 0;
+      cycleCount++;
+      if(cycleCount >= 4){ reseed(); }
+    }
+  }
+
+  parX += ((mouseX-0.5) * 26 - parX) * 0.04;
+  parY += ((mouseY-0.5) * 26 - parY) * 0.04;
+
+  ctx.fillStyle = '#05060a';
+  ctx.fillRect(0, 0, width, height);
+
+  const scalePx = baseScale * cam.scale;
+  const cx = width/2 + parX;
+  const cy = height/2 + parY;
+  const halfW = width/2/scalePx, halfH = height/2/scalePx;
+  const pad = 0.03/cam.scale;
+  const vMinRe = cam.re - halfW - pad, vMaxRe = cam.re + halfW + pad;
+  const vMinIm = cam.im - halfH - pad, vMaxIm = cam.im + halfH + pad;
+
+  for(let i=0; i<circles.length; i++){
+    const c = circles[i];
+    if(c.k < 0) continue;
+    const relR = 1/c.k;
+    if(c.re+relR < vMinRe || c.re-relR > vMaxRe || c.im+relR < vMinIm || c.im-relR > vMaxIm) continue;
+    const sr = relR * scalePx;
+    if(sr < 0.35) continue;
+    const sx = cx + (c.re - cam.re) * scalePx;
+    const sy = cy - (c.im - cam.im) * scalePx;
+    const alpha = Math.min(1, (sr - 0.35) / 2.2);
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    ctx.arc(sx, sy, Math.max(0.4, sr - Math.min(1.4, sr*0.045)), 0, Math.PI*2);
+    ctx.fillStyle = circleColor(c, hueShift);
+    ctx.fill();
+    if(sr > 7){
+      ctx.globalAlpha = alpha * 0.35;
+      ctx.beginPath();
+      ctx.arc(sx - sr*0.28, sy - sr*0.28, sr*0.32, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
+      ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+
+  requestAnimationFrame(frame);
+}
+
+resize();
+newOrchard();
+requestAnimationFrame(frame);
+setTimeout(() => caption.classList.add('visible'), 1500);
+setTimeout(() => caption.classList.remove('visible'), 9000);
+})();
+</script>
+</body>
+</html>
