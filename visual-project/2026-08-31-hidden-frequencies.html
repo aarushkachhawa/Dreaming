@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Hidden Frequencies — Night 31</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0a0806;
+    overflow: hidden;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 240, 220, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="trail"></canvas>
+<canvas id="wheels"></canvas>
+<div id="caption">Hidden Frequencies &mdash; Night 31 &mdash; move left/right of center to slow, still, or reverse; click for a new shape</div>
+<script>
+(() => {
+  // A thirty-first technique, and the first that begins by analyzing an
+  // existing shape rather than simulating one forward — a discrete Fourier
+  // transform of a closed curve, redrawn as Ptolemy's own device: a chain
+  // of circles turning on circles, each one a genuine hidden frequency the
+  // curve was built from all along. Night 17's harmonograph summed four
+  // sines forward and let a rosette fall out of them; this runs that logic
+  // backward, starting from an ordinary shape (a star, a heart, a polar
+  // rose, a lemniscate, a wobbling blob) and extracting the sum of rotating
+  // wheels — one per integer frequency, amplitude and phase read straight
+  // off its complex DFT coefficients, ordered largest first — whose
+  // combined tip traces that exact shape and nothing else. The top eighty
+  // wheels by amplitude are kept and drawn; discarding the rest is why
+  // sharp corners arrive slightly rounded, an honest Gibbs-phenomenon
+  // wobble rather than a flaw. Color along the traced line reads the
+  // fraction of the current revolution completed, dark bronze through
+  // amber to pale brass and pearl, so a finished trace reads like tarnish
+  // and polish laid down in the order the wheels drew it, and the whole
+  // assembly also breathes a slow, small zoom on its own clock. Move the
+  // cursor left or right of center to slow, still, or reverse the
+  // unwinding — real retrograde motion, the exact phenomenon epicycles
+  // were invented in the second century to explain, produced here by the
+  // same mechanism Ptolemy used, driven backward on purpose. Click to burn
+  // the trace and let a freshly chosen shape's own hidden frequencies take
+  // over. Left alone, a new shape arrives on its own every minute and a
+  // half or so. Open the file directly in a browser.
+
+  const trailCanvas = document.getElementById('trail');
+  const wheelCanvas = document.getElementById('wheels');
+  const trailCtx = trailCanvas.getContext('2d');
+  const wheelCtx = wheelCanvas.getContext('2d');
+
+  const TWO_PI = Math.PI * 2;
+  let W, H, DPR, cx, cy, scale;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [trailCanvas, wheelCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    trailCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    wheelCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    cx = W / 2;
+    cy = H / 2;
+    scale = Math.min(W, H) * 0.30;
+    trailCtx.fillStyle = '#0a0806';
+    trailCtx.fillRect(0, 0, W, H);
+    lastTip = null;
+  }
+
+  // ---------- curated closed curves, each sampled at N points as a
+  // complex (x, y) sequence in roughly [-1, 1] ----------
+  const N = 200;
+
+  function sampleLoop(verts) {
+    const vcount = verts.length;
+    const z = new Array(N);
+    for (let n = 0; n < N; n++) {
+      const f = (n / N) * vcount;
+      const i = Math.floor(f) % vcount;
+      const j = (i + 1) % vcount;
+      const frac = f - Math.floor(f);
+      z[n] = [
+        verts[i][0] + (verts[j][0] - verts[i][0]) * frac,
+        verts[i][1] + (verts[j][1] - verts[i][1]) * frac,
+      ];
+    }
+    return z;
+  }
+
+  function shapeStar() {
+    const points = 4 + ((Math.random() * 5) | 0);
+    const inner = 0.35 + Math.random() * 0.25;
+    const rot = Math.random() * TWO_PI;
+    const vcount = points * 2;
+    const verts = [];
+    for (let i = 0; i < vcount; i++) {
+      const r = i % 2 === 0 ? 1 : inner;
+      const a = rot + i * (TWO_PI / vcount);
+      verts.push([Math.cos(a) * r, Math.sin(a) * r]);
+    }
+    return sampleLoop(verts);
+  }
+
+  function shapeHeart() {
+    const z = new Array(N);
+    for (let n = 0; n < N; n++) {
+      const t = (n / N) * TWO_PI;
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      z[n] = [x / 16, -y / 16];
+    }
+    return z;
+  }
+
+  function shapeRose() {
+    const k = 2 + ((Math.random() * 7) | 0);
+    const z = new Array(N);
+    for (let n = 0; n < N; n++) {
+      const t = (n / N) * TWO_PI;
+      const r = Math.cos(k * t);
+      z[n] = [r * Math.cos(t), r * Math.sin(t)];
+    }
+    return z;
+  }
+
+  function shapeLemniscate() {
+    const z = new Array(N);
+    for (let n = 0; n < N; n++) {
+      const t = (n / N) * TWO_PI;
+      z[n] = [Math.cos(t), Math.sin(t) * Math.cos(t)];
+    }
+    return z;
+  }
+
+  function shapeBlob() {
+    const count = 3 + ((Math.random() * 3) | 0);
+    const terms = [];
+    for (let i = 0; i < count; i++) {
+      terms.push({
+        k: 1 + ((Math.random() * 6) | 0),
+        amp: 0.06 + Math.random() * 0.16,
+        phase: Math.random() * TWO_PI,
+      });
+    }
+    const z = new Array(N);
+    for (let n = 0; n < N; n++) {
+      const t = (n / N) * TWO_PI;
+      let r = 1;
+      for (const term of terms) r += term.amp * Math.cos(term.k * t + term.phase);
+      r = Math.max(r, 0.2);
+      z[n] = [r * Math.cos(t), r * Math.sin(t)];
+    }
+    return z;
+  }
+
+  const GENERATORS = { star: shapeStar, heart: shapeHeart, rose: shapeRose, lemniscate: shapeLemniscate, blob: shapeBlob };
+  const FAMILIES = Object.keys(GENERATORS);
+
+  function pickFamily(exclude) {
+    let f;
+    do {
+      f = FAMILIES[(Math.random() * FAMILIES.length) | 0];
+    } while (f === exclude);
+    return f;
+  }
+
+  // ---------- discrete Fourier transform: one epicycle per integer
+  // frequency, amplitude and phase read straight off the coefficient ----------
+  const MAX_CIRCLES = 80;
+
+  function computeDFT(z) {
+    const n = z.length;
+    const half = Math.floor(n / 2);
+    const list = [];
+    for (let k = -half; k < n - half; k++) {
+      let re = 0, im = 0;
+      for (let t = 0; t < n; t++) {
+        const x = z[t][0], y = z[t][1];
+        const phi = (TWO_PI * k * t) / n;
+        const c = Math.cos(phi), s = Math.sin(phi);
+        re += x * c + y * s;
+        im += y * c - x * s;
+      }
+      re /= n;
+      im /= n;
+      const amp = Math.hypot(re, im);
+      if (amp > 1e-5) list.push({ freq: k, amp, phase0: Math.atan2(im, re) });
+    }
+    list.sort((a, b) => b.amp - a.amp);
+    return list.slice(0, MAX_CIRCLES);
+  }
+
+  // dark bronze -> amber -> pale brass -> pearl, cyclic across one revolution
+  const BRONZE_STOPS = [
+    [46, 26, 14],
+    [150, 84, 28],
+    [214, 165, 92],
+    [252, 238, 214],
+  ];
+  function bronzeColor(t) {
+    const tt = ((t % 1) + 1) % 1;
+    const n = BRONZE_STOPS.length;
+    const f = tt * n;
+    const i = Math.floor(f) % n;
+    const j = (i + 1) % n;
+    const frac = f - Math.floor(f);
+    const a = BRONZE_STOPS[i], b = BRONZE_STOPS[j];
+    const r = a[0] + (b[0] - a[0]) * frac;
+    const g = a[1] + (b[1] - a[1]) * frac;
+    const bl = a[2] + (b[2] - a[2]) * frac;
+    return `rgba(${r | 0}, ${g | 0}, ${bl | 0}, 0.85)`;
+  }
+
+  let currentFamily = null;
+  let coeffs = [];
+  let theta = 0;
+  let lastTip = null;
+
+  function loadShape(family, burn) {
+    currentFamily = family;
+    coeffs = computeDFT(GENERATORS[family]());
+    theta = 0;
+    lastTip = null;
+    if (burn) {
+      trailCtx.fillStyle = 'rgba(10, 8, 6, 0.55)';
+      trailCtx.fillRect(0, 0, W, H);
+    }
+  }
+
+  const PERIOD_SECONDS = 9;
+  let speed = 1, targetSpeed = 1;
+  let slowClock = 0;
+  let sinceTransition = 0, nextTransitionAt = 90 + Math.random() * 20;
+
+  window.addEventListener('pointermove', (e) => {
+    const nx = (e.clientX / W) * 2 - 1;
+    targetSpeed = 1 + nx * 2;
+  });
+  window.addEventListener('pointerleave', () => {
+    targetSpeed = 1;
+  });
+  window.addEventListener('pointerdown', () => {
+    sinceTransition = 0;
+    nextTransitionAt = 90 + Math.random() * 20;
+    loadShape(pickFamily(currentFamily), true);
+  });
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  let last = null;
+  function frame(ts) {
+    if (last === null) last = ts;
+    let dt = (ts - last) / 1000;
+    last = ts;
+    if (dt > 0.05) dt = 0.05;
+
+    speed += (targetSpeed - speed) * Math.min(1, dt * 2.5);
+    theta += (TWO_PI / PERIOD_SECONDS) * dt * speed;
+    theta = ((theta % TWO_PI) + TWO_PI) % TWO_PI;
+
+    slowClock += dt * 0.12;
+    sinceTransition += dt;
+    if (sinceTransition > nextTransitionAt) {
+      sinceTransition = 0;
+      nextTransitionAt = 90 + Math.random() * 20;
+      loadShape(pickFamily(currentFamily), true);
+    }
+
+    const breatheScale = 1 + 0.04 * Math.sin(slowClock);
+
+    wheelCtx.clearRect(0, 0, W, H);
+    wheelCtx.save();
+    wheelCtx.strokeStyle = 'rgba(190, 215, 230, 0.22)';
+    wheelCtx.lineWidth = 1;
+    let px = cx, py = cy;
+    for (const c of coeffs) {
+      const angle = c.freq * theta + c.phase0;
+      const r = c.amp * scale * breatheScale;
+      const nx = px + r * Math.cos(angle);
+      const ny = py + r * Math.sin(angle);
+      if (r > 0.6) {
+        wheelCtx.beginPath();
+        wheelCtx.arc(px, py, r, 0, TWO_PI);
+        wheelCtx.stroke();
+        wheelCtx.beginPath();
+        wheelCtx.moveTo(px, py);
+        wheelCtx.lineTo(nx, ny);
+        wheelCtx.stroke();
+      }
+      px = nx;
+      py = ny;
+    }
+    wheelCtx.restore();
+
+    wheelCtx.save();
+    wheelCtx.globalCompositeOperation = 'lighter';
+    const grad = wheelCtx.createRadialGradient(px, py, 0, px, py, 14);
+    grad.addColorStop(0, 'rgba(255, 244, 220, 0.95)');
+    grad.addColorStop(1, 'rgba(255, 244, 220, 0)');
+    wheelCtx.fillStyle = grad;
+    wheelCtx.beginPath();
+    wheelCtx.arc(px, py, 14, 0, TWO_PI);
+    wheelCtx.fill();
+    wheelCtx.restore();
+
+    trailCtx.fillStyle = 'rgba(10, 8, 6, 0.0005)';
+    trailCtx.fillRect(0, 0, W, H);
+    if (lastTip) {
+      trailCtx.strokeStyle = bronzeColor(theta / TWO_PI);
+      trailCtx.lineWidth = 1.6;
+      trailCtx.lineCap = 'round';
+      trailCtx.beginPath();
+      trailCtx.moveTo(lastTip.x, lastTip.y);
+      trailCtx.lineTo(px, py);
+      trailCtx.stroke();
+    }
+    lastTip = { x: px, y: py };
+
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  loadShape(pickFamily(null), false);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

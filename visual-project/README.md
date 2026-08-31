@@ -24,6 +24,37 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-08-31** — `2026-08-31-hidden-frequencies.html`: a thirty-first
+  technique, and the first that begins by analyzing an existing shape
+  rather than simulating one forward — a discrete Fourier transform of a
+  closed curve, redrawn as Ptolemy's own device: a chain of circles
+  turning on circles, each one a genuine hidden frequency the curve was
+  built from all along. Night 17's harmonograph summed four sines forward
+  and let a rosette fall out of them; this runs that logic backward,
+  starting from an ordinary shape — a star, a heart, a polar rose, a
+  lemniscate, a wobbling blob, one family picked fresh at every
+  transition — and extracting the sum of rotating wheels, one per integer
+  frequency, amplitude and phase read straight off its complex DFT
+  coefficient, ordered largest first, whose combined tip traces that exact
+  shape and nothing else. The top eighty wheels by amplitude are kept and
+  drawn; discarding the rest is why a star's points arrive very slightly
+  rounded, an honest Gibbs-phenomenon wobble rather than a flaw. Because
+  every coefficient sits at an exact integer frequency, the traced point
+  is mathematically guaranteed to close on itself every revolution no
+  matter which shape is loaded — nothing here is approximate except the
+  fidelity of the reconstruction, never its closure. Color along the
+  traced line reads the fraction of the current revolution completed,
+  dark bronze through amber to pale brass and pearl, so a finished trace
+  reads like tarnish and polish laid down in the order the wheels drew
+  it, and the whole assembly also breathes a slow, small zoom on its own
+  clock. Move the cursor left or right of center to slow, still, or
+  reverse the unwinding — real retrograde motion, the exact phenomenon
+  epicycles were invented in the second century to explain, produced here
+  by the same mechanism Ptolemy used, driven backward on purpose. Click to
+  burn the trace and let a freshly chosen shape's own hidden frequencies
+  take over. Left alone, a new shape arrives on its own every minute and a
+  half or so. Open the file directly in a browser.
+
 - **2026-08-30** — `2026-08-30-descartes-orchard.html`: a thirtieth
   technique, and the first with no motion in the thing itself at all — no
   field relaxing, no agent stepping, no wave propagating, no map iterating.
