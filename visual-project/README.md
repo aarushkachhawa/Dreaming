@@ -24,6 +24,50 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-01** — `2026-09-01-drift-and-deluge.html`: a thirty-second
+  technique, and the first built from stochastic subdivision rather than a
+  field, a swarm, an automaton, a grammar, or a force law between bodies —
+  and the first to run two independent generative processes on the same
+  structure in sequence, one recursive and instantaneous, one physical and
+  never finished. The land is grown once by diamond-square midpoint
+  displacement (Fournier, Fussell & Carpenter, 1982): four random corners,
+  then every square's center set to the average of its corners plus a
+  random offset, every diamond's center to the average of its diamond
+  neighbors plus the same, halving the grid and the offset's scale by 2^-H
+  each pass, where H is the Hurst exponent — near 0 and each halving keeps
+  almost as much noise as the last, jagged country; near 1 and each pass
+  damps hard, rolling hills. The whole heightfield exists after eight
+  halvings, before a single frame is drawn — night 1's flow field advected
+  particles through Perlin's continuous, closed-form noise sampled point by
+  point; this instead builds its roughness by literally subdividing a grid,
+  fractal structure as a residue of the recursion rather than a formula
+  evaluated fresh each time. What happens next isn't that recursion again
+  but an unrelated law laid on top: particle-based hydraulic erosion (after
+  Hans Theobald Beyer's 2015 thesis), thousands of individual raindrops
+  rolling downhill from random high points along the local gradient with a
+  little inertia, picking up sediment where the ground steepens beneath
+  them and dropping it where the ground levels out, evaporating a little
+  every step until there's none left to carry. No single drop reshapes
+  anything visibly; a few dozen a frame, forever, is what carves ridges
+  into valleys and rounds a jagged birth into something that reads as a
+  real, weathered country — mass transport of rock standing in for the
+  momentum transport night 9's fluid solver ran on water. Lit by a low sun
+  whose azimuth wheels slowly around the whole country and whose elevation
+  breathes between noon and long shadow, height and slope together read as
+  water, wet sand, moss, bare rock, and snow, rock pushing through the
+  snow line wherever a slope is too steep to hold it, faint contour bands
+  threaded through the land the way a survey map would draw them, and a
+  scattered, twinkling glint combing every shoreline the sun sits high
+  enough to catch. Move the cursor to raise the ground gently beneath it, a
+  slow tectonic push; click to drop a strike outright, a crater punched
+  down with its own rim thrown up around the edge of impact — deep enough,
+  it fills as a fresh lake on the spot — which the rain then spends the
+  next stretch quietly smoothing back into the country. Left alone, the
+  rain never stops falling, and roughly every couple of minutes the whole
+  country dissolves into a freshly grown one with its own Hurst exponent
+  and its own coastlines, absorbed into view over a few seconds rather than
+  cut to. Open the file directly in a browser.
+
 - **2026-08-31** — `2026-08-31-hidden-frequencies.html`: a thirty-first
   technique, and the first that begins by analyzing an existing shape
   rather than simulating one forward — a discrete Fourier transform of a

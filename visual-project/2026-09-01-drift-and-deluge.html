@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drift and Deluge — Night 32</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #030405;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: -webkit-optimize-contrast;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="caption">Drift and Deluge &mdash; Night 32 &mdash; move to raise the land &middot; click to strike it &middot; left alone, the rain does the rest</div>
+<script>
+(function(){
+'use strict';
+// A thirty-second technique, and the first built from stochastic subdivision
+// rather than a field, a swarm, an automaton, a grammar, or a force law
+// between bodies — and the first to run two independent generative
+// processes in sequence on the same structure, one recursive and
+// instantaneous, one physical and never finished. The land itself is grown
+// once by diamond-square midpoint displacement (Fournier, Fussell &
+// Carpenter, 1982): four random corners, then every square's center is set
+// to the average of its corners plus a random offset, every diamond's
+// center to the average of its diamond neighbors plus the same, halving the
+// grid and the offset's scale by 2^-H each pass, where H is the Hurst
+// exponent — close to 0 and every halving keeps nearly as much noise as the
+// last, producing jagged, high-frequency country; close to 1 and each pass
+// damps hard, producing rolling hills. The whole heightfield exists after
+// seven halvings, before a single frame is drawn — night 1's flow field
+// advected particles through Perlin's continuous, closed-form noise
+// function sampled point by point; this instead builds its roughness by
+// literally subdividing a grid, fractal structure as an artifact of the
+// recursion rather than a formula evaluated fresh each time. What happens
+// after is not that recursion again but a second, unrelated law laid on
+// top: particle-based hydraulic erosion (after Hans Theobald Beyer's 2015
+// thesis), thousands of individual raindrops, each one rolling downhill
+// from a random high point along the local gradient with a little inertia,
+// picking up sediment where the ground steepens under it and dropping
+// sediment where the ground levels out, evaporating a little every step
+// until it has none left to carry. No single drop reshapes anything
+// visibly; a few thousand of them, one to a few dozen per frame forever,
+// is what carves ridges into valleys and rounds a jagged birth into
+// something that reads as a real, weathered country — mass transport of
+// rock standing in for the momentum transport Night 9's fluid solver ran on
+// water. Lit by a low sun whose azimuth slowly wheels around the whole
+// country and whose elevation breathes between noon and long shadow, height
+// bands read as water, sand, moss, bare rock, and snow, rock pushing
+// through the snow line wherever a slope is too steep to hold it, with
+// faint contour bands threaded through the land the way a survey map would
+// draw them, and a restless shimmer combing the shoreline whenever the sun
+// sits high enough to catch it. Move the cursor to raise the ground gently
+// beneath it, a slow tectonic push; click to drop a strike outright, a
+// crater punched down with its own rim thrown up around the rim of impact,
+// which the rain then spends the next stretch quietly smoothing back into
+// the country. Left alone, the rain never stops falling, and roughly every
+// couple of minutes the entire country dissolves into a freshly grown one
+// with its own Hurst exponent, its own coastlines, absorbed into view over
+// a few seconds rather than cut to. Open the file directly in a browser.
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+const caption = document.getElementById('caption');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let width = 0, height = 0;
+function resize(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+// ---------- terrain grid ----------
+
+const K = 8;
+const SIZE = (1 << K) + 1; // 257
+const CELLS = SIZE * SIZE;
+
+let heights = new Float32Array(CELLS);
+let startHeights = null;
+let targetHeights = null;
+let transitioning = false;
+let blendT = 0;
+const TRANSITION_MS = 3200;
+let waterLevelBase = 0.34;
+let hurst = 0.6;
+
+function idx(x, y){ return y * SIZE + x; }
+
+function diamondSquare(H){
+  const h = new Float32Array(CELLS);
+  const rand = () => Math.random() * 2 - 1;
+  h[idx(0, 0)] = rand();
+  h[idx(SIZE - 1, 0)] = rand();
+  h[idx(0, SIZE - 1)] = rand();
+  h[idx(SIZE - 1, SIZE - 1)] = rand();
+
+  let step = SIZE - 1;
+  let scale = 0.9;
+  while(step > 1){
+    const half = step / 2;
+    for(let y = half; y < SIZE; y += step){
+      for(let x = half; x < SIZE; x += step){
+        const avg = (h[idx(x - half, y - half)] + h[idx(x + half, y - half)] +
+                     h[idx(x - half, y + half)] + h[idx(x + half, y + half)]) / 4;
+        h[idx(x, y)] = avg + rand() * scale;
+      }
+    }
+    for(let y = 0; y < SIZE; y += half){
+      for(let x = (Math.floor(y / half) % 2 === 0) ? half : 0; x < SIZE; x += step){
+        let sum = 0, count = 0;
+        if(x - half >= 0){ sum += h[idx(x - half, y)]; count++; }
+        if(x + half < SIZE){ sum += h[idx(x + half, y)]; count++; }
+        if(y - half >= 0){ sum += h[idx(x, y - half)]; count++; }
+        if(y + half < SIZE){ sum += h[idx(x, y + half)]; count++; }
+        h[idx(x, y)] = sum / count + rand() * scale;
+      }
+    }
+    step = half;
+    scale *= Math.pow(2, -H);
+  }
+
+  let min = Infinity, max = -Infinity;
+  for(let i = 0; i < CELLS; i++){ if(h[i] < min) min = h[i]; if(h[i] > max) max = h[i]; }
+  const range = Math.max(1e-6, max - min);
+  for(let i = 0; i < CELLS; i++) h[i] = (h[i] - min) / range;
+  return h;
+}
+
+function percentile(h, p){
+  const sorted = Float32Array.from(h).sort();
+  return sorted[Math.floor(p * (sorted.length - 1))];
+}
+
+function growCountry(){
+  hurst = 0.32 + Math.random() * 0.5;
+  const fresh = diamondSquare(hurst);
+  waterLevelBase = percentile(fresh, 0.3);
+  startHeights = Float32Array.from(heights);
+  targetHeights = fresh;
+  transitioning = true;
+  blendT = 0;
+}
+
+// ---------- hydraulic erosion (Beyer-style droplets) ----------
+
+const INERTIA = 0.06;
+const CAPACITY = 7;
+const MIN_SLOPE = 0.0008;
+const DEPOSIT_RATE = 0.28;
+const ERODE_RATE = 0.32;
+const ERODE_CAP = 0.006;
+const GRAVITY = 5;
+const EVAPORATE = 0.018;
+const DROPLETS_PER_FRAME = 45;
+
+function heightAt(x, y){
+  const xi = Math.floor(x), yi = Math.floor(y);
+  const fx = x - xi, fy = y - yi;
+  const x0 = Math.min(SIZE - 1, Math.max(0, xi));
+  const x1 = Math.min(SIZE - 1, x0 + 1);
+  const y0 = Math.min(SIZE - 1, Math.max(0, yi));
+  const y1 = Math.min(SIZE - 1, y0 + 1);
+  const h00 = heights[idx(x0, y0)], h10 = heights[idx(x1, y0)];
+  const h01 = heights[idx(x0, y1)], h11 = heights[idx(x1, y1)];
+  return h00 * (1 - fx) * (1 - fy) + h10 * fx * (1 - fy) + h01 * (1 - fx) * fy + h11 * fx * fy;
+}
+
+function splat(xi, yi, fx, fy, amount){
+  if(xi >= 0 && yi >= 0 && xi < SIZE && yi < SIZE) heights[idx(xi, yi)] += amount * (1 - fx) * (1 - fy);
+  if(xi + 1 >= 0 && yi >= 0 && xi + 1 < SIZE && yi < SIZE) heights[idx(xi + 1, yi)] += amount * fx * (1 - fy);
+  if(xi >= 0 && yi + 1 >= 0 && xi < SIZE && yi + 1 < SIZE) heights[idx(xi, yi + 1)] += amount * (1 - fx) * fy;
+  if(xi + 1 >= 0 && yi + 1 >= 0 && xi + 1 < SIZE && yi + 1 < SIZE) heights[idx(xi + 1, yi + 1)] += amount * fx * fy;
+}
+
+function spawnDroplet(){
+  let x = 2 + Math.random() * (SIZE - 5);
+  let y = 2 + Math.random() * (SIZE - 5);
+  let dirX = 0, dirY = 0, speed = 0.6, water = 1, sediment = 0;
+  for(let step = 0; step < 28; step++){
+    const xi = Math.floor(x), yi = Math.floor(y);
+    if(xi < 1 || yi < 1 || xi > SIZE - 3 || yi > SIZE - 3) break;
+    const fx = x - xi, fy = y - yi;
+    const h00 = heights[idx(xi, yi)], h10 = heights[idx(xi + 1, yi)];
+    const h01 = heights[idx(xi, yi + 1)], h11 = heights[idx(xi + 1, yi + 1)];
+    const gx = (h10 - h00) * (1 - fy) + (h11 - h01) * fy;
+    const gy = (h01 - h00) * (1 - fx) + (h11 - h10) * fx;
+    dirX = dirX * INERTIA - gx * (1 - INERTIA);
+    dirY = dirY * INERTIA - gy * (1 - INERTIA);
+    const len = Math.hypot(dirX, dirY);
+    if(len < 1e-8){ dirX = Math.random() * 2 - 1; dirY = Math.random() * 2 - 1; }
+    else { dirX /= len; dirY /= len; }
+    const nx = x + dirX, ny = y + dirY;
+    if(nx < 1 || ny < 1 || nx > SIZE - 3 || ny > SIZE - 3) break;
+    const oldH = heightAt(x, y);
+    const newH = heightAt(nx, ny);
+    const deltaH = newH - oldH;
+    const capacity = Math.max(-deltaH, MIN_SLOPE) * speed * water * CAPACITY;
+    if(sediment > capacity || deltaH > 0){
+      const deposit = deltaH > 0 ? Math.min(deltaH, sediment) : (sediment - capacity) * DEPOSIT_RATE;
+      sediment -= deposit;
+      splat(xi, yi, fx, fy, Math.min(ERODE_CAP, deposit));
+    } else {
+      const erodeAmt = Math.min((capacity - sediment) * ERODE_RATE, ERODE_CAP, -deltaH);
+      splat(xi, yi, fx, fy, -Math.max(0, erodeAmt));
+      sediment += Math.max(0, erodeAmt);
+    }
+    speed = Math.sqrt(Math.max(0, speed * speed + deltaH * -GRAVITY));
+    water *= (1 - EVAPORATE);
+    x = nx; y = ny;
+    if(water < 0.01) break;
+  }
+}
+
+function applyBump(gx, gy, radius, amount){
+  const r2 = radius * radius;
+  const x0 = Math.max(0, Math.floor(gx - radius)), x1 = Math.min(SIZE - 1, Math.ceil(gx + radius));
+  const y0 = Math.max(0, Math.floor(gy - radius)), y1 = Math.min(SIZE - 1, Math.ceil(gy + radius));
+  for(let y = y0; y <= y1; y++){
+    for(let x = x0; x <= x1; x++){
+      const dx = x - gx, dy = y - gy;
+      const d2 = dx * dx + dy * dy;
+      if(d2 > r2) continue;
+      const falloff = Math.exp(-d2 / (r2 * 0.35));
+      heights[idx(x, y)] += amount * falloff;
+    }
+  }
+}
+
+function strikeCrater(gx, gy){
+  const R = 13 + Math.random() * 8;
+  const seedA = Math.random() * 6.2832, seedB = Math.random() * 6.2832;
+  const x0 = Math.max(0, Math.floor(gx - R * 2)), x1 = Math.min(SIZE - 1, Math.ceil(gx + R * 2));
+  const y0 = Math.max(0, Math.floor(gy - R * 2)), y1 = Math.min(SIZE - 1, Math.ceil(gy + R * 2));
+  for(let y = y0; y <= y1; y++){
+    for(let x = x0; x <= x1; x++){
+      const dx = x - gx, dy = y - gy;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      const angle = Math.atan2(dy, dx);
+      const jitter = 1 + 0.16 * Math.sin(angle * 5 + seedA) + 0.09 * Math.sin(angle * 11 + seedB);
+      const rimR = R * jitter;
+      if(d < rimR){
+        const t = d / rimR;
+        heights[idx(x, y)] -= (1 - t * t) * 0.22;
+      } else if(d < rimR * 1.8){
+        const t = (d - rimR) / (rimR * 0.8);
+        heights[idx(x, y)] += Math.max(0, 1 - t) * 0.09;
+      }
+    }
+  }
+}
+
+// ---------- interaction ----------
+
+let mouseGX = SIZE / 2, mouseGY = SIZE / 2;
+let lastMoveTime = -1e9;
+
+canvas.addEventListener('pointermove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const u = (e.clientX - rect.left) / Math.max(1, rect.width);
+  const v = (e.clientY - rect.top) / Math.max(1, rect.height);
+  mouseGX = Math.min(SIZE - 1, Math.max(0, u * (SIZE - 1)));
+  mouseGY = Math.min(SIZE - 1, Math.max(0, v * (SIZE - 1)));
+  lastMoveTime = performance.now();
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const u = (e.clientX - rect.left) / Math.max(1, rect.width);
+  const v = (e.clientY - rect.top) / Math.max(1, rect.height);
+  const gx = Math.min(SIZE - 1, Math.max(0, u * (SIZE - 1)));
+  const gy = Math.min(SIZE - 1, Math.max(0, v * (SIZE - 1)));
+  strikeCrater(gx, gy);
+  flash();
+});
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.55';
+  requestAnimationFrame(() => {
+    flashEl.style.transition = 'opacity 0.9s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+// ---------- rendering ----------
+
+const off = document.createElement('canvas');
+off.width = SIZE; off.height = SIZE;
+const offCtx = off.getContext('2d');
+const imgData = offCtx.createImageData(SIZE, SIZE);
+const pixels = imgData.data;
+
+const deep = [10, 22, 46];
+const shallow = [26, 92, 116];
+const wetSand = [186, 168, 128];
+const grassLo = [58, 92, 46];
+const grassHi = [110, 132, 58];
+const rock = [96, 84, 76];
+const snow = [232, 236, 240];
+
+function lerp3(a, b, t, out){
+  out[0] = a[0] + (b[0] - a[0]) * t;
+  out[1] = a[1] + (b[1] - a[1]) * t;
+  out[2] = a[2] + (b[2] - a[2]) * t;
+}
+
+const tmp = [0, 0, 0];
+const tmp2 = [0, 0, 0];
+
+function easeInOutCubic(t){
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+let lastT = performance.now();
+let clock = 0;
+let regenTimer = 0;
+const REGEN_INTERVAL = 118000;
+
+function frame(now){
+  const dt = Math.min(48, now - lastT);
+  lastT = now;
+  clock += dt;
+
+  if(transitioning){
+    blendT += dt / TRANSITION_MS;
+    const e = easeInOutCubic(Math.min(1, blendT));
+    for(let i = 0; i < CELLS; i++) heights[i] = startHeights[i] * (1 - e) + targetHeights[i] * e;
+    if(blendT >= 1) transitioning = false;
+  } else {
+    for(let i = 0; i < DROPLETS_PER_FRAME; i++) spawnDroplet();
+    if(now - lastMoveTime < 160){
+      applyBump(mouseGX, mouseGY, 16, dt * 0.00016);
+    }
+    regenTimer += dt;
+    if(regenTimer > REGEN_INTERVAL){
+      regenTimer = 0;
+      growCountry();
+    }
+  }
+
+  const azimuth = clock * 0.00007;
+  const elevation = 0.55 + Math.sin(clock * 0.00004) * 0.32;
+  const lx = Math.cos(azimuth) * Math.cos(elevation);
+  const ly = Math.sin(azimuth) * Math.cos(elevation);
+  const lz = Math.sin(elevation);
+  const waterLevel = waterLevelBase + Math.sin(clock * 0.00013) * 0.015;
+  const sunHigh = Math.max(0, lz);
+
+  let p = 0;
+  for(let y = 0; y < SIZE; y++){
+    const yl = Math.max(0, y - 1), yr = Math.min(SIZE - 1, y + 1);
+    for(let x = 0; x < SIZE; x++){
+      const xl = Math.max(0, x - 1), xr = Math.min(SIZE - 1, x + 1);
+      const h = heights[idx(x, y)];
+      const hl = heights[idx(xl, y)], hr = heights[idx(xr, y)];
+      const hu = heights[idx(x, yl)], hd = heights[idx(x, yr)];
+      let nx = (hl - hr) * 2.4;
+      let ny = (hu - hd) * 2.4;
+      let nz = 1;
+      const nlen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      nx /= nlen; ny /= nlen; nz /= nlen;
+      const diffuse = Math.max(0, nx * lx + ny * ly + nz * lz);
+      const intensity = 0.32 + diffuse * 0.85;
+
+      let r, g, b;
+      if(h < waterLevel){
+        const depth = Math.min(1, (waterLevel - h) / 0.1);
+        lerp3(shallow, deep, depth, tmp);
+        r = tmp[0]; g = tmp[1]; b = tmp[2];
+        const flat = Math.max(0, nz - 0.9) * 10;
+        const hash = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+        const cellPhase = (hash - Math.floor(hash)) * 6.2832;
+        const shimmer = 0.5 + 0.5 * Math.sin(cellPhase + clock * 0.0026);
+        const glint = sunHigh * flat * Math.max(0, shimmer - 0.9) * 9.5;
+        r += glint * 200; g += glint * 210; b += glint * 220;
+        r *= 0.55 + diffuse * 0.5; g *= 0.55 + diffuse * 0.5; b *= 0.55 + diffuse * 0.5;
+      } else {
+        const shoreTop = waterLevel + 0.025;
+        if(h < shoreTop){
+          r = wetSand[0]; g = wetSand[1]; b = wetSand[2];
+        } else if(h < 0.58){
+          lerp3(grassLo, grassHi, Math.min(1, (h - shoreTop) / (0.58 - shoreTop)), tmp);
+          r = tmp[0]; g = tmp[1]; b = tmp[2];
+        } else if(h < 0.8){
+          lerp3(grassHi, rock, Math.min(1, (h - 0.58) / 0.22), tmp);
+          r = tmp[0]; g = tmp[1]; b = tmp[2];
+        } else {
+          lerp3(rock, snow, Math.min(1, (h - 0.8) / 0.2), tmp);
+          r = tmp[0]; g = tmp[1]; b = tmp[2];
+        }
+        const steep = nz < 0.62 ? (0.62 - nz) / 0.62 : 0;
+        lerp3([r, g, b], rock, Math.min(0.85, steep * 1.4), tmp2);
+        r = tmp2[0]; g = tmp2[1]; b = tmp2[2];
+
+        const band = Math.abs(((h * 42) % 1) - 0.5);
+        if(band < 0.035) { r *= 0.82; g *= 0.82; b *= 0.82; }
+
+        r *= intensity; g *= intensity; b *= intensity;
+      }
+
+      pixels[p] = Math.max(0, Math.min(255, r));
+      pixels[p + 1] = Math.max(0, Math.min(255, g));
+      pixels[p + 2] = Math.max(0, Math.min(255, b));
+      pixels[p + 3] = 255;
+      p += 4;
+    }
+  }
+  offCtx.putImageData(imgData, 0, 0);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(off, 0, 0, SIZE, SIZE, 0, 0, width, height);
+
+  requestAnimationFrame(frame);
+}
+
+resize();
+hurst = 0.32 + Math.random() * 0.5;
+heights = diamondSquare(hurst);
+waterLevelBase = percentile(heights, 0.3);
+requestAnimationFrame(frame);
+setTimeout(() => caption.classList.add('visible'), 1500);
+setTimeout(() => caption.classList.remove('visible'), 9500);
+})();
+</script>
+</body>
+</html>
