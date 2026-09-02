@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Unwatched Wave — Night 33</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #03040a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="caption">The Unwatched Wave &mdash; Night 33 &mdash; move to open a well of your own &middot; click to look, and collapse it &middot; left alone, it drifts through five quantum regimes on its own</div>
+<script>
+(function(){
+'use strict';
+// A thirty-third technique, and the first field this project has run that
+// is genuinely complex-valued rather than real — not a height, a density,
+// or a phase borrowed from a clock, but an actual quantum probability
+// amplitude, psi = R + iI, carried on a grid and advanced by the
+// time-dependent Schrodinger equation itself rather than any classical
+// law. The integrator is Visscher's 1991 leapfrog scheme: real and
+// imaginary parts are staggered half a step apart in time, R at t+dt
+// computed from I at t+dt/2, and I at t+3dt/2 computed from the freshly
+// updated R, each side of the exchange driven by a plain five-point
+// Laplacian stencil standing in for the Hamiltonian's kinetic term plus
+// whatever potential the grid carries at that cell — explicit, no matrix
+// inversion, no FFT, stable indefinitely once the timestep respects the
+// scheme's own bound. A soft sponge ring damps both parts a little more
+// with every step near the frame's edge, an absorbing boundary that lets
+// a wavepacket leave the visible world instead of bouncing back through
+// it and fouling everything behind it. Five regimes take turns owning the
+// grid, each holding it for roughly a minute and a half and firing its
+// own fresh wavepackets on its own clock rather than freezing after the
+// first: free spreading, pure uncertainty pulling a Gaussian wider with
+// nothing in its way; twin coherent sources, two packets launched
+// together from nearby points, interfering the moment their fronts touch
+// — Young's own experiment, with the two slits replaced by two emitters
+// that need no screen to explain them; the literal double slit, a real
+// potential wall with two gaps, diffracting a packet that arrives whole
+// into fringes that leave in pieces; a thin tunneling barrier, tall
+// enough that classical mechanics would reflect every last bit of it,
+// porous enough that a real amplitude leaks through anyway; and a bound
+// well, a packet released inside a potential trough it can't climb out
+// of, left to slosh and half-revive against its own walls instead of
+// drifting off the screen like the other four. Night 24's wave function
+// collapse borrowed only the name from quantum mechanics — a
+// constraint-propagation algorithm for tiling that never carried an
+// amplitude or a phase anywhere in it; this is the thing the name was
+// borrowed from, and the only place in this project where "collapse"
+// names a measurement rather than a metaphor. Color reads local
+// probability density as brightness, gamma-adjusted against a
+// slow-adapting exposure the way Night 22's flame fractal kept its own
+// decay honest, and phase as hue around a full wheel — the same reading
+// Night 12's Kuramoto lattice gave its oscillators, except there the
+// phase was a clock each cell kept with its neighbors and here it is the
+// literal argument of a complex number, and the bright and dark bands two
+// overlapping wavepackets throw across each other are the Born rule
+// itself, not a picture of one. A pale wall stands wherever the potential
+// is a real barrier, a faint warm ring wherever it dips into a well,
+// visible with or without anything in front of them. Move the cursor to
+// open a shallow potential well of your own and draw the nearest
+// amplitude toward it — an ordinary force, unitary, nothing observed and
+// nothing lost. Click to actually look: a position is drawn at random,
+// weighted by where the probability density is thickest at that instant,
+// precisely as the Born rule prescribes, and the whole field collapses to
+// a narrow spike on that one point before spreading right back out from
+// it, newly uncertain the moment nobody is looking again. Open the file
+// directly in a browser.
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const flashEl = document.getElementById('flash');
+const caption = document.getElementById('caption');
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+let width = 0, height = 0;
+function resize(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resize);
+
+// ---------- wavefunction grid ----------
+
+const NX = 240, NY = 150;
+const N = NX * NY;
+function idx(x, y){ return y * NX + x; }
+
+const R = new Float32Array(N);
+const I = new Float32Array(N);
+const Vbase = new Float32Array(N);
+const VFrom = new Float32Array(N);
+const VTo = new Float32Array(N);
+const Veff = new Float32Array(N);
+const tmpH = new Float32Array(N);
+const mask = new Float32Array(N);
+const Rstart = new Float32Array(N);
+const Istart = new Float32Array(N);
+
+const BORDER = 16;
+function edgeFactor(k, n){
+  if(k < BORDER) return 0.86 + 0.14 * (k / BORDER);
+  if(k > n - 1 - BORDER) return 0.86 + 0.14 * ((n - 1 - k) / BORDER);
+  return 1;
+}
+for(let y = 0; y < NY; y++){
+  for(let x = 0; x < NX; x++){
+    mask[idx(x, y)] = Math.min(edgeFactor(x, NX), edgeFactor(y, NY));
+  }
+}
+
+const A = 0.5;   // hbar^2 / 2m, with hbar = m = 1
+const DT = 0.15;
+const SUBSTEPS = 3;
+
+function applyH(u, out){
+  for(let y = 0; y < NY; y++){
+    const yl = y > 0 ? y - 1 : y, yr = y < NY - 1 ? y + 1 : y;
+    const row = y * NX, rowl = yl * NX, rowr = yr * NX;
+    for(let x = 0; x < NX; x++){
+      const xl = x > 0 ? x - 1 : x, xr = x < NX - 1 ? x + 1 : x;
+      const i = row + x;
+      const lap = u[row + xl] + u[row + xr] + u[rowl + x] + u[rowr + x] - 4 * u[i];
+      out[i] = -A * lap + Veff[i] * u[i];
+    }
+  }
+}
+
+function physicsStep(){
+  applyH(I, tmpH);
+  for(let i = 0; i < N; i++) R[i] = (R[i] + DT * tmpH[i]) * mask[i];
+  applyH(R, tmpH);
+  for(let i = 0; i < N; i++) I[i] = (I[i] - DT * tmpH[i]) * mask[i];
+}
+
+function addPacket(cx, cy, sigma, kx, ky, amp){
+  const r2 = sigma * sigma;
+  const x0 = Math.max(0, Math.floor(cx - 4 * sigma)), x1 = Math.min(NX - 1, Math.ceil(cx + 4 * sigma));
+  const y0 = Math.max(0, Math.floor(cy - 4 * sigma)), y1 = Math.min(NY - 1, Math.ceil(cy + 4 * sigma));
+  for(let y = y0; y <= y1; y++){
+    for(let x = x0; x <= x1; x++){
+      const dx = x - cx, dy = y - cy;
+      const d2 = dx * dx + dy * dy;
+      const env = amp * Math.exp(-d2 / (2 * r2));
+      const phase = kx * x + ky * y;
+      const i = idx(x, y);
+      R[i] += env * Math.cos(phase);
+      I[i] += env * Math.sin(phase);
+    }
+  }
+}
+
+function addBump(target, cx, cy, sigma, amp){
+  const r2 = sigma * sigma;
+  const x0 = Math.max(0, Math.floor(cx - 3.5 * sigma)), x1 = Math.min(NX - 1, Math.ceil(cx + 3.5 * sigma));
+  const y0 = Math.max(0, Math.floor(cy - 3.5 * sigma)), y1 = Math.min(NY - 1, Math.ceil(cy + 3.5 * sigma));
+  for(let y = y0; y <= y1; y++){
+    for(let x = x0; x <= x1; x++){
+      const dx = x - cx, dy = y - cy;
+      const d2 = dx * dx + dy * dy;
+      target[idx(x, y)] += amp * Math.exp(-d2 / (2 * r2));
+    }
+  }
+}
+
+// ---------- five regimes ----------
+
+function buildFree(V){ V.fill(0); }
+
+function buildTwoSource(V){ V.fill(0); }
+
+const SLIT_BAR_X = Math.floor(NX * 0.52);
+const SLIT_VBAR = 4.2;
+function buildSlits(V){
+  V.fill(0);
+  const gapHalf = Math.max(2, Math.round(NY * 0.018));
+  const gapCenters = [NY * 0.40, NY * 0.60];
+  for(let y = 0; y < NY; y++){
+    let inGap = false;
+    for(const gc of gapCenters) if(Math.abs(y - gc) < gapHalf) inGap = true;
+    if(!inGap){
+      for(let dx = -1; dx <= 1; dx++){
+        const x = SLIT_BAR_X + dx;
+        if(x >= 0 && x < NX) V[idx(x, y)] = SLIT_VBAR;
+      }
+    }
+  }
+}
+
+const TUNNEL_VBAR = 1.15;
+function buildTunnel(V){
+  V.fill(0);
+  const x0 = Math.floor(NX * 0.5), x1 = x0 + Math.max(2, Math.round(NX * 0.02));
+  for(let y = 0; y < NY; y++) for(let x = x0; x <= x1; x++) V[idx(x, y)] = TUNNEL_VBAR;
+}
+
+const WELL_DEPTH = 2.4, WELL_RAD = NY * 0.16;
+function buildWell(V){
+  V.fill(0);
+  const cx = NX * 0.5, cy = NY * 0.5;
+  for(let y = 0; y < NY; y++){
+    for(let x = 0; x < NX; x++){
+      const dx = x - cx, dy = y - cy;
+      const d2 = dx * dx + dy * dy;
+      V[idx(x, y)] = -WELL_DEPTH * Math.exp(-d2 / (2 * WELL_RAD * WELL_RAD));
+    }
+  }
+}
+
+const EXPERIMENTS = [
+  {
+    build: buildFree,
+    interval: 5200,
+    spawn(){
+      const jitter = (Math.random() - 0.5) * NY * 0.1;
+      addPacket(NX * 0.14, NY * 0.5 + jitter, NY * 0.11, 0.55, (Math.random() - 0.5) * 0.15, 1.0);
+    },
+  },
+  {
+    build: buildTwoSource,
+    interval: 4200,
+    spawn(){
+      const cy = NY * 0.5 + (Math.random() - 0.5) * NY * 0.1;
+      const sep = NY * 0.09, sigma = NY * 0.05, k = 1.1;
+      addPacket(NX * 0.14, cy - sep, sigma, k, 0, 0.9);
+      addPacket(NX * 0.14, cy + sep, sigma, k, 0, 0.9);
+    },
+  },
+  {
+    build: buildSlits,
+    interval: 3400,
+    spawn(){
+      addPacket(NX * 0.12, NY * 0.5 + (Math.random() - 0.5) * NY * 0.05, NY * 0.09, 1.15, 0, 1.0);
+    },
+  },
+  {
+    build: buildTunnel,
+    interval: 3000,
+    spawn(){
+      addPacket(NX * 0.16, NY * 0.5 + (Math.random() - 0.5) * NY * 0.08, NY * 0.075, 1.05, 0, 1.0);
+    },
+  },
+  {
+    build: buildWell,
+    interval: 15000,
+    spawn(){
+      const ang = Math.random() * Math.PI * 2;
+      addPacket(
+        NX * 0.5 + Math.cos(ang) * NX * 0.045,
+        NY * 0.5 + Math.sin(ang) * NY * 0.05,
+        NY * 0.07,
+        Math.cos(ang) * 0.15,
+        Math.sin(ang) * 0.15,
+        1.0
+      );
+    },
+  },
+];
+
+let expIndex = Math.floor(Math.random() * EXPERIMENTS.length);
+let nextExpIndex = expIndex;
+let expElapsed = 0;
+let nextSpawnAt = 0;
+let transitioning = false;
+let transT = 0;
+const TRANS_MS = 1400;
+const EXP_DURATION = 90000;
+
+function beginTransition(){
+  transitioning = true;
+  transT = 0;
+  VFrom.set(Vbase);
+  Rstart.set(R);
+  Istart.set(I);
+  nextExpIndex = (expIndex + 1) % EXPERIMENTS.length;
+  EXPERIMENTS[nextExpIndex].build(VTo);
+}
+
+Vbase.fill(0);
+EXPERIMENTS[expIndex].build(Vbase);
+EXPERIMENTS[expIndex].spawn();
+
+// ---------- measurement (Born rule collapse) ----------
+
+function collapseAt(cx, cy){
+  R.fill(0);
+  I.fill(0);
+  addPacket(cx, cy, Math.max(2.2, NY * 0.03), 0, 0, 1.0);
+}
+
+function measure(){
+  let total = 0;
+  for(let i = 0; i < N; i++) total += R[i] * R[i] + I[i] * I[i];
+  if(!(total > 1e-9)){
+    collapseAt(NX * 0.5, NY * 0.5);
+    return;
+  }
+  const target = Math.random() * total;
+  let acc = 0, chosen = 0;
+  for(let i = 0; i < N; i++){
+    acc += R[i] * R[i] + I[i] * I[i];
+    if(acc >= target){ chosen = i; break; }
+  }
+  const cy = Math.floor(chosen / NX), cx = chosen - cy * NX;
+  collapseAt(cx, cy);
+}
+
+// ---------- interaction ----------
+
+let cursorGX = NX / 2, cursorGY = NY / 2;
+let lastMoveTime = -1e9;
+
+function toGrid(e){
+  const rect = canvas.getBoundingClientRect();
+  const u = (e.clientX - rect.left) / Math.max(1, rect.width);
+  const v = (e.clientY - rect.top) / Math.max(1, rect.height);
+  return [
+    Math.min(NX - 1, Math.max(0, u * (NX - 1))),
+    Math.min(NY - 1, Math.max(0, v * (NY - 1))),
+  ];
+}
+
+canvas.addEventListener('pointermove', (e) => {
+  const [gx, gy] = toGrid(e);
+  cursorGX = gx; cursorGY = gy;
+  lastMoveTime = performance.now();
+});
+
+canvas.addEventListener('pointerdown', () => {
+  if(transitioning){
+    transitioning = false;
+    Vbase.set(VTo);
+    expIndex = nextExpIndex;
+    expElapsed = 0;
+  }
+  measure();
+  nextSpawnAt = performance.now() + EXPERIMENTS[expIndex].interval * 0.5;
+  flash();
+});
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.35';
+  requestAnimationFrame(() => {
+    flashEl.style.transition = 'opacity 0.7s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+// ---------- rendering ----------
+
+const off = document.createElement('canvas');
+off.width = NX; off.height = NY;
+const offCtx = off.getContext('2d');
+const imgData = offCtx.createImageData(NX, NY);
+const pixels = imgData.data;
+
+const hueTmp = [0, 0, 0];
+function hueColor(h, out){
+  const hh = ((h % 1) + 1) % 1;
+  const i = Math.floor(hh * 6);
+  const f = hh * 6 - i;
+  const q = 1 - f, t = f;
+  switch(i % 6){
+    case 0: out[0] = 1; out[1] = t; out[2] = 0; break;
+    case 1: out[0] = q; out[1] = 1; out[2] = 0; break;
+    case 2: out[0] = 0; out[1] = 1; out[2] = t; break;
+    case 3: out[0] = 0; out[1] = q; out[2] = 1; break;
+    case 4: out[0] = t; out[1] = 0; out[2] = 1; break;
+    default: out[0] = 1; out[1] = 0; out[2] = q; break;
+  }
+}
+
+const WALL_COLOR = [148, 156, 168];
+const WELL_COLOR = [255, 176, 84];
+
+let expNorm = 0.5;
+
+function render(){
+  let frameMax = 1e-6;
+  let p = 0;
+  const invTwoPi = 1 / (2 * Math.PI);
+  for(let y = 0; y < NY; y++){
+    for(let x = 0; x < NX; x++){
+      const i = idx(x, y);
+      const r = R[i], im = I[i];
+      const rho = r * r + im * im;
+      if(rho > frameMax) frameMax = rho;
+
+      const norm = rho / expNorm;
+      const bright = 1 - Math.exp(-norm * 1.7);
+      const hueF = (Math.atan2(im, r) + Math.PI) * invTwoPi;
+      hueColor(hueF, hueTmp);
+
+      let rr = hueTmp[0] * bright, gg = hueTmp[1] * bright, bb = hueTmp[2] * bright;
+
+      const v = Vbase[i];
+      if(v > 0.12){
+        const w = Math.min(1, v / SLIT_VBAR) * 0.85;
+        rr = rr * (1 - w) + (WALL_COLOR[0] / 255) * w;
+        gg = gg * (1 - w) + (WALL_COLOR[1] / 255) * w;
+        bb = bb * (1 - w) + (WALL_COLOR[2] / 255) * w;
+      } else if(v < -0.12){
+        const w = Math.min(1, -v / WELL_DEPTH) * 0.22;
+        rr += (WELL_COLOR[0] / 255) * w;
+        gg += (WELL_COLOR[1] / 255) * w;
+        bb += (WELL_COLOR[2] / 255) * w;
+      }
+
+      pixels[p] = Math.max(0, Math.min(255, rr * 255));
+      pixels[p + 1] = Math.max(0, Math.min(255, gg * 255));
+      pixels[p + 2] = Math.max(0, Math.min(255, bb * 255));
+      pixels[p + 3] = 255;
+      p += 4;
+    }
+  }
+  expNorm = expNorm * 0.94 + frameMax * 0.06 * 1.4;
+
+  offCtx.putImageData(imgData, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(off, 0, 0, NX, NY, 0, 0, width, height);
+}
+
+let lastT = performance.now();
+
+function frame(now){
+  const rawDt = Math.min(48, now - lastT);
+  lastT = now;
+
+  if(transitioning){
+    transT += rawDt;
+    const t = Math.min(1, transT / TRANS_MS);
+    const ease = t * t * (3 - 2 * t);
+    for(let i = 0; i < N; i++) Vbase[i] = VFrom[i] * (1 - ease) + VTo[i] * ease;
+    for(let i = 0; i < N; i++){
+      R[i] = Rstart[i] * (1 - ease);
+      I[i] = Istart[i] * (1 - ease);
+    }
+    if(t >= 1){
+      transitioning = false;
+      R.fill(0); I.fill(0);
+      Vbase.set(VTo);
+      expIndex = nextExpIndex;
+      expElapsed = 0;
+      EXPERIMENTS[expIndex].spawn();
+      nextSpawnAt = now + EXPERIMENTS[expIndex].interval;
+    }
+  } else {
+    expElapsed += rawDt;
+
+    Veff.set(Vbase);
+    if(now - lastMoveTime < 300){
+      addBump(Veff, cursorGX, cursorGY, NY * 0.06, -1.6);
+    }
+
+    for(let s = 0; s < SUBSTEPS; s++) physicsStep();
+
+    for(let i = 0; i < N; i++){
+      if(!isFinite(R[i]) || !isFinite(I[i])){
+        R.fill(0); I.fill(0);
+        EXPERIMENTS[expIndex].spawn();
+        break;
+      }
+    }
+
+    if(now >= nextSpawnAt){
+      EXPERIMENTS[expIndex].spawn();
+      nextSpawnAt = now + EXPERIMENTS[expIndex].interval * (0.85 + Math.random() * 0.3);
+    }
+
+    if(expElapsed >= EXP_DURATION) beginTransition();
+  }
+
+  render();
+  requestAnimationFrame(frame);
+}
+
+resize();
+nextSpawnAt = performance.now() + EXPERIMENTS[expIndex].interval;
+requestAnimationFrame(frame);
+setTimeout(() => caption.classList.add('visible'), 1500);
+setTimeout(() => caption.classList.remove('visible'), 9500);
+})();
+</script>
+</body>
+</html>

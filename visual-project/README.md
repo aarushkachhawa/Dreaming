@@ -24,6 +24,60 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-02** — `2026-09-02-the-unwatched-wave.html`: a thirty-third
+  technique, and the first field this project has run that is genuinely
+  complex-valued rather than real — not a height, a density, or a phase
+  borrowed from a clock, but an actual quantum probability amplitude,
+  ψ = R + iI, carried on a grid and advanced by the time-dependent
+  Schrödinger equation itself rather than any classical law. The
+  integrator is Visscher's 1991 leapfrog scheme: real and imaginary parts
+  are staggered half a step apart in time, R at t+dt computed from I at
+  t+dt/2, and I at t+3dt/2 computed from the freshly updated R, each side
+  of the exchange driven by a plain five-point Laplacian stencil standing
+  in for the Hamiltonian's kinetic term plus whatever potential the grid
+  carries at that cell — explicit, no matrix inversion, no FFT, stable
+  indefinitely once the timestep respects the scheme's own bound. A soft
+  sponge ring damps both parts a little more with every step near the
+  frame's edge, an absorbing boundary that lets a wavepacket leave the
+  visible world instead of bouncing back through it and fouling everything
+  behind it. Five regimes take turns owning the grid, each holding it for
+  roughly a minute and a half and firing its own fresh wavepackets on its
+  own clock rather than freezing after the first: free spreading, pure
+  uncertainty pulling a Gaussian wider with nothing in its way; twin
+  coherent sources, two packets launched together from nearby points,
+  interfering the moment their fronts touch — Young's own experiment, with
+  the two slits replaced by two emitters that need no screen to explain
+  them; the literal double slit, a real potential wall with two gaps,
+  diffracting a packet that arrives whole into fringes that leave in
+  pieces; a thin tunneling barrier, tall enough that classical mechanics
+  would reflect every last bit of it, porous enough that a real amplitude
+  leaks through anyway; and a bound well, a packet released inside a
+  potential trough it can't climb out of, left to slosh and half-revive
+  against its own walls instead of drifting off the screen like the other
+  four. Night 24's wave function collapse borrowed only the name from
+  quantum mechanics — a constraint-propagation algorithm for tiling that
+  never carried an amplitude or a phase anywhere in it; this is the thing
+  the name was borrowed from, and the only place in this project where
+  "collapse" names a measurement rather than a metaphor. Color reads local
+  probability density as brightness, gamma-adjusted against a
+  slow-adapting exposure the way Night 22's flame fractal kept its own
+  decay honest, and phase as hue around a full wheel — the same reading
+  Night 12's Kuramoto lattice gave its oscillators, except there the phase
+  was a clock each cell kept with its neighbors and here it is the literal
+  argument of a complex number, and the bright and dark bands two
+  overlapping wavepackets throw across each other are the Born rule
+  itself, not a picture of one. A pale wall stands wherever the potential
+  is a real barrier, a faint warm ring wherever it dips into a well,
+  visible with or without anything in front of them. Move the cursor to
+  open a shallow potential well of your own and draw the nearest amplitude
+  toward it — an ordinary force, unitary, nothing observed and nothing
+  lost. Click to actually look: a position is drawn at random, weighted by
+  where the probability density is thickest at that instant, precisely as
+  the Born rule prescribes, and the whole field collapses to a narrow
+  spike on that one point before spreading right back out from it, newly
+  uncertain the moment nobody is looking again. Open the file directly in
+  a browser.
+
 - **2026-09-01** — `2026-09-01-drift-and-deluge.html`: a thirty-second
   technique, and the first built from stochastic subdivision rather than a
   field, a swarm, an automaton, a grammar, or a force law between bodies —
