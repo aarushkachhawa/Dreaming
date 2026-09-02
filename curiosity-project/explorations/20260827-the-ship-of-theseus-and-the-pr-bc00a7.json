@@ -1,0 +1,53 @@
+{
+  "id": "20260827-the-ship-of-theseus-and-the-pr-bc00a7",
+  "date": "2026-08-27T10:15:04.973813",
+  "title": "The Ship of Theseus and the Problem of Staying You",
+  "question": "If every part of something is replaced over time, is it still the same thing \u2014 and are you still the same person you were ten years ago?",
+  "summary": "An old puzzle about a rebuilt ship turns out to be a live question about atoms, memory, and what it even means for something to persist through change.",
+  "content": "\n<p>The puzzle is ancient: the ship in which Theseus sailed is preserved by the Athenians, but over the centuries each plank rots and is replaced, until eventually not a single original piece of timber remains. Is it still the Ship of Theseus? Plutarch posed this as a curiosity about legend and craftsmanship. It turns out to be a crack in our everyday assumption that objects \u2014 and people \u2014 are stable things that merely have properties, rather than processes that merely look stable.</p>\n\n<h2>The Body That Isn't the Same Body</h2>\n<p>The puzzle is not just a thought experiment. Most of the atoms in your body are replaced within a decade; the lining of your gut renews itself in days, your skin in weeks, even much of your skeleton over about ten years. Only a few tissues, like the lenses of your eyes and parts of your neurons, keep cells from early in life. In a very literal, physical sense, you are already the Ship of Theseus \u2014 mid-voyage, mid-replacement, right now.</p>\n\n<p>Yet nobody thinks that this material turnover destroys them. This is the first hint that identity, whatever it is, isn't a claim about which atoms occupy a body \u2014 it's a claim about a pattern that those atoms happen to be running.</p>\n\n<h2>Two Kinds of Sameness</h2>\n<p>Philosophers separate the puzzle into two questions that ordinary language collapses into one word. There's qualitative identity \u2014 being alike in properties, like two identical bicycles off the same factory line \u2014 and numerical identity \u2014 being literally one and the same particular thing, tracked through time. The ship's planks can change entirely while some deeper criterion of numerical identity (continuity of form, of function, of causal history) stays intact, or so one theory holds.</p>\n\n<p>But which criterion is the right one is exactly what's contested. If you rebuild a second ship from all the discarded original planks, you now have two candidates for the real Ship of Theseus \u2014 one that kept the form and function continuously, one that kept the original matter. Both have a claim. Neither claim is obviously wrong. That symmetry is the paradox: our concept of sameness over time was never built to handle total, gradual replacement, because most objects we evolved to reason about don't undergo it.</p>\n\n<h2>From Timber to Selfhood</h2>\n<p>The move from ships to people is not a metaphor, it's the same logical structure. John Locke argued that personal identity isn't sameness of substance (body or soul) but continuity of consciousness \u2014 specifically, memory, an unbroken chain of remembering being the one who did that. But memory is famously leaky, reconstructive, and sometimes false, which makes it a fragile foundation for something as weighty as moral responsibility or the fear of death. Derek Parfit pushed this further: he argued there may be no deep further fact of personal identity at all, just degrees of psychological connectedness \u2014 which would mean the question of whether a future person really is you is less like a factual question and more like asking exactly how many planks a ship can lose before it becomes a different ship. The question expects a sharp yes-or-no answer that the underlying reality doesn't supply.</p>\n\n<h2>Why It's Not Just Semantics</h2>\n<p>This matters practically. Legal systems, promises, punishment, and even anticipation of your own future all lean on the assumption that there's a fact of the matter about who is the same person across time. If Parfit is right that identity is a matter of degree rather than a hard line, then a lot of our intuitions \u2014 that a memory-erased criminal isn't the same person who committed the crime, that your ninety-year-old self deserves the same concern you'd give your future self tomorrow \u2014 are resting on a metaphysical assumption that may simply be false, dressed up as common sense.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "mind",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Metaphysics Perspective",
+      "description": "The debate over which criterion \u2014 matter, form, causal continuity, or something else \u2014 makes an object the same one over time, and whether any single criterion can survive edge cases like the reassembled ship."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Cellular turnover means the human body is a continuous process of replacement, not a fixed structure \u2014 identity in a living organism was never about material persistence to begin with."
+    },
+    {
+      "title": "Psychology Perspective",
+      "description": "Autobiographical memory is reconstructive and often inaccurate, yet it's the felt thread that makes past selves seem continuous with the present one, raising the question of how much of identity is really a well-told story."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Courts must treat people as identical across time for contracts, punishment, and promises to make sense, even though the psychological and physical continuity underlying that treatment is a matter of degree, not an all-or-nothing fact."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "The doctrine of anatta (non-self) holds that the sense of a persistent, unified self is itself a construction \u2014 the paradox dissolves once you stop assuming there was ever a single unchanging thing to track."
+    }
+  ],
+  "connections": [
+    "John Locke's memory theory of personal identity",
+    "Derek Parfit's arguments against a deep further fact of identity",
+    "The Sorites paradox (heap of sand) and vagueness in everyday concepts",
+    "Cellular turnover and the biology of the aging body",
+    "Buddhist anatta and the illusion of a fixed self",
+    "Mereology: the philosophy of parts and wholes",
+    "Teletransportation thought experiments in philosophy of mind"
+  ],
+  "openQuestions": [
+    "Is there a fact of the matter about personal identity, or only more and less useful ways of talking about continuity?",
+    "If identity comes in degrees, how should that change how we think about punishment, promises, or fear of death?",
+    "Does consciousness need any persistent substrate at all, or only continuity of pattern?",
+    "Could two future people both have an equal claim to being you, the way two rebuilt ships can both claim to be the original?",
+    "Is the intuition that we are the same person we were as children more like a perception or more like a useful fiction?"
+  ]
+}
