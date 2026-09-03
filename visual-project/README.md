@@ -24,6 +24,49 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-03** — `2026-09-03-naive-retina.html`: a thirty-third technique,
+  and the first in which nothing was designed at all — no field, no
+  automaton rule, no grammar, no force law, no constraint solver, not even
+  the hand-placed primitives of Night 23's raymarch. This is a
+  compositional pattern-producing network (Stanley, 2007): a small
+  feedforward neural network, three hidden layers of sixteen tanh neurons
+  apiece, with weights drawn once from a Gaussian and never trained on
+  anything, ever. Every pixel independently feeds its own coordinate, its
+  distance from center, a constant bias, and four shared latent numbers
+  through the identical seven hundred and thirty-nine weights, and
+  whatever the last layer outputs becomes that pixel's color — the entire
+  image is one matrix multiplication chain evaluated fresh per pixel per
+  frame, on the GPU, with no memory of the pixel beside it and no history
+  from the frame before. Nobody chose the shapes that result; tanh's own
+  smoothness and the network's own depth choose them, the way a handful of
+  random sine waves chose Night 17's rosettes without anyone drawing a
+  rosette on purpose. Two hyperparameters rolled fresh with every new mind
+  push the image to extremes: the input layer's own weight scale, which
+  runs from a little over one to three and a half — near one and whole
+  valleys of color turn over slowly, camera-close; near four and the same
+  network reads as fine, lace-thin static — and a coin flip on whether x
+  arrives raw or through an absolute value, which is the entire difference
+  between a lopsided creature and one with an exact mirror seam down the
+  middle. Color comes from the three raw outputs run through independently
+  tuned sine waves, each with its own frequency, phase, and slow drift, so
+  the palette keeps cycling on its own clock even on the frames when the
+  network itself is unchanging. Every other night's cursor reached into
+  the picture at the point where it stood — pushing ground, scattering
+  pheromone, nudging a bob. This one reaches somewhere no picture exists
+  at all: two of the eight shared input numbers, identical for every pixel
+  on the screen, so moving the cursor a finger's width doesn't disturb a
+  neighborhood, it reshapes the entire image at once, the same instant,
+  everywhere — a walk through the network's input space rather than a
+  touch on its output. Left to itself the network still drifts: two more
+  latent inputs wheel forward on their own slow sines, and the whole set
+  of seven hundred thirty-nine weights eases from the mind it was born
+  with toward a freshly drawn one every twenty-some seconds, arriving with
+  nothing sharper than the ease curve itself, so the picture is never the
+  same for two seconds running and never once cuts. Click to abandon the
+  crossfade outright and wake a brand new, uncorrelated mind on the
+  spot — no relation to the one standing before it. Open the file directly
+  in a browser.
+
 - **2026-09-01** — `2026-09-01-drift-and-deluge.html`: a thirty-second
   technique, and the first built from stochastic subdivision rather than a
   field, a swarm, an automaton, a grammar, or a force law between bodies —

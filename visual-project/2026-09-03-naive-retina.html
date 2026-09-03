@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Naive Retina — Night 33</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+  #fallback {
+    position: fixed; inset: 0; display: none; align-items: center;
+    justify-content: center; color: #888; font: 300 14px/1.5 sans-serif;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="fallback">This piece needs WebGL. Try a different browser.</div>
+<div id="caption">Naive Retina &mdash; Night 33 &mdash; move to reshape the dream &middot; click for a new mind</div>
+<script>
+(function(){
+'use strict';
+// A thirty-third technique, and the first in which nothing was designed at
+// all — no field, no automaton rule, no grammar, no force law, no
+// constraint solver, not even the hand-placed primitives of Night 23's
+// raymarch. This is a compositional pattern-producing network (Stanley,
+// 2007): a small feedforward neural network, three hidden layers of
+// sixteen tanh neurons apiece, with weights drawn once from a Gaussian and
+// never trained on anything, ever. Every pixel independently feeds its own
+// coordinate, its distance from center, a constant bias, and four shared
+// latent numbers through the identical seven hundred and thirty-nine
+// weights, and whatever the last layer outputs becomes that pixel's color
+// — the entire image is one matrix multiplication chain evaluated fresh
+// per pixel per frame, on the GPU, with no memory of the pixel beside it
+// and no history from the frame before. Nobody chose the shapes that
+// result; tanh's own smoothness and the network's own depth choose them,
+// the way a handful of random sine waves choose Night 17's rosettes
+// without anyone drawing a rosette on purpose. Two hyperparameters rolled
+// fresh with every new mind push the image to extremes: the input layer's
+// own weight scale, which runs from a little over one to three and a
+// half — near one and whole valleys of color turn over slowly, camera-close;
+// near four and the same network reads as fine, lace-thin static — and a
+// coin flip on whether x arrives raw or through an absolute value, which
+// is the entire difference between a lopsided creature and one with an
+// exact mirror seam down the middle. Color comes from the three raw
+// outputs run through independently tuned sine waves, each with its own
+// frequency, phase, and slow drift, so the palette keeps cycling on its
+// own clock even on the frames when the network itself is unchanging. Every
+// other night's cursor reached into the picture at the point where it
+// stood — pushing ground, scattering pheromone, nudging a bob. This one
+// reaches somewhere no picture exists at all: two of the eight shared
+// input numbers, identical for every pixel on the screen, so moving the
+// cursor a finger's width doesn't disturb a neighborhood, it reshapes the
+// entire image at once, the same instant, everywhere — a walk through the
+// network's input space rather than a touch on its output. Left to itself
+// the network still drifts: two more latent inputs wheel forward on their
+// own slow sines, and the whole set of seven hundred thirty-nine weights
+// eases from the mind it was born with toward a freshly drawn one every
+// twenty-some seconds, arriving with nothing sharper than the ease curve
+// itself, so the picture is never the same for two seconds running and
+// never once cuts. Click to abandon the crossfade outright and wake a
+// brand new, uncorrelated mind on the spot — no relation to the one
+// standing before it. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var flashEl = document.getElementById('flash');
+var caption = document.getElementById('caption');
+var fallback = document.getElementById('fallback');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+if(!gl){
+  fallback.style.display = 'flex';
+  return;
+}
+
+var IN_DIM = 8, H = 16;
+
+var vsSource =
+  'attribute vec2 aPos;' +
+  'void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }';
+
+var fsSource =
+  'precision highp float;' +
+  'uniform vec2 uRes;' +
+  'uniform float uTime;' +
+  'uniform vec2 uMouse;' +
+  'uniform float uZoom;' +
+  'uniform float uSym;' +
+  'uniform float uW1[' + (IN_DIM*H) + '];' +
+  'uniform float uB1[' + H + '];' +
+  'uniform float uW2[' + (H*H) + '];' +
+  'uniform float uB2[' + H + '];' +
+  'uniform float uW3[' + (H*H) + '];' +
+  'uniform float uB3[' + H + '];' +
+  'uniform float uW4[' + (H*3) + '];' +
+  'uniform float uB4[3];' +
+  'uniform float uCFreq[3];' +
+  'uniform float uCPhase[3];' +
+  'uniform float uCDrift[3];' +
+  'float tanhSafe(float x){' +
+  '  float cx = clamp(x, -15.0, 15.0);' +
+  '  float e2 = exp(2.0*cx);' +
+  '  return (e2-1.0)/(e2+1.0);' +
+  '}' +
+  'void main(){' +
+  '  vec2 uv = (gl_FragCoord.xy / uRes.xy) * 2.0 - 1.0;' +
+  '  uv.x *= uRes.x / uRes.y;' +
+  '  uv *= uZoom;' +
+  '  float r = length(uv);' +
+  '  float xin = mix(uv.x, abs(uv.x), uSym);' +
+  '  float z0 = sin(uTime*0.11);' +
+  '  float z1 = cos(uTime*0.084 + 1.7);' +
+  '  float inp[8];' +
+  '  inp[0]=xin; inp[1]=uv.y; inp[2]=r; inp[3]=1.0;' +
+  '  inp[4]=z0; inp[5]=z1; inp[6]=uMouse.x; inp[7]=uMouse.y;' +
+  '  float h1[16];' +
+  '  for(int i=0;i<16;i++){' +
+  '    float s = uB1[i];' +
+  '    for(int j=0;j<8;j++){ s += uW1[i*8+j]*inp[j]; }' +
+  '    h1[i] = tanhSafe(s);' +
+  '  }' +
+  '  float h2[16];' +
+  '  for(int i=0;i<16;i++){' +
+  '    float s = uB2[i];' +
+  '    for(int j=0;j<16;j++){ s += uW2[i*16+j]*h1[j]; }' +
+  '    h2[i] = tanhSafe(s);' +
+  '  }' +
+  '  float h3[16];' +
+  '  for(int i=0;i<16;i++){' +
+  '    float s = uB3[i];' +
+  '    for(int j=0;j<16;j++){ s += uW3[i*16+j]*h2[j]; }' +
+  '    h3[i] = tanhSafe(s);' +
+  '  }' +
+  '  vec3 outp;' +
+  '  for(int i=0;i<3;i++){' +
+  '    float s = uB4[i];' +
+  '    for(int j=0;j<16;j++){ s += uW4[i*16+j]*h3[j]; }' +
+  '    if(i==0) outp.x = tanhSafe(s);' +
+  '    if(i==1) outp.y = tanhSafe(s);' +
+  '    if(i==2) outp.z = tanhSafe(s);' +
+  '  }' +
+  '  vec3 col;' +
+  '  col.r = 0.5+0.5*sin(6.28318*(outp.x*uCFreq[0]+uCPhase[0]+uTime*uCDrift[0]));' +
+  '  col.g = 0.5+0.5*sin(6.28318*(outp.y*uCFreq[1]+uCPhase[1]+uTime*uCDrift[1]));' +
+  '  col.b = 0.5+0.5*sin(6.28318*(outp.z*uCFreq[2]+uCPhase[2]+uTime*uCDrift[2]));' +
+  '  gl_FragColor = vec4(col, 1.0);' +
+  '}';
+
+function compile(type, src){
+  var sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)){
+    throw new Error(gl.getShaderInfoLog(sh));
+  }
+  return sh;
+}
+
+var prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+  throw new Error(gl.getProgramInfoLog(prog));
+}
+gl.useProgram(prog);
+
+var quad = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+var aPos = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+var U = {};
+['uRes','uTime','uMouse','uZoom','uSym','uW1','uB1','uW2','uB2','uW3','uB3','uW4','uB4','uCFreq','uCPhase','uCDrift'].forEach(function(name){
+  U[name] = gl.getUniformLocation(prog, name);
+});
+
+var width = 0, height = 0;
+function resize(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+
+// ---------- network genomes ----------
+
+function gauss(){
+  var u = Math.max(1e-9, Math.random()), v = Math.random();
+  return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v);
+}
+function fillGauss(n, scale){
+  var a = new Float32Array(n);
+  for(var i=0;i<n;i++) a[i] = gauss() * scale;
+  return a;
+}
+
+function randomGenome(){
+  var scale1 = 1.0 + Math.random()*2.5;
+  var scaleH = 0.8 + Math.random()*0.8;
+  var scaleO = 1.0 + Math.random()*1.5;
+  var g = {
+    w1: fillGauss(IN_DIM*H, scale1),
+    b1: fillGauss(H, 0.5),
+    w2: fillGauss(H*H, scaleH),
+    b2: fillGauss(H, 0.5),
+    w3: fillGauss(H*H, scaleH),
+    b3: fillGauss(H, 0.5),
+    w4: fillGauss(H*3, scaleO),
+    b4: fillGauss(3, 0.5),
+    sym: Math.random() < 0.5 ? 0 : 1,
+    cFreq: [1+Math.random()*2, 1+Math.random()*2, 1+Math.random()*2],
+    cPhase: [Math.random(), Math.random(), Math.random()],
+    cDrift: [0.03+Math.random()*0.09, 0.03+Math.random()*0.09, 0.03+Math.random()*0.09]
+  };
+  return g;
+}
+
+function lerpArr(a, b, t, out){
+  for(var i=0;i<a.length;i++) out[i] = a[i] + (b[i]-a[i])*t;
+  return out;
+}
+
+var scratch = {
+  w1: new Float32Array(IN_DIM*H), b1: new Float32Array(H),
+  w2: new Float32Array(H*H), b2: new Float32Array(H),
+  w3: new Float32Array(H*H), b3: new Float32Array(H),
+  w4: new Float32Array(H*3), b4: new Float32Array(3)
+};
+
+function lerp3(a, b, t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+
+function easeInOutCubic(t){
+  return t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+}
+
+var genomeA = randomGenome();
+var genomeB = randomGenome();
+var morphT = 0;
+function randDuration(){ return 18000 + Math.random()*14000; }
+var morphDur = randDuration();
+
+function uploadCurrent(te){
+  lerpArr(genomeA.w1, genomeB.w1, te, scratch.w1);
+  lerpArr(genomeA.b1, genomeB.b1, te, scratch.b1);
+  lerpArr(genomeA.w2, genomeB.w2, te, scratch.w2);
+  lerpArr(genomeA.b2, genomeB.b2, te, scratch.b2);
+  lerpArr(genomeA.w3, genomeB.w3, te, scratch.w3);
+  lerpArr(genomeA.b3, genomeB.b3, te, scratch.b3);
+  lerpArr(genomeA.w4, genomeB.w4, te, scratch.w4);
+  lerpArr(genomeA.b4, genomeB.b4, te, scratch.b4);
+  var sym = genomeA.sym + (genomeB.sym-genomeA.sym)*te;
+  var cFreq = lerp3(genomeA.cFreq, genomeB.cFreq, te);
+  var cPhase = lerp3(genomeA.cPhase, genomeB.cPhase, te);
+  var cDrift = lerp3(genomeA.cDrift, genomeB.cDrift, te);
+
+  gl.uniform1fv(U.uW1, scratch.w1);
+  gl.uniform1fv(U.uB1, scratch.b1);
+  gl.uniform1fv(U.uW2, scratch.w2);
+  gl.uniform1fv(U.uB2, scratch.b2);
+  gl.uniform1fv(U.uW3, scratch.w3);
+  gl.uniform1fv(U.uB3, scratch.b3);
+  gl.uniform1fv(U.uW4, scratch.w4);
+  gl.uniform1fv(U.uB4, scratch.b4);
+  gl.uniform1f(U.uSym, sym);
+  gl.uniform1fv(U.uCFreq, cFreq);
+  gl.uniform1fv(U.uCPhase, cPhase);
+  gl.uniform1fv(U.uCDrift, cDrift);
+}
+
+// ---------- interaction ----------
+
+var mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+window.addEventListener('pointermove', function(e){
+  targetMouseX = (e.clientX / Math.max(1, width)) * 2 - 1;
+  targetMouseY = 1 - (e.clientY / Math.max(1, height)) * 2;
+});
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.9';
+  requestAnimationFrame(function(){
+    flashEl.style.transition = 'opacity 1.1s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+window.addEventListener('pointerdown', function(){
+  flash();
+  genomeA = randomGenome();
+  genomeB = randomGenome();
+  morphT = 0;
+  morphDur = randDuration();
+});
+
+// ---------- render ----------
+
+var startTime = performance.now();
+var lastT = startTime;
+
+function frame(now){
+  var dt = Math.min(64, now - lastT);
+  lastT = now;
+
+  morphT += dt;
+  var t = Math.min(1, morphT / morphDur);
+  var te = easeInOutCubic(t);
+  if(t >= 1){
+    genomeA = genomeB;
+    genomeB = randomGenome();
+    morphT = 0;
+    morphDur = randDuration();
+    te = 0;
+  }
+
+  mouseX += (targetMouseX - mouseX) * 0.04;
+  mouseY += (targetMouseY - mouseY) * 0.04;
+
+  var time = (now - startTime) / 1000;
+  var zoom = 1.0 + 0.15 * Math.sin(time * 0.05);
+
+  gl.uniform2f(U.uRes, canvas.width, canvas.height);
+  gl.uniform1f(U.uTime, time);
+  gl.uniform2f(U.uMouse, mouseX, mouseY);
+  gl.uniform1f(U.uZoom, zoom);
+  uploadCurrent(te);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  requestAnimationFrame(frame);
+}
+
+resize();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>
