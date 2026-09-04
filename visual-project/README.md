@@ -24,6 +24,55 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-04** — `2026-09-04-ripple-choir.html`: a thirty-fourth technique,
+  and the first with no particle, no agent, no grid cell, no grammar, and no
+  trained or random weight to speak of — six point sources radiating
+  circular waves into open, unbounded space, summed by Huygens' own
+  principle at every pixel, every frame. Night 6's Chladni plate was a wave
+  technique too, but a bounded, standing one: two mode pairs frozen into a
+  fixed interference pattern by a rigid boundary, made visible only where
+  grains happened to settle. There is no plate here and no grain — the six
+  voices are traveling waves in the open, each one's rings still expanding
+  forever outward from a moving center, and the interference between them,
+  constructive crest meeting destructive trough, is the entire and only
+  image, read directly off the field with nothing standing in for it. What
+  paints the screen isn't even the wave's own height, the way an honest
+  reading of the sum might suggest: a real ripple tank is watched by
+  shining a lamp through it onto a floor below, and what that floor shows
+  is where the tilted surface bent the light into bright braids and
+  starved dark gaps, not the water's raw displacement. This shader steals
+  that exact optics — four extra taps of the same sum, one step each side
+  in x and y, turned into a discrete Laplacian — so the brightness a
+  viewer sees answers where the surface curves toward concave, gathering
+  light into a bright seam, and where it curves the other way, spreading
+  it thin. It is the same per-pixel independence Night 33's CPPN ran, one
+  formula evaluated fresh with no memory of the pixel beside it and no
+  history from the frame before, but built from an actual physical model
+  rather than a Gaussian-seeded net answerable to nothing. Each of the six
+  voices carries its own pitch (a spatial wavenumber, how tight its rings
+  pack), its own tempo (a temporal frequency, how fast those rings crawl
+  outward), and its own loudness, and none of the three sits still: every
+  voice keeps a running target for each, drawn fresh on its own private
+  clock somewhere between fourteen and thirty seconds, and eases
+  continuously toward whatever it last picked rather than snapping to it,
+  so the chord is never one block resolving together and never once
+  repeats. That continuous drift is also this piece's whole answer to the
+  project's usual reset: there is no burn-down, no dissolve, no fresh
+  genome grown from scratch on a timer — every other night here eventually
+  restarts itself, and this is the first that simply keeps modulating,
+  forever, the same six voices worked loose and retuned one at a time. The
+  cursor is a seventh voice, not a force bent into the picture the way
+  every other night's cursor pushes ground or scatters pheromone or nudges
+  a bob — moving it literally adds a new emitter to the field, its
+  loudness fading in while it sits over the canvas and fading back out the
+  moment it leaves or stops, so silence really is silence here. A click
+  drops an eighth kind of voice, a struck pulse gated to its own outward
+  wavefront — its ring's radius is exactly its age times a fixed speed, so
+  it travels once through the ambient choir, interferes with whatever it
+  crosses, and dies over a few seconds, the one moment in this piece that
+  resembles every other night's stone-in-the-water gesture. Open the file
+  directly in a browser.
+
 - **2026-09-03** — `2026-09-03-naive-retina.html`: a thirty-third technique,
   and the first in which nothing was designed at all — no field, no
   automaton rule, no grammar, no force law, no constraint solver, not even

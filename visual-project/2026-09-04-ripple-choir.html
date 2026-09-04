@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ripple Choir — Night 34</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #030507;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+  #fallback {
+    position: fixed; inset: 0; display: none; align-items: center;
+    justify-content: center; color: #888; font: 300 14px/1.5 sans-serif;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="fallback">This piece needs WebGL. Try a different browser.</div>
+<div id="caption">Ripple Choir &mdash; Night 34 &mdash; move to join the choir &middot; click to strike a note</div>
+<script>
+(function(){
+'use strict';
+// A thirty-fourth technique, and the first with no particle, no agent, no
+// grid cell, no grammar, and no trained or random weight to speak of — six
+// point sources radiating circular waves into open, unbounded space, summed
+// by Huygens' own principle at every pixel, every frame. Night 6's Chladni
+// plate was a wave technique too, but a bounded, standing one: two mode
+// pairs frozen into a fixed interference pattern by a rigid boundary, made
+// visible only where grains happened to settle. There is no plate here and
+// no grain — the six voices are traveling waves in the open, each one's
+// rings still expanding forever outward from a moving center, and the
+// interference between them, constructive crest meeting destructive trough,
+// is the entire and only image, read directly off the field with nothing
+// standing in for it. What paints the screen isn't even the wave's own
+// height, the way an honest reading of the sum might suggest: a real ripple
+// tank is watched by shining a lamp through it onto a floor below, and what
+// that floor shows is where the tilted surface bent the light into bright
+// braids and starved dark gaps, not the water's raw displacement. This
+// shader steals that exact optics — four extra taps of the same sum, one
+// step each side in x and y, turned into a discrete Laplacian — so the
+// brightness a viewer sees answers where the surface curves toward
+// concave, gathering light into a bright seam, and where it curves the
+// other way, spreading it thin. It is the same per-pixel independence
+// Night 33's CPPN ran, one formula evaluated fresh with no memory of the
+// pixel beside it and no history from the frame before, but built from an
+// actual physical model rather than a Gaussian-seeded net answerable to
+// nothing. Each of the six voices carries its own pitch (a spatial
+// wavenumber, how tight its rings pack), its own tempo (a temporal
+// frequency, how fast those rings crawl outward), and its own loudness,
+// and none of the three sits still: every voice keeps a running target for
+// each, drawn fresh on its own private clock somewhere between fourteen and
+// thirty seconds, and eases continuously toward whatever it last picked
+// rather than snapping to it, so the chord is never one block resolving
+// together and never once repeats. That continuous drift is also this
+// piece's whole answer to the project's usual reset: there is no burn-down,
+// no dissolve, no fresh genome grown from scratch on a timer — every other
+// night here eventually restarts itself, and this is the first that simply
+// keeps modulating, forever, the same six voices worked loose and retuned
+// one at a time. The cursor is a seventh voice, not a force bent into the
+// picture the way every other night's cursor pushes ground or scatters
+// pheromone or nudges a bob — moving it literally adds a new emitter to the
+// field, its loudness fading in while it sits over the canvas and fading
+// back out the moment it leaves or stops, so silence really is silence
+// here. A click drops an eighth kind of voice, a struck pulse gated to its
+// own outward wavefront — its ring's radius is exactly its age times a
+// fixed speed, so it travels once through the ambient choir, interferes
+// with whatever it crosses, and dies over a few seconds, the one moment in
+// this piece that resembles every other night's stone-in-the-water
+// gesture. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var caption = document.getElementById('caption');
+var fallback = document.getElementById('fallback');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+if(!gl){
+  fallback.style.display = 'flex';
+  return;
+}
+
+var N_SRC = 6, N_PULSE = 4;
+
+var vsSource =
+  'attribute vec2 aPos;' +
+  'void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }';
+
+var fsSource =
+  'precision highp float;' +
+  'uniform vec2 uRes;' +
+  'uniform float uTime;' +
+  'uniform vec2 uMouse;' +
+  'uniform float uMouseAmp;' +
+  'uniform vec2 uSrcPos[' + N_SRC + '];' +
+  'uniform float uSrcAmp[' + N_SRC + '];' +
+  'uniform float uSrcK[' + N_SRC + '];' +
+  'uniform float uSrcPhase[' + N_SRC + '];' +
+  'uniform vec2 uPulsePos[' + N_PULSE + '];' +
+  'uniform float uPulseStart[' + N_PULSE + '];' +
+  'uniform float uPulseK[' + N_PULSE + '];' +
+  'uniform float uPulseSpeed[' + N_PULSE + '];' +
+  'uniform float uPulseAmp[' + N_PULSE + '];' +
+  'float tanhSafe(float x){' +
+  '  float cx = clamp(x, -15.0, 15.0);' +
+  '  float e2 = exp(2.0*cx);' +
+  '  return (e2-1.0)/(e2+1.0);' +
+  '}' +
+  'float field(vec2 p, float t){' +
+  '  float s = 0.0;' +
+  '  for(int i=0;i<' + N_SRC + ';i++){' +
+  '    float r = length(p - uSrcPos[i]);' +
+  '    s += uSrcAmp[i] * sin(uSrcK[i]*r - uSrcPhase[i]) / sqrt(r + 0.55);' +
+  '  }' +
+  '  {' +
+  '    float r = length(p - uMouse);' +
+  '    float k = 22.0 + 6.0*sin(t*0.13);' +
+  '    float w = 2.2 + 0.6*sin(t*0.07 + 1.0);' +
+  '    s += uMouseAmp * sin(k*r - w*t) / sqrt(r + 0.55);' +
+  '  }' +
+  '  for(int i=0;i<' + N_PULSE + ';i++){' +
+  '    float age = t - uPulseStart[i];' +
+  '    if(age > 0.0){' +
+  '      float radius = uPulseSpeed[i]*age;' +
+  '      float r = length(p - uPulsePos[i]);' +
+  '      float d = r - radius;' +
+  '      float env = exp(-d*d*10.0) * exp(-age*0.35);' +
+  '      s += uPulseAmp[i]*sin(uPulseK[i]*d)*env;' +
+  '    }' +
+  '  }' +
+  '  return s;' +
+  '}' +
+  'void main(){' +
+  '  vec2 uv = (gl_FragCoord.xy / uRes.xy) * 2.0 - 1.0;' +
+  '  uv.x *= uRes.x / uRes.y;' +
+  '  float t = uTime;' +
+  '  float e = 0.006;' +
+  '  float h0 = field(uv, t);' +
+  '  float hx1 = field(uv + vec2(e,0.0), t);' +
+  '  float hx2 = field(uv - vec2(e,0.0), t);' +
+  '  float hy1 = field(uv + vec2(0.0,e), t);' +
+  '  float hy2 = field(uv - vec2(0.0,e), t);' +
+  '  float lap = (hx1 + hx2 + hy1 + hy2 - 4.0*h0);' +
+  '  float focus = -lap * 7.0;' +
+  '  float hue = 0.5 + 0.08*sin(t*0.025);' +
+  '  vec3 deep = vec3(0.015, 0.028, 0.06);' +
+  '  vec3 mid = mix(vec3(0.04,0.30,0.42), vec3(0.05,0.34,0.30), hue);' +
+  '  vec3 crest = mix(vec3(0.75,0.95,1.0), vec3(0.85,1.0,0.9), hue);' +
+  '  float b = focus + 0.06*h0;' +
+  '  float tt = clamp(0.5 + 0.5*tanhSafe(b*0.7), 0.0, 1.0);' +
+  '  vec3 col = tt < 0.5 ? mix(deep, mid, tt*2.0) : mix(mid, crest, (tt-0.5)*2.0);' +
+  '  gl_FragColor = vec4(col, 1.0);' +
+  '}';
+
+function compile(type, src){
+  var sh = gl.createShader(type);
+  gl.shaderSource(sh, src);
+  gl.compileShader(sh);
+  if(!gl.getShaderParameter(sh, gl.COMPILE_STATUS)){
+    throw new Error(gl.getShaderInfoLog(sh));
+  }
+  return sh;
+}
+
+var prog = gl.createProgram();
+gl.attachShader(prog, compile(gl.VERTEX_SHADER, vsSource));
+gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, fsSource));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+  throw new Error(gl.getProgramInfoLog(prog));
+}
+gl.useProgram(prog);
+
+var quad = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+var aPos = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+var U = {};
+['uRes','uTime','uMouse','uMouseAmp','uSrcPos','uSrcAmp','uSrcK','uSrcPhase',
+ 'uPulsePos','uPulseStart','uPulseK','uPulseSpeed','uPulseAmp'].forEach(function(name){
+  U[name] = gl.getUniformLocation(prog, name);
+});
+
+var width = 0, height = 0, aspect = 1;
+function resize(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  aspect = canvas.width / canvas.height;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener('resize', resize);
+
+// ---------- voices ----------
+
+function rand(a, b){ return a + Math.random()*(b-a); }
+
+var voices = [];
+for(var i=0;i<N_SRC;i++){
+  var ang = (i/N_SRC)*Math.PI*2 + rand(-0.3,0.3);
+  var rad = rand(0.28, 0.55);
+  voices.push({
+    baseX: Math.cos(ang)*rad,
+    baseY: Math.sin(ang)*rad,
+    orbitR: rand(0.05,0.18),
+    orbitSpeed: rand(0.05,0.15) * (Math.random()<0.5?-1:1),
+    orbitPhase: rand(0, Math.PI*2),
+    k: rand(14,40), kTarget: rand(14,40), kNext: rand(14,30)*1000,
+    w: rand(1.2,3.0), wTarget: rand(1.2,3.0), wNext: rand(16,30)*1000,
+    amp: rand(0.6,1.1), ampTarget: rand(0.5,1.3), ampNext: rand(10,22)*1000,
+    phase: rand(0, Math.PI*2)
+  });
+}
+
+var pulses = [];
+for(var p=0;p<N_PULSE;p++){
+  pulses.push({ x:0, y:0, start:-1e6, k:24, speed:0.6, amp:1.0 });
+}
+var pulseCursor = 0;
+
+// ---------- interaction ----------
+
+var mouseX = 0, mouseY = 0, targetMouseX = 0, targetMouseY = 0;
+var hoverActive = 0, hoverTarget = 0;
+
+window.addEventListener('pointermove', function(e){
+  targetMouseX = ((e.clientX / Math.max(1,width)) * 2 - 1) * aspect;
+  targetMouseY = 1 - (e.clientY / Math.max(1,height)) * 2;
+  hoverTarget = 1;
+});
+window.addEventListener('pointerleave', function(){ hoverTarget = 0; });
+window.addEventListener('pointerdown', function(e){
+  var wx = ((e.clientX / Math.max(1,width)) * 2 - 1) * aspect;
+  var wy = 1 - (e.clientY / Math.max(1,height)) * 2;
+  var slot = pulses[pulseCursor];
+  slot.x = wx; slot.y = wy;
+  slot.start = nowSeconds;
+  slot.k = rand(20,42);
+  slot.speed = rand(0.5,0.85);
+  slot.amp = rand(0.9,1.4);
+  pulseCursor = (pulseCursor+1) % N_PULSE;
+});
+
+// ---------- render ----------
+
+var startTime = performance.now();
+var lastT = startTime;
+var nowSeconds = 0;
+
+var srcPosArr = new Float32Array(N_SRC*2);
+var srcAmpArr = new Float32Array(N_SRC);
+var srcKArr = new Float32Array(N_SRC);
+var srcPhaseArr = new Float32Array(N_SRC);
+var pulsePosArr = new Float32Array(N_PULSE*2);
+var pulseStartArr = new Float32Array(N_PULSE);
+var pulseKArr = new Float32Array(N_PULSE);
+var pulseSpeedArr = new Float32Array(N_PULSE);
+var pulseAmpArr = new Float32Array(N_PULSE);
+
+function ease(cur, target, dt, rate){
+  return cur + (target - cur) * (1 - Math.exp(-rate*dt));
+}
+
+function frame(now){
+  var dtMs = Math.min(64, now - lastT);
+  lastT = now;
+  var dt = dtMs / 1000;
+  nowSeconds = (now - startTime) / 1000;
+  var t = nowSeconds;
+  var nowAbs = now;
+
+  hoverActive += (hoverTarget - hoverActive) * Math.min(1, dt*4);
+  mouseX += (targetMouseX - mouseX) * Math.min(1, dt*6);
+  mouseY += (targetMouseY - mouseY) * Math.min(1, dt*6);
+
+  for(var i=0;i<N_SRC;i++){
+    var v = voices[i];
+    if(nowAbs > v.kNext){ v.kTarget = rand(14,40); v.kNext = nowAbs + rand(14000,26000); }
+    if(nowAbs > v.wNext){ v.wTarget = rand(1.2,3.0); v.wNext = nowAbs + rand(16000,30000); }
+    if(nowAbs > v.ampNext){ v.ampTarget = rand(0.5,1.3); v.ampNext = nowAbs + rand(10000,22000); }
+    v.k = ease(v.k, v.kTarget, dt, 0.15);
+    v.w = ease(v.w, v.wTarget, dt, 0.15);
+    v.amp = ease(v.amp, v.ampTarget, dt, 0.2);
+    v.phase += v.w * dt;
+
+    var ang = v.orbitPhase + t*v.orbitSpeed;
+    var x = v.baseX + Math.cos(ang)*v.orbitR;
+    var y = v.baseY + Math.sin(ang)*v.orbitR;
+    srcPosArr[i*2] = x * aspect;
+    srcPosArr[i*2+1] = y;
+    srcAmpArr[i] = v.amp;
+    srcKArr[i] = v.k;
+    srcPhaseArr[i] = v.phase;
+  }
+
+  for(var j=0;j<N_PULSE;j++){
+    var pl = pulses[j];
+    pulsePosArr[j*2] = pl.x;
+    pulsePosArr[j*2+1] = pl.y;
+    pulseStartArr[j] = pl.start;
+    pulseKArr[j] = pl.k;
+    pulseSpeedArr[j] = pl.speed;
+    pulseAmpArr[j] = pl.amp;
+  }
+
+  gl.uniform2f(U.uRes, canvas.width, canvas.height);
+  gl.uniform1f(U.uTime, t);
+  gl.uniform2f(U.uMouse, mouseX, mouseY);
+  gl.uniform1f(U.uMouseAmp, hoverActive);
+  gl.uniform2fv(U.uSrcPos, srcPosArr);
+  gl.uniform1fv(U.uSrcAmp, srcAmpArr);
+  gl.uniform1fv(U.uSrcK, srcKArr);
+  gl.uniform1fv(U.uSrcPhase, srcPhaseArr);
+  gl.uniform2fv(U.uPulsePos, pulsePosArr);
+  gl.uniform1fv(U.uPulseStart, pulseStartArr);
+  gl.uniform1fv(U.uPulseK, pulseKArr);
+  gl.uniform1fv(U.uPulseSpeed, pulseSpeedArr);
+  gl.uniform1fv(U.uPulseAmp, pulseAmpArr);
+
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  requestAnimationFrame(frame);
+}
+
+resize();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>
