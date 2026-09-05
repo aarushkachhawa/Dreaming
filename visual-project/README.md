@@ -24,6 +24,52 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-05** — `2026-09-05-lattice-wake.html`: a thirty-fourth
+  technique, and the third fluid in this project's history, and the first
+  built from a lattice-gas kinetic model rather than a continuum equation
+  solved on a grid or a swarm of particles carrying the fluid's mass with
+  them. This is the lattice Boltzmann method, D2Q9 flavor: every cell
+  holds not a velocity but nine numbers, one for each of the compass
+  directions plus rest, each representing how much of that cell's fluid is
+  presently moving that way. Two steps, repeated forever: collision, where
+  each cell's nine numbers relax a fraction of the way toward the
+  Maxwell-Boltzmann equilibrium implied by its own locally-summed density
+  and momentum; and streaming, where each of the nine numbers simply
+  slides one cell over in its own direction. Density and velocity are
+  never solved for directly, the way night 9's stable-fluids solver
+  explicitly built and inverted a pressure Laplacian to force the field
+  divergence-free, or night 21's SPH summed a kernel over neighbors to
+  estimate a smooth field at a moving point — here macroscopic flow is
+  just a statistic, the zeroth and first moment of a distribution nobody
+  ever asked to be smooth or incompressible, and it comes out that way
+  anyway, an emergent consequence of collide-and-stream. A solid cell
+  needs no boundary condition solved for it at all: streaming toward a
+  wall or a planted obstacle is simply redirected back the way it came,
+  one bounce-back rule standing in for what a continuum solver would spend
+  a whole no-slip constraint on. Left running, a channel of leftward-forced
+  inflow around any obstacle placed in it does not sit still — past a
+  critical ratio of inertia to the fluid's own relaxation time, exactly
+  Reynolds' own criterion, the wake behind the obstacle tears into an
+  alternating train of vortices peeling off first one side then the other,
+  a Kármán vortex street nobody scripted, the flow's own instability, the
+  closest thing this project's fluids have had yet to the double
+  pendulum's tear into chaos at night 26. Color reads vorticity rather
+  than dye or height: amber-coral where the local spin curls one way,
+  indigo-cyan where it curls the other, a faint white bloom laid over both
+  wherever the raw speed climbs, so a shed vortex train reads as an
+  alternating necklace of warm and cool beads drifting downstream while
+  untroubled inflow stays a calm, near-black hush. The relaxation time
+  driving that spin breathes slowly over several minutes, sliding the same
+  channel between a viscous, laminar hush around its obstacles and a
+  proper turbulent shedding train without touching the geometry at all.
+  Move the cursor to drag a temporary eddy-maker through the current, its
+  own trailing wake following it live; click to plant a permanent pillar
+  wherever it stands, up to a handful at once, each throwing its own
+  street into the others' way. Left alone, the whole channel dissolves its
+  pillars back to a single, freshly placed one every couple of minutes,
+  reseeded with its own small asymmetry so a new street always finds its
+  own side to start peeling from. Open the file directly in a browser.
+
 - **2026-09-03** — `2026-09-03-naive-retina.html`: a thirty-third technique,
   and the first in which nothing was designed at all — no field, no
   automaton rule, no grammar, no force law, no constraint solver, not even
