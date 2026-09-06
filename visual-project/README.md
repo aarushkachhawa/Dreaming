@@ -24,6 +24,50 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-06** — `2026-09-06-shard-lineage.html`: a thirty-fifth
+  technique, and the first whose entire structure is decided by collision
+  rather than by wandering, seeking, reading, or propagating a
+  constraint — Jared Tarbell's Substrate (2003), the generative-art
+  algorithm behind a whole decade of shattered-glass and circuit-board
+  wallpapers. A crack is nothing but a point and an angle: it walks
+  forward in a dead straight line, one short step at a time, until the
+  cell directly ahead of it is already occupied by another crack or by
+  the edge of the screen, at which instant it simply stops and is never
+  touched again. Night 10's lightning also froze in place at the moment
+  of contact, but every one of its walkers wandered blindly first; a
+  crack here never wanders — its only freedom is the single angle it is
+  born with. Most cracks are not born free at all: four in five spawn
+  directly off an already-frozen line, at that line's own angle plus or
+  minus a right angle and a few degrees of scatter, so a crack's
+  direction is quite literally inherited from whichever wall it broke
+  away from, the way a real fracture in glass or rock propagates along
+  and off the planes already laid down rather than starting fresh. The
+  other one in five starts from a bare, unclaimed point with no ancestry
+  at all, an occasional new fault line that owes nothing to anything
+  already drawn — which is why one canvas quietly ends up several
+  visually distinct territories, each descended from its own founding
+  crack, meeting at whatever angle their unrelated lineages happened to
+  collide at. Nothing is stroked as a line: every step scatters a small
+  handful of translucent grains across the crack's width, offset from
+  center by their own soft falloff, so a wall of a few hundred short
+  segments reads as one continuous sanded stroke rather than a row of
+  dashes — Tarbell's own name for the technique, the sand painter.
+  Grains lean lighter on the side facing a fixed low sun and darker on
+  the side away from it, one dot at a time, so every shard reads as
+  gently beveled the instant it exists, without a single explicit
+  highlight ever being drawn. Grain hue drifts on its own slow clock,
+  sliding the whole territory between warm cream-gold and cool ash-slate
+  over several minutes, independent of the cracking underneath it. The
+  canvas keeps growing until a little over half of it is claimed, at
+  which point new cracks stop spawning, the surviving few finish out
+  their own lines, and after a short held pause with nothing moving, the
+  entire pane fades to black and a fresh scattering of founding cracks
+  starts the fracture over from nothing. Move the cursor to bend nearby
+  growing cracks gently toward it, a warm draft nudging a fault as it
+  forms; click to plant a fresh founding crack at that exact point, in a
+  random direction, no ancestry required. Open the file directly in a
+  browser.
+
 - **2026-09-05** — `2026-09-05-lattice-wake.html`: a thirty-fourth
   technique, and the third fluid in this project's history, and the first
   built from a lattice-gas kinetic model rather than a continuum equation

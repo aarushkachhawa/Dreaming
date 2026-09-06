@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shard Lineage — Night 35</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0d0b08;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="caption">Shard Lineage &mdash; Night 35 &mdash; move to bend a growing crack &middot; click to plant a new one</div>
+<script>
+(function(){
+'use strict';
+// A thirty-fifth technique, and the first whose entire structure is
+// decided by collision rather than by wandering, seeking, reading, or
+// propagating a constraint — Jared Tarbell's Substrate (2003), the
+// generative-art algorithm behind a whole decade of shattered-glass and
+// circuit-board wallpapers. A crack is nothing but a point and an angle:
+// it walks forward in a dead straight line, one short step at a time,
+// until the cell directly ahead of it is already occupied by another
+// crack or by the edge of the screen, at which instant it simply stops
+// and is never touched again. Night 10's lightning also froze in place at
+// the moment of contact, but every one of its walkers wandered blindly
+// first; a crack here never wanders — its only freedom is the single
+// angle it is born with. Most cracks are not born free at all: four in
+// five spawn directly off an already-frozen line, at that line's own
+// angle plus or minus a right angle and a few degrees of scatter, so a
+// crack's direction is quite literally inherited from whichever wall it
+// broke away from, the way a real fracture in glass or rock propagates
+// along and off the planes already laid down rather than starting fresh.
+// The other one in five starts from a bare, unclaimed point with no
+// ancestry at all, an occasional new fault line that owes nothing to
+// anything already drawn — which is why one canvas quietly ends up
+// several visually distinct territories, each descended from its own
+// founding crack, meeting at whatever angle their unrelated lineages
+// happened to collide at. Nothing is stroked as a line: every step
+// scatters a small handful of translucent grains across the crack's
+// width, offset from center by their own soft falloff, so a wall of a
+// few hundred short segments reads as one continuous sanded stroke
+// rather than a row of dashes — Tarbell's own name for the technique,
+// the sand painter. Grains lean lighter on the side facing a fixed low
+// sun and darker on the side away from it, one dot at a time, so every
+// shard reads as gently beveled the instant it exists, without a single
+// explicit highlight ever being drawn. Grain hue drifts on its own slow
+// clock, sliding the whole territory between warm cream-gold and cool
+// ash-slate over several minutes, independent of the cracking underneath
+// it. The canvas keeps growing until a little over half of it is
+// claimed, at which point new cracks stop spawning, the surviving few
+// finish out their own lines, and after a short held pause with nothing
+// moving, the entire pane fades to black and a fresh scattering of
+// founding cracks starts the fracture over from nothing. Move the cursor
+// to bend nearby growing cracks gently toward it, a warm draft nudging a
+// fault as it forms; click to plant a fresh founding crack at that exact
+// point, in a random direction, no ancestry required. Open the file
+// directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var flashEl = document.getElementById('flash');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var BG = '#0d0b08';
+var CELL = 3;
+var POP_CAP = 60;
+var GRACE = CELL * 2.2;
+var HOLD_MS = 2500;
+var FADE_MS = 1800;
+var LIGHT_ANGLE = -2.3;
+
+var width = 0, height = 0, gridW = 0, gridH = 0;
+var occGrid = null, occCount = 0, occTotal = 1;
+var seedPool = [];
+var SEED_POOL_MAX = 4000;
+var tracers = [];
+var mouseX = 0, mouseY = 0, mouseActive = false;
+var rect = null;
+
+var STATE_GROW = 0, STATE_HOLD = 1, STATE_FADE = 2;
+var state = STATE_GROW;
+var holdStart = 0, fadeStart = 0;
+var SATURATION = 0.55;
+var startTime = 0;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+
+function angleDiff(target, current){
+  var d = target - current;
+  while(d > Math.PI) d -= Math.PI*2;
+  while(d < -Math.PI) d += Math.PI*2;
+  return d;
+}
+
+function currentHue(t){
+  var warmth = 0.5 + 0.5*Math.sin(t*0.00035);
+  var goldHue = 34, slateHue = 202;
+  return goldHue*warmth + slateHue*(1-warmth);
+}
+
+function Tracer(x, y, angle, hue){
+  this.x = x; this.y = y; this.angle = angle; this.hue = hue;
+  this.speed = 1.1 + Math.random()*0.9;
+  this.maxLen = 50 + Math.random()*300;
+  this.len = 0;
+  this.alive = true;
+}
+
+function pushSeed(x, y, angle){
+  var s = { x: x, y: y, angle: angle };
+  if(seedPool.length < SEED_POOL_MAX) seedPool.push(s);
+  else seedPool[(Math.random()*SEED_POOL_MAX)|0] = s;
+}
+
+function markOccupied(gx, gy, angle){
+  if(gx < 0 || gy < 0 || gx >= gridW || gy >= gridH) return;
+  var idx = gy*gridW + gx;
+  if(!occGrid[idx]){
+    occGrid[idx] = 1;
+    occCount++;
+    if(Math.random() < 0.25) pushSeed(gx*CELL + CELL*0.5, gy*CELL + CELL*0.5, angle);
+  }
+}
+
+function isOccupied(gx, gy){
+  if(gx < 0 || gy < 0 || gx >= gridW || gy >= gridH) return true;
+  return occGrid[gy*gridW + gx] === 1;
+}
+
+function paintSegment(x0, y0, x1, y1, angle, hue){
+  var perp = angle + Math.PI/2;
+  var px = Math.cos(perp), py = Math.sin(perp);
+  var maxSpread = 2.1;
+  var grains = 3;
+  for(var i=0; i<grains; i++){
+    var tt = Math.random();
+    var bx = x0 + (x1-x0)*tt;
+    var by = y0 + (y1-y0)*tt;
+    var g = (Math.random()+Math.random()+Math.random()-1.5);
+    var offset = g * maxSpread;
+    var gx = bx + px*offset;
+    var gy = by + py*offset;
+    var falloff = 1 - Math.min(1, Math.abs(offset)/(maxSpread*1.6));
+    var shadeSign = offset >= 0 ? 1 : -1;
+    var shade = shadeSign * Math.cos(perp - LIGHT_ANGLE);
+    var light = clamp(52 + shade*18, 18, 86);
+    var alpha = 0.08 + 0.16*falloff;
+    ctx.fillStyle = 'hsla(' + hue.toFixed(1) + ',34%,' + light.toFixed(0) + '%,' + alpha.toFixed(3) + ')';
+    ctx.beginPath();
+    ctx.arc(gx, gy, 0.55 + Math.random()*0.65, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function killTracer(t){
+  t.alive = false;
+  var grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, 5);
+  grad.addColorStop(0, 'hsla(' + t.hue.toFixed(1) + ',40%,78%,0.45)');
+  grad.addColorStop(1, 'hsla(' + t.hue.toFixed(1) + ',40%,78%,0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(t.x, t.y, 5, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function stepTracer(t, now){
+  if(!t.alive) return;
+  if(mouseActive){
+    var dx = mouseX - t.x, dy = mouseY - t.y;
+    var dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist > 1 && dist < 260){
+      var targetA = Math.atan2(dy, dx);
+      t.angle += angleDiff(targetA, t.angle) * 0.02 * (1 - dist/260);
+    }
+  }
+  var nx = t.x + Math.cos(t.angle)*t.speed;
+  var ny = t.y + Math.sin(t.angle)*t.speed;
+  if(nx < 0 || ny < 0 || nx >= width || ny >= height){ killTracer(t); return; }
+  var gx = (nx/CELL)|0, gy = (ny/CELL)|0;
+  if(t.len > GRACE && isOccupied(gx, gy)){ killTracer(t); return; }
+  paintSegment(t.x, t.y, nx, ny, t.angle, t.hue);
+  markOccupied(gx, gy, t.angle);
+  t.x = nx; t.y = ny; t.len += t.speed;
+  if(t.len >= t.maxLen) killTracer(t);
+}
+
+function spawnTracer(x, y, angle){
+  var hue = currentHue(performance.now()) + (Math.random()*26 - 13);
+  tracers.push(new Tracer(x, y, angle, hue));
+}
+
+function trySpawnReplacement(){
+  if(seedPool.length > 4 && Math.random() < 0.8){
+    var s = seedPool[(Math.random()*seedPool.length)|0];
+    var base = s.angle + (Math.random() < 0.5 ? 1 : -1)*(Math.PI/2);
+    var jitter = (Math.random()*24 - 12) * Math.PI/180;
+    spawnTracer(s.x, s.y, base + jitter);
+  } else {
+    spawnTracer(Math.random()*width, Math.random()*height, Math.random()*Math.PI*2);
+  }
+}
+
+function resetField(){
+  gridW = Math.max(1, Math.ceil(width/CELL));
+  gridH = Math.max(1, Math.ceil(height/CELL));
+  occGrid = new Uint8Array(gridW*gridH);
+  occCount = 0;
+  occTotal = gridW*gridH;
+  seedPool = [];
+  tracers = [];
+  state = STATE_GROW;
+  SATURATION = 0.5 + Math.random()*0.1;
+  startTime = performance.now();
+
+  ctx.fillStyle = BG;
+  ctx.fillRect(0, 0, width, height);
+
+  var founders = 8 + Math.floor(Math.random()*6);
+  for(var i=0; i<founders; i++){
+    spawnTracer(Math.random()*width, Math.random()*height, Math.random()*Math.PI*2);
+  }
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width*dpr);
+  canvas.height = Math.round(height*dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  resetField();
+}
+
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){ resizeCanvas(); updateRect(); }, 150);
+});
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.35';
+  requestAnimationFrame(function(){
+    flashEl.style.transition = 'opacity 0.8s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+function updateRect(){ rect = canvas.getBoundingClientRect(); }
+
+canvas.addEventListener('pointermove', function(e){
+  if(!rect) updateRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  mouseActive = true;
+});
+canvas.addEventListener('pointerleave', function(){ mouseActive = false; });
+canvas.addEventListener('pointerdown', function(e){
+  if(!rect) updateRect();
+  var x = e.clientX - rect.left, y = e.clientY - rect.top;
+  spawnTracer(x, y, Math.random()*Math.PI*2);
+  if(tracers.length > POP_CAP + 15) tracers.splice(0, tracers.length - (POP_CAP + 15));
+  flash();
+});
+
+function frame(now){
+  if(state === STATE_GROW){
+    while(tracers.length < POP_CAP && (occCount/occTotal) < SATURATION){
+      trySpawnReplacement();
+    }
+    for(var i=0; i<tracers.length; i++) stepTracer(tracers[i], now);
+    var kept = [];
+    for(var j=0; j<tracers.length; j++){ if(tracers[j].alive) kept.push(tracers[j]); }
+    tracers = kept;
+    if((occCount/occTotal) >= SATURATION && tracers.length === 0){
+      state = STATE_HOLD;
+      holdStart = now;
+    }
+  } else if(state === STATE_HOLD){
+    if(now - holdStart > HOLD_MS){ state = STATE_FADE; fadeStart = now; }
+  } else if(state === STATE_FADE){
+    ctx.fillStyle = 'rgba(13,11,8,0.045)';
+    ctx.fillRect(0, 0, width, height);
+    if(now - fadeStart > FADE_MS) resetField();
+  }
+  requestAnimationFrame(frame);
+}
+
+resizeCanvas();
+updateRect();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>
