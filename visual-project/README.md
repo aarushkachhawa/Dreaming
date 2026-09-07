@@ -24,6 +24,56 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-07** — `2026-09-07-soft-orbium.html`: a thirty-sixth technique,
+  and the first governed by a smooth, integrator dynamic rather than a
+  discrete replacement rule — Lenia (Bert Chan, 2018), the continuous
+  generalization of Conway's Game of Life that treats a cell's
+  neighborhood, its fate, and its very state as real numbers rather than a
+  fixed set of counts. Night 11's SmoothLife already softened Life's hard
+  birth/survival thresholds into two radii and a sigmoid, but it still
+  replaced each cell's state outright every step, the way the discrete
+  rule it descends from always has. Lenia doesn't replace anything: every
+  cell holds a density between 0 and 1, and each step nudges that density
+  by a small increment — never resets it — toward wherever a growth
+  function wants it to go, so a cell's history is baked into everything
+  that happens to it next rather than erased every tick. The neighborhood
+  itself is a single soft ring, a bell curve peaked at half the kernel's
+  radius rather than SmoothLife's two flat, hard-edged disks, so there is
+  no boundary anywhere in the whole calculation, only gradients — the
+  growth function judging that ring's weighted average is itself a bell
+  curve too, positive near a preferred density and negative everywhere
+  else, so a cell held too sparse or too crowded decays while one sitting
+  in the narrow sweet spot between grows, ever so slightly, frame after
+  frame. Set loose from nothing but scattered noise this dissolves to flat
+  gray nothing almost immediately; it is only from a deliberately
+  asymmetric seed — a teardrop of mass heavier on one side than the
+  other — that the rule sometimes discovers what its inventor's community
+  spent years cataloguing: a self-stabilizing blob that neither grows
+  without bound nor decays to nothing, and that a mere asymmetry is enough
+  to send gliding steadily across the grid, one of Lenia's many named
+  species, orbium chief among them, an organism nobody wrote down and
+  everybody found by search. Most seeds here die formless or bloom into a
+  static mat instead, and that failure rate is the honest picture —
+  nothing here guarantees a species, only searches for one. Color reads
+  the growth signal itself rather than the density it acts on: a cell
+  presently gaining ground glows warm amber, one presently losing it cools
+  toward violet, and one sitting exactly at equilibrium settles to a
+  still, pale jade — so a gliding blob's leading edge and trailing edge
+  paint themselves in opposite temperatures without either ever being
+  drawn on purpose, the mechanism that moves it made visible as the two
+  colors chasing each other around its rim. The growth function's own
+  center and width both breathe slowly over minutes, sliding the whole
+  field's chemistry between a narrow, choosy tolerance that only a few
+  seeds survive and a broad, forgiving one that lets almost any blob
+  persist. Move the cursor to trickle a faint feed of density into the
+  field, the gentlest possible seed; click to plant a full asymmetric blob
+  outright, oriented in a random direction, and see what it becomes. The
+  whole grid wraps at its edges, a torus with nowhere for a gliding blob
+  to run off to, and roughly every three minutes — sooner if the field has
+  gone fully dark or fully saturated on its own — it fades out and
+  reseeds itself from a fresh scatter of teardrops. Open the file directly
+  in a browser.
+
 - **2026-09-06** — `2026-09-06-shard-lineage.html`: a thirty-fifth
   technique, and the first whose entire structure is decided by collision
   rather than by wandering, seeking, reading, or propagating a

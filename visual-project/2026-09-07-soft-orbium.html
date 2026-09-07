@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Soft Orbium — Night 36</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #07080a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: auto;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="caption">Soft Orbium &mdash; Night 36 &mdash; move to feed a trickle &middot; click to plant a drifting blob</div>
+<script>
+(function(){
+'use strict';
+// A thirty-sixth technique, and the first governed by a smooth, integrator
+// dynamic rather than a discrete replacement rule — Lenia (Bert Chan,
+// 2018), the continuous generalization of Conway's Game of Life that
+// treats a cell's neighborhood, its fate, and its very state as real
+// numbers rather than a fixed set of counts. Night 11's SmoothLife already
+// softened Life's hard birth/survival thresholds into two radii and a
+// sigmoid, but it still replaced each cell's state outright every step,
+// the way the discrete rule it descends from always has. Lenia doesn't
+// replace anything: every cell holds a density between 0 and 1, and each
+// step nudges that density by a small increment — never resets it —
+// toward wherever a growth function wants it to go, so a cell's history is
+// baked into everything that happens to it next rather than erased every
+// tick. The neighborhood itself is a single soft ring, a bell curve peaked
+// at half the kernel's radius rather than SmoothLife's two flat,
+// hard-edged disks, so there is no boundary anywhere in the whole
+// calculation, only gradients — the growth function judging that ring's
+// weighted average is itself a bell curve too, positive near a preferred
+// density and negative everywhere else, so a cell held too sparse or too
+// crowded decays while one sitting in the narrow sweet spot between grows,
+// ever so slightly, frame after frame. Set loose from nothing but
+// scattered noise this dissolves to flat gray nothing almost immediately;
+// it is only from a deliberately asymmetric seed — a teardrop of mass
+// heavier on one side than the other — that the rule sometimes discovers
+// what its inventor's community spent years cataloguing: a
+// self-stabilizing blob that neither grows without bound nor decays to
+// nothing, and that a mere asymmetry is enough to send gliding steadily
+// across the grid, one of Lenia's many named species, orbium chief among
+// them, an organism nobody wrote down and everybody found by search. Most
+// seeds here die formless or bloom into a static mat instead, and that
+// failure rate is the honest picture — nothing here guarantees a species,
+// only searches for one. Color reads the growth signal itself rather than
+// the density it acts on: a cell presently gaining ground glows warm
+// amber, one presently losing it cools toward violet, and one sitting
+// exactly at equilibrium settles to a still, pale jade — so a gliding
+// blob's leading edge and trailing edge paint themselves in opposite
+// temperatures without either ever being drawn on purpose, the mechanism
+// that moves it made visible as the two colors chasing each other around
+// its rim. The growth function's own center and width both breathe slowly
+// over minutes, sliding the whole field's chemistry between a narrow,
+// choosy tolerance that only a few seeds survive and a broad, forgiving
+// one that lets almost any blob persist. Move the cursor to trickle a
+// faint feed of density into the field, the gentlest possible seed; click
+// to plant a full asymmetric blob outright, oriented in a random
+// direction, and see what it becomes. The whole grid wraps at its edges, a
+// torus with nowhere for a gliding blob to run off to, and roughly every
+// three minutes — sooner if the field has gone fully dark or fully
+// saturated on its own — it fades out and reseeds itself from a fresh
+// scatter of teardrops. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var flashEl = document.getElementById('flash');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var CELL = 8;
+var R = 10;
+var KERNEL_SIGMA = 0.12;
+var DT = 0.1;
+var STEP_INTERVAL = 1000 / 30;
+var FADE_MS = 1600;
+var AUTO_RESEED_MS = 170000;
+var UNHEALTHY_HOLD_MS = 4000;
+
+var width = 0, height = 0;
+var gridW = 0, gridH = 0, paddedW = 0, paddedH = 0;
+var A = null, Anext = null, Garr = null, padded = null;
+var kernelOff = null, kernelW = null, nK = 0;
+var offCanvas = null, offCtx = null, imageData = null, pixels = null;
+
+var muBase = 0.15, muAmp = 0.02, muPeriod = 190000;
+var sigBase = 0.017, sigAmp = 0.004, sigPeriod = 260000;
+var mu = muBase, gsig = sigBase;
+
+var STATE_RUN = 0, STATE_FADE = 1;
+var state = STATE_RUN;
+var fadeStart = 0;
+var lastAutoReseed = 0;
+var unhealthySince = 0;
+var stepAccumulator = 0;
+var lastFrameTime = 0;
+
+var mouseX = 0, mouseY = 0, mouseActive = false;
+var rect = null;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+
+function bell(x, m, s){
+  var d = (x - m) / s;
+  return Math.exp(-0.5 * d * d);
+}
+
+function growth(u){
+  return 2 * bell(u, mu, gsig) - 1;
+}
+
+function hsl2rgb(h, s, l, out){
+  var c = (1 - Math.abs(2 * l - 1)) * s;
+  var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  var m = l - c / 2;
+  var r, g, b;
+  if(h < 60){ r = c; g = x; b = 0; }
+  else if(h < 120){ r = x; g = c; b = 0; }
+  else if(h < 180){ r = 0; g = c; b = x; }
+  else if(h < 240){ r = 0; g = x; b = c; }
+  else if(h < 300){ r = x; g = 0; b = c; }
+  else { r = c; g = 0; b = x; }
+  out[0] = (r + m) * 255;
+  out[1] = (g + m) * 255;
+  out[2] = (b + m) * 255;
+}
+
+function buildKernel(){
+  var dxs = [], dys = [], ws = [];
+  var wsum = 0;
+  for(var dy = -R; dy <= R; dy++){
+    for(var dx = -R; dx <= R; dx++){
+      var r = Math.sqrt(dx*dx + dy*dy) / R;
+      if(r > 1) continue;
+      var w = bell(r, 0.5, KERNEL_SIGMA);
+      if(w < 0.01) continue;
+      dxs.push(dx); dys.push(dy); ws.push(w);
+      wsum += w;
+    }
+  }
+  nK = ws.length;
+  kernelOff = new Int32Array(nK);
+  kernelW = new Float32Array(nK);
+  for(var i = 0; i < nK; i++){
+    kernelOff[i] = dys[i] * paddedW + dxs[i];
+    kernelW[i] = ws[i] / wsum;
+  }
+}
+
+function addBlob(gx, gy, radius, angleBias, strength){
+  var rad = Math.ceil(radius);
+  for(var dy = -rad; dy <= rad; dy++){
+    for(var dx = -rad; dx <= rad; dx++){
+      var d = Math.sqrt(dx*dx + dy*dy) / radius;
+      if(d > 1) continue;
+      var ang = Math.atan2(dy, dx);
+      var lobe = 0.5 + 0.5 * Math.cos(ang - angleBias);
+      var amt = strength * (1 - d) * (0.35 + 0.65 * lobe);
+      var gxw = ((gx + dx) % gridW + gridW) % gridW;
+      var gyw = ((gy + dy) % gridH + gridH) % gridH;
+      var idx = gyw * gridW + gxw;
+      A[idx] = Math.min(1, A[idx] + amt);
+    }
+  }
+}
+
+function reseedField(){
+  A.fill(0);
+  var n = 16 + ((Math.random() * 10) | 0);
+  for(var i = 0; i < n; i++){
+    var gx = (Math.random() * gridW) | 0;
+    var gy = (Math.random() * gridH) | 0;
+    var radius = 4 + Math.random() * 5;
+    var ang = Math.random() * Math.PI * 2;
+    addBlob(gx, gy, radius, ang, 0.75 + Math.random() * 0.25);
+  }
+}
+
+function buildPadded(){
+  var y, x, rowBase, srcRow, srcBase, dstBase;
+  for(y = 0; y < gridH; y++){
+    var srcOff = y * gridW, dstOff = (y + R) * paddedW + R;
+    for(x = 0; x < gridW; x++) padded[dstOff + x] = A[srcOff + x];
+  }
+  for(y = 0; y < gridH; y++){
+    rowBase = (y + R) * paddedW;
+    for(x = 0; x < R; x++){
+      padded[rowBase + x] = A[y * gridW + ((gridW - R + x) % gridW)];
+      padded[rowBase + R + gridW + x] = A[y * gridW + (x % gridW)];
+    }
+  }
+  for(y = 0; y < R; y++){
+    srcRow = (gridH - R + y + gridH) % gridH;
+    srcBase = (srcRow + R) * paddedW;
+    dstBase = y * paddedW;
+    for(x = 0; x < paddedW; x++) padded[dstBase + x] = padded[srcBase + x];
+  }
+  for(y = 0; y < R; y++){
+    srcRow = y % gridH;
+    srcBase = (srcRow + R) * paddedW;
+    dstBase = (gridH + R + y) * paddedW;
+    for(x = 0; x < paddedW; x++) padded[dstBase + x] = padded[srcBase + x];
+  }
+}
+
+function simulateStep(){
+  buildPadded();
+  var y, x, k, idx, U, g, v;
+  for(y = 0; y < gridH; y++){
+    var centerBase = (y + R) * paddedW + R;
+    for(x = 0; x < gridW; x++){
+      var center = centerBase + x;
+      U = 0;
+      for(k = 0; k < nK; k++) U += padded[center + kernelOff[k]] * kernelW[k];
+      g = growth(U);
+      idx = y * gridW + x;
+      Garr[idx] = g;
+      v = A[idx] + DT * g;
+      Anext[idx] = v < 0 ? 0 : (v > 1 ? 1 : v);
+    }
+  }
+  var tmp = A; A = Anext; Anext = tmp;
+}
+
+var rgbTmp = [0, 0, 0];
+
+function render(now){
+  var i, n = gridW * gridH, sum = 0;
+  for(i = 0; i < n; i++){
+    var a = A[i];
+    sum += a;
+    var g = Garr[i];
+    var t = clamp(g * 5, -1, 1);
+    var hue = t >= 0 ? (170 + (40 - 170) * t) : (170 + (265 - 170) * (-t));
+    var light = 0.05 + 0.55 * Math.pow(a, 0.6);
+    var sat = 0.42 + 0.35 * Math.abs(t);
+    hsl2rgb(hue, sat, light, rgbTmp);
+    var p = i * 4;
+    pixels[p] = rgbTmp[0];
+    pixels[p+1] = rgbTmp[1];
+    pixels[p+2] = rgbTmp[2];
+    pixels[p+3] = 255;
+  }
+  offCtx.putImageData(imageData, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(offCanvas, 0, 0, gridW, gridH, 0, 0, width, height);
+  return sum / n;
+}
+
+function updateBreathing(now){
+  mu = muBase + muAmp * Math.sin(now / muPeriod * Math.PI * 2);
+  gsig = sigBase + sigAmp * Math.sin(now / sigPeriod * Math.PI * 2 + 1.3);
+}
+
+function triggerFade(now){
+  state = STATE_FADE;
+  fadeStart = now;
+}
+
+function frame(now){
+  if(!lastFrameTime) lastFrameTime = now;
+  var dtFrame = now - lastFrameTime;
+  lastFrameTime = now;
+  if(dtFrame > 250) dtFrame = 250;
+
+  updateBreathing(now);
+
+  if(state === STATE_RUN){
+    stepAccumulator += dtFrame;
+    var steps = 0;
+    while(stepAccumulator >= STEP_INTERVAL && steps < 4){
+      simulateStep();
+      stepAccumulator -= STEP_INTERVAL;
+      steps++;
+    }
+    if(mouseActive){
+      var gx = (mouseX / CELL) | 0, gy = (mouseY / CELL) | 0;
+      addBlob(gx, gy, 3, Math.random() * Math.PI * 2, 0.028);
+    }
+    var mean = render(now);
+    if(mean < 0.004 || mean > 0.9){
+      if(!unhealthySince) unhealthySince = now;
+      else if(now - unhealthySince > UNHEALTHY_HOLD_MS) triggerFade(now);
+    } else {
+      unhealthySince = 0;
+    }
+    if(now - lastAutoReseed > AUTO_RESEED_MS) triggerFade(now);
+  } else if(state === STATE_FADE){
+    var n = gridW * gridH;
+    for(var i = 0; i < n; i++) A[i] *= 0.90;
+    render(now);
+    if(now - fadeStart > FADE_MS){
+      reseedField();
+      state = STATE_RUN;
+      lastAutoReseed = now;
+      unhealthySince = 0;
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  gridW = clamp(Math.round(width / CELL), 50, 150);
+  gridH = clamp(Math.round(height / CELL), 34, 95);
+  paddedW = gridW + 2 * R;
+  paddedH = gridH + 2 * R;
+
+  A = new Float32Array(gridW * gridH);
+  Anext = new Float32Array(gridW * gridH);
+  Garr = new Float32Array(gridW * gridH);
+  padded = new Float32Array(paddedW * paddedH);
+
+  buildKernel();
+  reseedField();
+
+  offCanvas = document.createElement('canvas');
+  offCanvas.width = gridW;
+  offCanvas.height = gridH;
+  offCtx = offCanvas.getContext('2d');
+  imageData = offCtx.createImageData(gridW, gridH);
+  pixels = imageData.data;
+
+  lastAutoReseed = performance.now();
+  unhealthySince = 0;
+  state = STATE_RUN;
+}
+
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){ resizeCanvas(); updateRect(); }, 150);
+});
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.28';
+  requestAnimationFrame(function(){
+    flashEl.style.transition = 'opacity 0.8s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+function updateRect(){ rect = canvas.getBoundingClientRect(); }
+
+canvas.addEventListener('pointermove', function(e){
+  if(!rect) updateRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  mouseActive = true;
+});
+canvas.addEventListener('pointerleave', function(){ mouseActive = false; });
+canvas.addEventListener('pointerdown', function(e){
+  if(!rect) updateRect();
+  var x = e.clientX - rect.left, y = e.clientY - rect.top;
+  var gx = (x / CELL) | 0, gy = (y / CELL) | 0;
+  addBlob(gx, gy, 6 + Math.random() * 3, Math.random() * Math.PI * 2, 0.85);
+  flash();
+});
+
+resizeCanvas();
+updateRect();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>
