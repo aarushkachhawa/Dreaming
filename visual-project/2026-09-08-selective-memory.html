@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Selective Memory — Night 37</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05060a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #flash {
+    position: fixed; inset: 0; background: #fff; opacity: 0;
+    pointer-events: none; z-index: 1;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="caption">Selective Memory &mdash; Night 37 &mdash; move to focus refinement &middot; click to peek a true patch</div>
+<script>
+(function(){
+'use strict';
+// A thirty-seventh technique, and the first governed by selection against
+// a measured error rather than a rule, a field, a swarm, a grammar, or a
+// hand-tuned interactive parameter — a (1+1) evolutionary strategy, the
+// mechanism behind Roger Alsing's famous experiment reconstructing the
+// Mona Lisa out of fifty semi-transparent polygons. Every other night
+// here runs a process forward and looks at what it becomes; this one
+// runs a single lineage of one candidate picture, mutates a clone of it
+// at random — nudge a vertex, tint a color, add or remove a shape,
+// swap two layers' draw order — renders that clone at a tiny scale no
+// bigger than a postage stamp, and compares it pixel by pixel against a
+// hidden target scene nobody ever shows the viewer directly. If the
+// mutation's error is lower, the clone replaces the original outright;
+// if not, it is simply thrown away and never influences anything again.
+// There is no population, no crossover, no fitness proportional to
+// anything except a single number getting smaller — the closest relative
+// in this project's own history is night 22's fractal-flame chaos game,
+// which also renders through iteration, but that iteration searches
+// nothing and answers to no target; every accepted change here has to
+// have earned its place by literally looking more like the thing it is
+// blindly trying to remember. Early on the mutation step is enormous —
+// whole polygons lurch across a third of the canvas, colors swing wildly
+// — so the picture finds its coarse composition, sky from hill, light
+// from dark, in seconds; that step anneals down over the following
+// minutes the way simulated annealing cools, so what starts as blocking
+// in shapes ends as nudging a single vertex by a hair's width, chasing
+// diminishing error into fine detail no one mutation could have found on
+// its own. The hidden target itself is a small generated nightscape —
+// gradient sky, a soft-glowing moon, a scatter of stars, two or three
+// silhouetted hill ridges — regenerated from scratch every few minutes,
+// different each time, so the lineage is always chasing a dream it has
+// never actually seen and can only approach by trial, error, and the
+// occasional lucky mutation that survives. Move the cursor to spend the
+// mutation budget near it instead of scattering it uniformly across the
+// whole canvas, so whatever region holds your attention sharpens first
+// while the rest stays rough; click to cheat, once, exactly there —
+// sampling the true hidden color at that point and planting a patch of
+// it directly into the lineage without waiting for chance to find it,
+// the one moment this blind process is allowed to peek. When the error
+// stops falling, or a few minutes have passed, the reconstruction holds
+// still, the true scene fades up underneath it so you can see exactly
+// how close a few dozen polygons got, and then the whole canvas dissolves
+// to black and a fresh dream begins from nothing but a single flat guess
+// at the average color of what it hasn't met yet. Open the file directly
+// in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var flashEl = document.getElementById('flash');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var EVAL_AREA = 6000;
+var MAX_POLYS = 60, MIN_POLYS = 1;
+var SIGMA_START = 0.42, SIGMA_END = 0.014;
+var ANNEAL_MS = 95000;
+var MIN_EPOCH_MS = 42000;
+var EPOCH_MAX_MS = 165000;
+var PLATEAU_MS = 24000;
+var TRIALS_PER_FRAME = 4;
+var REVEAL_MS = 1500, HOLD_MS = 1900, FADE_MS = 1200;
+
+var width = 0, height = 0;
+var evalW = 0, evalH = 0;
+
+var genomeEvalCanvas, genomeEvalCtx;
+var targetEvalCanvas, targetEvalCtx, targetEvalData = null;
+var targetDisplayCanvas, targetDisplayCtx;
+
+var sceneParams = null;
+var bestGenome = null, bestError = Infinity;
+var lastImproveTime = 0;
+var epochStart = 0;
+
+var STATE_EVOLVE = 0, STATE_REVEAL = 1, STATE_HOLD = 2, STATE_FADE = 3;
+var state = STATE_EVOLVE;
+var revealStart = 0, holdStart = 0, fadeStart = 0;
+
+var mouseX = 0, mouseY = 0, mouseActive = false;
+var rect = null;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function clamp01(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+function generateSceneParams(){
+  var hue = 200 + Math.random() * 70;
+  var horizon = 0.60 + Math.random() * 0.12;
+  var moon = {
+    x: 0.15 + Math.random() * 0.7,
+    y: 0.10 + Math.random() * 0.18,
+    r: 0.035 + Math.random() * 0.022
+  };
+  var stars = [];
+  var starCount = 70 + ((Math.random() * 70) | 0);
+  for(var i = 0; i < starCount; i++){
+    stars.push({
+      x: Math.random(),
+      y: Math.random() * horizon * 0.92,
+      r: 0.0008 + Math.random() * 0.0016,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+  var hillCount = 2 + ((Math.random() * 2) | 0);
+  var hills = [];
+  var baseTone = 205 + Math.random() * 45;
+  for(var h = 0; h < hillCount; h++){
+    var pts = [];
+    var n = 18;
+    var y0 = horizon + (h * (1 - horizon)) / (hillCount + 0.6) + Math.random() * 0.02;
+    var amp = 0.05 + Math.random() * 0.05;
+    var seedPhase = Math.random() * Math.PI * 2;
+    var freq1 = 1.4 + Math.random() * 1.4, freq2 = 3 + Math.random() * 3;
+    for(var i2 = 0; i2 <= n; i2++){
+      var xx = i2 / n;
+      var yy = y0 - amp * (0.6 * Math.sin(xx * Math.PI * freq1 + seedPhase) +
+                            0.4 * Math.sin(xx * Math.PI * freq2 + seedPhase * 1.7)) -
+                amp * 0.25 * (Math.random() - 0.5);
+      pts.push([xx, yy]);
+    }
+    hills.push({ pts: pts, light: 0.09 + h * 0.09 + Math.random() * 0.03, hue: baseTone + h * 8 });
+  }
+  return { hue: hue, horizon: horizon, moon: moon, stars: stars, hills: hills };
+}
+
+function drawScene(g, w, h, p, twinkleT){
+  var grad = g.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, 'hsl(' + p.hue + ',55%,8%)');
+  grad.addColorStop(clamp01(p.horizon), 'hsl(' + (p.hue + 20) + ',50%,16%)');
+  grad.addColorStop(1, 'hsl(' + (p.hue + 35) + ',40%,10%)');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, w, h);
+
+  var mx = p.moon.x * w, my = p.moon.y * h, mr = p.moon.r * Math.max(w, h);
+  var glow = g.createRadialGradient(mx, my, 0, mx, my, mr * 4);
+  glow.addColorStop(0, 'rgba(255,250,230,0.35)');
+  glow.addColorStop(1, 'rgba(255,250,230,0)');
+  g.fillStyle = glow;
+  g.beginPath(); g.arc(mx, my, mr * 4, 0, Math.PI * 2); g.fill();
+  g.fillStyle = '#fdf6e3';
+  g.beginPath(); g.arc(mx, my, mr, 0, Math.PI * 2); g.fill();
+
+  for(var i = 0; i < p.stars.length; i++){
+    var s = p.stars[i];
+    var tw = twinkleT ? (0.5 + 0.5 * Math.sin(twinkleT * 0.002 + s.phase)) : 1;
+    g.globalAlpha = 0.35 + 0.65 * tw;
+    g.fillStyle = '#fff';
+    g.beginPath(); g.arc(s.x * w, s.y * h, s.r * Math.max(w, h), 0, Math.PI * 2); g.fill();
+  }
+  g.globalAlpha = 1;
+
+  for(var hI = 0; hI < p.hills.length; hI++){
+    var layer = p.hills[hI];
+    g.fillStyle = 'hsl(' + layer.hue + ',35%,' + (layer.light * 100) + '%)';
+    g.beginPath();
+    g.moveTo(0, h);
+    for(var j = 0; j < layer.pts.length; j++) g.lineTo(layer.pts[j][0] * w, layer.pts[j][1] * h);
+    g.lineTo(w, h);
+    g.closePath();
+    g.fill();
+  }
+}
+
+function newRandomPolygon(cx, cy, scale, colorHint){
+  var n = 3 + ((Math.random() * 4) | 0);
+  var pts = [];
+  var baseAng = Math.random() * Math.PI * 2;
+  for(var i = 0; i < n; i++){
+    var ang = baseAng + (i / n) * Math.PI * 2 + (Math.random() - 0.5) * 0.6;
+    var rad = scale * (0.4 + Math.random() * 0.6);
+    pts.push([clamp01(cx + Math.cos(ang) * rad), clamp01(cy + Math.sin(ang) * rad)]);
+  }
+  var col = colorHint || [(Math.random() * 255) | 0, (Math.random() * 255) | 0, (Math.random() * 255) | 0];
+  return { pts: pts, color: [col[0], col[1], col[2], 0.15 + Math.random() * 0.35] };
+}
+
+function cloneGenome(gm){
+  return gm.map(function(poly){
+    return { pts: poly.pts.map(function(p){ return [p[0], p[1]]; }), color: poly.color.slice() };
+  });
+}
+
+function initGenome(bg){
+  return [{ pts: [[0, 0], [1, 0], [1, 1], [0, 1]], color: [bg[0], bg[1], bg[2], 1] }];
+}
+
+function pickNearestVertex(gm, cx, cy){
+  var best = null, bd = Infinity;
+  for(var gi = 1; gi < gm.length; gi++){
+    var poly = gm[gi];
+    for(var vi = 0; vi < poly.pts.length; vi++){
+      var dx = poly.pts[vi][0] - cx, dy = poly.pts[vi][1] - cy;
+      var d = dx * dx + dy * dy;
+      if(d < bd){ bd = d; best = { gi: gi, vi: vi }; }
+    }
+  }
+  return best;
+}
+
+function mutate(gm, sigma, cursor){
+  var g = cloneGenome(gm);
+  var r = Math.random();
+  var useCursor = !!cursor && Math.random() < 0.55;
+  var cx = useCursor ? cursor.x : Math.random();
+  var cy = useCursor ? cursor.y : Math.random();
+
+  if(r < 0.12 && g.length < MAX_POLYS){
+    var scale = 0.05 + 0.35 * (sigma / SIGMA_START);
+    g.push(newRandomPolygon(cx, cy, scale));
+  } else if(r < 0.18 && g.length > MIN_POLYS + 1){
+    g.splice(1 + ((Math.random() * (g.length - 1)) | 0), 1);
+  } else if(r < 0.22 && g.length > 2){
+    var a = 1 + ((Math.random() * (g.length - 1)) | 0);
+    var b = 1 + ((Math.random() * (g.length - 1)) | 0);
+    var tmp = g[a]; g[a] = g[b]; g[b] = tmp;
+  } else if(r < 0.76){
+    var vt = useCursor ? pickNearestVertex(g, cx, cy) : null;
+    var gi = vt ? vt.gi : (g.length > 1 ? 1 + ((Math.random() * (g.length - 1)) | 0) : 0);
+    var poly = g[gi];
+    var vi = vt ? vt.vi : ((Math.random() * poly.pts.length) | 0);
+    poly.pts[vi][0] = clamp01(poly.pts[vi][0] + (Math.random() - 0.5) * sigma);
+    poly.pts[vi][1] = clamp01(poly.pts[vi][1] + (Math.random() - 0.5) * sigma);
+  } else if(r < 0.93){
+    var gi2 = (Math.random() * g.length) | 0;
+    var poly2 = g[gi2];
+    var ch = (Math.random() * 3) | 0;
+    poly2.color[ch] = clamp(poly2.color[ch] + (Math.random() - 0.5) * sigma * 500, 0, 255);
+  } else {
+    var gi3 = (Math.random() * g.length) | 0;
+    g[gi3].color[3] = clamp(g[gi3].color[3] + (Math.random() - 0.5) * sigma * 0.9, 0.03, 1);
+  }
+  return g;
+}
+
+function renderGenome(g, gm, w, h){
+  g.clearRect(0, 0, w, h);
+  for(var i = 0; i < gm.length; i++){
+    var poly = gm[i];
+    var c = poly.color;
+    g.fillStyle = 'rgba(' + (c[0] | 0) + ',' + (c[1] | 0) + ',' + (c[2] | 0) + ',' + c[3] + ')';
+    g.beginPath();
+    for(var j = 0; j < poly.pts.length; j++){
+      var x = poly.pts[j][0] * w, y = poly.pts[j][1] * h;
+      if(j === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.closePath();
+    g.fill();
+  }
+}
+
+function computeError(gm){
+  renderGenome(genomeEvalCtx, gm, evalW, evalH);
+  var data = genomeEvalCtx.getImageData(0, 0, evalW, evalH).data;
+  var sum = 0;
+  for(var i = 0; i < data.length; i += 4){
+    var dr = data[i] - targetEvalData[i];
+    var dgc = data[i + 1] - targetEvalData[i + 1];
+    var db = data[i + 2] - targetEvalData[i + 2];
+    sum += dr * dr + dgc * dgc + db * db;
+  }
+  return sum;
+}
+
+function averageEvalColor(){
+  var r = 0, gg = 0, b = 0, n = evalW * evalH;
+  for(var i = 0; i < targetEvalData.length; i += 4){
+    r += targetEvalData[i]; gg += targetEvalData[i + 1]; b += targetEvalData[i + 2];
+  }
+  return [r / n, gg / n, b / n];
+}
+
+function startNewEpoch(now){
+  sceneParams = generateSceneParams();
+  drawScene(targetEvalCtx, evalW, evalH, sceneParams, 0);
+  targetEvalData = targetEvalCtx.getImageData(0, 0, evalW, evalH).data.slice();
+  var bg = averageEvalColor();
+  bestGenome = initGenome(bg);
+  bestError = computeError(bestGenome);
+  epochStart = now;
+  lastImproveTime = now;
+  state = STATE_EVOLVE;
+}
+
+function startReveal(now){
+  state = STATE_REVEAL;
+  revealStart = now;
+}
+
+function frame(now){
+  if(state === STATE_EVOLVE){
+    var elapsed = now - epochStart;
+    var sigma = lerp(SIGMA_START, SIGMA_END, clamp(elapsed / ANNEAL_MS, 0, 1));
+    var cursor = mouseActive ? { x: clamp01(mouseX / width), y: clamp01(mouseY / height) } : null;
+    for(var t = 0; t < TRIALS_PER_FRAME; t++){
+      var candidate = mutate(bestGenome, sigma, cursor);
+      var err = computeError(candidate);
+      if(err < bestError){
+        bestGenome = candidate;
+        bestError = err;
+        lastImproveTime = now;
+      }
+    }
+    renderGenome(ctx, bestGenome, width, height);
+    if(elapsed > EPOCH_MAX_MS || (elapsed > MIN_EPOCH_MS && now - lastImproveTime > PLATEAU_MS)){
+      startReveal(now);
+    }
+  } else if(state === STATE_REVEAL){
+    var rt = clamp((now - revealStart) / REVEAL_MS, 0, 1);
+    renderGenome(ctx, bestGenome, width, height);
+    drawScene(targetDisplayCtx, width, height, sceneParams, now);
+    ctx.globalAlpha = rt;
+    ctx.drawImage(targetDisplayCanvas, 0, 0);
+    ctx.globalAlpha = 1;
+    if(rt >= 1){ state = STATE_HOLD; holdStart = now; }
+  } else if(state === STATE_HOLD){
+    drawScene(targetDisplayCtx, width, height, sceneParams, now);
+    ctx.drawImage(targetDisplayCanvas, 0, 0);
+    if(now - holdStart > HOLD_MS){ state = STATE_FADE; fadeStart = now; }
+  } else if(state === STATE_FADE){
+    var ft = clamp((now - fadeStart) / FADE_MS, 0, 1);
+    drawScene(targetDisplayCtx, width, height, sceneParams, now);
+    ctx.drawImage(targetDisplayCanvas, 0, 0);
+    ctx.fillStyle = 'rgba(0,0,0,' + ft + ')';
+    ctx.fillRect(0, 0, width, height);
+    if(ft >= 1) startNewEpoch(now);
+  }
+  requestAnimationFrame(frame);
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  var aspect = width / height;
+  evalW = clamp(Math.round(Math.sqrt(EVAL_AREA * aspect)), 40, 160);
+  evalH = clamp(Math.round(evalW / aspect), 24, 110);
+
+  genomeEvalCanvas = document.createElement('canvas');
+  genomeEvalCanvas.width = evalW; genomeEvalCanvas.height = evalH;
+  genomeEvalCtx = genomeEvalCanvas.getContext('2d', { willReadFrequently: true });
+
+  targetEvalCanvas = document.createElement('canvas');
+  targetEvalCanvas.width = evalW; targetEvalCanvas.height = evalH;
+  targetEvalCtx = targetEvalCanvas.getContext('2d', { willReadFrequently: true });
+
+  targetDisplayCanvas = document.createElement('canvas');
+  targetDisplayCanvas.width = Math.round(width);
+  targetDisplayCanvas.height = Math.round(height);
+  targetDisplayCtx = targetDisplayCanvas.getContext('2d');
+
+  startNewEpoch(performance.now());
+}
+
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){ resizeCanvas(); updateRect(); }, 150);
+});
+
+function flash(){
+  flashEl.style.transition = 'none';
+  flashEl.style.opacity = '0.22';
+  requestAnimationFrame(function(){
+    flashEl.style.transition = 'opacity 0.7s ease';
+    flashEl.style.opacity = '0';
+  });
+}
+
+function updateRect(){ rect = canvas.getBoundingClientRect(); }
+
+canvas.addEventListener('pointermove', function(e){
+  if(!rect) updateRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  mouseActive = true;
+});
+canvas.addEventListener('pointerleave', function(){ mouseActive = false; });
+canvas.addEventListener('pointerdown', function(e){
+  if(!rect) updateRect();
+  if(state !== STATE_EVOLVE) return;
+  var x = clamp01((e.clientX - rect.left) / width);
+  var y = clamp01((e.clientY - rect.top) / height);
+  var ex = clamp(Math.round(x * (evalW - 1)), 0, evalW - 1);
+  var ey = clamp(Math.round(y * (evalH - 1)), 0, evalH - 1);
+  var idx = (ey * evalW + ex) * 4;
+  var trueColor = [targetEvalData[idx], targetEvalData[idx + 1], targetEvalData[idx + 2]];
+  var g = cloneGenome(bestGenome);
+  g.push(newRandomPolygon(x, y, 0.07, trueColor));
+  bestGenome = g;
+  bestError = computeError(bestGenome);
+  lastImproveTime = performance.now();
+  flash();
+});
+
+resizeCanvas();
+updateRect();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,52 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-08** — `2026-09-08-selective-memory.html`: a thirty-seventh
+  technique, and the first governed by selection against a measured error
+  rather than a rule, a field, a swarm, a grammar, or a hand-tuned
+  interactive parameter — a (1+1) evolutionary strategy, the mechanism
+  behind Roger Alsing's famous experiment reconstructing the Mona Lisa out
+  of fifty semi-transparent polygons. Every other night here runs a
+  process forward and looks at what it becomes; this one runs a single
+  lineage of one candidate picture, mutates a clone of it at random —
+  nudge a vertex, tint a color, add or remove a shape, swap two layers'
+  draw order — renders that clone at a tiny scale no bigger than a
+  postage stamp, and compares it pixel by pixel against a hidden target
+  scene nobody ever shows the viewer directly. If the mutation's error is
+  lower, the clone replaces the original outright; if not, it is simply
+  thrown away and never influences anything again. There is no
+  population, no crossover, no fitness proportional to anything except a
+  single number getting smaller — the closest relative in this project's
+  own history is night 22's fractal-flame chaos game, which also renders
+  through iteration, but that iteration searches nothing and answers to
+  no target; every accepted change here has to have earned its place by
+  literally looking more like the thing it is blindly trying to
+  remember. Early on the mutation step is enormous — whole polygons
+  lurch across a third of the canvas, colors swing wildly — so the
+  picture finds its coarse composition, sky from hill, light from dark,
+  in seconds; that step anneals down over the following minutes the way
+  simulated annealing cools, so what starts as blocking in shapes ends
+  as nudging a single vertex by a hair's width, chasing diminishing
+  error into fine detail no one mutation could have found on its own.
+  The hidden target itself is a small generated nightscape — gradient
+  sky, a soft-glowing moon, a scatter of stars, two or three silhouetted
+  hill ridges — regenerated from scratch every few minutes, different
+  each time, so the lineage is always chasing a dream it has never
+  actually seen and can only approach by trial, error, and the
+  occasional lucky mutation that survives. Move the cursor to spend the
+  mutation budget near it instead of scattering it uniformly across the
+  whole canvas, so whatever region holds your attention sharpens first
+  while the rest stays rough; click to cheat, once, exactly there —
+  sampling the true hidden color at that point and planting a patch of
+  it directly into the lineage without waiting for chance to find it,
+  the one moment this blind process is allowed to peek. When the error
+  stops falling, or a few minutes have passed, the reconstruction holds
+  still, the true scene fades up underneath it so you can see exactly
+  how close a few dozen polygons got, and then the whole canvas
+  dissolves to black and a fresh dream begins from nothing but a single
+  flat guess at the average color of what it hasn't met yet. Open the
+  file directly in a browser.
+
 - **2026-09-07** — `2026-09-07-soft-orbium.html`: a thirty-sixth technique,
   and the first governed by a smooth, integrator dynamic rather than a
   discrete replacement rule — Lenia (Bert Chan, 2018), the continuous
