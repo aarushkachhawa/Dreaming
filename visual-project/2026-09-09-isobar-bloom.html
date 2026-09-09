@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Isobar Bloom — Night 38</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #060608;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Isobar Bloom &mdash; Night 38 &mdash; move to draw, click to pin a source, hold to drain one away</div>
+<script>
+(function(){
+'use strict';
+// A thirty-eighth technique, and the first that draws a boundary rather
+// than filling a region, coloring a cell, advancing a front, or rendering
+// a signed distance per pixel — marching squares, the 1987 contouring
+// algorithm (Lorensen and Cline's marching cubes, one dimension down) that
+// turns a scalar field sampled on a coarse grid into an exact geometric
+// polygon wherever that field crosses a threshold. A dozen or so drifting
+// point sources each spend a metaball's classic falloff, radius squared
+// over distance squared, into a shared field; every grid cell's four
+// corners are sampled against that field, the pattern of which corners sit
+// above the threshold and which below is looked up against one of sixteen
+// fixed cases, and the exact crossing point along each of the cell's four
+// edges is found by linear interpolation between the two corner values —
+// not stepped, not guessed, solved. No other night here has separated
+// sampling from drawing this cleanly: nights 11, 14, 16, 25, and 36 all
+// colored a cell by its own state directly, and night 23's raymarcher
+// samples a distance function once per pixel with no intermediate mesh at
+// all, but here the grid is sampled once, coarsely, and every polygon edge
+// in the final image is manufactured after the fact from four numbers and
+// a table, at a resolution the underlying sample grid never had. Where two
+// sources drift close enough that their fields overlap, the contour
+// doesn't intersect or occlude the way two circles drawn on top of each
+// other would — it fuses into one soft, continuous meniscus, because the
+// field itself has already summed by the time marching squares ever sees
+// it; where a source drifts back off alone, the same boundary pinches at a
+// single interior cell and splits cleanly into two, a topology change the
+// algorithm never has to be told about, only re-run. Three nested
+// thresholds are traced every frame from the same field, not three
+// separate fields, so a bright core, a mid glow, and a faint outer skin
+// share exactly one silhouette at three depths, colored by whichever
+// source dominates the field at each polygon's centroid, warm where one
+// source wins outright and blended through the seam where two contest it
+// evenly. Move the cursor to add one more source, weaker and always
+// dissolving, so the field ripples and merges wherever attention rests
+// without ever leaving a permanent mark; click to convert that transient
+// pull into a real source that stays and drifts on its own, up to a
+// working limit, past which the oldest planted source is retired to make
+// room; hold the pointer down to instead drain the nearest planted source,
+// shrinking its radius toward nothing until marching squares quietly stops
+// finding it at all. Left alone the sources wander on independent drifting
+// paths, softly repelling anything they pass too close to, bounded to the
+// canvas by a force that only ever pushes inward. Open the file directly
+// in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var CELL = 7;
+var THRESHOLDS = [2.6, 1.55, 0.95];
+var THRESHOLD_ALPHA = [0.85, 0.45, 0.18];
+var MAX_SOURCES = 13;
+var MIN_SOURCES = 6;
+
+var width = 0, height = 0, cols = 0, rows = 0;
+var sources = [];
+var cursorSource = null;
+var drainTarget = null;
+var mouseX = 0, mouseY = 0, mouseActive = false;
+var rect = null;
+var field = null; // Float32Array (cols+1)*(rows+1)
+var owner = null;  // Int16Array same size, index of dominant source
+
+function rand(a, b){ return a + Math.random() * (b - a); }
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+
+function makeSource(x, y, r, hue, transient){
+  return {
+    x: x, y: y,
+    vx: rand(-14, 14), vy: rand(-14, 14),
+    r: r, targetR: r,
+    hue: hue,
+    transient: !!transient,
+    born: performance.now(),
+    heading: rand(0, Math.PI * 2)
+  };
+}
+
+function spawnSource(){
+  var hue = rand(0, 360);
+  return makeSource(rand(width * 0.15, width * 0.85), rand(height * 0.15, height * 0.85),
+    rand(46, 78), hue, false);
+}
+
+function initSources(){
+  sources = [];
+  var n = ((MIN_SOURCES + MAX_SOURCES) / 2) | 0;
+  for(var i = 0; i < n; i++) sources.push(spawnSource());
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cols = Math.ceil(width / CELL);
+  rows = Math.ceil(height / CELL);
+  field = new Float32Array((cols + 1) * (rows + 1));
+  owner = new Int16Array((cols + 1) * (rows + 1));
+  if(sources.length === 0) initSources();
+}
+
+function fieldAt(x, y, dominantOut){
+  var v = 0, best = -1, bestC = 0;
+  for(var i = 0; i < sources.length; i++){
+    var s = sources[i];
+    var dx = x - s.x, dy = y - s.y;
+    var d2 = dx * dx + dy * dy;
+    var c = (s.r * s.r) / (d2 + 1);
+    v += c;
+    if(c > bestC){ bestC = c; best = i; }
+  }
+  if(dominantOut) dominantOut.i = best;
+  return v;
+}
+
+function sampleField(){
+  var domOut = { i: -1 };
+  for(var gy = 0; gy <= rows; gy++){
+    var y = gy * CELL;
+    var rowOff = gy * (cols + 1);
+    for(var gx = 0; gx <= cols; gx++){
+      var x = gx * CELL;
+      var v = fieldAt(x, y, domOut);
+      field[rowOff + gx] = v;
+      owner[rowOff + gx] = domOut.i;
+    }
+  }
+}
+
+function lerpPt(x0, y0, v0, x1, y1, v1, thresh){
+  var t = Math.abs(v1 - v0) < 1e-6 ? 0.5 : (thresh - v0) / (v1 - v0);
+  t = clamp(t, 0, 1);
+  return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t];
+}
+
+function addPoly(buckets, ownerIdx, poly){
+  var b = buckets[ownerIdx];
+  if(!b){ b = buckets[ownerIdx] = new Path2D(); }
+  b.moveTo(poly[0][0], poly[0][1]);
+  for(var v = 1; v < poly.length; v++) b.lineTo(poly[v][0], poly[v][1]);
+  b.closePath();
+}
+
+// Marching squares over the sampled grid for one threshold. Rather than
+// collecting individual fill polygons (one canvas fill() call per grid
+// cell would be ruinously slow at this resolution), every cell's polygon
+// is appended as a subpath into a Path2D bucketed by whichever source
+// dominates that cell, so the whole threshold resolves to a small handful
+// of fill() calls, one per contributing source, each covering many cells
+// at once.
+function marchThreshold(thresh, buckets){
+  for(var gy = 0; gy < rows; gy++){
+    var y0 = gy * CELL, y1 = y0 + CELL;
+    var rowA = gy * (cols + 1), rowB = rowA + (cols + 1);
+    var runOwner = -2, runStartGx = -1;
+    for(var gx = 0; gx < cols; gx++){
+      var x0 = gx * CELL, x1 = x0 + CELL;
+      var vTL = field[rowA + gx],     vTR = field[rowA + gx + 1];
+      var vBL = field[rowB + gx],     vBR = field[rowB + gx + 1];
+      var iTL = vTL > thresh ? 1 : 0, iTR = vTR > thresh ? 1 : 0;
+      var iBL = vBL > thresh ? 1 : 0, iBR = vBR > thresh ? 1 : 0;
+      var caseIdx = (iTL << 3) | (iTR << 2) | (iBR << 1) | iBL;
+
+      var dominant = owner[rowA + gx];
+      if(dominant < 0) dominant = sources.length; // fallback bucket, shouldn't normally hit
+
+      // Interior (fully-covered) cells never need a contour at all, so
+      // consecutive same-owner runs of them collapse into a single wide
+      // rectangle instead of one Path2D subpath per grid cell.
+      if(caseIdx === 15 && dominant === runOwner){
+        continue;
+      }
+      if(runOwner !== -2){
+        addPoly(buckets, runOwner, [[runStartGx * CELL, y0], [x0, y0], [x0, y1], [runStartGx * CELL, y1]]);
+        runOwner = -2;
+      }
+      if(caseIdx === 15){
+        runOwner = dominant;
+        runStartGx = gx;
+        continue;
+      }
+      if(caseIdx === 0) continue;
+
+      var TL = [x0, y0], TR = [x1, y0], BL = [x0, y1], BR = [x1, y1];
+      var T = lerpPt(x0, y0, vTL, x1, y0, vTR, thresh);
+      var R = lerpPt(x1, y0, vTR, x1, y1, vBR, thresh);
+      var Bm = lerpPt(x0, y1, vBL, x1, y1, vBR, thresh);
+      var L = lerpPt(x0, y0, vTL, x0, y1, vBL, thresh);
+
+      var polys = null;
+      switch(caseIdx){
+        case 1:  polys = [[BL, Bm, L]]; break;
+        case 2:  polys = [[Bm, BR, R]]; break;
+        case 3:  polys = [[L, BL, BR, R]]; break;
+        case 4:  polys = [[R, TR, T]]; break;
+        case 5: {
+          var center5 = (vTL + vTR + vBL + vBR) / 4;
+          polys = center5 > thresh ? [[T, TR, R, Bm, BL, L]] : [[BL, Bm, L], [T, TR, R]];
+          break;
+        }
+        case 6:  polys = [[T, TR, BR, Bm]]; break;
+        case 7:  polys = [[T, TR, BR, BL, L]]; break;
+        case 8:  polys = [[L, TL, T]]; break;
+        case 9:  polys = [[T, TL, BL, Bm]]; break;
+        case 10: {
+          var center10 = (vTL + vTR + vBL + vBR) / 4;
+          polys = center10 > thresh ? [[T, TL, L, Bm, BR, R]] : [[T, TL, L], [Bm, BR, R]];
+          break;
+        }
+        case 11: polys = [[T, TL, BL, BR, R]]; break;
+        case 12: polys = [[L, TL, TR, R]]; break;
+        case 13: polys = [[Bm, BL, TL, TR, R]]; break;
+        case 14: polys = [[L, TL, TR, BR, Bm]]; break;
+      }
+      if(!polys) continue;
+      for(var pI = 0; pI < polys.length; pI++){
+        addPoly(buckets, dominant, polys[pI]);
+      }
+    }
+    if(runOwner !== -2){
+      addPoly(buckets, runOwner, [[runStartGx * CELL, y0], [cols * CELL, y0], [cols * CELL, y1], [runStartGx * CELL, y1]]);
+    }
+  }
+}
+
+function stepSources(dt, now){
+  for(var i = sources.length - 1; i >= 0; i--){
+    var s = sources[i];
+    if(s.transient){
+      s.targetR *= 0.9;
+      if(s.targetR < 4){ sources.splice(i, 1); continue; }
+    }
+    if(s === drainTarget){
+      s.targetR -= 60 * dt;
+      if(s.targetR < 4){
+        sources.splice(i, 1);
+        if(drainTarget === s) drainTarget = null;
+        continue;
+      }
+    }
+    s.r += (s.targetR - s.r) * Math.min(1, dt * 3);
+
+    // slow random-walk heading keeps every source meandering forever
+    if(!s.transient){
+      s.heading += rand(-1.1, 1.1) * dt;
+      s.vx += Math.cos(s.heading) * 9 * dt;
+      s.vy += Math.sin(s.heading) * 9 * dt;
+    }
+
+    // mutual soft repulsion
+    for(var j = 0; j < sources.length; j++){
+      if(j === i) continue;
+      var o = sources[j];
+      var dx = s.x - o.x, dy = s.y - o.y;
+      var d2 = dx * dx + dy * dy;
+      var minD = (s.r + o.r) * 0.9;
+      if(d2 < minD * minD && d2 > 0.01){
+        var d = Math.sqrt(d2);
+        var push = (minD - d) / minD * 40;
+        s.vx += (dx / d) * push * dt;
+        s.vy += (dy / d) * push * dt;
+      }
+    }
+
+    // gentle inward containment
+    var margin = 60;
+    if(s.x < margin) s.vx += (margin - s.x) * 0.8 * dt;
+    if(s.x > width - margin) s.vx -= (s.x - (width - margin)) * 0.8 * dt;
+    if(s.y < margin) s.vy += (margin - s.y) * 0.8 * dt;
+    if(s.y > height - margin) s.vy -= (s.y - (height - margin)) * 0.8 * dt;
+
+    s.vx *= 0.985;
+    s.vy *= 0.985;
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
+    s.x = clamp(s.x, -40, width + 40);
+    s.y = clamp(s.y, -40, height + 40);
+  }
+
+  if(mouseActive){
+    if(!cursorSource){
+      cursorSource = makeSource(mouseX, mouseY, 0, rand(0, 360), true);
+      sources.push(cursorSource);
+    }
+    cursorSource.x = mouseX;
+    cursorSource.y = mouseY;
+    cursorSource.vx = 0; cursorSource.vy = 0;
+    cursorSource.targetR = 50;
+    if(cursorSource.r < 48) cursorSource.r += (50 - cursorSource.r) * Math.min(1, dt * 6);
+  } else {
+    cursorSource = null;
+  }
+
+  if(sources.length < MIN_SOURCES && Math.random() < dt * 0.2){
+    sources.push(spawnSource());
+  }
+  if(sources.length > MAX_SOURCES){
+    var oldestIdx = -1, oldestT = Infinity;
+    for(var k = 0; k < sources.length; k++){
+      if(sources[k].transient || sources[k] === drainTarget) continue;
+      if(sources[k].born < oldestT){ oldestT = sources[k].born; oldestIdx = k; }
+    }
+    if(oldestIdx >= 0) sources.splice(oldestIdx, 1);
+  }
+}
+
+var lastTime = 0;
+function frame(now){
+  var dt = lastTime ? Math.min((now - lastTime) / 1000, 0.05) : 0.016;
+  lastTime = now;
+
+  stepSources(dt, now);
+  sampleField();
+
+  ctx.fillStyle = '#060608';
+  ctx.fillRect(0, 0, width, height);
+  ctx.globalCompositeOperation = 'lighter';
+
+  for(var t = 0; t < THRESHOLDS.length; t++){
+    var buckets = new Array(sources.length + 1);
+    marchThreshold(THRESHOLDS[t], buckets);
+    var l = 30 + (t === 0 ? 30 : (t === 1 ? 10 : 0));
+    for(var b = 0; b < buckets.length; b++){
+      if(!buckets[b]) continue;
+      var hue = (b < sources.length && sources[b]) ? sources[b].hue : 200;
+      ctx.fillStyle = 'hsla(' + hue + ', 80%, ' + l + '%, ' + THRESHOLD_ALPHA[t] + ')';
+      ctx.fill(buckets[b]);
+    }
+  }
+
+  ctx.globalCompositeOperation = 'source-over';
+  requestAnimationFrame(frame);
+}
+
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){ resizeCanvas(); updateRect(); }, 150);
+});
+
+function updateRect(){ rect = canvas.getBoundingClientRect(); }
+
+function nearestSource(x, y){
+  var best = null, bd = Infinity;
+  for(var i = 0; i < sources.length; i++){
+    if(sources[i].transient) continue;
+    var dx = sources[i].x - x, dy = sources[i].y - y;
+    var d = dx * dx + dy * dy;
+    if(d < bd){ bd = d; best = sources[i]; }
+  }
+  return best;
+}
+
+canvas.addEventListener('pointermove', function(e){
+  if(!rect) updateRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  mouseActive = true;
+});
+canvas.addEventListener('pointerleave', function(){
+  mouseActive = false;
+  drainTarget = null;
+});
+canvas.addEventListener('pointerdown', function(e){
+  if(!rect) updateRect();
+  var x = e.clientX - rect.left, y = e.clientY - rect.top;
+  var near = nearestSource(x, y);
+  if(near){
+    var dx = near.x - x, dy = near.y - y;
+    if(dx * dx + dy * dy < near.r * near.r){
+      drainTarget = near;
+      return;
+    }
+  }
+  if(cursorSource && sources.length < MAX_SOURCES + 1){
+    cursorSource.transient = false;
+    cursorSource.born = performance.now();
+    cursorSource.targetR = rand(46, 78);
+    cursorSource = null;
+  }
+});
+canvas.addEventListener('pointerup', function(){
+  drainTarget = null;
+});
+
+resizeCanvas();
+updateRect();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>

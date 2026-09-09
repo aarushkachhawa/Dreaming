@@ -24,6 +24,50 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-09** — `2026-09-09-isobar-bloom.html`: a thirty-eighth
+  technique, and the first that draws a boundary rather than filling a
+  region, coloring a cell, advancing a front, or rendering a signed
+  distance per pixel — marching squares, the 1987 contouring algorithm
+  (Lorensen and Cline's marching cubes, one dimension down) that turns a
+  scalar field sampled on a coarse grid into an exact geometric polygon
+  wherever that field crosses a threshold. A dozen or so drifting point
+  sources each spend a metaball's classic falloff, radius squared over
+  distance squared, into a shared field; every grid cell's four corners
+  are sampled against that field, the pattern of which corners sit above
+  the threshold and which below is looked up against one of sixteen fixed
+  cases, and the exact crossing point along each of the cell's four edges
+  is found by linear interpolation between the two corner values — not
+  stepped, not guessed, solved. No other night here has separated
+  sampling from drawing this cleanly: nights 11, 14, 16, 25, and 36 all
+  colored a cell by its own state directly, and night 23's raymarcher
+  samples a distance function once per pixel with no intermediate mesh at
+  all, but here the grid is sampled once, coarsely, and every polygon
+  edge in the final image is manufactured after the fact from four
+  numbers and a table, at a resolution the underlying sample grid never
+  had. Where two sources drift close enough that their fields overlap,
+  the contour doesn't intersect or occlude the way two circles drawn on
+  top of each other would — it fuses into one soft, continuous meniscus,
+  because the field itself has already summed by the time marching
+  squares ever sees it; where a source drifts back off alone, the same
+  boundary pinches at a single interior cell and splits cleanly into two,
+  a topology change the algorithm never has to be told about, only
+  re-run. Three nested thresholds are traced every frame from the same
+  field, not three separate fields, so a bright core, a mid glow, and a
+  faint outer skin share exactly one silhouette at three depths, colored
+  by whichever source dominates the field at each polygon's centroid,
+  warm where one source wins outright and blended through the seam where
+  two contest it evenly. Move the cursor to add one more source, weaker
+  and always dissolving, so the field ripples and merges wherever
+  attention rests without ever leaving a permanent mark; click to convert
+  that transient pull into a real source that stays and drifts on its
+  own, up to a working limit, past which the oldest planted source is
+  retired to make room; hold the pointer down to instead drain the
+  nearest planted source, shrinking its radius toward nothing until
+  marching squares quietly stops finding it at all. Left alone the
+  sources wander on independent drifting paths, softly repelling
+  anything they pass too close to, bounded to the canvas by a force that
+  only ever pushes inward. Open the file directly in a browser.
+
 - **2026-09-08** — `2026-09-08-selective-memory.html`: a thirty-seventh
   technique, and the first governed by selection against a measured error
   rather than a rule, a field, a swarm, a grammar, or a hand-tuned
