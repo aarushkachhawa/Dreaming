@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Green and Ember — Night 38</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #07080a;
+    overflow: hidden;
+    cursor: none;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="base"></canvas>
+<canvas id="glow"></canvas>
+<div id="caption">Green and Ember &mdash; Night 38 &mdash; move to seed growth, click to strike lightning</div>
+<script>
+(() => {
+  // A thirty-eighth technique, and the first governed by a race between
+  // two separated timescales rather than a single rule, field, or force —
+  // the forest-fire model, proposed by Bak, Chen and Tang in 1990 as a
+  // second textbook example of self-organized criticality alongside their
+  // own sandpile, then sharpened by Drossel and Schwabl in 1992 into the
+  // form used here: bare ground sprouts a tree with a small probability
+  // p each tick, a tree with no burning neighbor is struck by lightning
+  // and ignites with a far smaller probability f, and any tree touching
+  // fire always catches. Night 25's sandpile released its avalanches by a
+  // hard local threshold, grains piling until a cell tips over; nothing
+  // here has a threshold at all — every ignition is a coin flip, and
+  // criticality falls out purely from p and f sitting orders of magnitude
+  // apart, slow growth patiently refilling a canopy that rare lightning
+  // then burns back down at every size at once, from a single scorched
+  // cell to a front that eats a quarter of the screen. Night 14's cyclic
+  // automaton produces rotating fronts that look like fire but are
+  // perfectly deterministic clocks; this is the opposite, a genuinely
+  // stochastic percolation front that only resembles a clock in how
+  // reliably it keeps recurring. A slowly rotating wind biases which way
+  // a burning cell's neighbors catch, elongating fronts downwind into
+  // tongues instead of clean circles the way real fire behaves, and
+  // every cell keeps two clocks of its own once it changes state —
+  // canopy color deepens from pale sprout green to dark pine as a tree
+  // ages, and a stand of ash glows warm ember-red for a few seconds after
+  // the flame moves on before cooling back to bare soil, ready to sprout
+  // again. Move the cursor to coax new growth in bare patches, like rain
+  // finding a clearing; click to strike a patch of canopy with lightning
+  // and watch the burn scar spread, crest, and start regrowing behind
+  // itself. Open the file directly in a browser.
+
+  const baseCanvas = document.getElementById('base');
+  const glowCanvas = document.getElementById('glow');
+  const baseCtx = baseCanvas.getContext('2d');
+  const glowCtx = glowCanvas.getContext('2d');
+
+  const off = document.createElement('canvas');
+  const offCtx = off.getContext('2d');
+
+  let W, H, DPR, nx, ny;
+  let state, nextState;         // 0 empty/soil, 1 tree, 2 burning
+  let treeAge, nextTreeAge;     // ticks since a cell became a tree
+  let burnAge, nextBurnAge;     // ticks since a cell ignited
+  let burnLife, nextBurnLife;   // randomized total burn duration for this fire
+  let sinceBurn;                // ticks since a cell last turned to ash (cosmetic glow)
+  let jitter;                   // per-cell static texture noise
+  let leftIdx, rightIdx, upIdx, downIdx;
+  let img;
+
+  const EMPTY = 0, TREE = 1, BURNING = 2;
+
+  // relative neighbor offsets and their travel direction unit vectors
+  // (fire moves from the burning neighbor toward the current cell, i.e.
+  // opposite the offset that names where the neighbor sits)
+  const NEIGH = [];
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const len = Math.sqrt(dx * dx + dy * dy);
+      NEIGH.push({ dx, dy, tx: -dx / len, ty: -dy / len });
+    }
+  }
+
+  function initGrid() {
+    nx = 200;
+    ny = Math.max(70, Math.min(150, Math.round(nx * (H / W))));
+    off.width = nx;
+    off.height = ny;
+    img = offCtx.createImageData(nx, ny);
+
+    const n = nx * ny;
+    state = new Uint8Array(n);
+    nextState = new Uint8Array(n);
+    treeAge = new Float32Array(n);
+    nextTreeAge = new Float32Array(n);
+    burnAge = new Float32Array(n);
+    nextBurnAge = new Float32Array(n);
+    burnLife = new Float32Array(n);
+    nextBurnLife = new Float32Array(n);
+    sinceBurn = new Float32Array(n).fill(9999);
+    jitter = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      jitter[i] = 0.85 + Math.random() * 0.3;
+      if (Math.random() < 0.35) {
+        state[i] = TREE;
+        treeAge[i] = Math.random() * 260;
+      }
+    }
+
+    leftIdx = new Int32Array(nx);
+    rightIdx = new Int32Array(nx);
+    for (let x = 0; x < nx; x++) {
+      leftIdx[x] = (x - 1 + nx) % nx;
+      rightIdx[x] = (x + 1) % nx;
+    }
+    upIdx = new Int32Array(ny);
+    downIdx = new Int32Array(ny);
+    for (let y = 0; y < ny; y++) {
+      upIdx[y] = (y - 1 + ny) % ny;
+      downIdx[y] = (y + 1) % ny;
+    }
+  }
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    for (const c of [baseCanvas, glowCanvas]) {
+      c.width = W * DPR;
+      c.height = H * DPR;
+    }
+    baseCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    glowCtx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    initGrid();
+  }
+
+  const GROW_P = 0.0026;      // bare ground sprouting a tree
+  const LIGHTNING_F = 0.000004; // spontaneous ignition of an untouched tree
+  const AGE_MATURE = 260;     // ticks to reach full canopy color
+  const ASH_LIFE = 55;        // ticks the ember afterglow takes to fade
+
+  let windAngle = 0;
+  const WIND_DRIFT = 0.00035;
+  const WIND_STRENGTH = 0.22;
+  const SPREAD_BASE = 0.32;
+
+  function step() {
+    windAngle += WIND_DRIFT;
+    const wx = Math.cos(windAngle), wy = Math.sin(windAngle);
+
+    for (let y = 0; y < ny; y++) {
+      const row = y * nx;
+      const rowU = upIdx[y] * nx, rowD = downIdx[y] * nx;
+      for (let x = 0; x < nx; x++) {
+        const i = row + x;
+        const s = state[i];
+
+        if (s === BURNING) {
+          const ba = burnAge[i] + 1;
+          if (ba >= burnLife[i]) {
+            nextState[i] = EMPTY;
+            nextTreeAge[i] = 0;
+            nextBurnAge[i] = 0;
+            sinceBurn[i] = 0;
+          } else {
+            nextState[i] = BURNING;
+            nextBurnAge[i] = ba;
+            nextBurnLife[i] = burnLife[i];
+          }
+          continue;
+        }
+
+        if (s === TREE) {
+          let ignited = false;
+          const l = leftIdx[x], r = rightIdx[x];
+          for (const nb of NEIGH) {
+            const nxx = nb.dx === -1 ? l : nb.dx === 1 ? r : x;
+            const nrow = nb.dy === -1 ? rowU : nb.dy === 1 ? rowD : row;
+            const ni = nrow + nxx;
+            // only a freshly-ignited neighbor gets a chance to spread the
+            // fire here — otherwise a long-burning front would re-roll
+            // ignition odds against this tree every tick it stays lit and
+            // spread would approach certainty instead of a single
+            // percolation trial per edge
+            if (state[ni] !== BURNING || burnAge[ni] !== 0) continue;
+            const dot = nb.tx * wx + nb.ty * wy;
+            const prob = Math.min(1, Math.max(0, SPREAD_BASE + WIND_STRENGTH * dot));
+            if (Math.random() < prob) { ignited = true; break; }
+          }
+          if (!ignited && Math.random() < LIGHTNING_F) ignited = true;
+
+          if (ignited) {
+            nextState[i] = BURNING;
+            nextBurnAge[i] = 0;
+            nextBurnLife[i] = 4 + Math.random() * 8;
+          } else {
+            nextState[i] = TREE;
+            nextTreeAge[i] = treeAge[i] + 1;
+          }
+          continue;
+        }
+
+        // EMPTY
+        if (Math.random() < GROW_P) {
+          nextState[i] = TREE;
+          nextTreeAge[i] = 0;
+        } else {
+          nextState[i] = EMPTY;
+        }
+      }
+    }
+
+    const n = nx * ny;
+    for (let i = 0; i < n; i++) {
+      if (state[i] !== EMPTY || nextState[i] !== EMPTY) sinceBurn[i] += 1;
+    }
+
+    [state, nextState] = [nextState, state];
+    [treeAge, nextTreeAge] = [nextTreeAge, treeAge];
+    [burnAge, nextBurnAge] = [nextBurnAge, burnAge];
+    [burnLife, nextBurnLife] = [nextBurnLife, burnLife];
+  }
+
+  const SOIL = [15, 11, 8];
+  const EMBER_ASH = [150, 74, 40];
+  const SPROUT = [142, 206, 98];
+  const CANOPY = [21, 82, 40];
+  const IGNITE = [255, 248, 214];
+  const MIDFIRE = [255, 128, 24];
+  const LATEFIRE = [162, 30, 10];
+
+  function lerp3(a, b, t, out, k) {
+    out[k] = a[0] + (b[0] - a[0]) * t;
+    out[k + 1] = a[1] + (b[1] - a[1]) * t;
+    out[k + 2] = a[2] + (b[2] - a[2]) * t;
+  }
+
+  function render() {
+    const data = img.data;
+    const n = nx * ny;
+    for (let i = 0, p = 0; i < n; i++, p += 4) {
+      const s = state[i];
+      const j = jitter[i];
+      if (s === BURNING) {
+        const t = burnLife[i] > 0 ? burnAge[i] / burnLife[i] : 0;
+        if (t < 0.35) {
+          lerp3(IGNITE, MIDFIRE, t / 0.35, data, p);
+        } else {
+          lerp3(MIDFIRE, LATEFIRE, (t - 0.35) / 0.65, data, p);
+        }
+      } else if (s === TREE) {
+        const ta = Math.min(treeAge[i] / AGE_MATURE, 1);
+        lerp3(SPROUT, CANOPY, ta, data, p);
+        data[p] *= j; data[p + 1] *= j; data[p + 2] *= j;
+      } else {
+        const sb = sinceBurn[i];
+        if (sb < ASH_LIFE) {
+          lerp3(EMBER_ASH, SOIL, sb / ASH_LIFE, data, p);
+        } else {
+          data[p] = SOIL[0] * j; data[p + 1] = SOIL[1] * j; data[p + 2] = SOIL[2] * j;
+        }
+      }
+      data[p + 3] = 255;
+    }
+    offCtx.putImageData(img, 0, 0);
+
+    baseCtx.imageSmoothingEnabled = true;
+    baseCtx.imageSmoothingQuality = 'high';
+    baseCtx.drawImage(off, 0, 0, nx, ny, 0, 0, W, H);
+
+    glowCtx.clearRect(0, 0, W, H);
+    glowCtx.save();
+    glowCtx.filter = 'blur(9px)';
+    glowCtx.globalCompositeOperation = 'lighter';
+    glowCtx.globalAlpha = 0.35;
+    glowCtx.drawImage(off, 0, 0, nx, ny, -12, -12, W + 24, H + 24);
+    glowCtx.restore();
+  }
+
+  // --- cursor seeds growth in bare patches; click strikes lightning ---
+  let mouse = { x: -9999, y: -9999, active: false };
+  const SEED_RADIUS = 9;
+  const STRIKE_RADIUS = 10;
+
+  window.addEventListener('pointermove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+    mouse.active = true;
+  });
+  window.addEventListener('pointerleave', () => (mouse.active = false));
+  window.addEventListener('pointerdown', (e) => {
+    const gx = (e.clientX / W) * nx;
+    const gy = (e.clientY / H) * ny;
+    const r = STRIKE_RADIUS, r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        if (state[i] === TREE) {
+          state[i] = BURNING;
+          burnAge[i] = 0;
+          burnLife[i] = 4 + Math.random() * 8;
+        }
+      }
+    }
+  });
+
+  function seedGrowth() {
+    if (!mouse.active) return;
+    const gx = (mouse.x / W) * nx;
+    const gy = (mouse.y / H) * ny;
+    const r = SEED_RADIUS, r2 = r * r;
+    const cx = Math.round(gx), cy = Math.round(gy);
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const d2 = dx * dx + dy * dy;
+        if (d2 > r2) continue;
+        const x = ((cx + dx) % nx + nx) % nx;
+        const y = ((cy + dy) % ny + ny) % ny;
+        const i = y * nx + x;
+        if (state[i] === EMPTY && Math.random() < 0.05 * (1 - d2 / r2)) {
+          state[i] = TREE;
+          treeAge[i] = 0;
+        }
+      }
+    }
+  }
+
+  const caption = document.getElementById('caption');
+  setTimeout(() => caption.classList.add('visible'), 1500);
+  setTimeout(() => caption.classList.remove('visible'), 9000);
+
+  const STEP_MS = 1000 / 16; // fixed simulation rate, independent of display fps
+  let acc = 0;
+  let last = null;
+
+  function frame(ts) {
+    if (last === null) last = ts;
+    let dt = ts - last;
+    last = ts;
+    if (dt > 250) dt = 250; // clamp after a tab-switch stall
+    acc += dt;
+
+    while (acc >= STEP_MS) {
+      seedGrowth();
+      step();
+      acc -= STEP_MS;
+    }
+
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

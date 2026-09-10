@@ -24,6 +24,40 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-10** — `2026-09-10-green-and-ember.html`: a thirty-eighth
+  technique, and the first governed by a race between two separated
+  timescales rather than a single rule, field, or force — the
+  forest-fire model, proposed by Bak, Chen and Tang in 1990 as a second
+  textbook example of self-organized criticality alongside their own
+  sandpile, then sharpened by Drossel and Schwabl in 1992 into the form
+  used here: bare ground sprouts a tree with a small probability p each
+  tick, a tree with no burning neighbor is struck by lightning and
+  ignites with a far smaller probability f, and any tree touching fire
+  always catches — but only on the tick its neighbor first ignites, a
+  single percolation trial per edge rather than a repeated one, which is
+  what keeps most strikes to a bounded scar instead of a guaranteed
+  clear-cut. Night 25's sandpile released its avalanches by a hard local
+  threshold, grains piling until a cell tips over; nothing here has a
+  threshold at all — every ignition is a coin flip, and criticality
+  falls out purely from p and f sitting orders of magnitude apart, slow
+  growth patiently refilling a canopy that rare lightning then burns
+  back down at every size at once, from a single scorched cell to a
+  front that eats a real fraction of the screen. Night 14's cyclic
+  automaton produces rotating fronts that look like fire but are
+  perfectly deterministic clocks; this is the opposite, a genuinely
+  stochastic percolation front that only resembles a clock in how
+  reliably it keeps recurring. A slowly rotating wind biases which way a
+  burning cell's neighbors catch, elongating fronts downwind into
+  tongues instead of clean circles the way real fire behaves, and every
+  cell keeps two clocks of its own once it changes state — canopy color
+  deepens from pale sprout green to dark pine as a tree ages, and a
+  stand of ash glows warm ember-red for a few seconds after the flame
+  moves on before cooling back to bare soil, ready to sprout again. Move
+  the cursor to coax new growth in bare patches, like rain finding a
+  clearing; click to strike a patch of canopy with lightning and watch
+  the burn scar spread, crest, and start regrowing behind itself. Open
+  the file directly in a browser.
+
 - **2026-09-08** — `2026-09-08-selective-memory.html`: a thirty-seventh
   technique, and the first governed by selection against a measured error
   rather than a rule, a field, a swarm, a grammar, or a hand-tuned
