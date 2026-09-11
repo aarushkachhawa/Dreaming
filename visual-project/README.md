@@ -24,6 +24,42 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-11** — `2026-09-11-kindred-foam.html`: a thirty-eighth
+  technique, and the first in which every lattice site carries a
+  persistent identity rather than a bare state — the Cellular Potts
+  model (Graner & Glazier, 1992), the differential-adhesion picture
+  biologists use to explain why a scrambled mix of two embryonic tissue
+  types will, given nothing but random jostling and a preference for
+  their own kind, sort itself back into clean domains, one sometimes
+  wrapped entirely inside the other, the way Malcolm Steinberg's
+  dissociated-and-remixed embryo cells were once filmed doing in a dish.
+  Night 16's Ising lattice already ran a Metropolis acceptance rule over
+  a spin field, and night 19's power diagram already grew and shrank
+  territory by a coarsening law, but neither pixel had a name: an Ising
+  spin is just +1 or -1 with no memory of which domain it belongs to,
+  and a power-diagram cell has a weight but no interior pixels to
+  reassign one at a time. Here several hundred cell IDs each own a patch
+  of the lattice, and the only move is a land grab: a random site looks
+  at a random neighbor and, weighing the change in total contact energy
+  against a penalty for straying from its own preferred size, either
+  lets that neighbor's identity creep one pixel further or refuses —
+  sometimes anyway, at a rate set by a temperature nudged upward
+  wherever the cursor lingers, so the tissue nearest your attention
+  turns loose and molten while the rest keeps its shape. Contact energy
+  is not one number here but a table of three: rose, verdigris, and
+  amber lineages each pay a different cost for touching their own kind
+  versus a stranger, tuned into a hierarchy of self-adhesion, so the
+  foam does not merely coarsen into arbitrary blobs the way spins do —
+  it sorts, and gradually nests, the stickiest lineage drawing itself
+  into clusters, the next-stickiest working around it, and the least
+  self-loving type left threading the gaps between them, echoing the
+  layered engulfment differential adhesion predicts for real tissue.
+  Click to graft a fresh, randomly-typed cell wherever you point, a
+  foreign implant the sorting has to work around. When the boundary
+  energy stops falling, or a few minutes pass, the foam dissolves and a
+  new scramble of a few hundred cells is poured out to sort itself from
+  scratch. Open the file directly in a browser.
+
 - **2026-09-08** — `2026-09-08-selective-memory.html`: a thirty-seventh
   technique, and the first governed by selection against a measured error
   rather than a rule, a field, a swarm, a grammar, or a hand-tuned

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kindred Foam — Night 38</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #07080d;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+    z-index: 2;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Kindred Foam &mdash; Night 38 &mdash; hover to warm and stir &middot; click to graft a cell</div>
+<script>
+(function(){
+'use strict';
+// A thirty-eighth technique, and the first in which every lattice site
+// carries a persistent identity rather than a bare state — the Cellular
+// Potts model (Graner & Glazier, 1992), the differential-adhesion picture
+// biologists use to explain why a scrambled mix of two embryonic tissue
+// types will, given nothing but random jostling and a preference for
+// their own kind, sort itself back into clean domains, one sometimes
+// wrapped entirely inside the other, the way Malcolm Steinberg's
+// dissociated-and-remixed embryo cells were once filmed doing in a dish.
+// Night 16's Ising lattice already ran a Metropolis acceptance rule over
+// a spin field, and night 19's power diagram already grew and shrank
+// territory by a coarsening law, but neither pixel had a name: an Ising
+// spin is just +1 or -1 with no memory of which domain it belongs to,
+// and a power-diagram cell has a weight but no interior pixels to
+// reassign one at a time. Here several hundred cell IDs each own a
+// patch of the lattice, and the only move is a land grab: a random site
+// looks at a random neighbor and, weighing the change in total contact
+// energy against a penalty for straying from its own preferred size,
+// either lets that neighbor's identity creep one pixel further or
+// refuses — sometimes anyway, at a rate set by a temperature nudged
+// upward wherever the cursor lingers, so the tissue nearest your
+// attention turns loose and molten while the rest keeps its shape.
+// Contact energy is not one number here but a table of three: rose,
+// verdigris, and amber lineages each pay a different cost for touching
+// their own kind versus a stranger, tuned into a hierarchy of
+// self-adhesion, so the foam does not merely coarsen into arbitrary
+// blobs the way spins do — it sorts, and gradually nests, the stickiest
+// lineage drawing itself into clusters, the next-stickiest working
+// around it, and the least self-loving type left threading the gaps
+// between them, echoing the layered engulfment differential adhesion
+// predicts for real tissue. Click to graft a fresh, randomly-typed cell
+// wherever you point, a foreign implant the sorting has to work around.
+// When the boundary energy stops falling, or a few minutes pass, the
+// foam dissolves and a new scramble of a few hundred cells is poured
+// out to sort itself from scratch. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var CELL_PX = 6;
+var TARGET_SITE_AREA = 130;
+var LAMBDA_AREA = 0.4;
+var BASE_TEMP = 1.3;
+var MOUSE_TEMP_BOOST = 10;
+var MOUSE_RADIUS = 46;
+var ATTEMPT_FRACTION = 2.0;
+var MAX_LIFE_MS = 150000;
+var CHECK_INTERVAL_MS = 2200;
+var PLATEAU_DROP = 0.006;
+var FADE_MS = 1600;
+var GRAFT_RADIUS = 5;
+
+var TYPE_COLORS = [
+  [352, 62, 58],
+  [162, 48, 46],
+  [42, 68, 60]
+];
+var NUM_TYPES = TYPE_COLORS.length;
+// self-adhesion hierarchy: type 1 stickiest (core), type 2 middle (shell),
+// type 0 least self-loving (outer) — engineered to nest under sorting.
+var J = [
+  [11, 13, 10],
+  [13, 2, 7],
+  [10, 7, 5]
+];
+
+var width = 0, height = 0;
+var gridW = 0, gridH = 0;
+var lattice = null;
+var cellType = null, cellArea = null, cellTarget = null;
+var numCellSlots = 0, nextCellId = 0;
+var simCanvas = document.createElement('canvas');
+var simCtx = simCanvas.getContext('2d');
+var simImage = null, simData = null;
+
+var mouseGX = -1000, mouseGY = -1000, mouseActive = false;
+var rect = null;
+
+var lastEnergy = Infinity;
+var lastCheckEnergy = Infinity;
+var lastCheckTime = 0;
+var bornTime = 0;
+var state = 0; // 0 = live, 1 = fading, 2 = reborn flash
+var fadeStart = 0;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function rand(a, b){ return a + Math.random() * (b - a); }
+function hash32(n){
+  n = (n ^ 61) ^ (n >>> 16);
+  n = n + (n << 3);
+  n = n ^ (n >>> 4);
+  n = Math.imul(n, 0x27d4eb2d);
+  n = n ^ (n >>> 15);
+  return (n >>> 0);
+}
+
+function idx(x, y){ return y * gridW + x; }
+
+function neighborOffsets(){
+  return [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
+}
+var NB = neighborOffsets();
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  gridW = clamp(Math.round(canvas.width / CELL_PX), 70, 260);
+  gridH = clamp(Math.round(canvas.height / CELL_PX), 46, 180);
+  simCanvas.width = gridW;
+  simCanvas.height = gridH;
+  simImage = simCtx.createImageData(gridW, gridH);
+  simData = simImage.data;
+  initTissue();
+}
+
+function initTissue(){
+  var totalSites = gridW * gridH;
+  var numCells = Math.max(24, Math.round(totalSites / TARGET_SITE_AREA));
+  numCellSlots = numCells * 6 + 32;
+  lattice = new Int32Array(totalSites);
+  cellType = new Int16Array(numCellSlots);
+  cellArea = new Int32Array(numCellSlots);
+  cellTarget = new Int32Array(numCellSlots);
+
+  var seedX = new Float64Array(numCells);
+  var seedY = new Float64Array(numCells);
+  var cols = Math.max(1, Math.round(Math.sqrt(numCells * gridW / gridH)));
+  var rows = Math.ceil(numCells / cols);
+  var sx = gridW / cols, sy = gridH / rows;
+  var n = 0;
+  for(var r = 0; r < rows && n < numCells; r++){
+    for(var c = 0; c < cols && n < numCells; c++){
+      seedX[n] = (c + 0.5) * sx + rand(-0.35, 0.35) * sx;
+      seedY[n] = (r + 0.5) * sy + rand(-0.35, 0.35) * sy;
+      cellType[n] = (Math.random() * NUM_TYPES) | 0;
+      n++;
+    }
+  }
+  nextCellId = numCells;
+
+  // brute-force nearest-seed assignment (one-off Voronoi partition)
+  for(var y = 0; y < gridH; y++){
+    for(var x = 0; x < gridW; x++){
+      var best = -1, bestD = Infinity;
+      for(var i = 0; i < numCells; i++){
+        var dx = x - seedX[i], dy = y - seedY[i];
+        var d = dx * dx + dy * dy;
+        if(d < bestD){ bestD = d; best = i; }
+      }
+      lattice[idx(x, y)] = best;
+      cellArea[best]++;
+    }
+  }
+  var avgArea = totalSites / numCells;
+  for(var k = 0; k < numCells; k++){ cellTarget[k] = avgArea; }
+
+  lastEnergy = Infinity;
+  lastCheckEnergy = Infinity;
+  lastCheckTime = performance.now();
+  bornTime = performance.now();
+  state = 2;
+  fadeStart = bornTime;
+}
+
+function localTempAt(gx, gy){
+  var t = BASE_TEMP;
+  if(mouseActive){
+    var dx = gx - mouseGX, dy = gy - mouseGY;
+    var d2 = dx * dx + dy * dy;
+    var r2 = (MOUSE_RADIUS / CELL_PX) * (MOUSE_RADIUS / CELL_PX);
+    if(d2 < r2 * 6) t += MOUSE_TEMP_BOOST * Math.exp(-d2 / r2);
+  }
+  return t;
+}
+
+function attemptCopy(){
+  var x = (Math.random() * gridW) | 0;
+  var y = (Math.random() * gridH) | 0;
+  var off = NB[(Math.random() * NB.length) | 0];
+  var nx = x + off[0], ny = y + off[1];
+  if(nx < 0 || ny < 0 || nx >= gridW || ny >= gridH) return;
+  var i = idx(x, y), j = idx(nx, ny);
+  var oldId = lattice[i], newId = lattice[j];
+  if(oldId === newId) return;
+  if(cellArea[oldId] <= 4) return;
+
+  var oldType = cellType[oldId], newType = cellType[newId];
+  var eBefore = 0, eAfter = 0;
+  for(var k = 0; k < NB.length; k++){
+    var kx = x + NB[k][0], ky = y + NB[k][1];
+    if(kx < 0 || ky < 0 || kx >= gridW || ky >= gridH) continue;
+    var nb = lattice[idx(kx, ky)];
+    if(nb !== oldId) eBefore += J[oldType][cellType[nb]];
+    if(nb !== newId) eAfter += J[newType][cellType[nb]];
+  }
+  var aOld = cellArea[oldId], aNew = cellArea[newId];
+  var tOld = cellTarget[oldId], tNew = cellTarget[newId];
+  var areaBefore = LAMBDA_AREA * ((aOld - tOld) * (aOld - tOld) + (aNew - tNew) * (aNew - tNew));
+  var areaAfter = LAMBDA_AREA * (((aOld - 1) - tOld) * ((aOld - 1) - tOld) + ((aNew + 1) - tNew) * ((aNew + 1) - tNew));
+
+  var dE = (eAfter - eBefore) + (areaAfter - areaBefore);
+  var temp = localTempAt(x, y);
+  if(dE <= 0 || Math.random() < Math.exp(-dE / temp)){
+    lattice[i] = newId;
+    cellArea[oldId]--;
+    cellArea[newId]++;
+  }
+}
+
+function totalBoundaryEnergy(){
+  var e = 0;
+  for(var y = 0; y < gridH; y++){
+    for(var x = 0; x < gridW; x++){
+      var id = lattice[idx(x, y)];
+      var t = cellType[id];
+      if(x + 1 < gridW){
+        var idr = lattice[idx(x + 1, y)];
+        if(idr !== id) e += J[t][cellType[idr]];
+      }
+      if(y + 1 < gridH){
+        var idd = lattice[idx(x, y + 1)];
+        if(idd !== id) e += J[t][cellType[idd]];
+      }
+    }
+  }
+  return e;
+}
+
+function graftAt(gx, gy){
+  if(nextCellId >= numCellSlots - 1) return;
+  var id = nextCellId++;
+  cellType[id] = (Math.random() * NUM_TYPES) | 0;
+  var count = 0;
+  var r2 = GRAFT_RADIUS * GRAFT_RADIUS;
+  for(var y = Math.max(0, gy - GRAFT_RADIUS); y <= Math.min(gridH - 1, gy + GRAFT_RADIUS); y++){
+    for(var x = Math.max(0, gx - GRAFT_RADIUS); x <= Math.min(gridW - 1, gx + GRAFT_RADIUS); x++){
+      var dx = x - gx, dy = y - gy;
+      if(dx * dx + dy * dy > r2) continue;
+      var i = idx(x, y);
+      var old = lattice[i];
+      if(old === id) continue;
+      cellArea[old]--;
+      lattice[i] = id;
+      count++;
+    }
+  }
+  cellArea[id] = count;
+  cellTarget[id] = count;
+}
+
+function render(){
+  var p = 0;
+  for(var y = 0; y < gridH; y++){
+    for(var x = 0; x < gridW; x++){
+      var id = lattice[idx(x, y)];
+      var t = cellType[id];
+      var col = TYPE_COLORS[t];
+      var jitter = ((hash32(id) & 255) / 255 - 0.5) * 14;
+      var l = clamp(col[2] + jitter, 14, 82);
+      var edge = false;
+      if(x + 1 < gridW && lattice[idx(x + 1, y)] !== id) edge = true;
+      if(!edge && y + 1 < gridH && lattice[idx(x, y + 1)] !== id) edge = true;
+      if(edge) l *= 0.5;
+      var rgb = hsl2rgb(col[0], col[1], l);
+      simData[p++] = rgb[0];
+      simData[p++] = rgb[1];
+      simData[p++] = rgb[2];
+      simData[p++] = 255;
+    }
+  }
+  simCtx.putImageData(simImage, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(simCanvas, 0, 0, canvas.width, canvas.height);
+
+  if(state === 1){
+    var t = clamp((performance.now() - fadeStart) / FADE_MS, 0, 1);
+    ctx.fillStyle = 'rgba(7,8,13,' + t + ')';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if(t >= 1) initTissue();
+  } else if(state === 2){
+    var t2 = clamp((performance.now() - fadeStart) / FADE_MS, 0, 1);
+    ctx.fillStyle = 'rgba(7,8,13,' + (1 - t2) + ')';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if(t2 >= 1) state = 0;
+  }
+}
+
+function hsl2rgb(h, s, l){
+  h /= 360; s /= 100; l /= 100;
+  if(s === 0){ var v = Math.round(l * 255); return [v, v, v]; }
+  var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  var p = 2 * l - q;
+  function hue2rgb(p, q, t){
+    if(t < 0) t += 1;
+    if(t > 1) t -= 1;
+    if(t < 1/6) return p + (q - p) * 6 * t;
+    if(t < 1/2) return q;
+    if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  }
+  var r = hue2rgb(p, q, h + 1/3);
+  var g = hue2rgb(p, q, h);
+  var b = hue2rgb(p, q, h - 1/3);
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function frame(now){
+  if(state !== 1){
+    var attempts = Math.round(gridW * gridH * ATTEMPT_FRACTION);
+    for(var i = 0; i < attempts; i++) attemptCopy();
+  }
+
+  if(state === 0 && now - lastCheckTime > CHECK_INTERVAL_MS){
+    var e = totalBoundaryEnergy();
+    var settled = lastCheckEnergy < Infinity &&
+      Math.abs(e - lastCheckEnergy) / Math.max(1, lastCheckEnergy) < PLATEAU_DROP;
+    var expired = now - bornTime > MAX_LIFE_MS;
+    if((settled && now - bornTime > 22000) || expired){
+      state = 1;
+      fadeStart = now;
+    }
+    lastCheckEnergy = e;
+    lastCheckTime = now;
+  }
+
+  render();
+  requestAnimationFrame(frame);
+}
+
+function updateRect(){ rect = canvas.getBoundingClientRect(); }
+
+function clientToGrid(cx, cy){
+  if(!rect) updateRect();
+  var gx = Math.floor(((cx - rect.left) / rect.width) * gridW);
+  var gy = Math.floor(((cy - rect.top) / rect.height) * gridH);
+  return [clamp(gx, 0, gridW - 1), clamp(gy, 0, gridH - 1)];
+}
+
+canvas.addEventListener('pointermove', function(e){
+  var g = clientToGrid(e.clientX, e.clientY);
+  mouseGX = g[0]; mouseGY = g[1];
+  mouseActive = true;
+});
+canvas.addEventListener('pointerleave', function(){ mouseActive = false; });
+canvas.addEventListener('pointerdown', function(e){
+  var g = clientToGrid(e.clientX, e.clientY);
+  graftAt(g[0], g[1]);
+});
+
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){ resizeCanvas(); updateRect(); }, 200);
+});
+
+resizeCanvas();
+updateRect();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>
