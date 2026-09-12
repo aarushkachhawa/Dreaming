@@ -24,6 +24,37 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-12** — `2026-09-12-tooth-and-clover.html`: a thirty-ninth
+  technique, and the first with no field, no lattice, and no fixed population
+  — an agent-based predator-prey ecology, the Rosenzweig-MacArthur model (a
+  logistically-capped Lotka-Volterra) run not as two coupled numbers but as a
+  few hundred individuals, each born, fed, and eventually eaten or starved on
+  its own private clock. Night 8's murmuration and night 18's elective
+  affinities both moved swarms of a fixed size through steering rules and a
+  force matrix; this swarm has no fixed size at all, since every prey and
+  every predator carries its own energy budget that a birth or a death can
+  only ever move by one. Pale clover-green grazers gain energy for free, at a
+  rate a slow three-minute season swings between lean and abundant and that
+  thins wherever too many graze the same patch at once, the logistic term
+  standing in for a finite pasture; fed enough, a grazer splits in two, its
+  energy halved between parent and child, the same conservation night 37's
+  evolving lineage answered to for pixels instead of calories. Amber hunters
+  spend energy just by existing, sense the nearest grazer within reach through
+  a coarse spatial grid rebuilt every frame rather than a brute check against
+  every other agent, steer toward it, and either eat on contact — energy up,
+  grazer gone — or, fed enough themselves, split the same way their prey do.
+  Starve to zero calories at either trophic level and that individual simply
+  stops, no rule beyond bookkeeping required for what reads, from outside, as
+  population booms and famines chasing each other in a ring nobody scripted. A
+  vanished grazer population drags every remaining hunter down with it and
+  forces a full reseeding; a vanished hunter population instead drifts back on
+  its own after a lean stretch, the way a locally-hunted species recolonizes
+  from elsewhere. Move the cursor to sow a patch of grass, giving nearby
+  grazers a private feast; click to drop a fresh hunting pack wherever you
+  point, culling whatever bloom has gotten out of hand. Left alone, the whole
+  ecology resets to a fresh scatter of both kinds every few minutes
+  regardless. Open the file directly in a browser.
+
 - **2026-09-11** — `2026-09-11-kindred-foam.html`: a thirty-eighth
   technique, and the first in which every lattice site carries a
   persistent identity rather than a bare state — the Cellular Potts

@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tooth and Clover — Night 39</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05080a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Tooth and Clover &mdash; Night 39 &mdash; hover to sow grass &middot; click to loose a hunting pack</div>
+<script>
+(function(){
+'use strict';
+// A thirty-ninth technique, and the first with no field, no lattice, and
+// no fixed population — an agent-based predator-prey ecology, the
+// Rosenzweig-MacArthur model (a logistically-capped Lotka-Volterra) run
+// not as two coupled numbers but as a few hundred individuals, each one
+// born, fed, and eventually eaten or starved on its own private clock.
+// Night 8's murmuration and night 18's elective affinities both moved
+// swarms of a fixed size through steering rules and force matrices; this
+// swarm has no fixed size at all, since every prey and every predator
+// carries its own energy budget that a birth or a death can only ever
+// move by one. Pale clover-green grazers gain energy for free, at a rate
+// that a slow three-minute season swings between lean and abundant and
+// that thins wherever too many graze the same patch at once (the
+// logistic term that keeps grass from feeding an infinite herd); once
+// fed enough, a grazer splits in two, its energy halved between parent
+// and child, the same conservation Night 37's evolving lineage answered
+// to for pixels instead of calories. Amber hunters spend energy just by
+// existing, sense the nearest grazer within reach through a coarse
+// spatial grid rebuilt every frame (rather than the brute distance check
+// every other agent), steer toward it, and either eat on contact — energy
+// up, grazer gone — or, fed enough themselves, split the same way their
+// prey do. Starve to zero calories at either trophic level and that
+// individual simply stops, no rule beyond bookkeeping required for what
+// looks, from outside, like population booms and famines chasing each
+// other in a ring nobody scripted. A vanished prey population drags every
+// remaining hunter down with it and forces a full reseeding; a vanished
+// hunter population is instead recolonized on its own after a lean
+// stretch, the way a locally-hunted species drifts back in from
+// elsewhere. Move the cursor to sow a patch of grass, giving nearby
+// grazers a private feast; click to drop a fresh hunting pack wherever
+// you point, culling whatever bloom has gotten out of hand. Left alone,
+// the whole ecology resets to a fresh scatter of both kinds every few
+// minutes regardless. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var width = 0, height = 0;
+
+var CELL = 60;
+var PREY_INIT = 260;
+var PRED_INIT = 22;
+var MAX_PREY = 900;
+var MAX_PRED = 220;
+
+var PREY_MAX_E = 100;
+var PREY_REPRO_E = 68;
+var PREY_REPRO_COOLDOWN = 2.2;
+var PREY_BASE_GROW = 15;
+var PREY_CROWD_CAP = 7;
+var PREY_SEASON_PERIOD = 165;
+var PREY_SPEED = 30;
+var PREY_FEAR_R = 74;
+var PREY_FEAR_FORCE = 150;
+var PREY_DEATH_RATE = 0.0028;
+var SOW_RADIUS = 130;
+var SOW_BOOST = 46;
+
+var PRED_INIT_E = 92;
+var PRED_MAX_E = 150;
+var PRED_REPRO_E = 116;
+var PRED_REPRO_COOLDOWN = 2.6;
+var PRED_METAB = 4.4;
+var PRED_EAT_GAIN = 34;
+var PRED_CAPTURE_R = 10;
+var PRED_SENSE_R = 150;
+var PRED_SPEED = 58;
+var PRED_STEER = 3.4;
+var PRED_REINTRO_DELAY = 11000;
+var PRED_PACK_SIZE = 9;
+
+var MAX_LIFE_MS = 175000;
+
+var prey = [];
+var pred = [];
+var grid = null;
+var gridCols = 0, gridRows = 0;
+
+var mouseX = -9999, mouseY = -9999, mouseActive = false;
+var rect = null;
+
+var startTime = 0;
+var predEmptySince = -1;
+var state = 0; // 0 live, 1 fading out, 2 fading in
+var fadeStart = 0;
+var FADE_MS = 1500;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function rand(a, b){ return a + Math.random() * (b - a); }
+
+function resizeCanvas(){
+  var oldW = width, oldH = height;
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  gridCols = Math.max(1, Math.ceil(width / CELL));
+  gridRows = Math.max(1, Math.ceil(height / CELL));
+
+  if(oldW > 0 && oldH > 0){
+    var sx = width / oldW, sy = height / oldH;
+    for(var i = 0; i < prey.length; i++){ prey[i].x *= sx; prey[i].y *= sy; }
+    for(var j = 0; j < pred.length; j++){ pred[j].x *= sx; pred[j].y *= sy; }
+  } else {
+    seedWorld();
+  }
+}
+
+function makePrey(x, y, e){
+  return { x: x, y: y, vx: rand(-10, 10), vy: rand(-10, 10), e: e, cool: rand(0, 1) };
+}
+function makePred(x, y, e){
+  return { x: x, y: y, vx: rand(-10, 10), vy: rand(-10, 10), e: e, cool: rand(0, 1) };
+}
+
+function seedWorld(){
+  prey = [];
+  pred = [];
+  for(var i = 0; i < PREY_INIT; i++){
+    prey.push(makePrey(rand(0, width), rand(0, height), rand(30, PREY_MAX_E)));
+  }
+  for(var j = 0; j < PRED_INIT; j++){
+    pred.push(makePred(rand(0, width), rand(0, height), rand(60, PRED_INIT_E + 30)));
+  }
+  startTime = performance.now();
+  predEmptySince = -1;
+}
+
+function cellKey(cx, cy){ return cx + cy * gridCols; }
+
+function buildGrid(){
+  grid = new Map();
+  for(var i = 0; i < prey.length; i++){
+    var p = prey[i];
+    var cx = clamp((p.x / CELL) | 0, 0, gridCols - 1);
+    var cy = clamp((p.y / CELL) | 0, 0, gridRows - 1);
+    var k = cellKey(cx, cy);
+    var bucket = grid.get(k);
+    if(!bucket){ bucket = []; grid.set(k, bucket); }
+    bucket.push(i);
+  }
+}
+
+function countCrowd(x, y){
+  var cx = clamp((x / CELL) | 0, 0, gridCols - 1);
+  var cy = clamp((y / CELL) | 0, 0, gridRows - 1);
+  var n = 0;
+  for(var dy = -1; dy <= 1; dy++){
+    for(var dx = -1; dx <= 1; dx++){
+      var nx = cx + dx, ny = cy + dy;
+      if(nx < 0 || ny < 0 || nx >= gridCols || ny >= gridRows) continue;
+      var bucket = grid.get(cellKey(nx, ny));
+      if(bucket) n += bucket.length;
+    }
+  }
+  return n;
+}
+
+function nearestPrey(x, y, maxR){
+  var cx = clamp((x / CELL) | 0, 0, gridCols - 1);
+  var cy = clamp((y / CELL) | 0, 0, gridRows - 1);
+  var range = Math.ceil(maxR / CELL) + 1;
+  var bestI = -1, bestD = maxR * maxR;
+  for(var dy = -range; dy <= range; dy++){
+    for(var dx = -range; dx <= range; dx++){
+      var nx = cx + dx, ny = cy + dy;
+      if(nx < 0 || ny < 0 || nx >= gridCols || ny >= gridRows) continue;
+      var bucket = grid.get(cellKey(nx, ny));
+      if(!bucket) continue;
+      for(var k = 0; k < bucket.length; k++){
+        var idx = bucket[k];
+        var p = prey[idx];
+        if(!p || p.dead) continue;
+        var ddx = p.x - x, ddy = p.y - y;
+        var d2 = ddx * ddx + ddy * ddy;
+        if(d2 < bestD){ bestD = d2; bestI = idx; }
+      }
+    }
+  }
+  return bestI;
+}
+
+function seasonalGrow(now){
+  var t = (now - startTime) / 1000;
+  var phase = Math.sin((t / PREY_SEASON_PERIOD) * Math.PI * 2);
+  return PREY_BASE_GROW * (0.5 + 0.5 * (0.5 + 0.5 * phase));
+}
+
+function stepPrey(dt, now){
+  var grow0 = seasonalGrow(now);
+  var born = [];
+  for(var i = 0; i < prey.length; i++){
+    var p = prey[i];
+    if(p.dead) continue;
+
+    var crowd = countCrowd(p.x, p.y);
+    var slack = clamp(1 - crowd / (PREY_CROWD_CAP * 9), 0.05, 1);
+    var grow = grow0 * slack;
+
+    if(mouseActive){
+      var mdx = p.x - mouseX, mdy = p.y - mouseY;
+      var md2 = mdx * mdx + mdy * mdy;
+      if(md2 < SOW_RADIUS * SOW_RADIUS){
+        grow += SOW_BOOST * (1 - Math.sqrt(md2) / SOW_RADIUS);
+      }
+    }
+    p.e = clamp(p.e + grow * dt, 0, PREY_MAX_E);
+
+    // gentle wander
+    p.vx += rand(-1, 1) * 18 * dt;
+    p.vy += rand(-1, 1) * 18 * dt;
+
+    // flee nearest predators within fear radius (brute force: predator count stays modest)
+    for(var j = 0; j < pred.length; j++){
+      var q = pred[j];
+      if(q.dead) continue;
+      var fdx = p.x - q.x, fdy = p.y - q.y;
+      var fd2 = fdx * fdx + fdy * fdy;
+      if(fd2 < PREY_FEAR_R * PREY_FEAR_R && fd2 > 0.0001){
+        var fd = Math.sqrt(fd2);
+        var s = (1 - fd / PREY_FEAR_R) * PREY_FEAR_FORCE;
+        p.vx += (fdx / fd) * s * dt;
+        p.vy += (fdy / fd) * s * dt;
+      }
+    }
+
+    var sp = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+    if(sp > PREY_SPEED){ p.vx = p.vx / sp * PREY_SPEED; p.vy = p.vy / sp * PREY_SPEED; }
+    p.vx *= 0.94; p.vy *= 0.94;
+    p.x += p.vx * dt; p.y += p.vy * dt;
+    if(p.x < 0){ p.x = 0; p.vx *= -1; } else if(p.x > width){ p.x = width; p.vx *= -1; }
+    if(p.y < 0){ p.y = 0; p.vy *= -1; } else if(p.y > height){ p.y = height; p.vy *= -1; }
+
+    p.cool -= dt;
+    if(p.e >= PREY_REPRO_E && p.cool <= 0 && prey.length + born.length < MAX_PREY){
+      p.e *= 0.5;
+      p.cool = PREY_REPRO_COOLDOWN;
+      born.push(makePrey(p.x + rand(-6, 6), p.y + rand(-6, 6), p.e));
+    }
+
+    if(p.e <= 0 || Math.random() < PREY_DEATH_RATE * dt) p.dead = true;
+  }
+  for(var b = 0; b < born.length; b++) prey.push(born[b]);
+  compact(prey);
+}
+
+function stepPred(dt){
+  var born = [];
+  for(var i = 0; i < pred.length; i++){
+    var q = pred[i];
+    if(q.dead) continue;
+    q.e -= PRED_METAB * dt;
+
+    var target = nearestPrey(q.x, q.y, PRED_SENSE_R);
+    if(target >= 0){
+      var t = prey[target];
+      var tdx = t.x - q.x, tdy = t.y - q.y;
+      var td = Math.sqrt(tdx * tdx + tdy * tdy) || 1;
+      q.vx += (tdx / td) * PRED_STEER * PRED_SPEED * dt;
+      q.vy += (tdy / td) * PRED_STEER * PRED_SPEED * dt;
+      if(td < PRED_CAPTURE_R){
+        t.dead = true;
+        q.e = clamp(q.e + PRED_EAT_GAIN, 0, PRED_MAX_E);
+      }
+    } else {
+      q.vx += rand(-1, 1) * 26 * dt;
+      q.vy += rand(-1, 1) * 26 * dt;
+    }
+
+    var sp = Math.sqrt(q.vx * q.vx + q.vy * q.vy);
+    if(sp > PRED_SPEED){ q.vx = q.vx / sp * PRED_SPEED; q.vy = q.vy / sp * PRED_SPEED; }
+    q.vx *= 0.95; q.vy *= 0.95;
+    q.x += q.vx * dt; q.y += q.vy * dt;
+    if(q.x < 0){ q.x = 0; q.vx *= -1; } else if(q.x > width){ q.x = width; q.vx *= -1; }
+    if(q.y < 0){ q.y = 0; q.vy *= -1; } else if(q.y > height){ q.y = height; q.vy *= -1; }
+
+    q.cool -= dt;
+    if(q.e >= PRED_REPRO_E && q.cool <= 0 && pred.length + born.length < MAX_PRED){
+      q.e *= 0.5;
+      q.cool = PRED_REPRO_COOLDOWN;
+      born.push(makePred(q.x + rand(-6, 6), q.y + rand(-6, 6), q.e));
+    }
+
+    if(q.e <= 0) q.dead = true;
+  }
+  for(var b = 0; b < born.length; b++) pred.push(born[b]);
+  compact(prey);
+  compact(pred);
+}
+
+function compact(arr){
+  var w = 0;
+  for(var r = 0; r < arr.length; r++){
+    if(!arr[r].dead){ arr[w++] = arr[r]; }
+  }
+  arr.length = w;
+}
+
+function dropPack(x, y){
+  for(var i = 0; i < PRED_PACK_SIZE && pred.length < MAX_PRED; i++){
+    pred.push(makePred(x + rand(-70, 70), y + rand(-70, 70), PRED_INIT_E));
+  }
+}
+
+function render(now){
+  ctx.fillStyle = 'rgba(5,8,10,0.5)';
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.globalCompositeOperation = 'lighter';
+  for(var i = 0; i < prey.length; i++){
+    var p = prey[i];
+    var f = p.e / PREY_MAX_E;
+    var l = 22 + f * 52;
+    var r = 1.4 + f * 1.8;
+    ctx.beginPath();
+    ctx.fillStyle = 'hsla(148,' + (38 + f * 30) + '%,' + l + '%,0.9)';
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  for(var j = 0; j < pred.length; j++){
+    var q = pred[j];
+    var g = q.e / PRED_MAX_E;
+    var l2 = 30 + g * 40;
+    var r2 = 2.6 + g * 2.6;
+    ctx.beginPath();
+    var grad = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r2 * 3.4);
+    grad.addColorStop(0, 'hsla(18,' + (55 + g * 30) + '%,' + l2 + '%,0.95)');
+    grad.addColorStop(1, 'hsla(18,60%,' + l2 + '%,0)');
+    ctx.fillStyle = grad;
+    ctx.arc(q.x, q.y, r2 * 3.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+
+  if(state === 1){
+    var t1 = clamp((now - fadeStart) / FADE_MS, 0, 1);
+    ctx.fillStyle = 'rgba(5,8,10,' + t1 + ')';
+    ctx.fillRect(0, 0, width, height);
+    if(t1 >= 1){ seedWorld(); state = 2; fadeStart = now; }
+  } else if(state === 2){
+    var t2 = clamp((now - fadeStart) / FADE_MS, 0, 1);
+    ctx.fillStyle = 'rgba(5,8,10,' + (1 - t2) + ')';
+    ctx.fillRect(0, 0, width, height);
+    if(t2 >= 1) state = 0;
+  }
+}
+
+var lastT = 0;
+function frame(now){
+  if(!lastT) lastT = now;
+  var dt = clamp((now - lastT) / 1000, 0, 0.05);
+  lastT = now;
+
+  if(state !== 1){
+    buildGrid();
+    stepPrey(dt, now);
+    buildGrid();
+    stepPred(dt);
+
+    if(prey.length === 0){
+      state = 1; fadeStart = now;
+    } else if(pred.length === 0){
+      if(predEmptySince < 0) predEmptySince = now;
+      else if(now - predEmptySince > PRED_REINTRO_DELAY){
+        dropPack(rand(width * 0.2, width * 0.8), rand(height * 0.2, height * 0.8));
+        predEmptySince = -1;
+      }
+    } else {
+      predEmptySince = -1;
+    }
+
+    if(now - startTime > MAX_LIFE_MS && state === 0){
+      state = 1; fadeStart = now;
+    }
+  }
+
+  render(now);
+  requestAnimationFrame(frame);
+}
+
+function updateRect(){ rect = canvas.getBoundingClientRect(); }
+function clientToWorld(cx, cy){
+  if(!rect) updateRect();
+  return [cx - rect.left, cy - rect.top];
+}
+
+canvas.addEventListener('pointermove', function(e){
+  var w = clientToWorld(e.clientX, e.clientY);
+  mouseX = w[0]; mouseY = w[1];
+  mouseActive = true;
+});
+canvas.addEventListener('pointerleave', function(){ mouseActive = false; });
+canvas.addEventListener('pointerdown', function(e){
+  var w = clientToWorld(e.clientX, e.clientY);
+  dropPack(w[0], w[1]);
+});
+
+var resizeTimer = null;
+window.addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(function(){ resizeCanvas(); updateRect(); }, 200);
+});
+
+resizeCanvas();
+updateRect();
+requestAnimationFrame(frame);
+setTimeout(function(){ caption.classList.add('visible'); }, 1500);
+setTimeout(function(){ caption.classList.remove('visible'); }, 9000);
+})();
+</script>
+</body>
+</html>
