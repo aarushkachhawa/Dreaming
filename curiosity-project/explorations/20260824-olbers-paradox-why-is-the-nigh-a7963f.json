@@ -1,0 +1,48 @@
+{
+  "id": "20260824-olbers-paradox-why-is-the-nigh-a7963f",
+  "date": "2026-08-24T10:14:25.327406",
+  "title": "Olbers' Paradox: Why Is the Night Sky Dark?",
+  "question": "If the universe is infinite and full of stars, why isn't the night sky blazing with light?",
+  "summary": "A seemingly childish question about the dark night sky led astronomers to some of the deepest truths about the universe's size, age, and expansion.",
+  "content": "\n<p>Look up on a clear night and you see darkness punctuated by pinpricks of light. This seems obvious, unremarkable. But if you take two simple, reasonable assumptions seriously&mdash;that the universe is infinite in extent and uniformly filled with stars&mdash;the night sky should not be dark at all. It should be a wall of light, as bright as the surface of the sun, in every direction you look.</p>\n\n<h2>The Argument</h2>\n<p>Imagine an infinite universe evenly sprinkled with stars. Pick any direction and stare down that line of sight. In a finite universe, your gaze might pass between all the stars and hit nothing. But in an infinite universe, no matter which direction you choose, your line of sight must eventually terminate on the surface of a star&mdash;there are simply infinitely many chances for one to be in the way. Every point in the sky should therefore show you a stellar surface, and the whole sky should glow with the average brightness of a star's surface. This is Olbers' Paradox, named for the 19th-century astronomer Heinrich Olbers, though the puzzle was noted earlier by Thomas Digges, Johannes Kepler, and Edmond Halley.</p>\n\n<h2>Wrong but Instructive Answers</h2>\n<p>The most tempting fix is dust: surely intervening clouds of gas and dust absorb the light from distant stars before it reaches us. This doesn't work. Over infinite time, absorbing material would itself heat up until it radiated as brightly as the stars it was blocking. Thermodynamic equilibrium defeats the dust explanation. Another tempting answer is that distant stars are too dim to see&mdash;but this ignores that dimming with distance is exactly compensated by the increasing number of stars at each distance, so the total light contribution from each spherical shell around us is the same regardless of how far away it is.</p>\n\n<h2>The Real Answer</h2>\n<p>The resolution is that the universe is not infinite in the way the paradox assumes&mdash;or more precisely, not infinite in observable, luminous age. The universe has a finite age (about 13.8 billion years), so light from stars farther than about 13.8 billion light-years hasn't had time to reach us yet, even though space beyond that may well contain more stars. On top of that, the universe is expanding, so light from very distant, ancient sources is redshifted into invisibility, its energy stretched out of the visible spectrum. And stars themselves are not eternal; most of the universe's history involved no stars at all, or stars that have already died. The night sky is dark because the universe had a beginning, and we are only now catching the first trickle of its light.</p>\n\n<h2>Why a Simple Question Mattered</h2>\n<p>What makes Olbers' Paradox remarkable is how much cosmology it silently smuggles in. Explaining a dark sky correctly requires knowing the universe has a finite age, that it is expanding, that light has a finite speed, and that stellar populations are not eternal. Long before precise measurements of cosmic expansion existed, the paradox was already hinting that the static, infinite, eternal universe favored by classical physics could not be right. A question a child could ask turned out to demand nothing less than modern cosmology to answer honestly.</p>\n",
+  "tags": [
+    "physics",
+    "cosmology",
+    "astronomy",
+    "history-of-science",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Astronomy Perspective",
+      "description": "The cosmic microwave background is effectively the resolved version of Olbers' sky: a faint, redshifted afterglow from the early universe rather than a blaze of starlight, confirming the universe had a hot, finite-age beginning."
+    },
+    {
+      "title": "Physics Perspective",
+      "description": "The paradox is fundamentally about the interplay of finite light speed and finite time. It shows why 'infinite in space' and 'infinite in observable effect' are not the same thing once you take causality seriously."
+    },
+    {
+      "title": "History of Science Perspective",
+      "description": "The paradox predates Big Bang cosmology by centuries and was debated by Kepler and Halley long before anyone had the tools to resolve it, showing how a good question can outlive the theories available to answer it."
+    },
+    {
+      "title": "Philosophy Perspective",
+      "description": "Olbers' Paradox is a case study in how an intuitive cosmological model (static, eternal, infinite) can be falsified by a single everyday observation, once the observation's full logical implications are traced out."
+    }
+  ],
+  "connections": [
+    "The Big Bang and the finite age of the universe",
+    "Cosmic expansion and redshift",
+    "The cosmic microwave background radiation",
+    "The finite speed of light and observable horizons",
+    "Stellar life cycles and the birth of the first stars",
+    "The steady-state theory of the universe and its downfall",
+    "Entropy and the heat death of the universe"
+  ],
+  "openQuestions": [
+    "Is there a true edge to the observable universe, or just a horizon set by light travel time?",
+    "What did the sky look like before the first stars formed, during the cosmic 'dark ages'?",
+    "Could future cosmic expansion eventually make the night sky darker still, as galaxies redshift beyond visibility?",
+    "How many other 'obvious' observations are we not yet asking hard enough questions about?"
+  ]
+}
