@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Amber Suspension — Night 40</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Amber Suspension &mdash; Night 40 &mdash; move to draw a warm current &middot; click to drip in a fresh droplet</div>
+<script>
+(function(){
+'use strict';
+// A fortieth technique, and the first to extract an explicit boundary from
+// a field rather than shade a field's interior directly, walk a ray into
+// it, or lean on a physics solver's own particles for shape. Every nucleus
+// in a small pool contributes a "soft object" falloff (Wyvill, McPheeters &
+// Wyvill, 1986) of its distance -- (1 - d^2/R^2)^3 inside its own reach,
+// zero beyond it -- and the frame's entire shape is nothing but the level
+// set where the sum of every nucleus's falloff crosses one fixed threshold.
+// Night 23's raymarcher walked a ray through a signed distance field and
+// shaded whatever surface it hit; night 21's SPH fluid never had a
+// boundary at all, only a cloud of kernel-weighted density read pixel by
+// pixel. This instead runs marching squares, the two-dimensional sibling of
+// Lorensen and Cline's 1987 marching cubes, over a coarse grid laid across
+// the field: every cell's four corners are tested against the threshold,
+// and wherever two neighboring corners disagree, linear interpolation along
+// that one edge finds the exact crossing point, which is stitched
+// corner-to-crossing-to-corner into that cell's own sliver of the boundary
+// -- the same trick medical imaging uses to turn a CT scan's density values
+// into an explicit organ outline. No cell is colored by hand; every fill is
+// read straight off a temperature the field itself carries, the weighted
+// average of whichever nuclei are actually contributing there.
+//
+// A little over a dozen blobs of amber wax drift inside a glass tube, each
+// one nothing but a position, a velocity, and a temperature that always
+// relaxes toward whatever a shelf of heat at the tube's floor and a cool
+// neck above are independently pulling it toward -- hotter near the floor,
+// cooler near the neck, with a real thermal lag rather than an instant
+// snap. Buoyancy is a single line: a nucleus warmer than neutral rises, one
+// colder sinks, no fluid ever solved for beyond that one number, and a
+// gentle drag stands in for the wax's own viscosity so nothing accelerates
+// forever. Warm blobs breaking from the floor climb, shed heat as they
+// rise, stall out near the neck, and sink again to reheat -- the entire
+// rise-stall-fall cycle real lava lamps run on, with the field doing all
+// the visual work of merging two close blobs into one shape and splitting
+// a stretched one back into two the instant marching squares finds the
+// neck between them has thinned past the threshold. The floor's own heat
+// breathes slowly over a couple of minutes, sliding the whole tube between
+// a slow, sluggish simmer and a vigorous boil. Move the cursor to draw a
+// warm current through the glass, nudging nearby blobs toward the floor's
+// own temperature and off on their own climb; click to drip a fresh hot
+// droplet in at that point, retiring whichever blob has gone coldest if the
+// tube is already full. Left alone, the whole tube empties and reseeds a
+// fresh stack of droplets at the floor every couple of minutes. Open the
+// file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var fluid = document.createElement('canvas');
+var fctx = fluid.getContext('2d');
+
+var width = 0, height = 0;
+
+var N_INIT = 13;
+var MAX_N = 20;
+var CELL = 5;
+var FIELD_T = 0.5;
+var R_FACTOR = 1.95;
+
+var COOL_TOP = 0.04;
+var HEAT_BASE = 0.22;
+var BUOY_K = 260;
+var DRAG = 1.0;
+var H_SPRING = 26;
+var V_SPRING = 34;
+var REPEL_K = 190;
+var JITTER = 14;
+
+var CURSOR_R = 170;
+var CURSOR_BOOST = 0.6;
+
+var BREATH_PERIOD = 130;
+
+var RESET_PERIOD = 165000;
+var FADE_MS = 1600;
+
+var nuclei = [];
+var mouseX = -9999, mouseY = -9999, mouseActive = false;
+var rect = null;
+var lastT = 0;
+var state = 0; // 0 live, 1 fading out, 2 fading in
+var fadeStart = 0;
+var nextResetAt = 0;
+
+var tube = { x0:0, x1:0, y0:0, y1:0, r:0, capH:0 };
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function rand(a, b){ return a + Math.random() * (b - a); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+function layoutTube(){
+  var tw = clamp(width * 0.30, 150, 420);
+  var marginV = height * 0.07;
+  tube.capH = clamp(height * 0.04, 14, 40);
+  tube.x0 = (width - tw) / 2;
+  tube.x1 = tube.x0 + tw;
+  tube.r = tw / 2;
+  tube.y0 = marginV + tube.capH + tube.r;
+  tube.y1 = height - marginV - tube.capH - tube.r;
+  if(tube.y1 < tube.y0 + 20) tube.y1 = tube.y0 + 20;
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  fluid.width = canvas.width;
+  fluid.height = canvas.height;
+  fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  layoutTube();
+  rect = canvas.getBoundingClientRect();
+}
+
+function spawnNucleus(x, y, heat, vy){
+  var r = rand(24, 44);
+  return {
+    x: x, y: y, vx: rand(-6, 6), vy: vy || 0,
+    r: r, heat: heat,
+    heatRate: clamp(HEAT_BASE * (28 / r), 0.04, 0.22)
+  };
+}
+
+function seedTube(){
+  nuclei = [];
+  var fh = floorHeat(0);
+  for(var i = 0; i < N_INIT; i++){
+    var x = lerp(tube.x0 + tube.r * 0.55, tube.x1 - tube.r * 0.55, Math.random());
+    var y = lerp(tube.y0 + tube.r * 0.2, tube.y1 - 4, Math.random());
+    var h = clamp(zoneHeat(y, fh).target + rand(-0.18, 0.18), 0, 1);
+    nuclei.push(spawnNucleus(x, y, h));
+  }
+}
+
+function floorHeat(time){
+  return 0.62 + 0.32 * (0.5 + 0.5 * Math.sin(time / BREATH_PERIOD * Math.PI * 2));
+}
+
+function smoothstep(e0, e1, x){
+  x = clamp((x - e0) / (e1 - e0), 0, 1);
+  return x * x * (3 - 2 * x);
+}
+
+// Heat only really exchanges in a thin boundary layer at the tube's floor
+// and neck; a blob coasting through the middle carries whatever heat it
+// arrived with, which is what lets it overshoot its own neutral height in
+// either direction before the next boundary layer catches up with it.
+function zoneHeat(y, fh){
+  var t = clamp((y - tube.y0) / Math.max(1, tube.y1 - tube.y0), 0, 1);
+  var floorZone = smoothstep(0.5, 0.88, t);
+  var topZone = smoothstep(0.5, 0.88, 1 - t);
+  var zone = Math.max(floorZone, topZone);
+  var side = t > 0.5 ? fh : COOL_TOP;
+  return { target: lerp(0.5, side, zone), zone: zone };
+}
+
+function step(dt, time){
+  var fh = floorHeat(time);
+  var i, j, n, m;
+
+  for(i = 0; i < nuclei.length; i++){
+    n = nuclei[i];
+    var zh = zoneHeat(n.y, fh);
+    var th = zh.target;
+    var zoneRate = lerp(0.1, 1, zh.zone);
+
+    if(mouseActive){
+      var dxm = n.x - mouseX, dym = n.y - mouseY;
+      var dm = Math.sqrt(dxm * dxm + dym * dym);
+      if(dm < CURSOR_R){
+        var boost = CURSOR_BOOST * (1 - dm / CURSOR_R);
+        th = th + boost;
+        zoneRate = Math.max(zoneRate, 0.6 * (1 - dm / CURSOR_R));
+      }
+    }
+
+    n.heat += (th - n.heat) * (1 - Math.exp(-n.heatRate * zoneRate * dt));
+
+    var ax = (Math.random() - 0.5) * JITTER;
+    var ay = -(n.heat - 0.5) * BUOY_K;
+
+    var leftBound = tube.x0 + n.r * 0.5;
+    var rightBound = tube.x1 - n.r * 0.5;
+    if(n.x < leftBound) ax += (leftBound - n.x) * H_SPRING;
+    if(n.x > rightBound) ax += (rightBound - n.x) * H_SPRING;
+
+    var topBound = tube.y0 - tube.r * 0.6;
+    var botBound = tube.y1 + tube.r * 0.6;
+    if(n.y < topBound) ay += (topBound - n.y) * V_SPRING;
+    if(n.y > botBound) ay += (botBound - n.y) * V_SPRING;
+
+    n.ax = ax;
+    n.ay = ay;
+  }
+
+  for(i = 0; i < nuclei.length; i++){
+    for(j = i + 1; j < nuclei.length; j++){
+      n = nuclei[i]; m = nuclei[j];
+      var dx = m.x - n.x, dy = m.y - n.y;
+      var d = Math.sqrt(dx * dx + dy * dy) || 0.001;
+      var minD = (n.r + m.r) * 0.62;
+      if(d < minD){
+        var push = (minD - d) / minD * REPEL_K;
+        var ux = dx / d, uy = dy / d;
+        n.ax -= ux * push;
+        n.ay -= uy * push;
+        m.ax += ux * push;
+        m.ay += uy * push;
+      }
+    }
+  }
+
+  for(i = 0; i < nuclei.length; i++){
+    n = nuclei[i];
+    n.vx = (n.vx + n.ax * dt) * Math.exp(-DRAG * dt);
+    n.vy = (n.vy + n.ay * dt) * Math.exp(-DRAG * dt);
+    n.x += n.vx * dt;
+    n.y += n.vy * dt;
+  }
+}
+
+function colorForTemp(t){
+  t = clamp(t, 0, 1);
+  var stops = [
+    [0.00, 24, 20, 58],
+    [0.32, 88, 42, 118],
+    [0.58, 196, 62, 92],
+    [0.80, 238, 138, 46],
+    [1.00, 255, 232, 176]
+  ];
+  var i = 0;
+  while(i < stops.length - 2 && t > stops[i + 1][0]) i++;
+  var a = stops[i], b = stops[i + 1];
+  var span = b[0] - a[0];
+  var lt = span > 0 ? (t - a[0]) / span : 0;
+  return [
+    Math.round(lerp(a[1], b[1], lt)),
+    Math.round(lerp(a[2], b[2], lt)),
+    Math.round(lerp(a[3], b[3], lt))
+  ];
+}
+
+var VAL, TMP, COLS, ROWS;
+
+function buildGrid(){
+  var gx0 = Math.max(0, Math.floor(tube.x0 - tube.r));
+  var gy0 = Math.max(0, Math.floor(tube.y0 - tube.r * 1.3));
+  var gx1 = Math.ceil(tube.x1 + tube.r);
+  var gy1 = Math.ceil(tube.y1 + tube.r * 1.3);
+  COLS = Math.max(2, Math.ceil((gx1 - gx0) / CELL));
+  ROWS = Math.max(2, Math.ceil((gy1 - gy0) / CELL));
+  return { gx0: gx0, gy0: gy0 };
+}
+
+function fillPolyFromCorners(px, py, val, inside, T){
+  var pts = [];
+  var order = [0, 1, 2, 3];
+  for(var k = 0; k < 4; k++){
+    var a = order[k], b = order[(k + 1) % 4];
+    if(inside[a]) pts.push(px[a], py[a]);
+    if(inside[a] !== inside[b]){
+      var denom = (val[b] - val[a]);
+      var tt = Math.abs(denom) > 1e-6 ? (T - val[a]) / denom : 0.5;
+      tt = clamp(tt, 0, 1);
+      pts.push(lerp(px[a], px[b], tt), lerp(py[a], py[b], tt));
+    }
+  }
+  return pts;
+}
+
+function renderFluid(time){
+  fctx.clearRect(0, 0, width, height);
+
+  var origin = buildGrid();
+  var gx0 = origin.gx0, gy0 = origin.gy0;
+  var vcols = COLS + 1, vrows = ROWS + 1;
+
+  if(!VAL || VAL.length < vcols * vrows){
+    VAL = new Float32Array(vcols * vrows);
+    TMP = new Float32Array(vcols * vrows);
+  }
+
+  var n, i, vx, vy, px, py, dx, dy, d2, rr, w, f;
+  var vertN = nuclei.length;
+
+  for(vy = 0; vy < vrows; vy++){
+    py = gy0 + vy * CELL;
+    for(vx = 0; vx < vcols; vx++){
+      px = gx0 + vx * CELL;
+      var fieldSum = 0, heatSum = 0;
+      for(i = 0; i < vertN; i++){
+        n = nuclei[i];
+        dx = px - n.x; dy = py - n.y;
+        d2 = dx * dx + dy * dy;
+        rr = (n.r * R_FACTOR) * (n.r * R_FACTOR);
+        if(d2 < rr){
+          w = 1 - d2 / rr;
+          f = w * w * w;
+          fieldSum += f;
+          heatSum += f * n.heat;
+        }
+      }
+      var idx = vy * vcols + vx;
+      VAL[idx] = fieldSum;
+      TMP[idx] = fieldSum > 0.0001 ? heatSum / fieldSum : 0;
+    }
+  }
+
+  var QUANT = 48;
+  var colorHex = new Array(QUANT + 1);
+
+  fctx.save();
+
+  var runActive = false, runStart = 0, runBucket = -1, runY = 0;
+
+  for(var cy = 0; cy < ROWS; cy++){
+    runActive = false;
+    runBucket = -1;
+    runStart = 0;
+    runY = gy0 + cy * CELL;
+
+    for(var cx = 0; cx < COLS; cx++){
+      var i00 = cy * vcols + cx;
+      var i10 = i00 + 1;
+      var i11 = i00 + vcols + 1;
+      var i01 = i00 + vcols;
+
+      var v00 = VAL[i00], v10 = VAL[i10], v11 = VAL[i11], v01 = VAL[i01];
+      var in00 = v00 >= FIELD_T, in10 = v10 >= FIELD_T, in11 = v11 >= FIELD_T, in01 = v01 >= FIELD_T;
+      var cxpx = gx0 + cx * CELL;
+
+      var uniform = (in00 === in10) && (in10 === in11) && (in11 === in01);
+
+      if(uniform){
+        var bucket = in00 ? Math.round(((TMP[i00] + TMP[i10] + TMP[i11] + TMP[i01]) * 0.25) * QUANT) : -1;
+        if(bucket === runBucket){
+          continue;
+        }
+        if(runActive && runBucket >= 0){
+          fctx.fillStyle = bucketColor(runBucket, QUANT, colorHex);
+          fctx.fillRect(runStart, runY, cxpx - runStart, CELL + 1);
+        }
+        runActive = true;
+        runBucket = bucket;
+        runStart = cxpx;
+        continue;
+      }
+
+      if(runActive && runBucket >= 0){
+        fctx.fillStyle = bucketColor(runBucket, QUANT, colorHex);
+        fctx.fillRect(runStart, runY, cxpx - runStart, CELL + 1);
+      }
+      runActive = true;
+      runBucket = -1;
+      runStart = cxpx + CELL;
+
+      var px4 = [cxpx, cxpx + CELL, cxpx + CELL, cxpx];
+      var py4 = [runY, runY, runY + CELL, runY + CELL];
+      var val4 = [v00, v10, v11, v01];
+      var in4 = [in00, in10, in11, in01];
+      var pts = fillPolyFromCorners(px4, py4, val4, in4, FIELD_T);
+      if(pts.length >= 6){
+        var avgT = 0, cnt = 0;
+        if(in00){ avgT += TMP[i00]; cnt++; }
+        if(in10){ avgT += TMP[i10]; cnt++; }
+        if(in11){ avgT += TMP[i11]; cnt++; }
+        if(in01){ avgT += TMP[i01]; cnt++; }
+        avgT = cnt > 0 ? avgT / cnt : 0;
+        var col = colorForTemp(avgT);
+        fctx.fillStyle = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')';
+        fctx.beginPath();
+        fctx.moveTo(pts[0], pts[1]);
+        for(var pi = 2; pi < pts.length; pi += 2) fctx.lineTo(pts[pi], pts[pi + 1]);
+        fctx.closePath();
+        fctx.fill();
+      }
+    }
+
+    if(runActive && runBucket >= 0){
+      fctx.fillStyle = bucketColor(runBucket, QUANT, colorHex);
+      fctx.fillRect(runStart, runY, gx0 + COLS * CELL - runStart, CELL + 1);
+    }
+  }
+
+  fctx.restore();
+}
+
+function bucketColor(bucket, quant, cache){
+  if(cache[bucket] === undefined){
+    var t = clamp(bucket / quant, 0, 1);
+    var col = colorForTemp(t);
+    cache[bucket] = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')';
+  }
+  return cache[bucket];
+}
+
+function capsulePath(g, x0, y0, x1, y1, r){
+  var cx = (x0 + x1) / 2;
+  g.beginPath();
+  g.moveTo(x0, y0);
+  g.arc(cx, y0, r, Math.PI, 0, false);
+  g.lineTo(x1, y1);
+  g.arc(cx, y1, r, 0, Math.PI, false);
+  g.closePath();
+}
+
+function draw(time, dt){
+  ctx.clearRect(0, 0, width, height);
+
+  var bg = ctx.createRadialGradient(width / 2, height * 0.4, 10, width / 2, height * 0.55, height * 0.75);
+  bg.addColorStop(0, '#0a0a14');
+  bg.addColorStop(1, '#040406');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, width, height);
+
+  var fh = floorHeat(time);
+  var glow = ctx.createRadialGradient(
+    (tube.x0 + tube.x1) / 2, tube.y1 + tube.r * 0.4, 4,
+    (tube.x0 + tube.x1) / 2, tube.y1 + tube.r * 0.4, tube.r * 2.2
+  );
+  var gc = colorForTemp(fh);
+  glow.addColorStop(0, 'rgba(' + gc[0] + ',' + gc[1] + ',' + gc[2] + ',' + (0.16 + fh * 0.1) + ')');
+  glow.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+
+  renderFluid(time);
+
+  ctx.save();
+  capsulePath(ctx, tube.x0, tube.y0, tube.x1, tube.y1, tube.r);
+  ctx.clip();
+
+  ctx.filter = 'blur(6px)';
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.6;
+  ctx.drawImage(fluid, 0, 0, fluid.width, fluid.height, 0, 0, width, height);
+
+  ctx.filter = 'none';
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.drawImage(fluid, 0, 0, fluid.width, fluid.height, 0, 0, width, height);
+
+  ctx.restore();
+
+  ctx.save();
+  capsulePath(ctx, tube.x0, tube.y0, tube.x1, tube.y1, tube.r);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = 'rgba(200, 220, 255, 0.22)';
+  ctx.stroke();
+
+  var rim = ctx.createLinearGradient(tube.x0, 0, tube.x0 + tube.r * 0.7, 0);
+  rim.addColorStop(0, 'rgba(255,255,255,0.18)');
+  rim.addColorStop(1, 'rgba(255,255,255,0)');
+  capsulePath(ctx, tube.x0, tube.y0, tube.x1, tube.y1, tube.r);
+  ctx.clip();
+  ctx.fillStyle = rim;
+  ctx.fillRect(tube.x0, tube.y0 - tube.r, tube.r * 0.9, (tube.y1 - tube.y0) + tube.r * 2);
+  ctx.restore();
+
+  drawCap(tube.y0 - tube.r - tube.capH * 0.5, tube.capH);
+  drawCap(tube.y1 + tube.r + tube.capH * 0.5, tube.capH);
+
+  if(state !== 0){
+    var el = (time * 1000 - fadeStart);
+    var a;
+    if(state === 1){
+      a = clamp(el / FADE_MS, 0, 1);
+      if(a >= 1){ seedTube(); state = 2; fadeStart = time * 1000; a = 1; }
+    } else {
+      a = 1 - clamp(el / FADE_MS, 0, 1);
+      if(el >= FADE_MS){ state = 0; a = 0; }
+    }
+    ctx.fillStyle = 'rgba(2,2,4,' + a + ')';
+    ctx.fillRect(0, 0, width, height);
+  }
+}
+
+function drawCap(centerY, h){
+  var w = tube.r * 2 + 18;
+  var x = (tube.x0 + tube.x1) / 2 - w / 2;
+  var y = centerY - h / 2;
+  var g = ctx.createLinearGradient(0, y, 0, y + h);
+  g.addColorStop(0, '#3a3a42');
+  g.addColorStop(0.35, '#8a8a94');
+  g.addColorStop(0.5, '#c8c8d2');
+  g.addColorStop(0.65, '#6a6a74');
+  g.addColorStop(1, '#26262c');
+  ctx.fillStyle = g;
+  var rr = Math.min(10, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.lineTo(x + w - rr, y);
+  ctx.arcTo(x + w, y, x + w, y + rr, rr);
+  ctx.lineTo(x + w, y + h - rr);
+  ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr);
+  ctx.lineTo(x + rr, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rr, rr);
+  ctx.lineTo(x, y + rr);
+  ctx.arcTo(x, y, x + rr, y, rr);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function maybeReset(time){
+  if(time * 1000 > nextResetAt && state === 0){
+    state = 1;
+    fadeStart = time * 1000;
+    nextResetAt = time * 1000 + RESET_PERIOD + FADE_MS * 2;
+  }
+}
+
+function frame(now){
+  var time = now / 1000;
+  if(!lastT) lastT = time;
+  var dt = Math.min(0.05, time - lastT);
+  lastT = time;
+
+  if(state === 0){
+    step(dt, time);
+    maybeReset(time);
+  }
+  draw(time, dt);
+
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resizeCanvas);
+canvas.addEventListener('mousemove', function(e){
+  mouseX = e.clientX - (rect ? rect.left : 0);
+  mouseY = e.clientY - (rect ? rect.top : 0);
+  mouseActive = true;
+});
+canvas.addEventListener('mouseleave', function(){ mouseActive = false; });
+canvas.addEventListener('touchmove', function(e){
+  if(e.touches && e.touches.length){
+    mouseX = e.touches[0].clientX - (rect ? rect.left : 0);
+    mouseY = e.touches[0].clientY - (rect ? rect.top : 0);
+    mouseActive = true;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+canvas.addEventListener('click', function(e){
+  var x = e.clientX - (rect ? rect.left : 0);
+  var y = e.clientY - (rect ? rect.top : 0);
+  x = clamp(x, tube.x0 + 10, tube.x1 - 10);
+  y = clamp(y, tube.y0 - tube.r * 0.4, tube.y1 + tube.r * 0.4);
+  if(nuclei.length >= MAX_N){
+    var coldest = 0;
+    for(var i = 1; i < nuclei.length; i++){
+      if(nuclei[i].heat < nuclei[coldest].heat) coldest = i;
+    }
+    nuclei.splice(coldest, 1);
+  }
+  nuclei.push(spawnNucleus(x, y, 1, -50));
+});
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resizeCanvas();
+layoutTube();
+seedTube();
+nextResetAt = RESET_PERIOD;
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

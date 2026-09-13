@@ -24,6 +24,52 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-13** — `2026-09-13-amber-suspension.html`: a fortieth technique,
+  and the first to extract an explicit boundary from a field rather than
+  shade a field's interior directly, walk a ray into it, or lean on a
+  physics solver's own particles for shape. Every nucleus in a small pool
+  contributes a "soft object" falloff (Wyvill, McPheeters & Wyvill, 1986) of
+  its distance — (1 − d²/R²)³ inside its own reach, zero beyond it — and the
+  frame's entire shape is nothing but the level set where the sum of every
+  nucleus's falloff crosses one fixed threshold. Night 23's raymarcher
+  walked a ray through a signed distance field and shaded whatever surface
+  it hit; night 21's SPH fluid never had a boundary at all, only a cloud of
+  kernel-weighted density read pixel by pixel. This instead runs marching
+  squares, the two-dimensional sibling of Lorensen and Cline's 1987 marching
+  cubes, over a coarse grid laid across the field: every cell's four corners
+  are tested against the threshold, and wherever two neighboring corners
+  disagree, linear interpolation along that one edge finds the exact
+  crossing point, which is stitched corner-to-crossing-to-corner into that
+  cell's own sliver of the boundary — the same trick medical imaging uses to
+  turn a CT scan's density values into an explicit organ outline. No cell is
+  colored by hand; every fill is read straight off a temperature the field
+  itself carries, the weighted average of whichever nuclei are actually
+  contributing there. A little over a dozen blobs of amber wax drift inside
+  a glass tube, each one nothing but a position, a velocity, and a
+  temperature that always relaxes toward whatever a shelf of heat at the
+  tube's floor and a cool neck above are independently pulling it toward —
+  hotter near the floor, cooler near the neck — but only within a thin
+  boundary layer at each end; a blob coasting through the middle of the tube
+  carries whatever heat it left the last boundary with, nearly unchanged,
+  which is what lets it overshoot its own neutral height by a wide margin
+  in either direction before the next boundary layer finally catches up
+  with it. Buoyancy is a single line: a nucleus warmer than neutral rises,
+  one colder sinks, no fluid ever solved for beyond that one number, and a
+  gentle drag stands in for the wax's own viscosity so nothing accelerates
+  forever. The entire rise-coast-cool-sink-reheat cycle real lava lamps run
+  on falls out of that one lag between a blob's position and its own
+  temperature, with the field doing all the visual work of merging two
+  close blobs into one shape and splitting a stretched one back into two
+  the instant marching squares finds the neck between them has thinned past
+  the threshold. The floor's own heat breathes slowly over a couple of
+  minutes, sliding the whole tube between a sluggish simmer and a vigorous
+  boil. Move the cursor to draw a warm current through the glass, nudging
+  nearby blobs toward the floor's own temperature and off on their own
+  climb; click to drip a fresh hot droplet in at that point, retiring
+  whichever blob has gone coldest if the tube is already full. Left alone,
+  the whole tube empties and reseeds a fresh stack of droplets at the floor
+  every couple of minutes. Open the file directly in a browser.
+
 - **2026-09-12** — `2026-09-12-tooth-and-clover.html`: a thirty-ninth
   technique, and the first with no field, no lattice, and no fixed population
   — an agent-based predator-prey ecology, the Rosenzweig-MacArthur model (a
