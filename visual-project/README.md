@@ -24,6 +24,44 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-14** — `2026-09-14-mean-free-hush.html`: a forty-first
+  technique, and the first built on exact pairwise hard-disk collision
+  rather than a field, a lattice, a swarm rule, or a continuum solver.
+  Night 9's ink weather solved a real velocity field on a fixed grid;
+  night 21's borrowed weight was particles too, but smeared into a
+  continuous density by an SPH kernel, never actually touching; night 34's
+  lattice wake ran a lattice-gas automaton, particles confined to a
+  hexagonal lattice with a handful of discrete velocity directions. This is
+  closer to the thing kinetic theory was built to describe in the first
+  place — a few hundred hard disks with continuous position and velocity,
+  each frame's overlaps found through a uniform spatial grid rebuilt from
+  scratch, resolved with the same exact two-body elastic impulse a
+  billiards engine would use, mass drawn from disk area so heavier bodies
+  push back harder. A wall down the center splits the box in two with a
+  single gap in it. Every particle that reaches the left outer wall is
+  handed a fresh velocity sampled from a hot Gaussian, the
+  Maxwell–Boltzmann speed distribution a thermal reservoir imposes on
+  whatever touches it; every particle reaching the right wall gets the same
+  treatment from a colder distribution. Nothing forces the two populations
+  to mix — only the gap does that, one collision at a time — so color, read
+  straight off each disk's instantaneous speed from a red hot to blue cold,
+  shows the whole story: two separate temperatures on either side, a
+  violet, turbulent jet where they cross, and a texture that never fully
+  homogenizes because the reservoirs keep resupplying the difference
+  they're fighting to erase. A few heavier golden disks ride inside the
+  swarm doing nothing themselves, carrying no reservoir, no purpose but to
+  be shoved — their own fading paths, drawn as a faint trailing line each
+  keeps behind it, are exactly the random walk Einstein derived from unseen
+  molecular bombardment in 1905 and Perrin confirmed by watching pollen
+  grains through a microscope. Move the cursor near the dividing wall and
+  it takes hold of the gap, sliding it to wherever the pointer sits; left
+  near the wall's own oscillation, the gap drifts on a slow sine instead.
+  Away from the wall, the cursor stirs — every disk nearby gets a gentle
+  push outward, a private breeze. Click anywhere to strike a spark:
+  everything within reach of the click is kicked to a sudden, shared high
+  temperature and left to cool back into the crowd on its own. Open the
+  file directly in a browser.
+
 - **2026-09-13** — `2026-09-13-amber-suspension.html`: a fortieth technique,
   and the first to extract an explicit boundary from a field rather than
   shade a field's interior directly, walk a ray into it, or lean on a
