@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Folded Horizon — Night 42</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Folded Horizon &mdash; Night 42 &mdash; move to bend the fold &middot; click to fold anew</div>
+<script>
+(function(){
+'use strict';
+// A forty-second technique, and the first with no field, no lattice, no
+// agents, and no evolving population at all -- a single fixed nonlinear
+// map, iterated forever. The Clifford attractor: x' = sin(a*y) + c*cos(a*x),
+// y' = sin(b*x) + d*cos(b*y). Four numbers and two trig sums are the entire
+// rule; there is no diffusion term, no neighbor lookup, no collision, no
+// birth or death. Night 17's harmonograph came closest -- a handful of
+// continuous oscillator terms summed into one pen's position -- but that
+// pen draws a single unbroken thread and the shape is whatever curve it
+// traces over time. Here a few thousand points, seeded at random, are each
+// run through the same map independently and forever; no point remembers
+// the last one, none interacts with any other, and the fractal wings that
+// appear are not drawn by anyone -- they are simply the only place left for
+// a point to land once the map has folded the plane over itself enough
+// times, the same folding-and-stretching that makes any chaotic map's
+// attractor a fixed shape even though no individual orbit ever repeats.
+// Night 10's lightning grew by thousands of blind random walks freezing on
+// contact; this has no randomness anywhere in its dynamics, only in where
+// each point happens to start -- everything that looks organic here is
+// pure determinism, folded until it looks improvised. Because sin and cos
+// are bounded by one, the entire attractor is provably confined to a box of
+// half-width 1+|c| and half-height 1+|d|, so the frame is scaled straight
+// off the live parameters rather than measured from the points themselves.
+// Color carries no physical quantity -- no speed, no temperature, no
+// age -- only which of the map's four sign-quadrants (the sign of
+// cos(a*x) crossed with the sign of cos(b*y)) a point currently occupies,
+// since it is exactly the folding between those quadrants that builds the
+// wings; brightness alone answers to how far a point just jumped, so the
+// fast-folding seams of the attractor glow and the slow-dwelling regions
+// stay a dim ember. The four parameters drift on their own slow
+// independent walks, breathing the wings from a tight rose into a loose
+// scattered fan and back over a couple of minutes, close enough to keep
+// one attractor's identity but never quite settling. Move the cursor to
+// lean two of the four parameters toward it, warping the fold in real
+// time and snapping back toward the drifting baseline when the pointer
+// leaves; click to draw an entirely new set of four parameters -- a
+// different species of attractor -- and let the plane refold itself
+// around it from a flash of white. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var trail = document.createElement('canvas');
+var tctx = trail.getContext('2d');
+
+var width = 0, height = 0;
+var rect = null;
+
+var N = 7000;
+var px = new Float32Array(N);
+var py = new Float32Array(N);
+
+var base = { a: -1.4, b: 1.7, c: 1.0, d: 0.75 };
+var live = { a: base.a, b: base.b, c: base.c, d: base.d };
+var walkTarget = { a: base.a, b: base.b, c: base.c, d: base.d };
+
+var PARAM_LO = 0.35, PARAM_HI = 2.3;
+var WALK_PERIOD = 100;
+var nextWalkAt = 0;
+
+var mouseX = 0, mouseY = 0, mouseActive = false;
+var PERTURB = 1.1;
+
+var flashAlpha = 0;
+var lastT = 0;
+
+var HUES = [28, 335, 190, 265]; // amber, rose, teal, violet -- one per sign-quadrant
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function rand(a, b){ return a + Math.random() * (b - a); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+function signedRand(lo, hi){ return (Math.random() < 0.5 ? -1 : 1) * rand(lo, hi); }
+
+function seedPoints(){
+  for(var i = 0; i < N; i++){
+    px[i] = rand(-1, 1);
+    py[i] = rand(-1, 1);
+  }
+}
+
+function randomParams(){
+  return {
+    a: signedRand(PARAM_LO, PARAM_HI),
+    b: signedRand(PARAM_LO, PARAM_HI),
+    c: signedRand(PARAM_LO, PARAM_HI),
+    d: signedRand(PARAM_LO, PARAM_HI)
+  };
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  trail.width = canvas.width;
+  trail.height = canvas.height;
+  tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tctx.fillStyle = '#05050a';
+  tctx.fillRect(0, 0, width, height);
+  rect = canvas.getBoundingClientRect();
+}
+
+function maybeWalk(time){
+  if(time < nextWalkAt) return;
+  nextWalkAt = time + WALK_PERIOD * (0.6 + Math.random() * 0.8);
+  var next = randomParams();
+  // Bias the new walk target to stay near the current baseline rather than
+  // jump across the whole range, so this reads as breathing, not switching.
+  walkTarget.a = lerp(base.a, next.a, 0.55);
+  walkTarget.b = lerp(base.b, next.b, 0.55);
+  walkTarget.c = lerp(base.c, next.c, 0.55);
+  walkTarget.d = lerp(base.d, next.d, 0.55);
+}
+
+function step(dt){
+  var breathT = clamp(dt / 6, 0, 1);
+  base.a = lerp(base.a, walkTarget.a, breathT);
+  base.b = lerp(base.b, walkTarget.b, breathT);
+  base.c = lerp(base.c, walkTarget.c, breathT);
+  base.d = lerp(base.d, walkTarget.d, breathT);
+
+  var targetC = base.c, targetD = base.d;
+  if(mouseActive){
+    var nx = clamp(mouseX / width, 0, 1) * 2 - 1;
+    var ny = clamp(mouseY / height, 0, 1) * 2 - 1;
+    targetC = base.c + nx * PERTURB;
+    targetD = base.d + ny * PERTURB;
+  }
+
+  var followT = clamp(dt * 1.6, 0, 1);
+  live.a = lerp(live.a, base.a, followT);
+  live.b = lerp(live.b, base.b, followT);
+  live.c = lerp(live.c, targetC, followT);
+  live.d = lerp(live.d, targetD, followT);
+}
+
+function draw(){
+  var a = live.a, b = live.b, c = live.c, d = live.d;
+  var halfW = 1 + Math.abs(c);
+  var halfH = 1 + Math.abs(d);
+  var margin = 0.92;
+  var scale = margin * Math.min(width / (2 * halfW), height / (2 * halfH));
+  var cx = width / 2, cy = height / 2;
+
+  // Fade the trail toward the background instead of clearing it outright,
+  // so a point's landing history persists just long enough to read as a
+  // shape rather than a scatter of single frames.
+  tctx.fillStyle = 'rgba(5, 5, 10, 0.10)';
+  tctx.fillRect(0, 0, width, height);
+
+  if(flashAlpha > 0.002){
+    tctx.fillStyle = 'rgba(255, 255, 255, ' + (flashAlpha * 0.5).toFixed(3) + ')';
+    tctx.fillRect(0, 0, width, height);
+    flashAlpha *= 0.90;
+  }
+
+  tctx.globalCompositeOperation = 'lighter';
+  for(var i = 0; i < N; i++){
+    var x0 = px[i], y0 = py[i];
+    var x1 = Math.sin(a * y0) + c * Math.cos(a * x0);
+    var y1 = Math.sin(b * x0) + d * Math.cos(b * y0);
+    px[i] = x1;
+    py[i] = y1;
+
+    var q = (Math.cos(a * x0) >= 0 ? 1 : 0) | (Math.cos(b * y0) >= 0 ? 2 : 0);
+    var jump = Math.hypot(x1 - x0, y1 - y0);
+    var light = clamp(22 + jump * 26, 18, 78);
+
+    tctx.fillStyle = 'hsla(' + HUES[q] + ', 80%, ' + light.toFixed(0) + '%, 0.5)';
+    tctx.fillRect(cx + x1 * scale, cy + y1 * scale, 1.4, 1.4);
+  }
+  tctx.globalCompositeOperation = 'source-over';
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(trail, 0, 0, width, height);
+}
+
+function frame(time){
+  time = time / 1000;
+  var dt = Math.min(0.05, time - lastT || 0.016);
+  lastT = time;
+
+  maybeWalk(time);
+  step(dt);
+  draw();
+
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resizeCanvas);
+canvas.addEventListener('mousemove', function(e){
+  mouseX = e.clientX - (rect ? rect.left : 0);
+  mouseY = e.clientY - (rect ? rect.top : 0);
+  mouseActive = true;
+});
+canvas.addEventListener('mouseleave', function(){ mouseActive = false; });
+canvas.addEventListener('touchmove', function(e){
+  if(e.touches && e.touches.length){
+    mouseX = e.touches[0].clientX - (rect ? rect.left : 0);
+    mouseY = e.touches[0].clientY - (rect ? rect.top : 0);
+    mouseActive = true;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+canvas.addEventListener('click', function(){
+  var next = randomParams();
+  base.a = next.a; base.b = next.b; base.c = next.c; base.d = next.d;
+  walkTarget.a = next.a; walkTarget.b = next.b; walkTarget.c = next.c; walkTarget.d = next.d;
+  seedPoints();
+  flashAlpha = 1;
+});
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resizeCanvas();
+seedPoints();
+nextWalkAt = WALK_PERIOD;
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

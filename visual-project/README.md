@@ -24,6 +24,46 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-15** — `2026-09-15-folded-horizon.html`: a forty-second
+  technique, and the first with no field, no lattice, no agents, and no
+  evolving population at all — a single fixed nonlinear map, iterated
+  forever. The Clifford attractor: x' = sin(a·y) + c·cos(a·x),
+  y' = sin(b·x) + d·cos(b·y). Four numbers and two trig sums are the
+  entire rule; there is no diffusion term, no neighbor lookup, no
+  collision, no birth or death. Night 17's harmonograph came closest — a
+  handful of continuous oscillator terms summed into one pen's position —
+  but that pen draws a single unbroken thread and the shape is whatever
+  curve it traces over time. Here a few thousand points, seeded at
+  random, are each run through the same map independently and forever;
+  no point remembers the last one, none interacts with any other, and
+  the fractal wings that appear are not drawn by anyone — they are
+  simply the only place left for a point to land once the map has folded
+  the plane over itself enough times, the same folding-and-stretching
+  that makes any chaotic map's attractor a fixed shape even though no
+  individual orbit ever repeats. Night 10's lightning grew by thousands
+  of blind random walks freezing on contact; this has no randomness
+  anywhere in its dynamics, only in where each point happens to start —
+  everything that looks organic here is pure determinism, folded until
+  it looks improvised. Because sine and cosine are bounded by one, the
+  entire attractor is provably confined to a box of half-width 1+|c| and
+  half-height 1+|d|, so the frame is scaled straight off the live
+  parameters rather than measured from the points themselves. Color
+  carries no physical quantity — no speed, no temperature, no age — only
+  which of the map's four sign-quadrants (the sign of cos(a·x) crossed
+  with the sign of cos(b·y)) a point currently occupies, since it is
+  exactly the folding between those quadrants that builds the wings;
+  brightness alone answers to how far a point just jumped, so the
+  fast-folding seams of the attractor glow and the slow-dwelling regions
+  stay a dim ember. The four parameters drift on their own slow
+  independent walks, breathing the wings from a tight rose into a loose
+  scattered fan and back over a couple of minutes, close enough to keep
+  one attractor's identity but never quite settling. Move the cursor to
+  lean two of the four parameters toward it, warping the fold in real
+  time and snapping back toward the drifting baseline when the pointer
+  leaves; click to draw an entirely new set of four parameters — a
+  different species of attractor — and let the plane refold itself
+  around it from a flash of white. Open the file directly in a browser.
+
 - **2026-09-14** — `2026-09-14-mean-free-hush.html`: a forty-first
   technique, and the first built on exact pairwise hard-disk collision
   rather than a field, a lattice, a swarm rule, or a continuum solver.
