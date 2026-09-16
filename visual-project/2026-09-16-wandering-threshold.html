@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wandering Threshold — Night 43</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+    image-rendering: auto;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Wandering Threshold &mdash; Night 43 &mdash; move to lean the constant &middot; click to fall into the boundary</div>
+<script>
+(function(){
+'use strict';
+// A forty-third technique, and the first where nothing is drawn as a
+// particle, a lattice cell, or a histogram bin at all -- every pixel asks
+// its own private yes-or-no question, answered by iterating one complex
+// map, z' = z^2 + c, starting from that pixel's own coordinate. Night 42's
+// Clifford attractor ran a few thousand points through a fixed map and let
+// their accumulated landings paint a shape; night 22's fractal flame ran a
+// chaos game, a different randomly-chosen affine map at every step, into a
+// persistent histogram. Both point-sample a plane and build an image out
+// of where points end up. This inverts that: the plane itself, one pixel
+// at a time, is the thing being tested -- does this starting point's orbit
+// stay bounded forever under z^2+c, or does it eventually run to infinity?
+// Bounded points render as void, the same near-black as the page itself;
+// escaping points are colored by *how fast* they escaped, a smooth,
+// continuous count (Milnor & Thurston's trick of blending the log-log of
+// the escape radius into the integer iteration count, which is what keeps
+// the color bands from showing their seams). The knife-edge between those
+// two answers -- close enough to bounded that an orbit wanders for a long
+// time before finally running off, or never runs off at all -- is the
+// Julia set, and it is fractal for a specific reason: it is the closure of
+// every repelling periodic orbit of the map, and z^2+c folds space onto
+// itself just enough at every scale that the boundary between staying and
+// leaving can never simplify into a smooth curve. Night 40's amber
+// suspension found a boundary too, but that one was a level set of a
+// finite sum of soft falloffs, entirely local and computable from nearby
+// sources; this boundary is a global, infinite-horizon question about a
+// single point's whole future, only ever approximated by capping how many
+// iterations a pixel is allowed before it is called bounded by default. c
+// is never fixed. A short list of the constant's historically named
+// landmarks -- a dendrite, the San Marco spiral, a Siegel disk, Douady's
+// rabbit, the airplane, a scattering of dust -- is visited in a slow,
+// eased loop, lingering near each named shape and hurrying through the
+// featureless country between them, the same lean-toward-a-drifting-
+// baseline structure night 42 used on the Clifford map's own coefficients,
+// but leaning a single complex number instead of two of four reals. Move
+// the cursor to pull the constant away from that baseline, warping whatever
+// shape is currently showing without resetting its identity; click to pick
+// a point on screen and fall toward it, the view easing into a steep zoom
+// centered exactly there and back out again, so the same fractal boundary
+// that built the wide shape reveals another copy of comparable detail
+// however far in you go. Iteration depth and internal render resolution
+// both adapt each frame to whatever this machine can sustain, so the image
+// softens under load rather than the animation stalling. Open the file
+// directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+
+var bufW = 2, bufH = 2;
+var imageData = null, buf8 = null, buf32 = null;
+
+var RENDER_MAX_DIM = 560;
+var VIEW_BASE_HALF_HEIGHT = 1.35;
+var BAILOUT2 = 16; // escape radius 4, squared
+
+var curIter = 90;
+var ITER_MIN = 40, ITER_MAX = 320;
+var TARGET_FRAME_MS = 30;
+
+var LIB = [
+  { name: 'dendrite',      re: 0.000,   im: 1.000 },
+  { name: 'san marco',     re: -0.750,  im: 0.000 },
+  { name: 'siegel disk',   re: -0.3905, im: -0.5868 },
+  { name: "douady rabbit", re: -0.123,  im: 0.745 },
+  { name: 'airplane',      re: -1.750,  im: 0.000 },
+  { name: 'dust',          re: -0.800,  im: 0.156 },
+  { name: 'spiral',        re: -0.7269, im: 0.1889 }
+];
+var libIndex = 0;
+var segT = 0;
+var SEGMENT_SECONDS = 15;
+
+var mouseX = 0, mouseY = 0, mouseActive = false, rect = null;
+var LEAN = 0.22;
+var leanRe = 0, leanIm = 0;
+
+var pulseStart = null;
+var PULSE_SECONDS = 5.5;
+var ZOOM_PEAK = 16;
+var clickTargetX = 0, clickTargetY = 0;
+
+var viewCenterX = 0, viewCenterY = 0, zoomValue = 1;
+
+var timeOffset = 0;
+var lastT = 0;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+function smoothstep(x){ x = clamp(x, 0, 1); return x * x * (3 - 2 * x); }
+
+function envelope(u){
+  if(u <= 0 || u >= 1) return 0;
+  if(u < 0.28) return smoothstep(u / 0.28);
+  if(u < 0.6) return 1;
+  return 1 - smoothstep((u - 0.6) / 0.4);
+}
+
+function resize(){
+  var ww = window.innerWidth, wh = window.innerHeight;
+  var scale = RENDER_MAX_DIM / Math.max(ww, wh);
+  bufW = Math.max(2, Math.round(ww * scale));
+  bufH = Math.max(2, Math.round(wh * scale));
+  canvas.width = bufW;
+  canvas.height = bufH;
+  imageData = ctx.createImageData(bufW, bufH);
+  buf8 = imageData.data;
+  buf32 = new Uint32Array(buf8.buffer);
+  rect = canvas.getBoundingClientRect();
+}
+
+function paletteByte(a, b, cFreq, d, t){
+  var v = a + b * Math.cos(6.283185307179586 * (cFreq * t + d));
+  return v <= 0 ? 0 : (v >= 1 ? 255 : (v * 255) | 0);
+}
+
+function renderFrame(){
+  var W = bufW, H = bufH;
+  var env = 0;
+  if(pulseStart !== null){
+    env = envelope(pulseStart);
+  }
+  var zoom = lerp(1, ZOOM_PEAK, env);
+  var vcx = lerp(0, clickTargetX, env);
+  var vcy = lerp(0, clickTargetY, env);
+  viewCenterX = vcx; viewCenterY = vcy; zoomValue = zoom;
+
+  var halfH = VIEW_BASE_HALF_HEIGHT / zoom;
+  var halfW = halfH * (W / H);
+
+  var cx = LIB[libIndex].re, cy = LIB[libIndex].im;
+  var nextIdx = (libIndex + 1) % LIB.length;
+  var eased = smoothstep(segT / SEGMENT_SECONDS);
+  cx = lerp(cx, LIB[nextIdx].re, eased);
+  cy = lerp(cy, LIB[nextIdx].im, eased);
+  cx += leanRe; cy += leanIm;
+
+  var maxIter = curIter;
+  var idx = 0;
+  var invW1 = 1 / Math.max(1, W - 1), invH1 = 1 / Math.max(1, H - 1);
+  var paletteT0 = timeOffset;
+
+  for(var j = 0; j < H; j++){
+    var y0 = vcy + ((j * invH1) - 0.5) * 2 * halfH;
+    for(var i = 0; i < W; i++){
+      var x0 = vcx + ((i * invW1) - 0.5) * 2 * halfW;
+      var zr = x0, zi = y0;
+      var zr2 = zr * zr, zi2 = zi * zi;
+      var n = 0;
+      while(n < maxIter && (zr2 + zi2) <= BAILOUT2){
+        zi = 2 * zr * zi + cy;
+        zr = zr2 - zi2 + cx;
+        zr2 = zr * zr; zi2 = zi * zi;
+        n++;
+      }
+
+      var r, g, b;
+      if(n >= maxIter){
+        r = 5; g = 5; b = 10;
+      } else {
+        var mag = Math.sqrt(zr2 + zi2);
+        var mu = n + 1 - Math.log(Math.log(mag)) / Math.LN2;
+        var t = mu * 0.045 + paletteT0;
+        t = t - Math.floor(t);
+        r = paletteByte(0.8, 0.2, 2.0, 0.00, t);
+        g = paletteByte(0.5, 0.4, 1.0, 0.25, t);
+        b = paletteByte(0.4, 0.2, 1.0, 0.25, t);
+      }
+      buf32[idx++] = (255 << 24) | (b << 16) | (g << 8) | r;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+}
+
+function frame(time){
+  time = time / 1000;
+  var dt = Math.min(0.05, time - lastT || 0.016);
+  lastT = time;
+
+  segT += dt;
+  if(segT >= SEGMENT_SECONDS){
+    segT -= SEGMENT_SECONDS;
+    libIndex = (libIndex + 1) % LIB.length;
+  }
+
+  var leanTargetRe = 0, leanTargetIm = 0;
+  if(mouseActive){
+    var nx = clamp(mouseX / Math.max(1, window.innerWidth), 0, 1) * 2 - 1;
+    var ny = clamp(mouseY / Math.max(1, window.innerHeight), 0, 1) * 2 - 1;
+    leanTargetRe = nx * LEAN;
+    leanTargetIm = ny * LEAN;
+  }
+  var followT = clamp(dt * 1.4, 0, 1);
+  leanRe = lerp(leanRe, leanTargetRe, followT);
+  leanIm = lerp(leanIm, leanTargetIm, followT);
+
+  timeOffset += dt * 0.015;
+
+  if(pulseStart !== null){
+    pulseStart += dt / PULSE_SECONDS;
+    if(pulseStart >= 1) pulseStart = null;
+  }
+
+  var t0 = performance.now();
+  renderFrame();
+  var elapsed = performance.now() - t0;
+
+  if(elapsed > TARGET_FRAME_MS * 1.15){
+    curIter -= 6;
+  } else if(elapsed < TARGET_FRAME_MS * 0.6){
+    curIter += 3;
+  }
+  var iterFloorForZoom = 60 + Math.log2(zoomValue + 1) * 48;
+  curIter = clamp(curIter, Math.max(ITER_MIN, iterFloorForZoom), ITER_MAX);
+
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resize);
+canvas.addEventListener('mousemove', function(e){
+  mouseX = e.clientX - (rect ? rect.left : 0);
+  mouseY = e.clientY - (rect ? rect.top : 0);
+  mouseActive = true;
+});
+canvas.addEventListener('mouseleave', function(){ mouseActive = false; });
+canvas.addEventListener('touchmove', function(e){
+  if(e.touches && e.touches.length){
+    mouseX = e.touches[0].clientX - (rect ? rect.left : 0);
+    mouseY = e.touches[0].clientY - (rect ? rect.top : 0);
+    mouseActive = true;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+function pixelToView(px, py){
+  var halfH = VIEW_BASE_HALF_HEIGHT / zoomValue;
+  var halfW = halfH * (bufW / bufH);
+  var nx = px / Math.max(1, window.innerWidth);
+  var ny = py / Math.max(1, window.innerHeight);
+  return {
+    x: viewCenterX + (nx - 0.5) * 2 * halfW,
+    y: viewCenterY + (ny - 0.5) * 2 * halfH
+  };
+}
+
+canvas.addEventListener('click', function(e){
+  var px = e.clientX - (rect ? rect.left : 0);
+  var py = e.clientY - (rect ? rect.top : 0);
+  var target = pixelToView(px, py);
+  clickTargetX = target.x;
+  clickTargetY = target.y;
+  ZOOM_PEAK = 8 + Math.random() * 34;
+  pulseStart = 0.0001;
+});
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resize();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

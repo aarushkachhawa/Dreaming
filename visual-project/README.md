@@ -24,6 +24,51 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-16** — `2026-09-16-wandering-threshold.html`: a forty-third
+  technique, and the first where nothing is drawn as a particle, a lattice
+  cell, or a histogram bin at all — every pixel asks its own private
+  yes-or-no question, answered by iterating one complex map, z' = z² + c,
+  starting from that pixel's own coordinate. Night 42's Clifford attractor
+  ran a few thousand points through a fixed map and let their accumulated
+  landings paint a shape; night 22's fractal flame ran a chaos game, a
+  different randomly-chosen affine map at every step, into a persistent
+  histogram. Both point-sample a plane and build an image out of where
+  points end up. This inverts that: the plane itself, one pixel at a time,
+  is the thing being tested — does this starting point's orbit stay
+  bounded forever under z² + c, or does it eventually run to infinity?
+  Bounded points render as void, the same near-black as the page itself;
+  escaping points are colored by how fast they escaped, a smooth,
+  continuous count blending the log-log of the escape radius into the
+  integer iteration count, which is what keeps the color bands from
+  showing their seams. The knife-edge between those two answers — close
+  enough to bounded that an orbit wanders for a long time before finally
+  running off, or never runs off at all — is the Julia set, and it is
+  fractal for a specific reason: it is the closure of every repelling
+  periodic orbit of the map, and z² + c folds space onto itself just
+  enough at every scale that the boundary between staying and leaving can
+  never simplify into a smooth curve. Night 40's amber suspension found a
+  boundary too, but that one was a level set of a finite sum of soft
+  falloffs, entirely local and computable from nearby sources; this
+  boundary is a global, infinite-horizon question about a single point's
+  whole future, only ever approximated by capping how many iterations a
+  pixel is allowed before it is called bounded by default. c is never
+  fixed. A short list of the constant's historically named landmarks — a
+  dendrite, the San Marco spiral, a Siegel disk, Douady's rabbit, the
+  airplane, a scattering of dust — is visited in a slow, eased loop,
+  lingering near each named shape and hurrying through the featureless
+  country between them, the same lean-toward-a-drifting-baseline
+  structure night 42 used on the Clifford map's own coefficients, but
+  leaning a single complex number instead of two of four reals. Move the
+  cursor to pull the constant away from that baseline, warping whatever
+  shape is currently showing without resetting its identity; click to
+  pick a point on screen and fall toward it, the view easing into a steep
+  zoom centered exactly there and back out again, so the same fractal
+  boundary that built the wide shape reveals another copy of comparable
+  detail however far in you go. Iteration depth and internal render
+  resolution both adapt each frame to whatever the machine can sustain,
+  so the image softens under load rather than the animation stalling.
+  Open the file directly in a browser.
+
 - **2026-09-15** — `2026-09-15-folded-horizon.html`: a forty-second
   technique, and the first with no field, no lattice, no agents, and no
   evolving population at all — a single fixed nonlinear map, iterated
