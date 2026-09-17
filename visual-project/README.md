@@ -24,6 +24,48 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-17** — `2026-09-17-phantom-convoy.html`: a forty-fourth
+  technique, and the first governed by a follow-the-leader rule carrying
+  its own built-in overreaction rather than a field, a swarm behavior, a
+  force law, a spin flip, or exact collision mechanics. This is the
+  Nagel-Schreckenberg model (1992), the cellular automaton traffic physics
+  was built on: cars live on a ring of discrete cells, hold nothing but an
+  integer velocity, and every tick apply four rules in lockstep — speed up
+  by one if nothing's close, slow down to whatever gap actually remains
+  ahead, then, with some fixed probability, brake one notch below even
+  that for no reason at all, and finally move. Night 16's Ising lattice
+  also flips by a coin weighed against a rule, but that coin weighs an
+  energy cost against a temperature; this coin weighs nothing — it fires
+  the same regardless of what's ahead, a driver's plain inattention rather
+  than any physics minimizing anything. Night 41's hard disks actually
+  touch, exact elastic collisions solved pairwise; nothing here ever
+  collides, a car's own speed is capped below its gap every tick so
+  contact is structurally impossible, yet gridlock still happens, which is
+  the entire point being demonstrated. That one extra unforced
+  deceleration is the whole mechanism behind the phantom traffic jam — a
+  dense-enough road left alone, no accident, no lane closure, no reason
+  visible to anyone in it, spontaneously knots into stop-and-go clusters
+  that crawl backward against the flow of traffic, each car braking a beat
+  later and a beat harder than the one ahead of it until the wave outruns
+  its own cause. It isn't a metaphor for the phenomenon; it is small
+  enough to be the actual mechanism, the same one a 2008 ring-road
+  experiment filmed forming from nothing in real cars on a real track.
+  Four lanes share the loop, cars weighing a blocked lane against a
+  clearer neighboring one and a safe gap behind before committing to a
+  change, so jams that start in one lane spill sideways into the others
+  exactly the way real congestion does. Color reads velocity directly,
+  brake red at a dead stop climbing through ember and gold to a near-white
+  cruise at top speed, with a sharp red flash on any car whose speed just
+  dropped, so a jam's shockwave shows as a pulse of brake light visibly
+  running upstream through a river of gold. Total traffic breathes slowly
+  over about a minute between light and heavy, crossing the model's own
+  critical density from the free-flow side to the jammed side and back.
+  Move the cursor near the loop to lean on the nearest stretch of road
+  like a rubbernecking zone, capping speed locally and watching a jam
+  nucleate exactly there; click anywhere to stall a car in place near the
+  loop for a few seconds and force everyone behind it to find a way
+  around. Open the file directly in a browser.
+
 - **2026-09-16** — `2026-09-16-wandering-threshold.html`: a forty-third
   technique, and the first where nothing is drawn as a particle, a lattice
   cell, or a histogram bin at all — every pixel asks its own private

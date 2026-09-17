@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Phantom Convoy — Night 44</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Phantom Convoy &mdash; Night 44 &mdash; hover the loop to slow traffic &middot; click to stall a car</div>
+<script>
+(function(){
+'use strict';
+// A forty-fourth technique, and the first governed by a follow-the-leader
+// rule carrying its own built-in overreaction rather than a field, a swarm
+// behavior, a force law, a spin flip, or exact collision mechanics. This is
+// the Nagel-Schreckenberg model (1992), the cellular automaton traffic
+// physics was built on: cars live on a ring of discrete cells, hold nothing
+// but an integer velocity, and every tick apply four rules in lockstep —
+// speed up by one if nothing's close, slow down to whatever gap actually
+// remains ahead, then, with some fixed probability, brake one notch below
+// even that for no reason at all, and finally move. Night 16's Ising
+// lattice also flips by a coin weighted against a rule, but that coin
+// weighs an energy cost against a temperature; this coin weighs nothing —
+// it fires the same regardless of what's ahead, a driver's plain
+// inattention rather than any physics minimizing anything. Night 41's hard
+// disks actually touch, exact elastic collisions solved pairwise; nothing
+// here ever collides, a car's own speed is capped below its gap every tick
+// so contact is structurally impossible, yet gridlock still happens, which
+// is the entire point being demonstrated. That one extra unforced
+// deceleration is the whole mechanism behind the phantom traffic jam — a
+// dense-enough road left alone, no accident, no lane closure, no reason
+// visible to anyone in it, spontaneously knots into stop-and-go clusters
+// that crawl backward against the flow of traffic, each car braking a beat
+// later and a beat harder than the one ahead of it until the wave outruns
+// its own cause. It isn't a metaphor for the phenomenon; it is small enough
+// to be the actual mechanism, the same one a 2008 ring-road experiment
+// filmed forming from nothing in real cars on a real track. Four lanes
+// share the loop, cars weighing a blocked lane against a clearer
+// neighboring one and a safe gap behind before committing to a change, so
+// jams that start in one lane spill sideways into the others exactly the
+// way real congestion does. Color reads velocity directly, brake red at a
+// dead stop climbing through ember and gold to a near-white cruise at top
+// speed, with a sharp red flash on any car whose speed just dropped, so a
+// jam's shockwave shows as a pulse of brake light visibly running upstream
+// through a river of gold. Total traffic breathes slowly over about a
+// minute between light and heavy, crossing the model's own critical
+// density from the free-flow side to the jammed side and back. Move the
+// cursor near the loop to lean on the nearest stretch of road like a
+// rubbernecking zone, capping speed locally and watching a jam nucleate
+// exactly there; click anywhere to stall a car in place near the loop for
+// a few seconds and force everyone behind it to find a way around. Open
+// the file directly in a browser.
+
+var canvas = document.getElementById('scene');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+
+var LANES = 4;
+var ROAD_LEN = 220;
+var VMAX = 5;
+var BRAKE_P = 0.32;
+var SAFETY_GAP = 3;
+var P_CHANGE = 0.55;
+var COOLDOWN_TICKS = 6;
+var TICK_MS = 170;
+var STALL_MS = 4200;
+var MAX_STALLS = 3;
+var DENSITY_LOW = 0.10;
+var DENSITY_HIGH = 0.40;
+var DENSITY_PERIOD_S = 64;
+var SAMPLES = ROAD_LEN;
+
+var W, H, DPR;
+var cx, cy, halfW, halfH, radius, laneGap;
+var CENTER = null; // Float32Array SAMPLES*4 : x, y, nx, ny
+
+var cars = [];
+var laneArrays = [];
+for (var li = 0; li < LANES; li++) laneArrays.push([]);
+
+var lastTick = 0;
+var startTime = 0;
+
+var mouseX = -9999, mouseY = -9999, mouseActive = false;
+var hoverS = 0, hoverStrength = 0;
+var ZONE_RADIUS_CELLS = 16;
+var ZONE_MAX_DIST_PX = 150;
+
+function lerp(a, b, t){ return a + (b - a) * t; }
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function mod(a, n){ return ((a % n) + n) % n; }
+
+function buildTrack(){
+  var marginFrac = 0.14;
+  halfW = W / 2 - Math.min(W, H) * marginFrac;
+  halfH = H / 2 - Math.min(W, H) * marginFrac;
+  radius = Math.min(halfW, halfH) * 0.55;
+  laneGap = Math.min(halfW, halfH) * 0.11;
+  cx = W / 2; cy = H / 2;
+
+  var hw = halfW, hh = halfH, R = radius;
+  var topLen = Math.max(0, 2 * (hw - R));
+  var sideLen = Math.max(0, 2 * (hh - R));
+  var arcLen = Math.PI / 2 * R;
+
+  var segs = [
+    { type: 'line', x0: -hw + R, y0: -hh, x1: hw - R, y1: -hh, nx: 0, ny: -1, len: topLen },
+    { type: 'arc', ccx: hw - R, ccy: -hh + R, a0: -Math.PI / 2, a1: 0, len: arcLen },
+    { type: 'line', x0: hw, y0: -hh + R, x1: hw, y1: hh - R, nx: 1, ny: 0, len: sideLen },
+    { type: 'arc', ccx: hw - R, ccy: hh - R, a0: 0, a1: Math.PI / 2, len: arcLen },
+    { type: 'line', x0: hw - R, y0: hh, x1: -hw + R, y1: hh, nx: 0, ny: 1, len: topLen },
+    { type: 'arc', ccx: -hw + R, ccy: hh - R, a0: Math.PI / 2, a1: Math.PI, len: arcLen },
+    { type: 'line', x0: -hw, y0: hh - R, x1: -hw, y1: -hh + R, nx: -1, ny: 0, len: sideLen },
+    { type: 'arc', ccx: -hw + R, ccy: -hh + R, a0: Math.PI, a1: Math.PI * 1.5, len: arcLen }
+  ];
+  var total = 0;
+  for (var i = 0; i < segs.length; i++) total += segs[i].len;
+
+  CENTER = new Float32Array(SAMPLES * 4);
+  var segIdx = 0, segStart = 0, seg = segs[0];
+  for (var s = 0; s < SAMPLES; s++) {
+    var target = (s / SAMPLES) * total;
+    while (target > segStart + seg.len && segIdx < segs.length - 1) {
+      segStart += seg.len;
+      segIdx++;
+      seg = segs[segIdx];
+    }
+    var local = seg.len > 1e-6 ? (target - segStart) / seg.len : 0;
+    local = clamp(local, 0, 1);
+    var px, py, nx, ny;
+    if (seg.type === 'line') {
+      px = lerp(seg.x0, seg.x1, local);
+      py = lerp(seg.y0, seg.y1, local);
+      nx = seg.nx; ny = seg.ny;
+    } else {
+      var a = lerp(seg.a0, seg.a1, local);
+      nx = Math.cos(a); ny = Math.sin(a);
+      px = seg.ccx + nx * R;
+      py = seg.ccy + ny * R;
+    }
+    CENTER[s * 4] = cx + px;
+    CENTER[s * 4 + 1] = cy + py;
+    CENTER[s * 4 + 2] = nx;
+    CENTER[s * 4 + 3] = ny;
+  }
+}
+
+function laneOffset(l){
+  return (l - (LANES - 1) / 2) * laneGap;
+}
+
+function samplePoint(sFloat, laneFloat, out){
+  var s0 = Math.floor(mod(sFloat, SAMPLES));
+  var s1 = (s0 + 1) % SAMPLES;
+  var frac = mod(sFloat, SAMPLES) - s0;
+  var x0 = CENTER[s0 * 4], y0 = CENTER[s0 * 4 + 1], nx0 = CENTER[s0 * 4 + 2], ny0 = CENTER[s0 * 4 + 3];
+  var x1 = CENTER[s1 * 4], y1 = CENTER[s1 * 4 + 1], nx1 = CENTER[s1 * 4 + 2], ny1 = CENTER[s1 * 4 + 3];
+  var px = lerp(x0, x1, frac), py = lerp(y0, y1, frac);
+  var nxv = lerp(nx0, nx1, frac), nyv = lerp(ny0, ny1, frac);
+  var off = laneOffset(laneFloat);
+  out.x = px + nxv * off;
+  out.y = py + nyv * off;
+  out.angle = Math.atan2(y1 - y0, x1 - x0);
+  return out;
+}
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  buildTrack();
+}
+
+function occupied(lane, pos, ownIdx){
+  var arr = laneArrays[lane];
+  for (var i = 0; i < arr.length; i++) {
+    if (arr[i] !== ownIdx && Math.abs(mod(cars[arr[i]].pos - pos + ROAD_LEN / 2, ROAD_LEN) - ROAD_LEN / 2) < 1) return true;
+  }
+  return false;
+}
+
+function spawnCar(lane, pos, vel){
+  var car = {
+    lane: lane, pos: pos, vel: vel,
+    prevLane: lane, prevPos: pos,
+    cooldown: 0, frozenUntil: 0, flash: 0
+  };
+  cars.push(car);
+  return car;
+}
+
+function initCars(){
+  cars.length = 0;
+  var targetCount = Math.round(LANES * ROAD_LEN * DENSITY_LOW);
+  var attempts = 0;
+  while (cars.length < targetCount && attempts < targetCount * 20) {
+    attempts++;
+    var lane = (Math.random() * LANES) | 0;
+    var pos = (Math.random() * ROAD_LEN) | 0;
+    var clear = true;
+    for (var i = 0; i < cars.length; i++) {
+      if (cars[i].lane === lane && Math.abs(mod(cars[i].pos - pos + ROAD_LEN / 2, ROAD_LEN) - ROAD_LEN / 2) < 2) { clear = false; break; }
+    }
+    if (clear) spawnCar(lane, pos, (Math.random() * VMAX) | 0);
+  }
+}
+
+function rebuildLaneArrays(){
+  for (var l = 0; l < LANES; l++) laneArrays[l].length = 0;
+  for (var i = 0; i < cars.length; i++) laneArrays[cars[i].lane].push(i);
+  for (var l2 = 0; l2 < LANES; l2++) {
+    laneArrays[l2].sort(function(a, b){ return cars[a].pos - cars[b].pos; });
+  }
+}
+
+function gapInLane(lane, pos, ownIdx){
+  var arr = laneArrays[lane];
+  if (arr.length === 0 || (arr.length === 1 && arr[0] === ownIdx)) return ROAD_LEN - 1;
+  var best = ROAD_LEN - 1;
+  for (var i = 0; i < arr.length; i++) {
+    var idx = arr[i];
+    if (idx === ownIdx) continue;
+    var d = mod(cars[idx].pos - pos, ROAD_LEN) - 1;
+    if (d < best) best = d;
+  }
+  return Math.max(0, best);
+}
+
+function gapBehindInLane(lane, pos, ownIdx){
+  var arr = laneArrays[lane];
+  if (arr.length === 0 || (arr.length === 1 && arr[0] === ownIdx)) return ROAD_LEN - 1;
+  var best = ROAD_LEN - 1;
+  for (var i = 0; i < arr.length; i++) {
+    var idx = arr[i];
+    if (idx === ownIdx) continue;
+    var d = mod(pos - cars[idx].pos, ROAD_LEN) - 1;
+    if (d < best) best = d;
+  }
+  return Math.max(0, best);
+}
+
+function zoneCapAt(lane, pos){
+  if (hoverStrength <= 0.01) return VMAX;
+  var d = Math.abs(mod(pos - hoverS + ROAD_LEN / 2, ROAD_LEN) - ROAD_LEN / 2);
+  if (d > ZONE_RADIUS_CELLS) return VMAX;
+  var falloff = 1 - d / ZONE_RADIUS_CELLS;
+  var cap = lerp(VMAX, 1, hoverStrength * falloff);
+  return Math.max(1, Math.round(cap));
+}
+
+function tick(now){
+  rebuildLaneArrays();
+
+  // lane-change decisions
+  var changes = [];
+  for (var i = 0; i < cars.length; i++) {
+    var car = cars[i];
+    if (car.frozenUntil > now) continue;
+    if (car.cooldown > 0) { car.cooldown--; continue; }
+    var gapHere = gapInLane(car.lane, car.pos, i);
+    if (gapHere >= VMAX) continue;
+    var candidates = [];
+    if (car.lane > 0) candidates.push(car.lane - 1);
+    if (car.lane < LANES - 1) candidates.push(car.lane + 1);
+    var best = -1, bestGap = gapHere;
+    for (var c = 0; c < candidates.length; c++) {
+      var tl = candidates[c];
+      var gAhead = gapInLane(tl, car.pos, -1);
+      var gBehind = gapBehindInLane(tl, car.pos, -1);
+      if (gAhead > bestGap + 1 && gBehind >= SAFETY_GAP) {
+        if (gAhead > bestGap) { bestGap = gAhead; best = tl; }
+      }
+    }
+    if (best !== -1 && Math.random() < P_CHANGE) {
+      changes.push({ idx: i, lane: best });
+    }
+  }
+  for (var k = 0; k < changes.length; k++) {
+    cars[changes[k].idx].lane = changes[k].lane;
+    cars[changes[k].idx].cooldown = COOLDOWN_TICKS;
+  }
+  rebuildLaneArrays();
+
+  // velocity update
+  for (var j = 0; j < cars.length; j++) {
+    var c2 = cars[j];
+    c2.prevPos = c2.pos;
+    c2.prevLane = c2.lane;
+    if (c2.frozenUntil > now) {
+      c2.vel = 0;
+      continue;
+    }
+    var oldVel = c2.vel;
+    var gap = gapInLane(c2.lane, c2.pos, cars.indexOf(c2));
+    var v = Math.min(c2.vel + 1, VMAX);
+    v = Math.min(v, gap);
+    if (v > 0 && Math.random() < BRAKE_P) v -= 1;
+    var cap = zoneCapAt(c2.lane, c2.pos);
+    v = Math.min(v, cap);
+    v = Math.max(0, v);
+    c2.vel = v;
+    c2.flash = (v < oldVel) ? 1 : Math.max(0, c2.flash - 0.35);
+  }
+
+  // movement
+  for (var m2 = 0; m2 < cars.length; m2++) {
+    var c3 = cars[m2];
+    if (c3.frozenUntil > now) continue;
+    c3.pos = mod(c3.pos + c3.vel, ROAD_LEN);
+  }
+
+  // density breathing
+  var phase = (now / 1000 / DENSITY_PERIOD_S) * Math.PI * 2;
+  var densityTarget = lerp(DENSITY_LOW, DENSITY_HIGH, (Math.sin(phase) + 1) / 2);
+  var targetCount = Math.round(LANES * ROAD_LEN * densityTarget);
+  if (cars.length < targetCount) {
+    for (var s2 = 0; s2 < 3 && cars.length < targetCount; s2++) {
+      var lane2 = (Math.random() * LANES) | 0;
+      var pos2 = (Math.random() * ROAD_LEN) | 0;
+      if (!occupied(lane2, pos2, -1)) spawnCar(lane2, pos2, 0);
+    }
+  } else if (cars.length > targetCount) {
+    for (var r2 = 0; r2 < 3 && cars.length > targetCount; r2++) {
+      var victim = (Math.random() * cars.length) | 0;
+      if (cars[victim].frozenUntil <= now) cars.splice(victim, 1);
+    }
+  }
+}
+
+function projectToTrack(px, py){
+  var best = 0, bestD = Infinity;
+  for (var s = 0; s < SAMPLES; s += 2) {
+    var dx = CENTER[s * 4] - px, dy = CENTER[s * 4 + 1] - py;
+    var d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; best = s; }
+  }
+  return { s: best, dist: Math.sqrt(bestD) };
+}
+
+function nearestLane(s, px, py){
+  var bestL = 0, bestD = Infinity;
+  var p = { x: 0, y: 0, angle: 0 };
+  for (var l = 0; l < LANES; l++) {
+    samplePoint(s, l, p);
+    var dx = p.x - px, dy = p.y - py;
+    var d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; bestL = l; }
+  }
+  return bestL;
+}
+
+canvas.addEventListener('mousemove', function(e){
+  mouseX = e.clientX; mouseY = e.clientY; mouseActive = true;
+});
+canvas.addEventListener('mouseleave', function(){ mouseActive = false; });
+canvas.addEventListener('touchmove', function(e){
+  if (e.touches && e.touches.length) {
+    mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; mouseActive = true;
+    e.preventDefault();
+  }
+}, { passive: false });
+
+function stallAt(px, py){
+  var proj = projectToTrack(px, py);
+  var lane = nearestLane(proj.s, px, py);
+  var now = performance.now();
+  var arr = laneArrays[lane];
+  var target = -1, bestD = Infinity;
+  for (var i = 0; i < arr.length; i++) {
+    var d = Math.abs(mod(cars[arr[i]].pos - proj.s + ROAD_LEN / 2, ROAD_LEN) - ROAD_LEN / 2);
+    if (d < bestD) { bestD = d; target = arr[i]; }
+  }
+  var activeStalls = cars.filter(function(c){ return c.frozenUntil > now; });
+  if (activeStalls.length >= MAX_STALLS) {
+    activeStalls.sort(function(a, b){ return a.frozenUntil - b.frozenUntil; });
+    activeStalls[0].frozenUntil = now;
+  }
+  if (target !== -1 && bestD < 6) {
+    cars[target].vel = 0;
+    cars[target].frozenUntil = now + STALL_MS;
+  } else if (!occupied(lane, proj.s, -1)) {
+    var car = spawnCar(lane, proj.s, 0);
+    car.frozenUntil = now + STALL_MS;
+  }
+}
+
+canvas.addEventListener('click', function(e){
+  stallAt(e.clientX, e.clientY);
+});
+canvas.addEventListener('touchstart', function(e){
+  if (e.touches && e.touches.length) stallAt(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: true });
+
+function velocityColor(v){
+  var stops = [
+    [196, 32, 45], [214, 92, 40], [230, 150, 50],
+    [235, 195, 110], [245, 225, 175], [255, 250, 240]
+  ];
+  var t = clamp(v / VMAX, 0, 1) * (stops.length - 1);
+  var i0 = Math.floor(t), i1 = Math.min(stops.length - 1, i0 + 1);
+  var f = t - i0;
+  var a = stops[i0], b = stops[i1];
+  return [Math.round(lerp(a[0], b[0], f)), Math.round(lerp(a[1], b[1], f)), Math.round(lerp(a[2], b[2], f))];
+}
+
+function drawTrackGuides(){
+  ctx.lineWidth = 1;
+  for (var l = 0; l <= LANES; l++) {
+    var off = (l - LANES / 2) * laneGap;
+    ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+    ctx.beginPath();
+    var p0 = { x: 0, y: 0, angle: 0 };
+    for (var s = 0; s <= SAMPLES; s++) {
+      var sm = s % SAMPLES;
+      var x0 = CENTER[sm * 4], y0 = CENTER[sm * 4 + 1], nx0 = CENTER[sm * 4 + 2], ny0 = CENTER[sm * 4 + 3];
+      var px = x0 + nx0 * off, py = y0 + ny0 * off;
+      if (s === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+}
+
+var pnt = { x: 0, y: 0, angle: 0 };
+function render(now){
+  ctx.fillStyle = '#05050a';
+  ctx.fillRect(0, 0, W, H);
+
+  drawTrackGuides();
+
+  var f = clamp((now - lastTick) / TICK_MS, 0, 1);
+  for (var i = 0; i < cars.length; i++) {
+    var c = cars[i];
+    var posInterp = c.prevPos;
+    var diff = mod(c.pos - c.prevPos, ROAD_LEN);
+    posInterp = c.prevPos + diff * f;
+    var laneInterp = lerp(c.prevLane, c.lane, f);
+    samplePoint(posInterp, laneInterp, pnt);
+
+    var col = velocityColor(c.vel);
+    var flash = c.flash;
+    if (flash > 0.02) {
+      ctx.save();
+      ctx.globalAlpha = flash * 0.55;
+      ctx.fillStyle = 'rgba(255,50,50,1)';
+      ctx.beginPath();
+      ctx.arc(pnt.x, pnt.y, 10 + flash * 6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.translate(pnt.x, pnt.y);
+    ctx.rotate(pnt.angle);
+    var len = 9, wid = 4.2;
+    ctx.fillStyle = 'rgb(' + col[0] + ',' + col[1] + ',' + col[2] + ')';
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(-len / 2, -wid / 2, len, wid, 2) : ctx.rect(-len / 2, -wid / 2, len, wid);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  if (hoverStrength > 0.02) {
+    samplePoint(hoverS, (LANES - 1) / 2, pnt);
+    ctx.save();
+    ctx.globalAlpha = hoverStrength * 0.12;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(pnt.x, pnt.y, laneGap * LANES * 0.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function frame(now){
+  if (!startTime) startTime = now;
+  if (!lastTick) lastTick = now;
+
+  if (mouseActive) {
+    var proj = projectToTrack(mouseX, mouseY);
+    if (proj.dist < ZONE_MAX_DIST_PX) {
+      hoverS = proj.s;
+      hoverStrength = lerp(hoverStrength, 1, 0.08);
+    } else {
+      hoverStrength = lerp(hoverStrength, 0, 0.05);
+    }
+  } else {
+    hoverStrength = lerp(hoverStrength, 0, 0.05);
+  }
+
+  if (now - lastTick >= TICK_MS) {
+    tick(now);
+    lastTick = now;
+  }
+
+  render(now);
+  requestAnimationFrame(frame);
+}
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resize();
+window.addEventListener('resize', resize);
+initCars();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
