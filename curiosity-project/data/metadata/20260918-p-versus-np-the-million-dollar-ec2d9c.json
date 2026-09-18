@@ -1,0 +1,14 @@
+{
+  "id": "20260918-p-versus-np-the-million-dollar-ec2d9c",
+  "date": "2026-09-18T10:12:48.884864",
+  "title": "P versus NP: The Million-Dollar Question at the Heart of Computation",
+  "question": "Is every problem whose solution can be quickly checked also a problem that can be quickly solved?",
+  "summary": "A look at computer science's most famous open problem, why it has resisted proof for over fifty years, and what hangs on the answer \u2014 from cryptography to the nature of creativity itself.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "complexity-theory",
+    "cryptography",
+    "logic"
+  ]
+}
