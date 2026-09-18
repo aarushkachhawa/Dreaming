@@ -24,6 +24,49 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-18** — `2026-09-18-unwritten-treaties.html`: a forty-fifth
+  technique, and the first where every agent's only knowledge of the world
+  is which of a handful of kinds every other agent belongs to. This is
+  Particle Life — the pairwise force law popularized as "Clusters" by
+  Jeffrey Ventrella and later as a real-time demo by Tom Mohr — reduced to
+  a single rule: every pair of particles within reach feels a signed force
+  read off a fixed species-by-species matrix, strongly repulsive at
+  contact, then either attracting or repelling through a wider ring
+  depending on that one number, and nothing at all beyond it. Night 8's
+  boids blended three separate steering rules — separation, alignment,
+  cohesion — computed and summed every frame; there is exactly one rule
+  here, and it carries no notion of heading at all, yet flocks, chases, and
+  stable rings still emerge from six kinds of particle relating to each
+  other through a matrix that isn't even symmetric — species A can be drawn
+  to B while B is repelled by A, which is what turns some clusters into
+  slow-orbiting binaries and others into one kind endlessly fleeing another
+  around the torus. Night 41's hard disks resolved exact pairwise
+  collisions the instant two circles touched; nothing here ever resolves,
+  contact is just the steepest part of a continuous force curve, softened
+  enough that colonies interpenetrate and separate again rather than
+  bouncing. Night 39's predator and prey lived only as two numbers pushed
+  through a shared rate equation, no individuals, no positions; here the
+  chase is the same shape wearing every particle's own coordinates, an
+  aggregate behavior nobody wrote down watching itself happen from eight
+  hundred independent bodies. Night 16's Ising spins and night 12's
+  Kuramoto phases both coupled through fixed, symmetric neighborhoods; here
+  the neighborhood is whoever is currently close enough, which keeps
+  changing as everyone moves, and the coupling strength itself depends on
+  which two kinds happen to have drifted into range. Positions wrap on a
+  torus, neighbors found each frame through a uniform spatial grid, so no
+  boundary wall ever interrupts a chase. Each of the six kinds keeps its
+  own hue, brightening toward white the faster it moves, drawn with
+  additive light so a dense cluster's core glows hot where members
+  overlap, and a slow trailing fade behind every frame leaves a comet's
+  tail on anything moving fast enough to outrun its own afterglow. The
+  overall force strength breathes over about seventy seconds between a calm
+  regime where clusters settle into slow stable orbits and an energetic one
+  where the whole board churns and re-sorts. Move the cursor through the
+  field to startle everything nearby away from it, like a hand through an
+  ant farm; click anywhere to tear up the entire relationship matrix and
+  hand the same eight hundred particles an entirely new, unwritten set of
+  treaties to live under. Open the file directly in a browser.
+
 - **2026-09-17** — `2026-09-17-phantom-convoy.html`: a forty-fourth
   technique, and the first governed by a follow-the-leader rule carrying
   its own built-in overreaction rather than a field, a swarm behavior, a

@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Unwritten Treaties — Night 45</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div id="caption">Unwritten Treaties &mdash; Night 45 &mdash; move through the field to startle it &middot; click to rewrite every kind's relationship to every other</div>
+<script>
+(function(){
+'use strict';
+// A forty-fifth technique, and the first where every agent's only knowledge
+// of the world is which of a handful of kinds every other agent belongs to.
+// This is Particle Life — the pairwise force law popularized as "Clusters"
+// by Jeffrey Ventrella and later as a real-time demo by Tom Mohr — reduced
+// to a single rule: every pair of particles within reach feels a signed
+// force read off a fixed species-by-species matrix, strongly repulsive at
+// contact, then either attracting or repelling through a wider ring
+// depending on that one number, and nothing at all beyond it. Night 8's
+// boids blended three separate steering rules — separation, alignment,
+// cohesion — computed and summed every frame; there is exactly one rule
+// here, and it carries no notion of heading at all, yet flocks, chases, and
+// stable rings still emerge from six kinds of particle relating to each
+// other through a matrix that isn't even symmetric — species A can be
+// drawn to B while B is repelled by A, which is what turns some clusters
+// into slow-orbiting binaries and others into one kind endlessly fleeing
+// another around the torus. Night 41's hard disks resolved exact pairwise
+// collisions the instant two circles touched; nothing here ever resolves,
+// contact is just the steepest part of a continuous force curve, softened
+// enough that colonies interpenetrate and separate again rather than
+// bouncing. Night 39's predator and prey lived only as two numbers pushed
+// through a shared rate equation, no individuals, no positions; here the
+// chase is the same shape wearing every particle's own coordinates, an
+// aggregate behavior nobody wrote down watching itself happen from eight
+// hundred independent bodies. Night 16's Ising spins and night 12's
+// Kuramoto phases both coupled through fixed, symmetric neighborhoods; here
+// the neighborhood is whoever is currently close enough, which keeps
+// changing as everyone moves, and the coupling strength itself depends on
+// which two kinds happen to have drifted into range. Positions wrap on a
+// torus, neighbors found each frame through a uniform spatial grid, so no
+// boundary wall ever interrupts a chase. Each of the six kinds keeps its
+// own hue, brightening toward white the faster it moves, drawn with
+// additive light so a dense cluster's core glows hot where members
+// overlap, and a slow trailing fade behind every frame leaves a comet's
+// tail on anything moving fast enough to outrun its own afterglow. The
+// overall force strength breathes over about seventy seconds between a
+// calm regime where clusters settle into slow stable orbits and an
+// energetic one where the whole board churns and re-sorts. Move the cursor
+// through the field to startle everything nearby away from it, like a hand
+// through an ant farm; click anywhere to tear up the entire relationship
+// matrix and hand the same eight hundred particles an entirely new,
+// unwritten set of treaties to live under. Open the file directly in a
+// browser.
+
+var canvas = document.getElementById('scene');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+
+var NUM_SPECIES = 6;
+var PER_SPECIES = 130;
+var N = NUM_SPECIES * PER_SPECIES;
+var R_MAX = 76;
+var BETA = 0.28;
+var FRICTION = 0.88;
+var MAX_SPEED = 6;
+var FORCE_LOW = 0.5, FORCE_HIGH = 1.3;
+var BREATH_PERIOD_S = 70;
+var MOUSE_RADIUS = 140;
+var MOUSE_PUSH = 5.5;
+var TRAIL_ALPHA = 0.12;
+
+var HUES = [205, 265, 325, 25, 85, 145];
+
+var W, H, DPR;
+var PX, PY, VX, VY, SP;
+var MATRIX;
+
+var cols, rows, cellW, cellH;
+var buckets, bucketCount;
+
+var mouseX = -9999, mouseY = -9999, mouseActive = false;
+var startTime = 0;
+var lastFrame = 0;
+
+function lerp(a, b, t){ return a + (b - a) * t; }
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function mod(a, n){ return ((a % n) + n) % n; }
+
+function torDelta(a, b, size){
+  var d = a - b;
+  if (d > size / 2) d -= size;
+  if (d < -size / 2) d += size;
+  return d;
+}
+
+function forceMag(r, a){
+  var rn = r / R_MAX;
+  if (rn < BETA) return rn / BETA - 1;
+  if (rn < 1) {
+    var t = 1 - Math.abs(2 * rn - 1 - BETA) / (1 - BETA);
+    return a * t;
+  }
+  return 0;
+}
+
+function randomizeMatrix(){
+  if (!MATRIX) MATRIX = new Float32Array(NUM_SPECIES * NUM_SPECIES);
+  for (var i = 0; i < MATRIX.length; i++) MATRIX[i] = Math.random() * 2 - 1;
+}
+
+function initParticles(){
+  PX = new Float32Array(N);
+  PY = new Float32Array(N);
+  VX = new Float32Array(N);
+  VY = new Float32Array(N);
+  SP = new Uint8Array(N);
+  for (var i = 0; i < N; i++) {
+    PX[i] = Math.random() * W;
+    PY[i] = Math.random() * H;
+    SP[i] = (Math.random() * NUM_SPECIES) | 0;
+  }
+}
+
+function buildGrid(){
+  cols = Math.max(1, Math.floor(W / R_MAX));
+  rows = Math.max(1, Math.floor(H / R_MAX));
+  cellW = W / cols;
+  cellH = H / rows;
+  bucketCount = cols * rows;
+  buckets = new Array(bucketCount);
+  for (var i = 0; i < bucketCount; i++) buckets[i] = [];
+}
+
+function resize(){
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  buildGrid();
+}
+
+function fillBuckets(){
+  for (var b = 0; b < bucketCount; b++) buckets[b].length = 0;
+  for (var i = 0; i < N; i++) {
+    var cx = clamp(Math.floor(PX[i] / cellW), 0, cols - 1);
+    var cy = clamp(Math.floor(PY[i] / cellH), 0, rows - 1);
+    buckets[cy * cols + cx].push(i);
+  }
+}
+
+var fxArr = new Float32Array(1);
+function step(dtScale, forceScale){
+  fillBuckets();
+
+  for (var i = 0; i < N; i++) {
+    var px = PX[i], py = PY[i], si = SP[i];
+    var cx = clamp(Math.floor(px / cellW), 0, cols - 1);
+    var cy = clamp(Math.floor(py / cellH), 0, rows - 1);
+    var fx = 0, fy = 0;
+
+    for (var dyk = -1; dyk <= 1; dyk++) {
+      var ncy = mod(cy + dyk, rows);
+      for (var dxk = -1; dxk <= 1; dxk++) {
+        var ncx = mod(cx + dxk, cols);
+        var bucket = buckets[ncy * cols + ncx];
+        for (var b = 0; b < bucket.length; b++) {
+          var j = bucket[b];
+          if (j === i) continue;
+          var dx = torDelta(PX[j], px, W);
+          var dy = torDelta(PY[j], py, H);
+          var r2 = dx * dx + dy * dy;
+          if (r2 > R_MAX * R_MAX || r2 < 1e-6) continue;
+          var r = Math.sqrt(r2);
+          var a = MATRIX[si * NUM_SPECIES + SP[j]];
+          var fm = forceMag(r, a) * forceScale;
+          fx += (dx / r) * fm;
+          fy += (dy / r) * fm;
+        }
+      }
+    }
+
+    if (mouseActive) {
+      var mdx = torDelta(px, mouseX, W);
+      var mdy = torDelta(py, mouseY, H);
+      var md = Math.sqrt(mdx * mdx + mdy * mdy);
+      if (md < MOUSE_RADIUS && md > 1e-4) {
+        var push = MOUSE_PUSH * (1 - md / MOUSE_RADIUS);
+        fx += (mdx / md) * push;
+        fy += (mdy / md) * push;
+      }
+    }
+
+    var vx = (VX[i] + fx * dtScale) * FRICTION;
+    var vy = (VY[i] + fy * dtScale) * FRICTION;
+    var sp = Math.sqrt(vx * vx + vy * vy);
+    if (sp > MAX_SPEED) { vx *= MAX_SPEED / sp; vy *= MAX_SPEED / sp; }
+    VX[i] = vx;
+    VY[i] = vy;
+  }
+
+  for (var k = 0; k < N; k++) {
+    PX[k] = mod(PX[k] + VX[k] * dtScale, W);
+    PY[k] = mod(PY[k] + VY[k] * dtScale, H);
+  }
+}
+
+canvas.addEventListener('mousemove', function(e){
+  mouseX = e.clientX; mouseY = e.clientY; mouseActive = true;
+});
+canvas.addEventListener('mouseleave', function(){ mouseActive = false; });
+canvas.addEventListener('touchmove', function(e){
+  if (e.touches && e.touches.length) {
+    mouseX = e.touches[0].clientX; mouseY = e.touches[0].clientY; mouseActive = true;
+    e.preventDefault();
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', function(){ mouseActive = false; });
+
+canvas.addEventListener('click', function(){
+  randomizeMatrix();
+});
+
+function speedColor(hue, speed){
+  var boost = clamp(speed * 6, 0, 30);
+  var light = 52 + boost;
+  var sat = 70 - boost * 0.6;
+  return 'hsl(' + hue + ',' + Math.max(30, sat) + '%,' + Math.min(90, light) + '%)';
+}
+
+function render(){
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(5,5,10,' + TRAIL_ALPHA + ')';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.globalCompositeOperation = 'lighter';
+  for (var i = 0; i < N; i++) {
+    var speed = Math.hypot(VX[i], VY[i]);
+    ctx.fillStyle = speedColor(HUES[SP[i]], speed);
+    ctx.beginPath();
+    ctx.arc(PX[i], PY[i], 2.3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function frame(now){
+  if (!startTime) startTime = now;
+  if (!lastFrame) lastFrame = now;
+  var dtScale = clamp((now - lastFrame) / 16.6667, 0.2, 3);
+  lastFrame = now;
+
+  var elapsed = (now - startTime) / 1000;
+  var breathe = (Math.sin(elapsed / BREATH_PERIOD_S * Math.PI * 2) + 1) / 2;
+  var forceScale = lerp(FORCE_LOW, FORCE_HIGH, breathe);
+
+  step(dtScale, forceScale);
+  render();
+  requestAnimationFrame(frame);
+}
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resize();
+window.addEventListener('resize', resize);
+randomizeMatrix();
+initParticles();
+ctx.fillStyle = '#05050a';
+ctx.fillRect(0, 0, W, H);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
