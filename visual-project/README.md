@@ -24,6 +24,60 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-19** — `2026-09-19-fivefold-hush.html`: a forty-sixth technique,
+  and the first built from no field, no lattice, no swarm, no force law,
+  and no forward-in-time process at all — every tile placed by a single
+  piece of closed-form algebra rather than a rule stepped forward one
+  frame at a time. This is de Bruijn's pentagrid construction (1981): five
+  families of parallel lines, spaced one unit apart and 72° apart from
+  each other so their five directions land exactly on a pentagon, each
+  family free to slide by its own real-numbered offset. Every point in
+  the plane sits on one side or the other of every line in all five
+  families at once, and that one five-digit reading — which strip of
+  family 0, which strip of family 1, and so on — is unique to the little
+  region it's standing in; running the same five numbers back through the
+  five directions that produced them lands on a single vertex, and the
+  four regions that meet at any one crossing of two lines land on the
+  four corners of a rhombus. Ten unordered pairs of the five families, ten
+  rhombus orientations, and only two shapes among them — a 72° fat rhombus
+  where the crossing families sit one apart in the pentagon's order, a
+  36° thin one where they sit two apart — tiling the entire plane without
+  ever repeating and settling, as it grows, toward the golden ratio's own
+  value for how many fat rhombi there are for every thin one. It's the
+  same two-tile aperiodic set Roger Penrose found by hand in 1974; de
+  Bruijn's contribution was showing that every valid arrangement of them
+  is just a flat slice through this multigrid, which is itself the shadow
+  a five-dimensional cubic lattice casts when it's cut at the right angle.
+  Night 43's Julia set also answered a private yes-or-no question at every
+  point independently, but by iterating a map to see whether it escapes;
+  nothing here ever iterates — five numbers, five directions, one lookup,
+  done. Night 19's power diagram also tiled the plane from a handful of
+  seed parameters, but by nearest-seed distance, a purely local and
+  metric rule; a pentagrid cell's identity depends on its position against
+  five infinite lines, not on distance to anything. The five offsets are
+  the only moving part, and moving one doesn't drag a region of the
+  picture the way a parameter drags Night 42's attractor — it only flips
+  the sparse, scattered rhombi sitting close enough to one of that
+  family's lines from fat to thin or back, the rest of the tiling not
+  even noticing, which is the actual mechanism — a "phason flip" —
+  physicists reach for to explain how a real quasicrystal can quietly
+  rearrange itself without ever breaking its long-range order. That order
+  is not a metaphor here: this is the same five-fold symmetry Dan
+  Shechtman found in an electron-diffraction pattern in 1982, dismissed
+  for two years because a crystal repeating in five-fold symmetry was
+  supposed to be mathematically impossible, and awarded the Nobel Prize
+  in Chemistry in 2011 once it was accepted that quasicrystals were real.
+  Two families of orientation carry two palettes — five shades of ember
+  gold for the fat rhombi, five of deep indigo for the thin, one hue per
+  pair of line families, with a fine dark seam traced at every shared
+  edge. The five offsets drift on their own slow, mutually irrational
+  clocks, so the pattern is never quite still; move the cursor to bend
+  two of them directly and watch the flips ripple through in scattered
+  unison rather than a wave; click to cut an entirely new slice through
+  the same five-dimensional lattice and let the whole rose window
+  reassemble itself from a flash of white. Open the file directly in a
+  browser.
+
 - **2026-09-18** — `2026-09-18-unwritten-treaties.html`: a forty-fifth
   technique, and the first where every agent's only knowledge of the world
   is which of a handful of kinds every other agent belongs to. This is

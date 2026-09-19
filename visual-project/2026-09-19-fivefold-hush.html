@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fivefold Hush — Night 46</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Fivefold Hush &mdash; Night 46 &mdash; move to bend two offsets &middot; click to cut a new slice</div>
+<script>
+(function(){
+'use strict';
+// A forty-sixth technique, and the first built from no field, no lattice,
+// no swarm, no force law, and no forward-in-time process at all -- every
+// tile placed by a single piece of closed-form algebra rather than a rule
+// stepped forward one frame at a time. This is de Bruijn's pentagrid
+// construction (1981): five families of parallel lines, spaced one unit
+// apart and 72 degrees apart from each other so their five directions land
+// exactly on a pentagon, each family free to slide by its own real-numbered
+// offset. Every point in the plane sits on one side or the other of every
+// line in all five families at once, and that one five-digit reading --
+// which strip of family 0, which strip of family 1, and so on -- is unique
+// to the little region it's standing in; running the same five numbers
+// back through the five directions that produced them lands on a single
+// vertex, and the four regions that meet at any one crossing of two lines
+// land on the four corners of a rhombus. Ten unordered pairs of the five
+// families, ten rhombus orientations, and only two shapes among them -- a
+// 72-degree fat rhombus where the crossing families sit one apart in the
+// pentagon's order, a 36-degree thin one where they sit two apart --
+// tiling the entire plane without ever repeating and settling, as it
+// grows, toward the golden ratio's own value for how many fat rhombi
+// there are for every thin one. It's the same two-tile aperiodic set
+// Roger Penrose found by hand in 1974; de Bruijn's contribution was
+// showing that every valid arrangement of them is just a flat slice
+// through this multigrid, which is itself the shadow a five-dimensional
+// cubic lattice casts when it's cut at the right angle. Night 43's Julia
+// set also answered a private yes-or-no question at every point
+// independently, but by iterating a map to see whether it escapes;
+// nothing here ever iterates -- five numbers, five directions, one
+// lookup, done. Night 19's power diagram also tiled the plane from a
+// handful of seed parameters, but by nearest-seed distance, a purely
+// local and metric rule; a pentagrid cell's identity depends on its
+// position against five infinite lines, not on distance to anything. The
+// five offsets are the only moving part, and moving one doesn't drag a
+// region of the picture the way a parameter drags Night 42's attractor --
+// it only flips the sparse, scattered rhombi sitting close enough to one
+// of that family's lines from fat to thin or back, the rest of the tiling
+// not even noticing, which is the actual mechanism -- a "phason flip" --
+// physicists reach for to explain how a real quasicrystal can quietly
+// rearrange itself without ever breaking its long-range order. That order
+// is not a metaphor here: this is the same five-fold symmetry Dan
+// Shechtman found in an electron-diffraction pattern in 1982, dismissed
+// for two years because a crystal repeating in five-fold symmetry was
+// supposed to be mathematically impossible, and awarded the Nobel Prize
+// in Chemistry in 2011 once it was accepted that quasicrystals were real.
+// Two families of orientation carry two palettes -- five shades of ember
+// gold for the fat rhombi, five of deep indigo for the thin, one hue per
+// pair of line families, with a fine dark seam traced at every shared
+// edge. The five offsets drift on their own slow, mutually irrational
+// clocks, so the pattern is never quite still; move the cursor to bend
+// two of them directly and watch the flips ripple through in scattered
+// unison rather than a wave; click to cut an entirely new slice through
+// the same five-dimensional lattice and let the whole rose window
+// reassemble itself from a flash of white. Open the file directly in a
+// browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var width = 0, height = 0, rect = null;
+var scale = 80, cx = 0, cy = 0, Rvis = 9;
+
+var TWO_PI = Math.PI * 2;
+var THETA = [], COS = [], SIN = [];
+for (var i = 0; i < 5; i++) {
+  THETA[i] = -Math.PI / 2 + i * TWO_PI / 5;
+  COS[i] = Math.cos(THETA[i]);
+  SIN[i] = Math.sin(THETA[i]);
+}
+
+var PAIRS = [];
+(function buildPairs(){
+  var fatIdx = 0, thinIdx = 0;
+  for (var j = 0; j < 5; j++) {
+    for (var k = j + 1; k < 5; k++) {
+      var d = k - j;
+      var fat = (d === 1 || d === 4);
+      var hue = fat ? (20 + fatIdx * 7) : (258 + thinIdx * 7);
+      if (fat) fatIdx++; else thinIdx++;
+      var others = [];
+      for (var l = 0; l < 5; l++) if (l !== j && l !== k) others.push(l);
+      PAIRS.push({
+        j: j, k: k, others: others, fat: fat, hue: hue,
+        det: COS[j] * SIN[k] - COS[k] * SIN[j]
+      });
+    }
+  }
+})();
+
+var BASE = [0.13, -0.29, 0.07, 0.41, -0.32];
+var gamma = BASE.slice();
+var DRIFT_PERIOD = [95, 131, 157, 113];
+var DRIFT_AMP = 0.18;
+
+var mnx = 0, mny = 0, liveMnx = 0, liveMny = 0;
+var MOUSE_STRENGTH = 0.9;
+var MOUSE_SMOOTH = 0.06;
+
+var flashAlpha = 0;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function rand(a, b){ return a + Math.random() * (b - a); }
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rect = canvas.getBoundingClientRect();
+  scale = Math.min(width, height) / 8;
+  cx = width / 2; cy = height / 2;
+  Rvis = Math.hypot(width, height) / (2 * scale) + 1.5;
+}
+
+function newBase(){
+  var v = [rand(-0.5, 0.5), rand(-0.5, 0.5), rand(-0.5, 0.5), rand(-0.5, 0.5)];
+  v.push(-(v[0] + v[1] + v[2] + v[3]));
+  if (Math.abs(v[4]) > 0.9) return newBase();
+  return v;
+}
+
+function updateGamma(t){
+  var d = [0, 0, 0, 0];
+  for (var i = 0; i < 4; i++) {
+    d[i] = DRIFT_AMP * Math.sin(t * (TWO_PI / DRIFT_PERIOD[i]) + i * 1.7);
+  }
+  var d4 = -(d[0] + d[1] + d[2] + d[3]);
+
+  liveMnx += (mnx - liveMnx) * MOUSE_SMOOTH;
+  liveMny += (mny - liveMny) * MOUSE_SMOOTH;
+  var mv0 = liveMnx * MOUSE_STRENGTH, mv1 = liveMny * MOUSE_STRENGTH;
+  var mean = (mv0 + mv1) / 5;
+
+  gamma[0] = BASE[0] + d[0] + (mv0 - mean);
+  gamma[1] = BASE[1] + d[1] + (mv1 - mean);
+  gamma[2] = BASE[2] + d[2] + (0 - mean);
+  gamma[3] = BASE[3] + d[3] + (0 - mean);
+  gamma[4] = BASE[4] + d4 + (0 - mean);
+}
+
+function draw(){
+  ctx.fillStyle = '#05050a';
+  ctx.fillRect(0, 0, width, height);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(6, 4, 14, 0.55)';
+
+  for (var pi = 0; pi < PAIRS.length; pi++) {
+    var pr = PAIRS[pi];
+    var j = pr.j, k = pr.k, det = pr.det;
+    var cj = COS[j], sj = SIN[j], ck = COS[k], sk = SIN[k];
+    var gj = gamma[j], gk = gamma[k];
+    var o0 = pr.others[0], o1 = pr.others[1], o2 = pr.others[2];
+    var Rloop = Math.ceil(Rvis / Math.abs(det)) + 2;
+
+    for (var m = -Rloop; m <= Rloop; m++) {
+      var rhsJ = m + gj;
+      for (var n = -Rloop; n <= Rloop; n++) {
+        var rhsK = n + gk;
+        var px = (sk * rhsJ - sj * rhsK) / det;
+        var py = (-ck * rhsJ + cj * rhsK) / det;
+        if (px * px + py * py > Rvis * Rvis) continue;
+
+        var sx = 0, sy = 0;
+        var K0 = Math.ceil(px * COS[o0] + py * SIN[o0] - gamma[o0]);
+        sx += K0 * COS[o0]; sy += K0 * SIN[o0];
+        var K1 = Math.ceil(px * COS[o1] + py * SIN[o1] - gamma[o1]);
+        sx += K1 * COS[o1]; sy += K1 * SIN[o1];
+        var K2 = Math.ceil(px * COS[o2] + py * SIN[o2] - gamma[o2]);
+        sx += K2 * COS[o2]; sy += K2 * SIN[o2];
+
+        var v00x = sx + m * cj + n * ck,         v00y = sy + m * sj + n * sk;
+        var v10x = sx + (m + 1) * cj + n * ck,   v10y = sy + (m + 1) * sj + n * sk;
+        var v11x = sx + (m + 1) * cj + (n + 1) * ck, v11y = sy + (m + 1) * sj + (n + 1) * sk;
+        var v01x = sx + m * cj + (n + 1) * ck,   v01y = sy + m * sj + (n + 1) * sk;
+
+        var t = clamp(Math.sqrt(px * px + py * py) / Rvis, 0, 1);
+        var light = pr.fat ? (46 - t * 16) : (30 - t * 12);
+        var sat = pr.fat ? 70 : 55;
+
+        ctx.beginPath();
+        ctx.moveTo(cx + v00x * scale, cy - v00y * scale);
+        ctx.lineTo(cx + v10x * scale, cy - v10y * scale);
+        ctx.lineTo(cx + v11x * scale, cy - v11y * scale);
+        ctx.lineTo(cx + v01x * scale, cy - v01y * scale);
+        ctx.closePath();
+        ctx.fillStyle = 'hsl(' + pr.hue + ', ' + sat + '%, ' + light.toFixed(1) + '%)';
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+  }
+
+  if (flashAlpha > 0.003) {
+    ctx.fillStyle = 'rgba(255, 255, 255, ' + (flashAlpha * 0.55).toFixed(3) + ')';
+    ctx.fillRect(0, 0, width, height);
+    flashAlpha *= 0.90;
+  }
+}
+
+function frame(time){
+  time = time / 1000;
+  updateGamma(time);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resizeCanvas);
+canvas.addEventListener('mousemove', function(e){
+  var mx = e.clientX - (rect ? rect.left : 0);
+  var my = e.clientY - (rect ? rect.top : 0);
+  mnx = clamp(mx / width, 0, 1) * 2 - 1;
+  mny = clamp(my / height, 0, 1) * 2 - 1;
+});
+canvas.addEventListener('mouseleave', function(){ mnx = 0; mny = 0; });
+canvas.addEventListener('touchmove', function(e){
+  if (e.touches && e.touches.length) {
+    var mx = e.touches[0].clientX - (rect ? rect.left : 0);
+    var my = e.touches[0].clientY - (rect ? rect.top : 0);
+    mnx = clamp(mx / width, 0, 1) * 2 - 1;
+    mny = clamp(my / height, 0, 1) * 2 - 1;
+    e.preventDefault();
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', function(){ mnx = 0; mny = 0; });
+
+canvas.addEventListener('click', function(){
+  BASE = newBase();
+  flashAlpha = 1;
+});
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resizeCanvas();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
