@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Distant Kin — Night 47</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Distant Kin &mdash; Night 47 &mdash; move to induce nearby nodes &middot; click to flip one bit and watch it spread</div>
+<script>
+(function(){
+'use strict';
+// A forty-seventh technique, and the first automaton whose neighborhood
+// isn't geometry at all. Every automaton before this one read its update
+// from a neighborhood fixed by geometry -- night 28's elementary rule from
+// the cell to its immediate left and right, night 16's Ising spin and
+// night 12's Kuramoto phase from the eight cells ringing it, night 27's
+// turmite from the one cell underfoot. This is a random Boolean network,
+// the model Stuart Kauffman built in 1969 to ask what a genome does
+// before evolution has had any chance to tune it: two hundred nodes, each
+// wired at random to K other nodes anywhere in the network -- never its
+// geometric neighbors, since there is no geometry to be near, only
+// whichever strangers the initial dice roll happened to name -- and each
+// carrying its own private truth table, 2^K entries of coin flips, filled
+// in once and never touched again. Every tick, synchronously, every node
+// reads the current state of its K inputs, looks up the one bit its own
+// private table assigns to that exact combination, and becomes that bit.
+// Night 33's CPPN also fed every pixel through an identical set of fixed,
+// never-trained random weights, but continuously and from scratch every
+// frame, with no memory from the frame before; a node here has exactly
+// two possible values and a real history, since this frame's bit was
+// computed from last frame's bits and nothing else. Nothing here decides
+// collectively and nothing propagates outward from a source the way
+// night 13's auxin or night 3's pheromone did -- every node is its own
+// separate, arbitrary law, and the whole net's behavior is just what two
+// hundred private laws look like added together. Kauffman's own result is
+// the reason K is the one parameter this piece breathes: with an unbiased
+// coin filling every table, the critical average connectivity sits at
+// exactly K=1/(2p(1-p))=2 for p=1/2 -- below it the network freezes into
+// a few small islands of flicker surrounded by a majority of nodes locked
+// dead still forever, at it the network sits on what Kauffman called the
+// edge of chaos, and above it almost every node's state depends
+// sensitively on almost every other's. A curated sequence of K -- one
+// (frozen), two (critical) twice, three, four (turbulent) -- takes turns
+// for a minute and a half apiece, each transition tearing up the wiring,
+// the tables, and the states and growing an entirely new net from scratch
+// behind a flash of white. Nodes sit fixed on a ring, a faint web of
+// chords drawn once for every node's K inputs, the wiring made visible as
+// a static circuit rather than something forces move; the only thing
+// that ever moves is which bit each node holds, read as a slow ember-cool
+// between dim slate off and warm amber on. Click anywhere and the nearest
+// node has its single bit flipped in the live network while an invisible,
+// unflipped shadow copy -- same wiring, same tables, same states at the
+// instant of the click -- keeps running the counterfactual beside it: any
+// node where the two now disagree lights a bright ring, and the
+// shockwave of disagreement is Derrida's own Hamming-distance experiment
+// made visible rather than plotted. In the frozen and critical regimes
+// that ring of disagreement almost always shrinks back to nothing within
+// a few seconds, the network healing the wound on its own; past the
+// critical point it just as often spreads to swallow half the ring and
+// never closes, the network's own case for why real gene networks,
+// wired by evolution's own early trial and error, seem to sit so close
+// to that same edge rather than deep in either the frozen or the chaotic
+// country. Move the cursor near the ring to reach in as an external
+// inducer, forcing whichever nodes it's close enough to switch on
+// regardless of what their own private table says, the way a real
+// inducer molecule overrides a gene's regulators from outside the system
+// the table lives in. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var width = 0, height = 0, rect = null, cx = 0, cy = 0;
+
+var N = 200;
+var REGIME_K = [1, 2, 3, 2, 4];
+var regimeIdx = 0;
+var regimeElapsed = 0;
+var regimeDuration = rand(70, 95);
+
+var angle = new Float64Array(N);
+var radiusFrac = new Float64Array(N);
+var nodeX = new Float64Array(N);
+var nodeY = new Float64Array(N);
+for (var ni = 0; ni < N; ni++) {
+  angle[ni] = (ni / N) * Math.PI * 2;
+  radiusFrac[ni] = 0.84 + Math.random() * 0.16;
+}
+
+var K = REGIME_K[0];
+var inputs = [];
+var tables = [];
+var state = new Uint8Array(N);
+var glow = new Float64Array(N);
+var ringAlpha = new Float64Array(N);
+
+var shadowState = null;
+var shadowActive = false;
+var shadowStartTime = 0;
+
+var mx = -9999, my = -9999;
+var CURSOR_R = 78;
+
+var flashAlpha = 0;
+var lastTickTime = 0;
+var TICK_MS = 260;
+
+function rand(a, b) { return a + Math.random() * (b - a); }
+function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function regenerateNetwork(newK) {
+  K = newK;
+  var size = 1 << K;
+  inputs = [];
+  tables = [];
+  for (var i = 0; i < N; i++) {
+    var ins = [];
+    for (var k = 0; k < K; k++) {
+      var j;
+      do { j = (Math.random() * N) | 0; } while (j === i);
+      ins.push(j);
+    }
+    inputs.push(ins);
+    var tbl = new Uint8Array(size);
+    for (var s = 0; s < size; s++) tbl[s] = Math.random() < 0.5 ? 1 : 0;
+    tables.push(tbl);
+    state[i] = Math.random() < 0.5 ? 1 : 0;
+    glow[i] = state[i];
+    ringAlpha[i] = 0;
+  }
+  shadowActive = false;
+  shadowState = null;
+  flashAlpha = 1;
+}
+
+function resizeCanvas() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rect = canvas.getBoundingClientRect();
+  cx = width / 2;
+  cy = height / 2;
+  var R = Math.min(width, height) * 0.40;
+  for (var i = 0; i < N; i++) {
+    nodeX[i] = cx + Math.cos(angle[i]) * R * radiusFrac[i];
+    nodeY[i] = cy + Math.sin(angle[i]) * R * radiusFrac[i];
+  }
+}
+
+function tick() {
+  var next = new Uint8Array(N);
+  for (var i = 0; i < N; i++) {
+    var ins = inputs[i], tbl = tables[i], idx = 0;
+    for (var k = 0; k < K; k++) idx |= state[ins[k]] << k;
+    var v = tbl[idx];
+    var dx = nodeX[i] - mx, dy = nodeY[i] - my;
+    if (dx * dx + dy * dy < CURSOR_R * CURSOR_R) v = 1;
+    next[i] = v;
+  }
+
+  var nextShadow = null;
+  if (shadowActive) {
+    nextShadow = new Uint8Array(N);
+    for (var si = 0; si < N; si++) {
+      var sins = inputs[si], stbl = tables[si], sidx = 0;
+      for (var sk = 0; sk < K; sk++) sidx |= shadowState[sins[sk]] << sk;
+      nextShadow[si] = stbl[sidx];
+    }
+  }
+
+  state = next;
+  var diffCount = 0;
+  if (shadowActive) {
+    shadowState = nextShadow;
+    for (var di = 0; di < N; di++) {
+      if (state[di] !== shadowState[di]) {
+        ringAlpha[di] = 1;
+        diffCount++;
+      }
+    }
+    if (diffCount === 0 || (performance.now() - shadowStartTime) > 14000) {
+      shadowActive = false;
+      shadowState = null;
+    }
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#05050a';
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(140, 120, 200, 0.06)';
+  ctx.beginPath();
+  for (var i = 0; i < N; i++) {
+    var ins = inputs[i];
+    for (var k = 0; k < ins.length; k++) {
+      var j = ins[k];
+      ctx.moveTo(nodeX[i], nodeY[i]);
+      ctx.lineTo(nodeX[j], nodeY[j]);
+    }
+  }
+  ctx.stroke();
+
+  for (var n = 0; n < N; n++) {
+    var target = state[n] ? 1 : 0.12;
+    glow[n] += (target - glow[n]) * 0.16;
+    ringAlpha[n] *= 0.90;
+
+    var hue = lerp(206, 38, glow[n]);
+    var sat = lerp(24, 78, glow[n]);
+    var light = lerp(7, 56, glow[n]);
+    var r = 2.1 + glow[n] * 1.1;
+
+    ctx.beginPath();
+    ctx.arc(nodeX[n], nodeY[n], r, 0, Math.PI * 2);
+    ctx.fillStyle = 'hsl(' + hue.toFixed(0) + ', ' + sat.toFixed(0) + '%, ' + light.toFixed(1) + '%)';
+    ctx.fill();
+
+    if (ringAlpha[n] > 0.02) {
+      ctx.beginPath();
+      ctx.arc(nodeX[n], nodeY[n], r + 3.5, 0, Math.PI * 2);
+      ctx.lineWidth = 1.4;
+      ctx.strokeStyle = 'rgba(150, 225, 255, ' + ringAlpha[n].toFixed(3) + ')';
+      ctx.stroke();
+    }
+  }
+
+  if (flashAlpha > 0.003) {
+    ctx.fillStyle = 'rgba(255, 255, 255, ' + (flashAlpha * 0.5).toFixed(3) + ')';
+    ctx.fillRect(0, 0, width, height);
+    flashAlpha *= 0.90;
+  }
+}
+
+function frame(time) {
+  var dt = time - (lastTickTime || time);
+  regimeElapsed += (time - (frame._prev || time)) / 1000;
+  frame._prev = time;
+
+  if (regimeElapsed > regimeDuration) {
+    regimeIdx = (regimeIdx + 1) % REGIME_K.length;
+    regenerateNetwork(REGIME_K[regimeIdx]);
+    regimeDuration = rand(70, 95);
+    regimeElapsed = 0;
+  }
+
+  if (time - lastTickTime > TICK_MS) {
+    tick();
+    lastTickTime = time;
+  }
+
+  draw();
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resizeCanvas);
+canvas.addEventListener('mousemove', function(e){
+  mx = e.clientX - (rect ? rect.left : 0);
+  my = e.clientY - (rect ? rect.top : 0);
+});
+canvas.addEventListener('mouseleave', function(){ mx = -9999; my = -9999; });
+canvas.addEventListener('touchmove', function(e){
+  if (e.touches && e.touches.length) {
+    mx = e.touches[0].clientX - (rect ? rect.left : 0);
+    my = e.touches[0].clientY - (rect ? rect.top : 0);
+    e.preventDefault();
+  }
+}, { passive: false });
+canvas.addEventListener('touchend', function(){ mx = -9999; my = -9999; });
+
+canvas.addEventListener('click', function(e){
+  var cxp = e.clientX - (rect ? rect.left : 0);
+  var cyp = e.clientY - (rect ? rect.top : 0);
+  var best = 0, bestD = Infinity;
+  for (var i = 0; i < N; i++) {
+    var dx = nodeX[i] - cxp, dy = nodeY[i] - cyp;
+    var d = dx * dx + dy * dy;
+    if (d < bestD) { bestD = d; best = i; }
+  }
+  shadowState = new Uint8Array(state);
+  state[best] = state[best] ? 0 : 1;
+  shadowActive = true;
+  shadowStartTime = performance.now();
+  for (var r = 0; r < N; r++) ringAlpha[r] = 0;
+  ringAlpha[best] = 1;
+});
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+regenerateNetwork(K);
+resizeCanvas();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

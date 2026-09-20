@@ -24,6 +24,64 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-20** — `2026-09-20-distant-kin.html`: a forty-seventh technique,
+  and the first automaton whose neighborhood isn't geometry at all. Every
+  automaton before this one read its update from a neighborhood fixed by
+  geometry — night 28's elementary rule from the cell to its immediate
+  left and right, night 16's Ising spin and night 12's Kuramoto phase from
+  the eight cells ringing it, night 27's turmite from the one cell
+  underfoot. This is a random Boolean network, the model Stuart Kauffman
+  built in 1969 to ask what a genome does before evolution has had any
+  chance to tune it: two hundred nodes, each wired at random to K other
+  nodes anywhere in the network — never its geometric neighbors, since
+  there is no geometry to be near, only whichever strangers the initial
+  dice roll happened to name — and each carrying its own private truth
+  table, 2^K entries of coin flips, filled in once and never touched
+  again. Every tick, synchronously, every node reads the current state of
+  its K inputs, looks up the one bit its own private table assigns to
+  that exact combination, and becomes that bit. Night 33's CPPN also fed
+  every pixel through an identical set of fixed, never-trained random
+  weights, but continuously and from scratch every frame, with no memory
+  from the frame before; a node here has exactly two possible values and
+  a real history, since this frame's bit was computed from last frame's
+  bits and nothing else. Nothing here decides collectively and nothing
+  propagates outward from a source the way night 13's auxin or night 3's
+  pheromone did — every node is its own separate, arbitrary law, and the
+  whole net's behavior is just what two hundred private laws look like
+  added together. Kauffman's own result is the reason K is the one
+  parameter this piece breathes: with an unbiased coin filling every
+  table, the critical average connectivity sits at exactly
+  K=1/(2p(1-p))=2 for p=1/2 — below it the network freezes into a few
+  small islands of flicker surrounded by a majority of nodes locked dead
+  still forever, at it the network sits on what Kauffman called the edge
+  of chaos, and above it almost every node's state depends sensitively on
+  almost every other's. A curated sequence of K — one (frozen), two
+  (critical) twice, three, four (turbulent) — takes turns for a minute
+  and a half apiece, each transition tearing up the wiring, the tables,
+  and the states and growing an entirely new net from scratch behind a
+  flash of white. Nodes sit fixed on a ring, a faint web of chords drawn
+  once for every node's K inputs, the wiring made visible as a static
+  circuit rather than something forces move; the only thing that ever
+  moves is which bit each node holds, read as a slow ember-cool between
+  dim slate off and warm amber on. Click anywhere and the nearest node
+  has its single bit flipped in the live network while an invisible,
+  unflipped shadow copy — same wiring, same tables, same states at the
+  instant of the click — keeps running the counterfactual beside it: any
+  node where the two now disagree lights a bright ring, and the shockwave
+  of disagreement is Derrida's own Hamming-distance experiment made
+  visible rather than plotted. In the frozen and critical regimes that
+  ring of disagreement almost always shrinks back to nothing within a few
+  seconds, the network healing the wound on its own; past the critical
+  point it just as often spreads to swallow half the ring and never
+  closes, the network's own case for why real gene networks, wired by
+  evolution's own early trial and error, seem to sit so close to that
+  same edge rather than deep in either the frozen or the chaotic country.
+  Move the cursor near the ring to reach in as an external inducer,
+  forcing whichever nodes it's close enough to switch on regardless of
+  what their own private table says, the way a real inducer molecule
+  overrides a gene's regulators from outside the system the table lives
+  in. Open the file directly in a browser.
+
 - **2026-09-19** — `2026-09-19-fivefold-hush.html`: a forty-sixth technique,
   and the first built from no field, no lattice, no swarm, no force law,
   and no forward-in-time process at all — every tile placed by a single
