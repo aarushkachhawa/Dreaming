@@ -24,6 +24,61 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-21** — `2026-09-21-rim-of-mirrors.html`: a forty-seventh
+  technique, and the first where the plane itself is not flat. Every night
+  before this one — fields, swarms, force laws, automata, grammars,
+  tessellations, even the pentagrid two nights ago — took place on
+  ordinary Euclidean paper; the only thing that ever changed was the rule
+  laid on top of it. Tonight the rule is the simplest one there is — a
+  mirror, reflected in a mirror, reflected in a mirror — and the only
+  thing that changes is the geometry it's reflected in. This is a {7,3}
+  tiling of the hyperbolic plane, regular heptagons meeting three to a
+  vertex, drawn in the Poincaré disk model: a faithful map of the whole
+  infinite hyperbolic plane compressed into a finite circle, where
+  straight lines (geodesics) become arcs that always cross the boundary
+  at right angles, and every heptagon on screen is exactly congruent to
+  every other in the only distance that actually matters here, however
+  small it's been squeezed by the time it reaches the rim. The
+  construction is a kaleidoscope, not a simulation: start with one
+  heptagon sized so its interior angle is exactly a third of a circle
+  (solved from a single hyperbolic right-triangle identity, cosh R =
+  cot(π/7)·cot(π/3)), then reflect it across each of its seven edges to
+  get seven neighbors, reflect each of those across their own edges, and
+  keep going — breadth-first, mirror after mirror, discarding any copy
+  that lands where one has already landed — until the copies are packed
+  too close to the rim to matter. Every reflection is computed the way a
+  billiard reflects off a curved cushion: use the disk's own symmetry to
+  slide the mirror line through the origin, reflect across that diameter
+  by ordinary conjugation, slide back. No copy is ever drawn twice, and
+  none is approximated — the seven-sided outline is the true geodesic
+  polygon, its edges sampled along that same origin-trick whenever a tile
+  is large enough on screen for the bend to show. Night 19's power
+  diagram and night 46's pentagrid both tiled a flat plane by a rule
+  about distance or position; this tiles by a rule about mirrors, and the
+  reason it can do with regular heptagons what no flat tiling ever could
+  — three meeting at a vertex with room to spare — is that the surface is
+  curved to make room for them. This is the same picture Donald Coxeter
+  handed M.C. Escher at a conference in Amsterdam in 1954, a diagram of a
+  hyperbolic tessellation that Escher, who had no training in the
+  mathematics, spent the next four years teaching himself to reconstruct
+  by hand; it became the four "Circle Limit" woodcuts, and the vanishing
+  fish and angels and devils in them are not really shrinking toward the
+  rim, any more than these heptagons are — every one is the same size,
+  out where the metric lives, and it's only the flat page, or the flat
+  screen, straining to hold an infinite curved world that makes the ones
+  near the edge look like they're running out of room. Color drifts from
+  a warm amber spark at the center through rose and magenta to a cooling
+  violet as the reflections stack up, each ring of copies a little darker
+  than the one it was born from, a fine dark seam traced at every shared
+  mirror line. Nothing here moves on its own except a slow unforced
+  drift, the whole disk wandering along a lazy, irrational circuit around
+  wherever it currently sits; drag to grab the tiling directly and pull
+  any part of the infinite pattern into the middle — the disk never runs
+  dry, because a hyperbolic isometry maps the whole thing onto itself, so
+  wherever you drag from is exactly as full as where you started. Click
+  without dragging to let go and drift back to center. Open the file
+  directly in a browser.
+
 - **2026-09-19** — `2026-09-19-fivefold-hush.html`: a forty-sixth technique,
   and the first built from no field, no lattice, no swarm, no force law,
   and no forward-in-time process at all — every tile placed by a single

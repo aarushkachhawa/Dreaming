@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rim of Mirrors — Night 47</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #05050a;
+    overflow: hidden;
+    cursor: grab;
+  }
+  body.dragging { cursor: grabbing; }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Rim of Mirrors &mdash; Night 47 &mdash; drag to wander the curve &middot; click to return</div>
+<script>
+(function(){
+'use strict';
+// A forty-seventh technique, and the first where the plane itself is not
+// flat. Every night before this one -- fields, swarms, force laws,
+// automata, grammars, tessellations, even last night's pentagrid -- took
+// place on ordinary Euclidean paper; the only thing that ever changed was
+// the rule laid on top of it. Tonight the rule is the simplest one there
+// is -- a mirror, reflected in a mirror, reflected in a mirror -- and the
+// only thing that changes is the geometry it's reflected in. This is a
+// {7,3} tiling of the hyperbolic plane, regular heptagons meeting three to
+// a vertex, drawn in the Poincare disk model: a faithful map of the whole
+// infinite hyperbolic plane compressed into a finite circle, where
+// straight lines (geodesics) become arcs that always cross the boundary
+// at right angles, and every heptagon you see is exactly congruent to
+// every other in the only distance that actually matters here, however
+// small it's been squeezed on your screen. The construction is a
+// kaleidoscope, not a simulation: start with one heptagon sized so its
+// interior angle is exactly a third of a circle (solved from a single
+// hyperbolic right-triangle identity, cosh R = cot(pi/7) cot(pi/3)), then
+// reflect it across each of its seven edges to get seven neighbors,
+// reflect each of those across their own edges, and keep going --
+// breadth-first, mirror after mirror, discarding any copy that lands
+// where one has already landed -- until the copies are packed too close
+// to the rim to matter. Every reflection is computed the same way a
+// billiard reflects off a curved cushion: move the mirror line to pass
+// through the origin by the disk's own symmetry, reflect across that
+// diameter by ordinary conjugation, move back. No copy is ever drawn
+// twice, and none is approximated -- the seven-sided outline you see is
+// the true geodesic polygon, its edges sampled along that same
+// origin-trick whenever a tile is large enough on screen for the bend to
+// show. Night 19's power diagram and night 46's pentagrid both tiled a
+// flat plane by a rule about distance or position; this tiles by a rule
+// about mirrors, and the reason it can do with regular heptagons what no
+// flat tiling ever could -- three meeting at a vertex with room to
+// spare -- is that the surface is curved to make room for them. This is
+// the same picture Donald Coxeter handed M.C. Escher at a conference in
+// Amsterdam in 1954, a diagram of a hyperbolic tessellation that Escher,
+// who had no training in the mathematics, spent the next four years
+// teaching himself to reconstruct by hand; it became the four "Circle
+// Limit" woodcuts, and the vanishing fish and angels and devils in them
+// are not really shrinking toward the rim, any more than these heptagons
+// are -- every one is the same size, out where the metric lives, and it's
+// only the flat page, or the flat screen, straining to hold an infinite
+// curved world that makes the ones near the edge look like they're
+// running out of room. Color drifts from a warm spark at the center
+// through amber and rose to a cooling violet as the reflections stack up,
+// each ring of copies a little darker than the one it was born from, a
+// fine dark seam traced at every shared mirror line. Nothing here moves
+// on its own except a slow unforced drift, the whole disk wandering along
+// a lazy, irrational circuit around its own center; drag to grab the
+// tiling directly and pull any part of the infinite pattern into the
+// middle -- the disk never runs dry, because a hyperbolic isometry maps
+// the whole thing onto itself, so wherever you drag from is exactly as
+// full as where you started. Click without dragging to let go and drift
+// back to center. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var body = document.body;
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var width = 0, height = 0, rect = null, cx = 0, cy = 0, Rpix = 0;
+
+// -- complex arithmetic, points as [re, im] --
+function cadd(u, v){ return [u[0] + v[0], u[1] + v[1]]; }
+function csub(u, v){ return [u[0] - v[0], u[1] - v[1]]; }
+function cmul(u, v){ return [u[0] * v[0] - u[1] * v[1], u[0] * v[1] + u[1] * v[0]]; }
+function cdiv(u, v){
+  var d = v[0] * v[0] + v[1] * v[1];
+  return [(u[0] * v[0] + u[1] * v[1]) / d, (u[1] * v[0] - u[0] * v[1]) / d];
+}
+function conjg(u){ return [u[0], -u[1]]; }
+function cabs(u){ return Math.sqrt(u[0] * u[0] + u[1] * u[1]); }
+
+// disk automorphism sending a -> 0
+function phi(a, z){
+  return cdiv(csub(z, a), csub([1, 0], cmul(conjg(a), z)));
+}
+// its inverse, sending 0 -> a
+function phiInv(a, z){
+  return cdiv(cadd(z, a), cadd([1, 0], cmul(conjg(a), z)));
+}
+// reflection of z across the hyperbolic geodesic through a and b
+function reflect(a, b, z){
+  var bp = phi(a, b);
+  var theta = Math.atan2(bp[1], bp[0]);
+  var rot = [Math.cos(2 * theta), Math.sin(2 * theta)];
+  var rotated = cmul(rot, conjg(phi(a, z)));
+  return phiInv(a, rotated);
+}
+// a handful of points along the true geodesic from a to b (both already
+// wherever the current view has carried them)
+function geodesicPoints(a, b, steps){
+  var w = phi(a, b);
+  var out = [];
+  for (var i = 0; i <= steps; i++) {
+    var t = i / steps;
+    out.push(phiInv(a, [w[0] * t, w[1] * t]));
+  }
+  return out;
+}
+
+// -- build the {7,3} tiling once, in a fixed coordinate frame --
+var P = 7, Q = 3;
+var Rh = Math.acosh(1 / Math.tan(Math.PI / P) / Math.tan(Math.PI / Q));
+var rE = Math.tanh(Rh / 2);
+
+var baseVerts = [];
+for (var bk = 0; bk < P; bk++) {
+  var ang = -Math.PI / 2 + bk * (2 * Math.PI / P);
+  baseVerts.push([rE * Math.cos(ang), rE * Math.sin(ang)]);
+}
+
+var tiles = (function build(){
+  var CUTOFF = 0.999, MAXTILES = 7000;
+  var visited = {};
+  function keyFor(c){ return Math.round(c[0] * 100000) + ',' + Math.round(c[1] * 100000); }
+  var root = { verts: baseVerts, center: [0, 0], depth: 0 };
+  visited[keyFor([0, 0])] = true;
+  var list = [root], queue = [root], head = 0;
+  while (head < queue.length && list.length < MAXTILES) {
+    var t = queue[head++];
+    for (var i = 0; i < P; i++) {
+      var a = t.verts[i], b = t.verts[(i + 1) % P];
+      var ncenter = reflect(a, b, t.center);
+      if (cabs(ncenter) > CUTOFF) continue;
+      var key = keyFor(ncenter);
+      if (visited[key]) continue;
+      visited[key] = true;
+      var nv = new Array(P);
+      for (var j = 0; j < P; j++) nv[j] = reflect(a, b, t.verts[j]);
+      var nt = { verts: nv, center: ncenter, depth: t.depth + 1 };
+      list.push(nt);
+      queue.push(nt);
+      if (list.length >= MAXTILES) break;
+    }
+  }
+  return list;
+})();
+
+var maxDepth = 0;
+for (var ti = 0; ti < tiles.length; ti++) if (tiles[ti].depth > maxDepth) maxDepth = tiles[ti].depth;
+
+// -- view state: a single hyperbolic translation parameter --
+var curD = [0, 0], targetD = [0, 0], orbitCenter = [0, 0];
+var dragging = false, dragStartD = [0, 0], dragStartPt = [0, 0], moved = 0;
+var driftT = 0;
+var flashAlpha = 0;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function clampToDisk(d, lim){
+  var r = cabs(d);
+  if (r <= lim) return d;
+  var s = lim / r;
+  return [d[0] * s, d[1] * s];
+}
+function viewOf(z){
+  var s = Math.sqrt(Math.max(1e-9, 1 - (curD[0] * curD[0] + curD[1] * curD[1])));
+  var a = [1 / s, 0], b = [curD[0] / s, curD[1] / s];
+  var num = cadd(cmul(a, z), b);
+  var den = cadd(cmul(conjg(b), z), conjg(a));
+  return cdiv(num, den);
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  rect = canvas.getBoundingClientRect();
+  cx = width / 2; cy = height / 2;
+  Rpix = Math.min(width, height) * 0.47;
+}
+
+function toScreen(z){
+  return [cx + z[0] * Rpix, cy - z[1] * Rpix];
+}
+
+function draw(){
+  ctx.fillStyle = '#05050a';
+  ctx.fillRect(0, 0, width, height);
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = 'rgba(4, 3, 10, 0.6)';
+
+  for (var i = 0; i < tiles.length; i++) {
+    var t = tiles[i];
+    var tv = new Array(P);
+    for (var j = 0; j < P; j++) tv[j] = viewOf(t.verts[j]);
+
+    var pts = [];
+    for (var e = 0; e < P; e++) {
+      var a = tv[e], b = tv[(e + 1) % P];
+      var chord = Math.hypot((a[0] - b[0]) * Rpix, (a[1] - b[1]) * Rpix);
+      if (chord > 7) {
+        var steps = Math.min(8, Math.ceil(chord / 7));
+        var gp = geodesicPoints(a, b, steps);
+        for (var g = 0; g < gp.length - 1; g++) pts.push(gp[g]);
+      } else {
+        pts.push(a);
+      }
+    }
+
+    var depthF = t.depth / Math.max(1, maxDepth);
+    var hue = (25 - t.depth * 19 + 360) % 360;
+    var light = clamp(50 - t.depth * 5.5, 7, 50);
+    var sat = 68 - depthF * 12;
+
+    ctx.beginPath();
+    var s0 = toScreen(pts[0]);
+    ctx.moveTo(s0[0], s0[1]);
+    for (var p2 = 1; p2 < pts.length; p2++) {
+      var sp = toScreen(pts[p2]);
+      ctx.lineTo(sp[0], sp[1]);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'hsl(' + hue + ', ' + sat.toFixed(0) + '%, ' + light.toFixed(1) + '%)';
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  if (flashAlpha > 0.003) {
+    ctx.fillStyle = 'rgba(255, 255, 255, ' + (flashAlpha * 0.4).toFixed(3) + ')';
+    ctx.fillRect(0, 0, width, height);
+    flashAlpha *= 0.92;
+  }
+}
+
+function frame(time){
+  time = time / 1000;
+  driftT = time;
+
+  if (!dragging) {
+    var off = [0.07 * Math.cos(driftT * 0.045), 0.055 * Math.sin(driftT * 0.037 + 1.1)];
+    targetD = clampToDisk([orbitCenter[0] + off[0], orbitCenter[1] + off[1]], 0.94);
+  }
+  curD[0] += (targetD[0] - curD[0]) * 0.02;
+  curD[1] += (targetD[1] - curD[1]) * 0.02;
+  curD = clampToDisk(curD, 0.94);
+
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function pointerPos(e){
+  var mx = (e.touches ? e.touches[0].clientX : e.clientX) - (rect ? rect.left : 0);
+  var my = (e.touches ? e.touches[0].clientY : e.clientY) - (rect ? rect.top : 0);
+  return [mx, my];
+}
+
+function startDrag(e){
+  dragging = true;
+  moved = 0;
+  body.className = 'dragging';
+  dragStartD = [curD[0], curD[1]];
+  dragStartPt = pointerPos(e);
+}
+function moveDrag(e){
+  if (!dragging) return;
+  var pt = pointerPos(e);
+  var dx = (pt[0] - dragStartPt[0]) / Rpix;
+  var dy = (pt[1] - dragStartPt[1]) / Rpix;
+  moved += Math.abs(dx) + Math.abs(dy);
+  targetD = clampToDisk([dragStartD[0] - dx, dragStartD[1] + dy], 0.94);
+  curD = targetD.slice();
+}
+function endDrag(){
+  if (!dragging) return;
+  dragging = false;
+  body.className = '';
+  if (moved < 0.01) {
+    orbitCenter = [0, 0];
+    flashAlpha = 0.7;
+  } else {
+    orbitCenter = clampToDisk([curD[0], curD[1]], 0.85);
+  }
+}
+
+window.addEventListener('resize', resizeCanvas);
+canvas.addEventListener('mousedown', startDrag);
+window.addEventListener('mousemove', moveDrag);
+window.addEventListener('mouseup', endDrag);
+canvas.addEventListener('touchstart', function(e){ startDrag(e); e.preventDefault(); }, { passive: false });
+window.addEventListener('touchmove', function(e){ if (dragging) { moveDrag(e); e.preventDefault(); } }, { passive: false });
+window.addEventListener('touchend', endDrag);
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resizeCanvas();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
