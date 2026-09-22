@@ -24,6 +24,44 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-22** — `2026-09-22-drowned-light.html`: a forty-eighth technique,
+  and the first governed by geometric optics -- what light does when it bends
+  -- rather than a field, a swarm, an agent, or a discretized solver update
+  shaded directly onto the screen. Every earlier night that touched water
+  rendered its surface: night 4's glass-tide lit a wave height field with
+  Blinn-Phong reflection, one bounce, stopping at the same pixel it left.
+  Tonight the surface itself never appears on screen at all. A shallow sea is
+  built the ordinary way, as a sum of eight plane-wave trains at different
+  wavelengths, directions, and speeds, plus a handful of short-lived radial
+  ripple packets seeded by the cursor, each a damped sinusoid expanding
+  outward from where it was dropped. But instead of shading that field, every
+  point on it is treated only as a lens: its local slope gives a surface
+  normal, Snell's law bends a bundle of parallel sun rays through it at the
+  ratio between air and water (1 : 1.33), and each ray is carried on in a
+  straight line until it crosses a floor some distance below. Nothing about
+  any single ray is interesting -- what matters is where a great many of them
+  land together. A flat patch of sea sends its rays down in a neat,
+  undistorted grid; a patch curved like a lens focuses its rays into a small,
+  bright knot, and a patch curved the other way spreads them thin into a dark
+  gap. The bright, tangled net that results -- the same one on the floor of
+  every sunlit swimming pool, and under the base of any wine glass -- is not
+  drawn, it is counted: one ray landing per bin of an accumulation buffer, the
+  method Nishita and Nakamae described for rendering underwater light in 1994.
+  The reason it resolves into sharp cusps and folds rather than a smooth
+  gradient is exactly the mathematics Michael Berry and Colin Upstill worked
+  out for caustics in 1980 as instances of Thom's catastrophe theory: the map
+  from a ray's starting point to its landing point stops being one-to-one
+  wherever neighboring rays cross, and light piles up precisely on that fold.
+  None of that is solved for symbolically here -- it falls out on its own from
+  tens of thousands of straight lines and one refraction each, recomputed from
+  scratch every frame as the sea moves. The sun's own angle drifts slowly and
+  without pattern, sliding the whole net sideways over the course of minutes
+  the way real sunlight does over a longer day. Move the cursor to trouble the
+  surface, trailing a wake of small ripples that bend the net beneath it;
+  click to drop a single stone and watch one ripple ring pass under the
+  caustics, forking and refocusing them as it crosses. Open the file directly
+  in a browser.
+
 - **2026-09-21** — `2026-09-21-rim-of-mirrors.html`: a forty-seventh
   technique, and the first where the plane itself is not flat. Every night
   before this one — fields, swarms, force laws, automata, grammars,

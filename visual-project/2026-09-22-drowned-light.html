@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Drowned Light — Night 48</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #03080a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Drowned Light &mdash; Night 48 &mdash; move to trouble the surface &middot; click to drop a stone</div>
+<script>
+(function(){
+'use strict';
+// A forty-eighth technique, and the first governed by geometric optics --
+// what light does when it bends -- rather than a field, a swarm, an
+// agent, or a discretized solver update shaded directly onto the screen.
+// Every earlier night that touched water rendered its surface: night 4's
+// glass-tide lit a wave height field with Blinn-Phong reflection, one
+// bounce, stopping at the same pixel it left. Tonight the surface itself
+// never appears on screen at all. A shallow sea is built the ordinary
+// way, as a sum of eight plane-wave trains at different wavelengths,
+// directions, and speeds, plus a handful of short-lived radial ripple
+// packets seeded by the cursor, each a damped sinusoid expanding outward
+// from where it was dropped. But instead of shading that field, every
+// point on it is treated only as a lens: its local slope gives a surface
+// normal, Snell's law bends a bundle of parallel sun rays through it at
+// the ratio between air and water (1 : 1.33), and each ray is carried on
+// in a straight line until it crosses a floor some distance below.
+// Nothing about any single ray is interesting -- what matters is where a
+// great many of them land together. A flat patch of sea sends its rays
+// down in a neat, undistorted grid; a patch curved like a lens focuses
+// its rays into a small, bright knot, and a patch curved the other way
+// spreads them thin into a dark gap. The bright, tangled net that results
+// -- the same one on the floor of every sunlit swimming pool, and under
+// the base of any wine glass -- is not drawn, it is counted: one ray
+// landing per bin of an accumulation buffer, the method Nishita and
+// Nakamae described for rendering underwater light in 1994. The reason
+// it resolves into sharp cusps and folds rather than a smooth gradient is
+// exactly the mathematics Michael Berry and Colin Upstill worked out for
+// caustics in 1980 as instances of Thom's catastrophe theory: the map
+// from a ray's starting point to its landing point stops being one-to-one
+// wherever neighboring rays cross, and light piles up precisely on that
+// fold. None of that is solved for symbolically here -- it falls out on
+// its own from tens of thousands of straight lines and one refraction
+// each, recomputed from scratch every frame as the sea moves. The sun's
+// own angle drifts slowly and without pattern, sliding the whole net
+// sideways over the course of minutes the way real sunlight does over a
+// longer day. Move the cursor to trouble the surface, trailing a wake of
+// small ripples that bend the net beneath it; click to drop a single
+// stone and watch one ripple ring pass under the caustics, forking and
+// refocusing them as it crosses. Open the file directly in a browser.
+
+var canvas = document.getElementById('c');
+var ctx = canvas.getContext('2d');
+var caption = document.getElementById('caption');
+var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+var floorCanvas = document.createElement('canvas');
+var floorCtx = floorCanvas.getContext('2d');
+var glowCanvas = document.createElement('canvas');
+var glowCtx = glowCanvas.getContext('2d');
+
+var width = 0, height = 0;
+var GW = 120, GH = 80;
+var display = null, fresh = null;
+var img = null;
+
+var TARGET_CELLS = 46000;
+var FLOOR_DEPTH = 230;
+var ETA = 1.0 / 1.33;
+var GAIN = 0.34;
+var BLEND = 0.4;
+
+var N_WAVES = 8;
+var waves = [];
+(function initWaves(){
+  var WL_MAX = 340, WL_MIN = 24, BASE_AMP = 6.4;
+  var angOffset = Math.random() * Math.PI * 2;
+  for (var i = 0; i < N_WAVES; i++) {
+    var u = (i + 0.25 + 0.5 * Math.random()) / N_WAVES;
+    var wl = WL_MAX * Math.pow(WL_MIN / WL_MAX, u);
+    var amp = BASE_AMP * Math.pow(wl / WL_MAX, 0.85);
+    var ang = angOffset + (i + 0.5 * Math.random()) / N_WAVES * Math.PI * 2;
+    var spd = 24 + 90 * Math.pow(WL_MAX / wl, 0.25) * (0.85 + 0.3 * Math.random());
+    var k = 2 * Math.PI / wl;
+    waves.push({
+      amp: amp,
+      kx: k * Math.cos(ang),
+      ky: k * Math.sin(ang),
+      omega: k * spd,
+      phase: Math.random() * Math.PI * 2
+    });
+  }
+})();
+
+var ripples = [];
+var MAX_RIPPLES = 14;
+
+function clamp(v, lo, hi){ return v < lo ? lo : (v > hi ? hi : v); }
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+function spawnRipple(x, y, amp, decay, speed, wl){
+  if (ripples.length >= MAX_RIPPLES) ripples.shift();
+  ripples.push({ x0: x, y0: y, t0: performance.now() / 1000, amp: amp, decay: decay, speed: speed, k: 2 * Math.PI / wl });
+}
+
+function heightAndGrad(x, y, t, out){
+  var h = 0, dhdx = 0, dhdy = 0, i;
+  for (i = 0; i < N_WAVES; i++){
+    var w = waves[i];
+    var ph = w.kx * x + w.ky * y - w.omega * t + w.phase;
+    var s = Math.sin(ph), c = Math.cos(ph);
+    h += w.amp * s;
+    dhdx += w.amp * w.kx * c;
+    dhdy += w.amp * w.ky * c;
+  }
+  for (i = ripples.length - 1; i >= 0; i--){
+    var r = ripples[i];
+    var age = t - r.t0;
+    if (age < 0) continue;
+    var env = r.amp * Math.exp(-r.decay * age);
+    if (env < 0.04) continue;
+    var dx = x - r.x0, dy = y - r.y0;
+    var dist = Math.sqrt(dx * dx + dy * dy) + 0.0001;
+    var falloff = env / Math.sqrt(dist * 0.045 + 1);
+    var phase = r.k * dist - r.speed * r.k * age;
+    var s = Math.sin(phase), c = Math.cos(phase);
+    h += falloff * s;
+    var dpdx = r.k * (dx / dist), dpdy = r.k * (dy / dist);
+    dhdx += falloff * c * dpdx;
+    dhdy += falloff * c * dpdy;
+  }
+  out.h = h; out.dhdx = dhdx; out.dhdy = dhdy;
+}
+
+function computeGrid(w, h){
+  var aspect = w / h;
+  var gh = Math.round(Math.sqrt(TARGET_CELLS / aspect));
+  gh = clamp(gh, 60, 200);
+  var gw = Math.round(gh * aspect);
+  gw = clamp(gw, 60, 340);
+  return { gw: gw, gh: gh };
+}
+
+function resizeCanvas(){
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  var g = computeGrid(width, height);
+  GW = g.gw; GH = g.gh;
+  display = new Float32Array(GW * GH);
+  fresh = new Float32Array(GW * GH);
+  floorCanvas.width = GW; floorCanvas.height = GH;
+  glowCanvas.width = GW; glowCanvas.height = GH;
+  img = floorCtx.createImageData(GW, GH);
+}
+
+var sample = { h: 0, dhdx: 0, dhdy: 0 };
+
+function addAt(buf, x, y, w, h, v){
+  if (x < 0 || x >= w || y < 0 || y >= h) return;
+  buf[y * w + x] += v;
+}
+
+function splat(buf, bx, by, w, h, weight){
+  if (bx < -1 || bx >= w + 1 || by < -1 || by >= h + 1) return;
+  var x0 = Math.floor(bx), y0 = Math.floor(by);
+  var fx = bx - x0, fy = by - y0;
+  addAt(buf, x0, y0, w, h, (1 - fx) * (1 - fy) * weight);
+  addAt(buf, x0 + 1, y0, w, h, fx * (1 - fy) * weight);
+  addAt(buf, x0, y0 + 1, w, h, (1 - fx) * fy * weight);
+  addAt(buf, x0 + 1, y0 + 1, w, h, fx * fy * weight);
+}
+
+function pruneRipples(t){
+  for (var i = ripples.length - 1; i >= 0; i--){
+    var r = ripples[i];
+    var age = t - r.t0;
+    if (age >= 0 && r.amp * Math.exp(-r.decay * age) < 0.04) ripples.splice(i, 1);
+  }
+}
+
+function castRays(t){
+  pruneRipples(t);
+  fresh.fill(0);
+  var tiltMag = 0.16;
+  var sx = tiltMag * Math.sin(t * 0.021 + 1.3);
+  var sy = tiltMag * Math.sin(t * 0.017);
+  var slen = Math.sqrt(sx * sx + sy * sy + 1);
+  var Ix = sx / slen, Iy = sy / slen, Iz = -1 / slen;
+  var weight = 1.0;
+
+  for (var iy = 0; iy < GH; iy++){
+    var y = (iy + 0.5) / GH * height;
+    for (var ix = 0; ix < GW; ix++){
+      var x = (ix + 0.5) / GW * width;
+      heightAndGrad(x, y, t, sample);
+      var nx = -sample.dhdx, ny = -sample.dhdy, nz = 1;
+      var nlen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+      nx /= nlen; ny /= nlen; nz /= nlen;
+
+      var dotNI = nx * Ix + ny * Iy + nz * Iz;
+      var kk = 1 - ETA * ETA * (1 - dotNI * dotNI);
+      var sq = Math.sqrt(kk < 0 ? 0 : kk);
+      var coef = ETA * dotNI + sq;
+      var Tx = ETA * Ix - coef * nx;
+      var Ty = ETA * Iy - coef * ny;
+      var Tz = ETA * Iz - coef * nz;
+
+      var tp = (-FLOOR_DEPTH - sample.h) / Tz;
+      var fx = x + Tx * tp;
+      var fy = y + Ty * tp;
+
+      var bx = fx / width * GW;
+      var by = fy / height * GH;
+      splat(fresh, bx, by, GW, GH, weight);
+    }
+  }
+
+  for (var i = 0; i < display.length; i++){
+    display[i] = display[i] * BLEND + fresh[i] * (1 - BLEND);
+  }
+}
+
+function rampColor(t){
+  var stops = [
+    [0.00, 3, 10, 13],
+    [0.32, 7, 46, 58],
+    [0.60, 42, 150, 158],
+    [0.82, 255, 224, 168],
+    [1.00, 255, 250, 236]
+  ];
+  var i = 0;
+  while (i < stops.length - 2 && t > stops[i + 1][0]) i++;
+  var a = stops[i], b = stops[i + 1];
+  var span = b[0] - a[0];
+  var u = span > 0 ? (t - a[0]) / span : 0;
+  return [
+    Math.round(lerp(a[1], b[1], u)),
+    Math.round(lerp(a[2], b[2], u)),
+    Math.round(lerp(a[3], b[3], u))
+  ];
+}
+
+function renderFloor(){
+  var data = img.data;
+  for (var i = 0; i < display.length; i++){
+    var v = display[i];
+    var tone = 1 - Math.exp(-v * GAIN);
+    tone = Math.pow(tone, 1.5);
+    var rgb = rampColor(tone);
+    var p = i * 4;
+    data[p] = rgb[0]; data[p + 1] = rgb[1]; data[p + 2] = rgb[2]; data[p + 3] = 255;
+  }
+  floorCtx.putImageData(img, 0, 0);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.drawImage(floorCanvas, 0, 0, GW, GH, 0, 0, width, height);
+
+  glowCtx.clearRect(0, 0, GW, GH);
+  glowCtx.drawImage(floorCanvas, 0, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = 0.4;
+  ctx.filter = 'blur(7px)';
+  ctx.drawImage(glowCanvas, 0, 0, GW, GH, 0, 0, width, height);
+  ctx.filter = 'none';
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+
+  var vg = ctx.createRadialGradient(
+    width / 2, height / 2, Math.min(width, height) * 0.25,
+    width / 2, height / 2, Math.max(width, height) * 0.72
+  );
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,3,4,0.55)');
+  ctx.fillStyle = vg;
+  ctx.fillRect(0, 0, width, height);
+}
+
+var lastT = 0, startTime = performance.now() / 1000;
+var rect = null;
+var mouseX = -9999, mouseY = -9999, lastMoveSpawn = 0, haveMouse = false;
+
+function frame(now){
+  var t = now / 1000 - startTime;
+  castRays(t);
+  renderFloor();
+  requestAnimationFrame(frame);
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+canvas.addEventListener('mousemove', function(e){
+  mouseX = e.clientX - (rect ? rect.left : 0);
+  mouseY = e.clientY - (rect ? rect.top : 0);
+  var now = performance.now();
+  if (haveMouse && now - lastMoveSpawn > 90){
+    lastMoveSpawn = now;
+    spawnRipple(mouseX, mouseY, 3.2, 0.9, 70, 46);
+  }
+  haveMouse = true;
+});
+canvas.addEventListener('mouseleave', function(){ haveMouse = false; });
+canvas.addEventListener('touchmove', function(e){
+  if (e.touches && e.touches.length){
+    mouseX = e.touches[0].clientX - (rect ? rect.left : 0);
+    mouseY = e.touches[0].clientY - (rect ? rect.top : 0);
+    var now = performance.now();
+    if (now - lastMoveSpawn > 90){
+      lastMoveSpawn = now;
+      spawnRipple(mouseX, mouseY, 3.2, 0.9, 70, 46);
+    }
+    e.preventDefault();
+  }
+}, { passive: false });
+
+canvas.addEventListener('click', function(e){
+  var x = e.clientX - (rect ? rect.left : 0);
+  var y = e.clientY - (rect ? rect.top : 0);
+  spawnRipple(x, y, 11, 0.35, 90, 70);
+});
+
+setTimeout(function(){ caption.className = 'visible'; }, 900);
+
+resizeCanvas();
+rect = canvas.getBoundingClientRect();
+window.addEventListener('scroll', function(){ rect = canvas.getBoundingClientRect(); });
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
