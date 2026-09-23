@@ -24,6 +24,51 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-23** — `2026-09-23-undecided-ground.html`: a forty-ninth
+  technique, and the first fractal boundary drawn by convergence rather
+  than escape. Night 43's Julia set asked every pixel a private
+  yes-or-no question about z² + c — does this point's orbit run to
+  infinity, or stay bound forever — and painted the boundary between
+  those two fates. This asks a different question of the same shape:
+  under Newton's method applied to a polynomial with six complex roots,
+  which root does this starting point eventually fall into? There is no
+  escape here, no third fate — every point in the plane is drawn, sooner
+  or later, into one of six wells — so instead of one bounded region set
+  against one unbounded one, the plane splits into six basins of
+  attraction, and the fractal is what happens wherever three or more of
+  them meet. Arthur Cayley posed exactly this in 1879, the
+  "Newton–Fourier imaginary problem," and solved the two-root case by
+  hand in an afternoon: the boundary is a single straight line, the
+  perpendicular bisector between the roots, because either root's pull
+  only ever wins outright. He tried three roots next and got nowhere; it
+  took Fatou and Julia's own turn-of-the-century work on iterated
+  rational maps to explain why, and nobody actually saw the shape of the
+  answer until computer graphics could render it, a century later. Six
+  roots sit on screen here, not three, each one a complex number treated
+  as a physical thing rather than a fixed constant: a small, restless
+  particle system nudges every well with a weak pull back toward the
+  center, a soft mutual repulsion so no two ever quite collide, and a
+  little noise, so the map keeps drifting even untouched. The iteration
+  itself never computes the polynomial or its derivative directly — for
+  a polynomial given as a product of its roots, Newton's update
+  algebraically collapses to z' = z − 1 / Σᵢ 1/(z − rᵢ), summing one
+  reciprocal per root and inverting once, which is both cheaper per
+  pixel and the reason moving a single root reshapes the whole boundary
+  at once rather than demanding a full polynomial refit. Color carries
+  two answers at once: which well a pixel eventually settles into sets
+  its hue, how many iterations that took sets its brightness, so each
+  basin reads as a smooth field near its own well and frays into thin
+  concentric filigree approaching the boundary, self-similar at every
+  scale it's viewed — the same lacework Night 48's caustic net folded
+  into cusps, arrived at here by counting the steps of an algorithm
+  instead of crossing rays. Drag a well to relocate it and watch the map
+  answer instantly, every basin it touches reshaping live; drag open
+  ground to pan; scroll to zoom into the boundary's own detail, which
+  never resolves into a smooth curve no matter how far in you go. Left
+  alone, the wells keep drifting on their own, so no arrangement of the
+  boundary lasts long enough to call finished. Open the file directly in
+  a browser.
+
 - **2026-09-22** — `2026-09-22-drowned-light.html`: a forty-eighth technique,
   and the first governed by geometric optics -- what light does when it bends
   -- rather than a field, a swarm, an agent, or a discretized solver update
