@@ -24,6 +24,54 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-24** — `2026-09-24-shared-weather.html`: a fiftieth technique,
+  and the first chaotic system that is dissipative rather than conservative
+  — one where phase space itself contracts. Nights 5 and 26 were chaotic
+  too: the three-body waltz's mutual gravity and common-descent's double
+  pendulum are both Hamiltonian, so by Liouville's theorem the volume a
+  cloud of nearby starting conditions occupies is exactly preserved forever,
+  only stretched and folded, and common-descent's own added drag was
+  strong enough to kill the chaos outright, settling every pendulum back
+  toward a calm, ordinary, non-chaotic rhythm at the bottom of its swing.
+  This is the Lorenz system: dx/dt = σ(y−x), dy/dt = x(ρ−z)−y,
+  dz/dt = xy−βz, the three equations Edward Lorenz kept in 1963 after
+  radically truncating Barry Saltzman's Fourier model of atmospheric
+  convection down to its three most energetic terms — x the intensity of
+  a convective roll, y the temperature difference between its rising and
+  falling currents, z how far the vertical temperature profile bows away
+  from a straight line. Its divergence, σ+1+β combined, is a constant
+  negative number everywhere in the state space, so unlike nights 5 and
+  26 this system is always, unconditionally, shrinking every volume it
+  contains toward zero — and yet it is exactly as chaotic as they are,
+  nearby trajectories still separating exponentially with the same
+  positive Lyapunov exponent that made those nights' bundles unravel.
+  Both are true at once because contraction and separation happen along
+  different directions: trajectories are squeezed flat onto a
+  two-lobed, self-similar surface with no thickness and a fractal
+  dimension near 2.06, then spread apart exponentially only within that
+  surface, matting it into an object Ruelle and Takens named a "strange
+  attractor" in 1971. Every one of the forty threads on screen starts
+  from a different, often wildly different, point in space, seeded
+  nowhere near each other or the attractor itself, yet all of them, in a
+  few seconds, get reeled onto the identical double-lobed shape and
+  begin the same unpredictable back-and-forth between wings — the
+  opposite emphasis from common-descent's identical starting bundle
+  tearing apart, and the truer origin of "the butterfly effect," a
+  phrase Lorenz didn't coin until a 1972 talk but had already lived
+  through in 1961, when he re-ran a forecast from a printout rounded to
+  three decimals instead of the six his program actually carried and
+  watched the weather it produced diverge completely within an
+  in-machine month. Runge-Kutta integrates all forty streams at once,
+  each colored along a blue-to-gold gradient by which wing it currently
+  occupies, so a color change on screen is a trajectory changing its
+  mind about which lobe to circle next — itself a chaotic, symbolic
+  sequence with no pattern a human eye has ever found in it. Drag to
+  orbit the attractor and see the two lobes from any angle; scroll to
+  dolly in and out; click anywhere to drop a fresh storm from whatever
+  point you chose, and watch it forget its origin and join the shared
+  shape within moments. Left alone, the view keeps slowly turning on its
+  own. Open the file directly in a browser.
+
 - **2026-09-23** — `2026-09-23-undecided-ground.html`: a forty-ninth
   technique, and the first fractal boundary drawn by convergence rather
   than escape. Night 43's Julia set asked every pixel a private

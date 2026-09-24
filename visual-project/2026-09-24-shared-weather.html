@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shared Weather — Night 50</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #06050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Shared Weather &mdash; Night 50 &mdash; drag to orbit &middot; scroll to zoom &middot; click to drop a new storm</div>
+<script>
+(function () {
+  var canvas = document.getElementById('c');
+  var caption = document.getElementById('caption');
+  var ctx = canvas.getContext('2d');
+
+  var SIGMA = 10.0;
+  var RHO = 28.0;
+  var BETA = 8.0 / 3.0;
+  var DT = 0.006;
+  var SUBSTEPS = 2;
+  var MAX_STREAMS = 64;
+
+  function deriv(p) {
+    return {
+      dx: SIGMA * (p.y - p.x),
+      dy: p.x * (RHO - p.z) - p.y,
+      dz: p.x * p.y - BETA * p.z
+    };
+  }
+
+  function rk4(p, dt) {
+    var k1 = deriv(p);
+    var mid1 = { x: p.x + dt / 2 * k1.dx, y: p.y + dt / 2 * k1.dy, z: p.z + dt / 2 * k1.dz };
+    var k2 = deriv(mid1);
+    var mid2 = { x: p.x + dt / 2 * k2.dx, y: p.y + dt / 2 * k2.dy, z: p.z + dt / 2 * k2.dz };
+    var k3 = deriv(mid2);
+    var end = { x: p.x + dt * k3.dx, y: p.y + dt * k3.dy, z: p.z + dt * k3.dz };
+    var k4 = deriv(end);
+    p.x += dt / 6 * (k1.dx + 2 * k2.dx + 2 * k3.dx + k4.dx);
+    p.y += dt / 6 * (k1.dy + 2 * k2.dy + 2 * k3.dy + k4.dy);
+    p.z += dt / 6 * (k1.dz + 2 * k2.dz + 2 * k3.dz + k4.dz);
+  }
+
+  function hueForX(x) {
+    var t = Math.max(-1, Math.min(1, x / 18));
+    var u = (t + 1) / 2;
+    return 206 - 166 * u;
+  }
+
+  var streams = [];
+
+  function randomSeed() {
+    return {
+      x: (Math.random() - 0.5) * 44,
+      y: (Math.random() - 0.5) * 50,
+      z: 1 + Math.random() * 46,
+      px: null,
+      py: null,
+      pf: 1,
+      born: performance.now()
+    };
+  }
+
+  for (var i = 0; i < 40; i++) streams.push(randomSeed());
+
+  var W = 0, H = 0, cx = 0, cy = 0, dpr = 1;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+    W = Math.floor(window.innerWidth * dpr);
+    H = Math.floor(window.innerHeight * dpr);
+    canvas.width = W;
+    canvas.height = H;
+    cx = W / 2;
+    cy = H / 2;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  var yaw = 0.6, pitch = 0.34;
+  var zoom = 1;
+  var camDist = 95;
+
+  function project(px, py, pz) {
+    var x = px, y = py, z = pz - 25;
+    var cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+    var x1 = x * cosY - z * sinY;
+    var z1 = x * sinY + z * cosY;
+    var cosP = Math.cos(pitch), sinP = Math.sin(pitch);
+    var y1 = y * cosP - z1 * sinP;
+    var z2 = y * sinP + z1 * cosP;
+    var f = camDist / (camDist - z2);
+    if (f < 0.05) f = 0.05;
+    var scale = Math.min(W, H) / 46 * zoom;
+    return {
+      x: cx + x1 * f * scale,
+      y: cy - y1 * f * scale,
+      f: f
+    };
+  }
+
+  function unprojectApprox(sx, sy) {
+    var scale = Math.min(W, H) / 46 * zoom;
+    var x1 = (sx - cx) / scale;
+    var y1 = -(sy - cy) / scale;
+    var cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+    var x = x1 * cosY;
+    var z = x1 * -sinY + 25;
+    var cosP = Math.cos(pitch);
+    var y = cosP !== 0 ? y1 / cosP : y1;
+    return {
+      x: Math.max(-26, Math.min(26, x)),
+      y: Math.max(-30, Math.min(30, y)),
+      z: Math.max(1, Math.min(48, z + (Math.random() - 0.5) * 20))
+    };
+  }
+
+  var dragging = false, lastPointer = { x: 0, y: 0 };
+  var idleSince = 0, now = 0;
+  var moved = false;
+
+  function wake() {
+    idleSince = now;
+    caption.classList.add('visible');
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    dragging = true;
+    moved = false;
+    lastPointer = { x: e.clientX, y: e.clientY };
+    wake();
+  });
+
+  window.addEventListener('pointermove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastPointer.x;
+    var dy = e.clientY - lastPointer.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) moved = true;
+    yaw += dx * 0.005;
+    pitch += dy * 0.004;
+    pitch = Math.max(-1.2, Math.min(1.2, pitch));
+    lastPointer = { x: e.clientX, y: e.clientY };
+    wake();
+  });
+
+  window.addEventListener('pointerup', function (e) {
+    if (dragging && !moved) {
+      var r = canvas.getBoundingClientRect();
+      var sx = (e.clientX - r.left) * dpr;
+      var sy = (e.clientY - r.top) * dpr;
+      var seed = unprojectApprox(sx, sy);
+      seed.px = null;
+      seed.py = null;
+      seed.pf = 1;
+      seed.born = performance.now();
+      streams.push(seed);
+      if (streams.length > MAX_STREAMS) streams.shift();
+    }
+    dragging = false;
+  });
+
+  canvas.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    wake();
+    var factor = Math.exp(-e.deltaY * 0.0015);
+    zoom = Math.min(Math.max(zoom * factor, 0.35), 3.2);
+  }, { passive: false });
+
+  var start = performance.now();
+  var lastT = start;
+
+  function frame(tms) {
+    now = (tms - start) / 1000;
+    var dt = Math.min((tms - lastT) / 1000, 0.05);
+    lastT = tms;
+
+    if (!dragging) yaw += dt * 0.045;
+
+    if (now - idleSince > 6.0) caption.classList.remove('visible');
+
+    ctx.fillStyle = 'rgba(6, 5, 10, 0.09)';
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.lineCap = 'round';
+
+    for (var i = 0; i < streams.length; i++) {
+      var s = streams[i];
+      for (var k = 0; k < SUBSTEPS; k++) rk4(s, DT);
+
+      var proj = project(s.x, s.y, s.z);
+      if (s.px !== null) {
+        var hue = hueForX(s.x);
+        var depthAlpha = Math.max(0.12, Math.min(1, (proj.f - 0.6) * 1.4));
+        var age = (performance.now() - s.born) / 1000;
+        var fadeIn = Math.min(1, age / 1.5);
+        ctx.strokeStyle = 'hsla(' + hue.toFixed(1) + ', 78%, ' + (52 + 14 * depthAlpha).toFixed(0) + '%, ' + (0.55 * depthAlpha * fadeIn).toFixed(3) + ')';
+        ctx.lineWidth = 0.9 + 0.9 * depthAlpha * dpr;
+        ctx.beginPath();
+        ctx.moveTo(s.px, s.py);
+        ctx.lineTo(proj.x, proj.y);
+        ctx.stroke();
+      }
+      s.px = proj.x;
+      s.py = proj.y;
+      s.pf = proj.f;
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
