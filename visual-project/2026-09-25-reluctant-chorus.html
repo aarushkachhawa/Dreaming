@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reluctant Chorus — Night 51</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #06050a;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  canvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100vh;
+  }
+  #caption {
+    position: fixed;
+    left: 24px;
+    bottom: 20px;
+    font: 300 12px/1.5 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.08em;
+    color: rgba(255, 255, 255, 0);
+    text-transform: uppercase;
+    pointer-events: none;
+    transition: color 3s ease;
+  }
+  #caption.visible {
+    color: rgba(255, 255, 255, 0.32);
+  }
+  #readout {
+    position: fixed;
+    right: 24px;
+    top: 20px;
+    font: 300 12px/1.6 -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.38);
+    text-align: right;
+    pointer-events: none;
+    text-transform: uppercase;
+  }
+  #readout b {
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 400;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="caption">Reluctant Chorus &mdash; Night 51 &mdash; drag the lower bar to set coupling &middot; click the ring to jolt it out of step</div>
+<div id="readout"></div>
+<script>
+(function () {
+  var canvas = document.getElementById('c');
+  var ctx = canvas.getContext('2d');
+  var caption = document.getElementById('caption');
+  var readout = document.getElementById('readout');
+
+  var N = 360;
+  var GAMMA = 1.0;         // Cauchy scale of the natural-frequency distribution
+  var K_C = 2 * GAMMA;     // critical coupling: Kc = 2 / (pi * g(0)) for a Cauchy g
+  var K_MAX = 4 * GAMMA;
+  var OMEGA_CLAMP = 6.0;   // trims the Cauchy tail so no single dot laps the ring absurdly often
+
+  var theta = new Float64Array(N);
+  var omega = new Float64Array(N);
+  var scratch1 = new Float64Array(N);
+  var scratch2 = new Float64Array(N);
+  var scratch3 = new Float64Array(N);
+  var k1 = new Float64Array(N), k2 = new Float64Array(N), k3 = new Float64Array(N), k4 = new Float64Array(N);
+
+  for (var i = 0; i < N; i++) {
+    theta[i] = Math.random() * Math.PI * 2;
+    var u = Math.random();
+    var w = GAMMA * Math.tan(Math.PI * (u - 0.5));
+    omega[i] = Math.max(-OMEGA_CLAMP, Math.min(OMEGA_CLAMP, w));
+  }
+
+  var COOL = [120, 185, 255];  // slow oscillators, negative omega
+  var WARM = [255, 170, 95];   // fast oscillators, positive omega
+  var rgbCache = new Array(N);
+  for (var ci = 0; ci < N; ci++) {
+    var t = Math.max(-1, Math.min(1, omega[ci] / OMEGA_CLAMP));
+    var u = (t + 1) / 2;
+    rgbCache[ci] = [
+      Math.round(COOL[0] + (WARM[0] - COOL[0]) * u),
+      Math.round(COOL[1] + (WARM[1] - COOL[1]) * u),
+      Math.round(COOL[2] + (WARM[2] - COOL[2]) * u)
+    ];
+  }
+
+  function orderParam(th) {
+    var sx = 0, sy = 0;
+    for (var i = 0; i < N; i++) { sx += Math.cos(th[i]); sy += Math.sin(th[i]); }
+    sx /= N; sy /= N;
+    return { r: Math.sqrt(sx * sx + sy * sy), psi: Math.atan2(sy, sx) };
+  }
+
+  function deriv(th, K, out) {
+    var op = orderParam(th);
+    for (var i = 0; i < N; i++) {
+      out[i] = omega[i] + K * op.r * Math.sin(op.psi - th[i]);
+    }
+    return op;
+  }
+
+  function rk4Step(K, dt) {
+    deriv(theta, K, k1);
+    for (var i = 0; i < N; i++) scratch1[i] = theta[i] + dt / 2 * k1[i];
+    deriv(scratch1, K, k2);
+    for (i = 0; i < N; i++) scratch2[i] = theta[i] + dt / 2 * k2[i];
+    deriv(scratch2, K, k3);
+    for (i = 0; i < N; i++) scratch3[i] = theta[i] + dt * k3[i];
+    deriv(scratch3, K, k4);
+    for (i = 0; i < N; i++) {
+      theta[i] += dt / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]);
+    }
+  }
+
+  var W = 0, H = 0, cx = 0, cy = 0, dpr = 1, ringR = 0;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 1.6);
+    W = Math.floor(window.innerWidth * dpr);
+    H = Math.floor(window.innerHeight * dpr);
+    canvas.width = W;
+    canvas.height = H;
+    cx = W / 2;
+    cy = H / 2 - 18 * dpr;
+    ringR = Math.min(W, H) * 0.32;
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  var K = 0;
+  var manualK = null;
+  var sweepPhase = 0;
+
+  var barY, barX0, barX1;
+  function layoutBar() {
+    barY = H - 46 * dpr;
+    barX0 = 70 * dpr;
+    barX1 = W - 70 * dpr;
+  }
+  layoutBar();
+  window.addEventListener('resize', layoutBar);
+
+  var rHistory = [];
+  var HIST_MAX = 480;
+
+  var draggingBar = false;
+  var idleSince = 0, now = 0;
+
+  function wake() {
+    idleSince = now;
+    caption.classList.add('visible');
+  }
+
+  function inBarZone(cy0) {
+    return cy0 > barY - 18 * dpr && cy0 < barY + 18 * dpr;
+  }
+
+  canvas.addEventListener('pointerdown', function (e) {
+    var r = canvas.getBoundingClientRect();
+    var sx = (e.clientX - r.left) * dpr;
+    var sy = (e.clientY - r.top) * dpr;
+    wake();
+    if (inBarZone(sy)) {
+      draggingBar = true;
+      var frac = (sx - barX0) / (barX1 - barX0);
+      manualK = Math.max(0, Math.min(1, frac)) * K_MAX;
+    } else {
+      var dx = sx - cx, dy = sy - cy;
+      var dist = Math.sqrt(dx * dx + dy * dy);
+      if (Math.abs(dist - ringR) < ringR * 0.4) {
+        var clickAngle = Math.atan2(dy, dx);
+        var kicked = 0;
+        for (var i = 0; i < N; i++) {
+          var diff = Math.atan2(Math.sin(theta[i] - clickAngle), Math.cos(theta[i] - clickAngle));
+          if (Math.abs(diff) < 0.5) {
+            theta[i] += (Math.random() - 0.5) * 3.6;
+            kicked++;
+          }
+        }
+      }
+    }
+  });
+
+  window.addEventListener('pointermove', function (e) {
+    if (!draggingBar) return;
+    var r = canvas.getBoundingClientRect();
+    var sx = (e.clientX - r.left) * dpr;
+    var frac = (sx - barX0) / (barX1 - barX0);
+    manualK = Math.max(0, Math.min(1, frac)) * K_MAX;
+    wake();
+  });
+
+  window.addEventListener('pointerup', function () {
+    draggingBar = false;
+  });
+
+  var start = performance.now();
+  var lastT = start;
+  var DT = 0.02;
+
+  function frame(tms) {
+    now = (tms - start) / 1000;
+    var dt = Math.min((tms - lastT) / 1000, 0.05);
+    lastT = tms;
+
+    if (manualK !== null) {
+      K = manualK;
+      if (now - idleSince > 9.0) manualK = null; // release back to the automatic sweep after a while untouched
+    } else {
+      sweepPhase += dt * 0.05;
+      K = (K_MAX / 2) * (1 - Math.cos(sweepPhase));
+    }
+
+    if (now - idleSince > 6.0) caption.classList.remove('visible');
+
+    rk4Step(K, DT);
+    var op = orderParam(theta);
+
+    rHistory.push(op.r);
+    if (rHistory.length > HIST_MAX) rHistory.shift();
+
+    ctx.fillStyle = 'rgba(6, 5, 10, 0.62)';
+    ctx.fillRect(0, 0, W, H);
+
+    // guide ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, ringR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1 * dpr;
+    ctx.stroke();
+
+    // oscillators
+    ctx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < N; i++) {
+      var x = cx + ringR * Math.cos(theta[i]);
+      var y = cy + ringR * Math.sin(theta[i]);
+      var rgb = rgbCache[i];
+      var lockDiff = Math.atan2(Math.sin(theta[i] - op.psi), Math.cos(theta[i] - op.psi));
+      var locked = op.r * Math.cos(lockDiff);
+      var glow = Math.max(0.25, Math.min(1, 0.4 + 0.6 * locked));
+
+      ctx.beginPath();
+      ctx.arc(x, y, 3.4 * dpr, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + (0.05 * glow).toFixed(3) + ')';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(x, y, 1.7 * dpr, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',' + (0.7 + 0.3 * glow).toFixed(3) + ')';
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+
+    // order-parameter vector
+    var vx = cx + ringR * op.r * Math.cos(op.psi);
+    var vy = cy + ringR * op.r * Math.sin(op.psi);
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(vx, vy);
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.15 + 0.55 * op.r).toFixed(3) + ')';
+    ctx.lineWidth = 1.6 * dpr;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(vx, vy, 3 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,' + (0.3 + 0.6 * op.r).toFixed(3) + ')';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx, cy, 2.2 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fill();
+
+    // coupling bar
+    var by = barY, bx0 = barX0, bx1 = barX1;
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+    ctx.lineWidth = 2 * dpr;
+    ctx.beginPath();
+    ctx.moveTo(bx0, by);
+    ctx.lineTo(bx1, by);
+    ctx.stroke();
+
+    var kx = bx0 + (bx1 - bx0) * (K / K_MAX);
+    ctx.strokeStyle = 'rgba(160,200,255,0.65)';
+    ctx.lineWidth = 3 * dpr;
+    ctx.beginPath();
+    ctx.moveTo(bx0, by);
+    ctx.lineTo(kx, by);
+    ctx.stroke();
+
+    var kcx = bx0 + (bx1 - bx0) * (K_C / K_MAX);
+    ctx.beginPath();
+    ctx.moveTo(kcx, by - 7 * dpr);
+    ctx.lineTo(kcx, by + 7 * dpr);
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1.2 * dpr;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(kx, by, 5 * dpr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fill();
+
+    // r(t) strip chart
+    var chY0 = 30 * dpr, chY1 = 70 * dpr, chX0 = W - 220 * dpr, chX1 = W - 24 * dpr;
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 1.2 * dpr;
+    ctx.beginPath();
+    for (var h = 0; h < rHistory.length; h++) {
+      var hx = chX1 - (rHistory.length - 1 - h) * ((chX1 - chX0) / HIST_MAX);
+      var hy = chY1 - rHistory[h] * (chY1 - chY0);
+      if (h === 0) ctx.moveTo(hx, hy); else ctx.lineTo(hx, hy);
+    }
+    ctx.stroke();
+
+    readout.innerHTML = 'K <b>' + K.toFixed(2) + '</b> &nbsp; K<sub>c</sub> ' + K_C.toFixed(2) +
+      ' &nbsp; r <b>' + op.r.toFixed(3) + '</b>';
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

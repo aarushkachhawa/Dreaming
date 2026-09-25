@@ -24,6 +24,73 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-25** — `2026-09-25-reluctant-chorus.html`: a fifty-first
+  technique, and the first built around convergence instead of divergence.
+  Every dynamical-systems night so far — the three-body waltz, common
+  descent's double pendulum, last night's Lorenz attractor — has been a
+  demonstration of how two nearby states pull apart, exponentially, no
+  matter how careful the seeding. This one runs the tape the other way: a
+  population of four hundred oscillators, each ticking at its own private
+  frequency and otherwise indifferent to the others, that a single coupling
+  term can drag into a shared rhythm. The model is Kuramoto's, from a 1975
+  paper written to explain something Arthur Winfree had proposed by hand
+  eight years earlier while modeling flashing fireflies and pacemaker cells:
+  that a large population of biological oscillators, all a little different,
+  could still lock into synchrony if the coupling between them crossed some
+  threshold, with no conductor and no shared clock. Winfree's version needed
+  simulation to explore. Kuramoto's, by restricting the coupling to a pure
+  sine of the phase difference, turns out to be exactly solvable in the
+  limit of infinitely many oscillators, and infamously it took Steven
+  Strogatz and collaborators another two decades after that to actually
+  prove the self-consistency argument Kuramoto sketched in a few lines. The
+  equation for oscillator i is dθᵢ/dt = ωᵢ + (K/N) Σⱼ sin(θⱼ − θᵢ): its own
+  frequency ωᵢ, plus a pull from every other oscillator weighted by how far
+  out of phase it is. That sum over all N neighbors looks like an O(N²)
+  problem every frame, but the same trigonometric identity that makes the
+  model solvable also makes it cheap to simulate: Σⱼ sin(θⱼ − θᵢ) collapses
+  to N·r·sin(ψ − θᵢ), where r·e^(iψ) is the population's own mean phase —
+  the order parameter, r running from 0 (phases scattered uniformly, no
+  correlation) to 1 (every oscillator reading the same phase at once). Each
+  oscillator, in other words, doesn't feel four hundred individual neighbors;
+  it feels the crowd's average mood and how far it personally strays from
+  it, recomputed fresh every step — a mean-field reduction, not an
+  approximation. The four hundred natural frequencies are drawn from a
+  Cauchy distribution, the one Kuramoto himself used, because its heavy
+  tails and simple peak give a closed form for the critical coupling:
+  Kc = 2/(πg(0)) = 2γ for scale γ, below which no amount of waiting produces
+  sync and above which a locked cluster condenses out of the noise and
+  grows. Every oscillator sits on the ring at its own phase angle, so
+  incoherence looks like four hundred points scattered evenly around the
+  circle's circumference, drifting at visibly different rates — the fast
+  ones streak past, the slow ones barely creep — while synchrony looks like
+  most of that ring collapsing into one bright knot that holds together and
+  slowly turns, with only the most extreme frequencies, out at the Cauchy
+  distribution's tails, still lapping past the cluster on their own
+  schedule, unable to be caught. Color is frequency, not phase: a cold blue
+  for the slowest oscillators shading to warm amber for the fastest, fixed
+  to each point for its whole life, so the eye can watch identity persist
+  through the transition — the same blue dot that was drifting alone a
+  moment ago is the one that gets folded into the cluster once coupling
+  crosses Kc. A white line from the center is the order parameter itself,
+  its length r and angle ψ read directly off the crowd, and a strip chart
+  in the corner traces r over time, the plainest possible readout of whether
+  the chorus is currently holding together. The coupling K is not fixed:
+  left alone, it sweeps slowly and continuously from zero to twice critical
+  and back, so the ring is guaranteed to cross the transition in both
+  directions if you watch long enough — synchrony assembling, then
+  dissolving, then assembling again from different survivors. Drag the bar
+  along the bottom to set K by hand and hold the population wherever you
+  like relative to Kc; click anywhere on the ring itself to seize a wedge of
+  nearby oscillators and scramble their phases at random, a deliberate
+  shove to see whether the current coupling is strong enough to reel the
+  stragglers back in or whether the jolt is the one that finally breaks a
+  fragile lock apart. The same mechanism, at different scales, is why a
+  suspended bridge full of pedestrians can start swaying in lockstep, why a
+  cluster of cardiac cells with no pacemaker among them can still beat as
+  one, and why a few hundred fireflies in a Tennessee forest can end up
+  flashing in the same half-second window with nothing coordinating them
+  but each other. Open the file directly in a browser.
+
 - **2026-09-24** — `2026-09-24-shared-weather.html`: a fiftieth technique,
   and the first chaotic system that is dissipative rather than conservative
   — one where phase space itself contracts. Nights 5 and 26 were chaotic
