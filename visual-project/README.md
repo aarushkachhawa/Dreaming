@@ -24,6 +24,48 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-26** — `2026-09-26-patient-cartography.html`: a fifty-second
+  technique, and the first that draws its shape from learning rather than a
+  field, a swarm, a force law, a grammar, an automaton, thermodynamics, or a
+  constraint solver — a self-organizing map, Teuvo Kohonen's 1982
+  competitive-learning algorithm, the one behind the textbook demo of a
+  rubber grid unfolding to cover a training distribution. A neuron on the
+  lattice carries no rule about the world, only a weight vector — here just
+  a screen position — that a stream of random samples drawn from a target
+  shape nudges toward itself. Each sample finds one best matching unit, the
+  neuron whose weight is nearest it in the plane, and every neuron within a
+  shrinking neighborhood of that winner — a neighborhood counted in lattice
+  index, not screen distance — is pulled a little toward the same sample, by
+  a Gaussian centered on the winner and narrowing over each shape's tenure.
+  That is the entire rule. Nobody encodes what a ring or a star looks like;
+  the map sees one random point at a time and infers a surface by accretion,
+  closer to a self-organizing nervous tissue finding a topographic map for a
+  cortex than to any physical process the prior fifty-one nights simulated.
+  The mesh is born as a small jittered scribble at the canvas center, and
+  its first seconds are a violent unfolding, a wide neighborhood radius
+  dragging the whole lattice at once toward whatever shape it has just been
+  shown; that radius decays through each shape's residency, so the
+  correspondence hardens from a soft gauze into a taut, wrinkle-fine one.
+  The wrinkles that remain are not decoration — a lattice forced to keep
+  every neuron wired to its grid neighbors while the data it is chasing
+  forms a ring with an empty middle has nowhere to put the interior but
+  folded back on itself, the same boundary artifact printed in every SOM
+  textbook. Color is heat: a rolling record of how recently and strongly a
+  neuron's weight moved, decaying every frame, glowing warm gold where the
+  lattice is actively learning and cooling to a faint violet-blue once a
+  region has settled, so the newest data reads as a moving glow riding the
+  mesh rather than a static shape. Six targets — a ring, a filled disk, a
+  five-lobed rosette, a lemniscate, two separate colonies, a spiral — cycle
+  automatically every twenty-four seconds or instantly on click, and every
+  switch also spikes the neighborhood radius back open so the map can refold
+  rather than get stuck defending the last shape. Move the cursor to become
+  a seventh, local target: some samples are drawn from around the pointer
+  instead of the standing shape, so a single patch of the lattice peels off
+  what it was covering and stretches to follow, a visible tug between the
+  distribution it was taught and the one you are offering it by hand. Click
+  to interrupt training outright and hand the map a new shape before it has
+  finished with the last one. Open the file directly in a browser.
+
 - **2026-09-25** — `2026-09-25-reluctant-chorus.html`: a fifty-first
   technique, and the first built around convergence instead of divergence.
   Every dynamical-systems night so far — the three-body waltz, common
