@@ -24,6 +24,65 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-27** — `2026-09-27-wound-memory.html`: a fifty-third technique,
+  and the first whose local rule was never written down by hand at all —
+  every automaton before this one, hand-tuned or learned, had a designer
+  choosing its update by inspection or an unsupervised competition doing
+  the choosing for them. This one was shaped entirely by gradient descent
+  against an explicit target: a growing neural cellular automaton
+  (Mordvintsev, Niklasson, Randazzo & Sabatier, 2020), the family behind
+  Distill's self-repairing pixel lizard. It sits deliberately between the
+  last two nights rather than beside them: night 52's self-organizing map
+  found its rule through unsupervised competition, neighbors pulling on
+  neighbors, no loss function and no correct answer; night 33's CPPN wired
+  a small network's weights once, from a Gaussian, and never touched them
+  again. This one is supervised in the plainest sense — a single scalar
+  loss, how far a stochastic rollout from one lit seed pixel sits, after
+  some number of steps, from a target picture of a single curled petal,
+  backpropagated through dozens of unrolled update steps the way a
+  recurrent network is trained through time. The training never touched a
+  browser or a GPU: every forward pass, every partial derivative through
+  the perception convolution, the two dense layers, and the stochastic
+  update was worked out and coded by hand in plain NumPy, offline, with no
+  automatic differentiation library in reach.
+  What ships is only the result of that process. Each cell on a 40x40
+  lattice carries sixteen numbers — three visible color channels and an
+  alpha that doubles as an alive signal, plus twelve hidden ones nobody
+  renders. Every step, every cell reads a fixed, hand-built perception of
+  its own 3x3 neighborhood — its own state, and a Sobel x- and
+  y-derivative of every channel, forty-eight numbers — and feeds that
+  through the same two small dense layers, forty-eight hundred-odd weights
+  applied identically everywhere, to get a proposed update. A stochastic
+  fire mask lets only about half the cells act on it each step, breaking
+  the lockstep synchrony of every earlier automaton here; a 3x3 max-pool
+  of the alpha channel, thresholded at 0.1, starves any cell with no
+  living neighbor of its own future, which is the entire mechanism by
+  which a single lit pixel is a sufficient seed for the whole shape. None
+  of that was hand-tuned to draw a petal. It was tuned to minimize a
+  number, and drawing a petal is what minimizing that number turned out to
+  require.
+  A rule trained only to grow, though, was never told what happens after
+  it arrives: run indefinitely, this one does not hold — it drifts, then
+  overgrows into noise past the forty-odd steps it was ever shown, the
+  well-documented failure of a growing recipe with no persistence phase
+  behind it. So nothing here runs forever. Every cell keeps its own clock,
+  extended only by the planting or the wound that reaches it, and when
+  that clock runs out the cell simply stops, mid-sentence if it has to,
+  freezing whatever it had rather than trusting a rule past the horizon it
+  was shown on. A wound gets the same clock, far shorter, and nobody ever
+  showed this network a damaged petal on purpose — there was no
+  persistence phase, no deliberate damage curriculum, none of the pool
+  training the original paper uses to teach real regeneration. What
+  happens under a wound here is a side effect of locality, not a rehearsed
+  answer, and empirically it is a good one: a torn hole surrounded by its
+  own converged neighbors usually gets pulled most of the way back to
+  itself before the short clock runs out, close enough that the accident
+  reads as intent. Click to plant a new seed anywhere on the lattice — the
+  rule is the same rule everywhere, so it grows the same petal wherever
+  it's asked, a garden rather than a single specimen. Drag to wound
+  whatever has already grown and watch how much of it the rule can still
+  half-remember. Open the file directly in a browser.
+
 - **2026-09-26** — `2026-09-26-patient-cartography.html`: a fifty-second
   technique, and the first that draws its shape from learning rather than a
   field, a swarm, a force law, a grammar, an automaton, thermodynamics, or a
