@@ -24,6 +24,59 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-28** — `2026-09-28-inherited-momentum.html`: a fifty-fourth
+  technique, and the first governed by a population evolving together
+  rather than one lineage improving alone — a generational genetic
+  algorithm with real crossover, the mechanism behind decades of
+  evolved-car and evolved-creature demos going back to Karl Sims' 1994
+  virtual creatures. Night 37's (1+1) evolutionary strategy already
+  mutated a single candidate against a measured error, but it explicitly
+  had no population and no crossover: one lineage, one clone competing
+  with its own parent, nothing else in the picture. This one runs twenty
+  wheeled creatures at once, every generation, and its next generation is
+  built by picking two survivors as parents and mixing their genes, which
+  a lineage of one can never do. A creature's genome is small and literal
+  — six radii around a hexagon for its chassis, and per wheel an anchor
+  vertex, a radius, a suspension rest length, and a target driving speed
+  — decoded into a real, if simplified, second-order physical body: a
+  rigid chassis with mass and rotational inertia, two wheels held on by
+  actual spring-and-damper suspension rather than a fixed rod, integrated
+  with symplectic Euler at a fixed 180Hz substep. A wheel drives only by
+  friction, a proportional controller pushing its ground-contact point
+  toward the genome's target speed and no further, capped at a maximum
+  force, so a car with too little grip on a slope simply spins uselessly
+  against the ground the same way a real underpowered wheel would.
+  Fitness is only ever how far a creature's chassis got before it
+  flipped past roughly 120 degrees, stalled without progress for four and
+  a half seconds, or ran out its generation's clock — no notion of style,
+  symmetry, or elegance, exactly the single blunt number Karl Sims' and
+  every BoxCar-style descendant since has used. Each generation keeps its
+  top two unmutated as elites, fills the rest from 3-way tournament
+  selection and gene-by-gene crossover — uniform for the chassis radii,
+  a mix of uniform and arithmetic blending for the continuous wheel
+  genes — mutates the result, and one in twenty children is simply thrown
+  in from scratch at random to keep the search from collapsing onto a
+  single body plan too early. The terrain itself never changes: a flat
+  launch pad giving way to rolling hills whose amplitude grows slowly
+  with distance, a fixed, closed-form function of x so every generation,
+  good or bad, is judged against exactly the same ground the one before
+  it faced. What actually shows up on screen across a run is a familiar
+  arc from every video of this kind of experiment — early generations
+  mostly faceplant off the launch pad, a few generations in something
+  ugly and lopsided learns to drag itself forward by falling in a
+  controlled direction, and eventually a genuinely wheeled gait
+  stabilizes and just keeps rolling until the clock or the hills win. A
+  dashed gold line marks the furthest any creature has ever reached, so
+  a new generation's collapse against an old record is visible at a
+  glance rather than remembered. Click anywhere to end the current
+  generation immediately rather than waiting out a timid population's
+  full clock; press 1, 2, or 3 to change how many physics steps run
+  per rendered frame, watching either at the pace a single creature's
+  wobble is readable or fast enough to burn through a dozen generations
+  in a minute; drag to look away from the pack for a few seconds before
+  the camera reclaims itself; space bar freezes the whole population
+  mid-stride. Open the file directly in a browser.
+
 - **2026-09-27** — `2026-09-27-wound-memory.html`: a fifty-third technique,
   and the first whose local rule was never written down by hand at all —
   every automaton before this one, hand-tuned or learned, had a designer

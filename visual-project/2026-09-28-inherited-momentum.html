@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Inherited Momentum</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05070c; height:100%; width:100%; }
+  canvas { display:block; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  #hud {
+    position:fixed; top:14px; left:16px; color:#cfe8ff; font-family: 'Courier New', monospace;
+    font-size:13px; line-height:1.55; text-shadow:0 0 6px rgba(120,200,255,0.5);
+    pointer-events:none; user-select:none; max-width:420px;
+  }
+  #hud .big { font-size:17px; color:#ffe9b0; text-shadow:0 0 8px rgba(255,210,120,0.6); }
+  #hud .dim { color:#7d93ab; }
+  #hint {
+    position:fixed; bottom:14px; left:16px; color:#5c7488; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click / tap &mdash; end this generation early&nbsp;&nbsp;|&nbsp;&nbsp;1 2 3 &mdash; simulation speed&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause&nbsp;&nbsp;|&nbsp;&nbsp;drag &mdash; look around</div>
+<script>
+(function(){
+"use strict";
+
+// ---------- canvas / camera ----------
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; }
+resize();
+window.addEventListener('resize', resize);
+
+const camera = { x: 200, y: 0, targetY: 0 };
+let manualPan = false, manualPanUntil = 0, dragging = false, lastDragX = 0, lastDragY = 0;
+
+// ---------- terrain ----------
+// Flat launch pad, then rolling hills whose amplitude grows slowly with
+// distance so early generations face an easy world and later, faster
+// lineages meet harder ground. Pure function of x: identical every
+// generation, so fitness differences come only from the genome.
+function groundHeight(x){
+  const BASE = 60;
+  if (x < 260) return BASE;
+  const t = x - 260;
+  const amp = Math.min(85, 14 + t * 0.014);
+  return BASE - amp * (
+    0.55 * Math.sin(t * 0.0115 + 1.2) +
+    0.30 * Math.sin(t * 0.029  + 4.0) +
+    0.18 * Math.sin(t * 0.066  + 2.1)
+  );
+}
+
+// ---------- physics constants ----------
+const GRAVITY = 1650;
+const CHASSIS_MASS = 9;
+const WHEEL_MASS = 1.3;
+const SUS_K = 3100, SUS_D = 110;      // suspension spring / damper
+const BODY_K = 1400, BODY_D = 45;     // body-vs-ground when dragging/flipped
+const MOTOR_GAIN = 9, MOTOR_MAX = 2600;
+const LIN_DAMP_PER_SEC = 0.55;        // fraction of velocity retained after 1s
+const ANG_DAMP_PER_SEC = 0.12;
+const DT = 1 / 180;
+
+function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+function rand(a,b){ return a + Math.random()*(b-a); }
+function gauss(sigma){ return (Math.random()+Math.random()+Math.random()-1.5)/1.5*sigma; }
+function cross2(rx,ry,fx,fy){ return rx*fy - ry*fx; }
+
+// ---------- genome ----------
+const N_VERTS = 6;
+function randomGenome(){
+  const vr = [];
+  for (let i=0;i<N_VERTS;i++) vr.push(rand(16,50));
+  function randWheel(){
+    return { anchor: Math.floor(rand(0,N_VERTS)), radius: rand(9,21),
+             rest: rand(16,44), motor: rand(50,260) * (Math.random()<0.08 ? -1:1) };
+  }
+  const w0 = randWheel(), w1 = randWheel();
+  if (w1.anchor === w0.anchor) w1.anchor = (w1.anchor + 1 + Math.floor(rand(0,4))) % N_VERTS;
+  return { vr, w:[w0,w1] };
+}
+function mixGene(a,b){
+  const r = Math.random();
+  if (r < 0.4) return a;
+  if (r < 0.8) return b;
+  return (a+b)/2;
+}
+function crossover(a,b){
+  const vr = a.vr.map((v,i)=> Math.random()<0.5 ? v : b.vr[i]);
+  const w = [0,1].map(i=>{
+    const pa=a.w[i], pb=b.w[i];
+    return {
+      anchor: (Math.random()<0.5?pa:pb).anchor,
+      radius: mixGene(pa.radius, pb.radius),
+      rest:   mixGene(pa.rest,   pb.rest),
+      motor:  mixGene(pa.motor,  pb.motor)
+    };
+  });
+  return { vr, w };
+}
+function mutate(g){
+  const vr = g.vr.map(v => Math.random()<0.18 ? clamp(v+gauss(9), 14, 55) : v);
+  const w = g.w.map(wh => ({
+    anchor: Math.random()<0.07 ? Math.floor(rand(0,N_VERTS)) : wh.anchor,
+    radius: Math.random()<0.18 ? clamp(wh.radius+gauss(4), 8, 24) : wh.radius,
+    rest:   Math.random()<0.18 ? clamp(wh.rest+gauss(6), 12, 48) : wh.rest,
+    motor:  Math.random()<0.18 ? clamp(wh.motor+gauss(35), -80, 300) : wh.motor
+  }));
+  return { vr, w };
+}
+
+// ---------- car ----------
+const START_X = 130;
+const MAX_GEN_TIME = 24;
+const STUCK_TIME = 4.5;
+
+class Car {
+  constructor(genome, hue){
+    this.genome = genome;
+    this.hue = hue;
+    this.localVerts = genome.vr.map((r,i)=>{
+      const a = i * Math.PI * 2 / N_VERTS;
+      return { x: Math.cos(a)*r, y: Math.sin(a)*r };
+    });
+    this.mass = CHASSIS_MASS;
+    let I = 0;
+    for (const v of this.localVerts) I += (v.x*v.x + v.y*v.y) * (this.mass / N_VERTS);
+    this.inertia = Math.max(I, 400);
+
+    this.x = START_X; this.y = groundHeight(START_X) - 110;
+    this.vx = 0; this.vy = 0; this.theta = 0; this.omega = 0;
+    this.wheels = genome.w.map(wg=>{
+      const al = this.localVerts[wg.anchor];
+      return { anchorLocal: al, radius: wg.radius, rest: wg.rest, motor: wg.motor,
+               x: this.x+al.x, y: this.y+al.y+wg.rest, vx:0, vy:0, grounded:false, spin:0 };
+    });
+    this.alive = true;
+    this.age = 0;
+    this.bestX = this.x;
+    this.timeSinceProgress = 0;
+  }
+
+  step(dt){
+    if (!this.alive) return;
+    this.age += dt;
+    const ct = Math.cos(this.theta), st = Math.sin(this.theta);
+    let Fx = 0, Fy = GRAVITY*this.mass, T = 0;
+
+    for (const wh of this.wheels){
+      const rx = wh.anchorLocal.x*ct - wh.anchorLocal.y*st;
+      const ry = wh.anchorLocal.x*st + wh.anchorLocal.y*ct;
+      const ax = this.x+rx, ay = this.y+ry;
+      const avx = this.vx - this.omega*ry, avy = this.vy + this.omega*rx;
+
+      let dx = wh.x-ax, dy = wh.y-ay;
+      let dist = Math.hypot(dx,dy) || 1e-4;
+      const dirx = dx/dist, diry = dy/dist;
+      const stretch = dist - wh.rest;
+      const relv = (wh.vx-avx)*dirx + (wh.vy-avy)*diry;
+      const mag = SUS_K*stretch + SUS_D*relv;
+      const fwx = -dirx*mag, fwy = -diry*mag; // force on wheel
+
+      Fx += -fwx; Fy += -fwy; T += cross2(rx,ry,-fwx,-fwy);
+
+      // wheel integration
+      let wfx = fwx, wfy = fwy + GRAVITY*WHEEL_MASS;
+      const gY = groundHeight(wh.x);
+      wh.grounded = (wh.y + wh.radius) >= gY;
+      if (wh.grounded){
+        wh.y = Math.min(wh.y, gY - wh.radius);
+        if (wh.vy > 0) wh.vy = 0;
+        const drive = clamp((wh.motor - wh.vx) * MOTOR_GAIN, -MOTOR_MAX, MOTOR_MAX);
+        wfx += drive;
+        wh.spin += (wh.vx / wh.radius) * dt;
+      }
+      wh.vx += wfx/WHEEL_MASS*dt; wh.vy += wfy/WHEEL_MASS*dt;
+      const ldw = Math.pow(LIN_DAMP_PER_SEC, dt);
+      wh.vx *= ldw; wh.vy *= ldw;
+      wh.x += wh.vx*dt; wh.y += wh.vy*dt;
+      if (wh.grounded && wh.y+wh.radius > gY) wh.y = gY - wh.radius;
+    }
+
+    // body-vs-ground drag (only bites when a vertex actually penetrates)
+    for (const v of this.localVerts){
+      const rx = v.x*ct - v.y*st, ry = v.x*st + v.y*ct;
+      const vx_ = this.x+rx, vy_ = this.y+ry;
+      const gY = groundHeight(vx_);
+      if (vy_ > gY){
+        const pen = vy_ - gY;
+        const pvy = this.vy + this.omega*rx;
+        const f = BODY_K*pen + BODY_D*Math.max(pvy,0);
+        Fy += -f; T += cross2(rx,ry,0,-f);
+      }
+    }
+
+    this.vx += Fx/this.mass*dt; this.vy += Fy/this.mass*dt;
+    this.omega += T/this.inertia*dt;
+    const ld = Math.pow(LIN_DAMP_PER_SEC, dt), ad = Math.pow(ANG_DAMP_PER_SEC, dt);
+    this.vx *= ld; this.vy *= ld; this.omega *= ad;
+    this.x += this.vx*dt; this.y += this.vy*dt; this.theta += this.omega*dt;
+
+    if (this.x > this.bestX + 0.4){ this.bestX = this.x; this.timeSinceProgress = 0; }
+    else this.timeSinceProgress += dt;
+
+    const wrapped = Math.atan2(Math.sin(this.theta), Math.cos(this.theta));
+    if (Math.abs(wrapped) > 2.15) this.alive = false;
+    if (this.timeSinceProgress > STUCK_TIME && this.age > 3) this.alive = false;
+    if (this.age > MAX_GEN_TIME) this.alive = false;
+    if (!isFinite(this.x) || !isFinite(this.y)) this.alive = false;
+  }
+
+  fitness(){ return Math.max(0, this.bestX - START_X); }
+}
+
+// ---------- population ----------
+const POP = 20;
+let generation = 1;
+let genomes = []; for (let i=0;i<POP;i++) genomes.push(randomGenome());
+let cars = spawn(genomes);
+let record = 0;
+let genBest = 0;
+let genStartTime = performance.now();
+
+function spawn(gs){
+  return gs.map((g,i)=> new Car(g, (generation*41 + i*23) % 360));
+}
+
+function tournament(sorted, k){
+  let best = null;
+  for (let i=0;i<k;i++){
+    const cand = sorted[Math.floor(Math.random()*sorted.length)];
+    if (!best || cand.fitness() > best.fitness()) best = cand;
+  }
+  return best;
+}
+
+function nextGeneration(){
+  const sorted = cars.slice().sort((a,b)=> b.fitness()-a.fitness());
+  genBest = sorted[0].fitness();
+  record = Math.max(record, genBest);
+
+  const newGenomes = [];
+  newGenomes.push(sorted[0].genome);
+  newGenomes.push(sorted[1] ? sorted[1].genome : mutate(sorted[0].genome));
+  while (newGenomes.length < POP){
+    if (Math.random() < 0.05){ newGenomes.push(randomGenome()); continue; }
+    const pa = tournament(sorted, 3), pb = tournament(sorted, 3);
+    newGenomes.push(mutate(crossover(pa.genome, pb.genome)));
+  }
+  generation++;
+  cars = spawn(newGenomes);
+  genStartTime = performance.now();
+}
+
+// ---------- simulation driving ----------
+let speedMult = 1;
+let paused = false;
+
+function simTick(){
+  const steps = Math.round(3 * speedMult);
+  for (let s=0; s<steps; s++){
+    let anyAlive = false;
+    for (const c of cars){ c.step(DT); if (c.alive) anyAlive = true; }
+    if (!anyAlive){ nextGeneration(); break; }
+  }
+}
+
+// ---------- input ----------
+window.addEventListener('keydown', (e)=>{
+  if (e.key === '1') speedMult = 1;
+  else if (e.key === '2') speedMult = 4;
+  else if (e.key === '3') speedMult = 12;
+  else if (e.key === ' '){ paused = !paused; e.preventDefault(); }
+});
+canvas.addEventListener('mousedown', (e)=>{ dragging=true; lastDragX=e.clientX; lastDragY=e.clientY; });
+window.addEventListener('mousemove', (e)=>{
+  if (!dragging) return;
+  manualPan = true; manualPanUntil = performance.now() + 3200;
+  camera.x -= (e.clientX-lastDragX);
+  camera.targetY -= (e.clientY-lastDragY);
+  lastDragX=e.clientX; lastDragY=e.clientY;
+});
+window.addEventListener('mouseup', ()=>{ dragging=false; });
+canvas.addEventListener('click', ()=>{
+  if (dragging) return;
+  for (const c of cars) c.alive = false;
+});
+canvas.addEventListener('touchstart', (e)=>{
+  const t=e.touches[0]; dragging=true; lastDragX=t.clientX; lastDragY=t.clientY;
+}, {passive:true});
+canvas.addEventListener('touchmove', (e)=>{
+  const t=e.touches[0];
+  manualPan = true; manualPanUntil = performance.now()+3200;
+  camera.x -= (t.clientX-lastDragX); camera.targetY -= (t.clientY-lastDragY);
+  lastDragX=t.clientX; lastDragY=t.clientY;
+}, {passive:true});
+window.addEventListener('touchend', ()=>{ dragging=false; });
+
+// ---------- stars ----------
+const stars = [];
+for (let i=0;i<160;i++) stars.push({ x: Math.random(), y: Math.random()*0.7, ph: Math.random()*Math.PI*2 });
+
+// ---------- rendering ----------
+function leaderX(){
+  let best=null;
+  for (const c of cars) if (c.alive && (!best || c.x>best.x)) best=c;
+  if (!best) for (const c of cars) if (!best || c.x>best.x) best=c;
+  return best ? best.x : START_X;
+}
+
+function draw(){
+  const t = performance.now()/1000;
+
+  // camera
+  if (!manualPan || performance.now() > manualPanUntil){
+    manualPan = false;
+    const lx = leaderX();
+    camera.x += (lx - camera.x) * 0.06;
+    camera.targetY = groundHeight(camera.x);
+  }
+  camera.y += (camera.targetY - camera.y) * 0.05;
+
+  const originX = W/2 - camera.x;
+  const originY = H*0.66 - camera.y;
+
+  // sky
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#050912'); g.addColorStop(0.6,'#0a1424'); g.addColorStop(1,'#0c1a1a');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  ctx.save();
+  for (const s of stars){
+    const sx = s.x*W - (camera.x*0.04)%W;
+    let sxWrapped = ((sx % W)+W)%W;
+    const alpha = 0.35 + 0.5*Math.abs(Math.sin(t*0.6+s.ph));
+    ctx.fillStyle = `rgba(210,230,255,${alpha.toFixed(2)})`;
+    ctx.fillRect(sxWrapped, s.y*H*0.9, 1.6, 1.6);
+  }
+  ctx.restore();
+
+  // ground
+  ctx.beginPath();
+  const step = 6;
+  const x0 = camera.x - W/2 - 40, x1 = camera.x + W/2 + 40;
+  ctx.moveTo(originX+x0, H+40);
+  for (let x=x0; x<=x1; x+=step){
+    ctx.lineTo(originX+x, originY+groundHeight(x));
+  }
+  ctx.lineTo(originX+x1, H+40);
+  ctx.closePath();
+  const gg = ctx.createLinearGradient(0, originY-60, 0, H);
+  gg.addColorStop(0,'#123222'); gg.addColorStop(1,'#04140d');
+  ctx.fillStyle = gg; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(originX+x0, originY+groundHeight(x0));
+  for (let x=x0; x<=x1; x+=step) ctx.lineTo(originX+x, originY+groundHeight(x));
+  ctx.strokeStyle = 'rgba(120,255,170,0.35)';
+  ctx.lineWidth = 2; ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(120,255,170,0.5)';
+  ctx.stroke(); ctx.shadowBlur = 0;
+
+  // record marker
+  if (record > 0.5){
+    const rx = START_X + record;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,215,120,0.45)';
+    ctx.setLineDash([4,6]);
+    ctx.beginPath(); ctx.moveTo(originX+rx, 0); ctx.lineTo(originX+rx, H); ctx.stroke();
+    ctx.restore();
+  }
+
+  // cars
+  const sorted = cars.slice().sort((a,b)=>a.fitness()-b.fitness());
+  for (const c of sorted){
+    const sx = originX + c.x, sy = originY + c.y;
+    const alive = c.alive;
+    const lead = alive && c.x === leaderX();
+    ctx.save();
+    ctx.translate(sx, sy); ctx.rotate(c.theta);
+    const alpha = alive ? (lead?0.95:0.5) : 0.16;
+    ctx.beginPath();
+    c.localVerts.forEach((v,i)=> i===0?ctx.moveTo(v.x,v.y):ctx.lineTo(v.x,v.y));
+    ctx.closePath();
+    ctx.fillStyle = `hsla(${c.hue},75%,60%,${alpha*0.35})`;
+    ctx.strokeStyle = `hsla(${c.hue},85%,${lead?75:60}%,${alpha})`;
+    ctx.lineWidth = lead ? 2.4 : 1.4;
+    if (lead){ ctx.shadowBlur = 16; ctx.shadowColor = `hsla(${c.hue},90%,65%,0.8)`; }
+    ctx.fill(); ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    for (const wh of c.wheels){
+      const wx = originX+wh.x, wy = originY+wh.y;
+      const ct=Math.cos(c.theta), st=Math.sin(c.theta);
+      const ax = sx + (wh.anchorLocal.x*ct - wh.anchorLocal.y*st);
+      const ay = sy + (wh.anchorLocal.x*st + wh.anchorLocal.y*ct);
+      ctx.strokeStyle = `hsla(${c.hue},40%,55%,${alpha*0.7})`;
+      ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(wx,wy); ctx.stroke();
+
+      ctx.beginPath(); ctx.arc(wx,wy,wh.radius,0,Math.PI*2);
+      ctx.fillStyle = `hsla(${c.hue},20%,15%,${alpha})`;
+      ctx.strokeStyle = `hsla(${c.hue},70%,${lead?70:55}%,${alpha})`;
+      ctx.lineWidth = 1.6; ctx.fill(); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(wx,wy);
+      ctx.lineTo(wx+Math.cos(wh.spin)*wh.radius, wy+Math.sin(wh.spin)*wh.radius);
+      ctx.stroke();
+    }
+  }
+
+  // hud
+  const aliveCount = cars.reduce((n,c)=>n+(c.alive?1:0),0);
+  const hud = document.getElementById('hud');
+  hud.innerHTML =
+    `<span class="big">generation ${generation}</span><br>` +
+    `alive: ${aliveCount} / ${POP}<br>` +
+    `best this generation: ${Math.max(...cars.map(c=>c.fitness())).toFixed(0)}<br>` +
+    `record: <span class="big">${record.toFixed(0)}</span><br>` +
+    `<span class="dim">speed ${speedMult}x${paused?' &mdash; paused':''}</span>`;
+}
+
+function loop(){
+  if (!paused) simTick();
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// expose minimal debug hook (used only for offline verification, harmless in normal use)
+window.__debug = () => ({
+  generation, record,
+  x: cars.map(c=>c.x), alive: cars.map(c=>c.alive),
+  finite: cars.every(c=>isFinite(c.x)&&isFinite(c.y)&&isFinite(c.theta))
+});
+})();
+</script>
+</body>
+</html>
