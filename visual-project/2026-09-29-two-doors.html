@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Doors</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#03060b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; image-rendering:auto; cursor:crosshair; }
+  #hud {
+    position:fixed; top:14px; left:16px; color:#cfe8ff; font-family:'Courier New', monospace;
+    font-size:13px; line-height:1.55; text-shadow:0 0 6px rgba(120,200,255,0.5);
+    pointer-events:none; user-select:none;
+  }
+  #hud .big { font-size:17px; color:#ffe9b0; text-shadow:0 0 8px rgba(255,210,120,0.6); }
+  #hud .dim { color:#7d93ab; }
+  #hint {
+    position:fixed; bottom:14px; left:16px; color:#5c7488; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; tune wavelength&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; drop a stone&nbsp;&nbsp;|&nbsp;&nbsp;1 2 3 &mdash; doors in the wall&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+
+// A ripple tank: the scalar wave equation u_tt = c^2 (u_xx + u_yy) - damping,
+// stepped with the leapfrog finite-difference scheme on a grid. A plane wave
+// is driven from the left edge, meets a wall with a few narrow doors, and
+// every door becomes its own circular source (Huygens). Where their crests
+// meet they add and cancel; the time-averaged energy on the right-hand
+// screen builds up the classic fringe pattern.
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+
+const NX = 320, NY = 200;
+canvas.width = NX; canvas.height = NY;
+const img = ctx.createImageData(NX, NY);
+const pix = img.data;
+
+let u = new Float32Array(NX*NY), p = new Float32Array(NX*NY), n = new Float32Array(NX*NY);
+const wall = new Uint8Array(NX*NY);
+const sponge = new Float32Array(NX*NY);
+const energy = new Float32Array(NY);
+
+const C2 = 0.42;            // (c*dt/dx)^2, stable below 0.5 in 2D
+const WALL_X = 96, WALL_W = 3, SCREEN_X = NX - 44, SRC_X = 6;
+let doors = 2, wavelength = 16, phase = 0, t = 0, paused = false;
+
+// absorbing border so waves leave instead of bouncing back
+for (let y=0; y<NY; y++) for (let x=0; x<NX; x++){
+  const d = Math.min(x, NX-1-x, y, NY-1-y);
+  const B = 22;
+  sponge[y*NX+x] = d >= B ? 0 : Math.pow((B-d)/B, 2) * 0.16;
+}
+
+function buildWall(){
+  wall.fill(0);
+  const gap = 5, mid = NY/2, sep = 38;
+  for (let y=0; y<NY; y++){
+    let open = false;
+    for (let k=0; k<doors; k++){
+      const cy = mid + (k - (doors-1)/2) * sep;
+      if (Math.abs(y - cy) <= gap/2) open = true;
+    }
+    if (!open) for (let x=WALL_X; x<WALL_X+WALL_W; x++) wall[y*NX+x] = 1;
+  }
+}
+buildWall();
+
+function reset(){ u.fill(0); p.fill(0); n.fill(0); energy.fill(0); t = 0; }
+
+function step(){
+  const omega = 2*Math.PI*Math.sqrt(C2)/wavelength;
+  t++;
+  phase += omega;
+  const ramp = Math.min(1, t/120);
+  for (let y=1; y<NY-1; y++){
+    const row = y*NX;
+    for (let x=1; x<NX-1; x++){
+      const i = row+x;
+      if (wall[i]){ n[i] = 0; continue; }
+      const lap = u[i-1]+u[i+1]+u[i-NX]+u[i+NX]-4*u[i];
+      n[i] = (2*u[i] - p[i] + C2*lap) * (1 - sponge[i]);
+    }
+  }
+  // soft plane-wave source on a thin column
+  const s = Math.sin(phase) * 1.0 * ramp;
+  for (let y=8; y<NY-8; y++){
+    const edge = Math.min(1, Math.min(y-8, NY-9-y)/14);
+    n[y*NX+SRC_X] = s*edge;
+  }
+  const tmp = p; p = u; u = n; n = tmp;
+  for (let y=0; y<NY; y++){
+    const v = u[y*NX+SCREEN_X];
+    energy[y] = energy[y]*0.9985 + v*v*0.0015;
+  }
+}
+
+function stone(gx, gy){
+  for (let dy=-4; dy<=4; dy++) for (let dx=-4; dx<=4; dx++){
+    const x = gx+dx, y = gy+dy;
+    if (x<1||y<1||x>=NX-1||y>=NY-1||wall[y*NX+x]) continue;
+    const r2 = dx*dx+dy*dy;
+    u[y*NX+x] += 1.4*Math.exp(-r2/5);
+  }
+}
+
+function draw(){
+  let emax = 1e-6;
+  for (let y=0; y<NY; y++) if (energy[y] > emax) emax = energy[y];
+  for (let y=0; y<NY; y++){
+    for (let x=0; x<NX; x++){
+      const i = y*NX+x, o = i*4;
+      let r, g, b;
+      if (wall[i]){ r=150; g=165; b=190; }
+      else {
+        const v = Math.max(-1, Math.min(1, u[i]*1.5));
+        if (v >= 0){ r = 8+v*250; g = 14+v*170; b = 30+v*60; }
+        else { const a=-v; r = 8+a*20; g = 14+a*110; b = 30+a*215; }
+      }
+      // detector screen: fringe intensity as a glowing bar
+      if (x >= SCREEN_X+3){
+        const k = Math.min(1, energy[y]/emax);
+        const w = (x-SCREEN_X-3)/40;
+        if (w < k){ const q = 0.35+0.65*(1-w/Math.max(k,0.01)); r = 255*q; g = 214*q; b = 120*q; }
+        else { r = 6; g = 9; b = 16; }
+      } else if (x >= SCREEN_X && x < SCREEN_X+3){ r=230; g=230; b=240; }
+      pix[o]=r; pix[o+1]=g; pix[o+2]=b; pix[o+3]=255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+}
+
+function updateHud(){
+  const names = ['', 'one door', 'two doors', 'three doors'];
+  hud.innerHTML = '<span class="big">Two Doors</span><br>' +
+    '<span class="dim">' + names[doors] + ' &middot; wavelength ' + wavelength.toFixed(0) +
+    ' cells' + (paused ? ' &middot; paused' : '') + '</span>';
+}
+
+function pos(e){
+  const r = canvas.getBoundingClientRect();
+  const t0 = e.touches ? e.touches[0] : e;
+  return [(t0.clientX-r.left)/r.width, (t0.clientY-r.top)/r.height];
+}
+canvas.addEventListener('mousemove', e => {
+  const [fx] = pos(e);
+  wavelength = 8 + fx*22;
+  updateHud();
+});
+canvas.addEventListener('click', e => { const [fx,fy] = pos(e); stone(Math.round(fx*NX), Math.round(fy*NY)); });
+canvas.addEventListener('touchstart', e => { const [fx,fy] = pos(e); stone(Math.round(fx*NX), Math.round(fy*NY)); }, {passive:true});
+window.addEventListener('keydown', e => {
+  if (e.key==='1'||e.key==='2'||e.key==='3'){ doors = +e.key; buildWall(); reset(); updateHud(); }
+  else if (e.key===' '){ paused = !paused; updateHud(); e.preventDefault(); }
+});
+
+function frame(){
+  if (!paused) for (let k=0; k<3; k++) step();
+  draw();
+  requestAnimationFrame(frame);
+}
+updateHud();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

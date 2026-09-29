@@ -24,6 +24,21 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-29** — `2026-09-29-two-doors.html`: a fifty-fifth technique,
+  and the first to simulate a wave field directly — the scalar wave
+  equation stepped forward on a grid with the leapfrog finite-difference
+  scheme, rather than particles, agents, or automata approximating
+  something wave-like. A plane wave is driven from the left edge and meets
+  a wall pierced by one, two, or three narrow doors; each door becomes a
+  circular source of its own (Huygens' principle, never coded in, simply
+  falling out of the equation), and where their crests meet they add and
+  cancel. A detector screen at the right time-averages the energy arriving
+  at each row, so the classic double-slit fringes slowly build as a glowing
+  bar graph. Absorbing sponge borders let waves leave instead of bouncing
+  back. Move the cursor to tune the wavelength, click to drop a stone,
+  press 1, 2, or 3 to change the number of doors, space to pause. Open the
+  file directly in a browser.
+
 - **2026-09-28** — `2026-09-28-inherited-momentum.html`: a fifty-fourth
   technique, and the first governed by a population evolving together
   rather than one lineage improving alone — a generational genetic
