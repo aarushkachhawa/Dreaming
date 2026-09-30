@@ -24,6 +24,21 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-09-30** — `2026-09-30-tangled-tiles.html`: a fifty-sixth technique,
+  and the first built from a tiling whose meaning lives in global topology
+  rather than local rules — Smith-style Truchet tiles. Every square holds
+  two quarter-circle arcs, joined either N-W and S-E or N-E and S-W; since
+  each edge midpoint is touched by exactly two arcs, the whole torus falls
+  apart into closed loops. A union-find over the edge midpoints names every
+  loop, and colour comes from the loop rather than the tile, so flipping a
+  single square visibly splices two loops into one or tears one in two
+  (small loops glow brighter; the HUD counts loops and the longest one).
+  Orientations chase a slowly drifting sum-of-sines field, with a frozen
+  per-tile noise value deciding which tiles dissent. Move the cursor from
+  left to right to raise the disorder from clean diamond lattices to
+  loops of every size, and to stir tiles under it; click to scramble a
+  patch, space to pause. Open the file directly in a browser.
+
 - **2026-09-29** — `2026-09-29-two-doors.html`: a fifty-fifth technique,
   and the first to simulate a wave field directly — the scalar wave
   equation stepped forward on a grid with the leapfrog finite-difference

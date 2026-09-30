@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tangled Tiles</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#070509; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud {
+    position:fixed; top:14px; left:16px; color:#f0d9ff; font-family:'Courier New', monospace;
+    font-size:13px; line-height:1.55; text-shadow:0 0 6px rgba(200,120,255,0.5);
+    pointer-events:none; user-select:none;
+  }
+  #hud .big { font-size:17px; color:#ffd9a0; text-shadow:0 0 8px rgba(255,180,100,0.6); }
+  #hud .dim { color:#8f7aa3; }
+  #hint {
+    position:fixed; bottom:14px; left:16px; color:#6e5c80; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; left to right, order to chaos&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; scramble a patch&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+
+// Smith-style Truchet tiles: every square holds two quarter-circle arcs,
+// joining either (N-W and S-E) or (N-E and S-W). Each edge midpoint is
+// touched by exactly two arcs, so the whole torus decomposes into closed
+// loops. A union-find over the edge midpoints names each loop; colour comes
+// from the loop, not the tile, so flipping one tile visibly splices two
+// loops into one or tears one into two.
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+
+const W = 56, H = 34, N = W*H;
+let cw = 0, ch = 0, S = 20, ox = 0, oy = 0, dpr = 1;
+const ori = new Uint8Array(N);
+const frozen = new Float32Array(N);
+const heat = new Float32Array(N);
+for (let i=0;i<N;i++){ frozen[i] = Math.random(); ori[i] = Math.random()<0.5?1:0; }
+
+const parent = new Int32Array(2*N), size = new Int32Array(2*N);
+let loopCount = 0, longest = 0;
+let disorder = 0.08, paused = false, t = 0, mx = -1, my = -1, dirty = true;
+
+function resize(){
+  dpr = Math.min(2, window.devicePixelRatio||1);
+  cw = canvas.width = Math.floor(innerWidth*dpr);
+  ch = canvas.height = Math.floor(innerHeight*dpr);
+  S = Math.min(cw/W, ch/H);
+  ox = (cw - S*W)/2; oy = (ch - S*H)/2;
+}
+window.addEventListener('resize', resize); resize();
+
+const hN = (x,y) => ((y+H)%H)*W + ((x+W)%W);
+const vW = (x,y) => N + ((y+H)%H)*W + ((x+W)%W);
+function find(a){ while (parent[a]!==a){ parent[a]=parent[parent[a]]; a=parent[a]; } return a; }
+function join(a,b){ a=find(a); b=find(b); if (a===b) return; if (size[a]<size[b]){const c=a;a=b;b=c;} parent[b]=a; size[a]+=size[b]; }
+
+function relabel(){
+  for (let i=0;i<2*N;i++){ parent[i]=i; size[i]=1; }
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    const n=hN(x,y), s=hN(x,y+1), w=vW(x,y), e=vW(x+1,y);
+    if (ori[y*W+x]===0){ join(n,w); join(s,e); } else { join(n,e); join(s,w); }
+  }
+  loopCount = 0; longest = 0;
+  for (let i=0;i<2*N;i++) if (parent[i]===i){ loopCount++; if (size[i]>longest) longest=size[i]; }
+  dirty = false;
+}
+
+function hue(root){ let h = Math.imul(root+1, 2654435761)>>>0; return (h % 360); }
+
+function target(x,y){
+  const a = Math.sin(x*0.21 + t*0.011) + Math.sin(y*0.29 - t*0.008) + Math.sin((x+y)*0.13 + t*0.006);
+  const field = a > 0 ? 1 : 0;
+  return frozen[y*W+x] < disorder ? 1-field : field;
+}
+
+function tick(){
+  t++;
+  for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+    const i=y*W+x;
+    if (ori[i] !== target(x,y) && Math.random() < 0.06){ ori[i] ^= 1; heat[i] = 1; dirty = true; }
+    else if (heat[i] > 0) heat[i] = Math.max(0, heat[i]-0.03);
+  }
+  if (mx >= 0){
+    const gx = (mx*dpr-ox)/S, gy = (my*dpr-oy)/S;
+    for (let k=0;k<3;k++){
+      const x = Math.floor(gx + (Math.random()-0.5)*5), y = Math.floor(gy + (Math.random()-0.5)*5);
+      if (x>=0&&y>=0&&x<W&&y<H){ const i=y*W+x; ori[i]^=1; frozen[i]=Math.random(); heat[i]=1; dirty=true; }
+    }
+  }
+}
+
+function scramble(gx, gy){
+  for (let y=Math.floor(gy)-4;y<=gy+4;y++) for (let x=Math.floor(gx)-4;x<=gx+4;x++){
+    if (x<0||y<0||x>=W||y>=H) continue;
+    if ((x-gx)**2+(y-gy)**2 > 18) continue;
+    const i=y*W+x; ori[i]=Math.random()<0.5?1:0; frozen[i]=Math.random(); heat[i]=1;
+  }
+  dirty = true;
+}
+
+function arc(x,y,o,k){
+  const px = ox+x*S, py = oy+y*S, h = S/2, P = Math.PI;
+  // quarter arc centred on a corner, sweeping between two adjacent edge midpoints
+  if (o===0){
+    if (k===0){ ctx.moveTo(px+h, py); ctx.arc(px, py, h, 0, P/2); }
+    else { ctx.moveTo(px+S-h, py+S); ctx.arc(px+S, py+S, h, P, P*1.5); }
+  } else {
+    if (k===0){ ctx.moveTo(px+S, py+h); ctx.arc(px+S, py, h, P/2, P); }
+    else { ctx.moveTo(px, py+S-h); ctx.arc(px, py+S, h, P*1.5, P*2); }
+  }
+}
+
+function draw(){
+  if (dirty) relabel();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = 'rgba(7,5,9,0.55)';
+  ctx.fillRect(0,0,cw,ch);
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  for (let pass=0; pass<2; pass++){
+    for (let y=0;y<H;y++) for (let x=0;x<W;x++){
+      const i=y*W+x, o=ori[i];
+      for (let k=0;k<2;k++){
+        // arc 0 touches the north midpoint, arc 1 the south one
+        const root = find(k===0 ? hN(x,y) : hN(x,y+1));
+        const sz = size[root];
+        const hh = hue(root);
+        const light = 46 + Math.max(0, 1 - sz/60)*24 + heat[i]*24;
+        ctx.beginPath(); arc(x,y,o,k);
+        if (pass===0){ ctx.lineWidth = S*0.34; ctx.strokeStyle = 'hsla('+hh+',85%,'+(light-10)+'%,'+(0.10+heat[i]*0.18)+')'; }
+        else { ctx.lineWidth = Math.max(1.2, S*0.085); ctx.strokeStyle = 'hsla('+hh+',90%,'+(light+8)+'%,0.95)'; }
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function updateHud(){
+  hud.innerHTML = '<span class="big">Tangled Tiles</span><br><span class="dim">' + loopCount +
+    ' loops &middot; longest ' + longest + ' &middot; disorder ' + (disorder*100).toFixed(0) + '%' +
+    (paused ? ' &middot; paused' : '') + '</span>';
+}
+
+function pos(e){ const t0 = e.touches ? e.touches[0] : e; return [t0.clientX, t0.clientY]; }
+canvas.addEventListener('mousemove', e => { const [x,y]=pos(e); mx=x; my=y; disorder = Math.max(0, Math.min(0.5, x/innerWidth*0.5)); });
+canvas.addEventListener('mouseleave', () => { mx = my = -1; });
+canvas.addEventListener('click', e => { const [x,y]=pos(e); scramble((x*dpr-ox)/S, (y*dpr-oy)/S); });
+canvas.addEventListener('touchstart', e => { const [x,y]=pos(e); scramble((x*dpr-ox)/S, (y*dpr-oy)/S); }, {passive:true});
+window.addEventListener('keydown', e => { if (e.key===' '){ paused=!paused; e.preventDefault(); } });
+
+let hudT = 0;
+function frame(){
+  if (!paused) tick();
+  draw();
+  if (++hudT % 10 === 0) updateHud();
+  requestAnimationFrame(frame);
+}
+relabel(); updateHud();
+ctx.fillStyle = '#070509'; ctx.fillRect(0,0,cw,ch);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
