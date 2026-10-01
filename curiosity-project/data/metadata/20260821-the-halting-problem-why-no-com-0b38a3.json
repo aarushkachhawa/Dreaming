@@ -1,0 +1,14 @@
+{
+  "id": "20260821-the-halting-problem-why-no-com-0b38a3",
+  "date": "2026-08-21T10:16:24.212725",
+  "title": "The Halting Problem: Why No Computer Can Ever Predict Every Program",
+  "question": "Why is it mathematically impossible to write a program that can always tell whether any other program will finish running or loop forever?",
+  "summary": "Alan Turing proved in 1936 that no algorithm can ever exist which reliably predicts whether an arbitrary program halts, and the proof reveals a hard boundary on what computation itself can ever know about itself.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "logic",
+    "computation",
+    "turing"
+  ]
+}
