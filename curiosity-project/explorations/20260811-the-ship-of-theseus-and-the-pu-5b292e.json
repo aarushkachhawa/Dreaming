@@ -1,0 +1,53 @@
+{
+  "id": "20260811-the-ship-of-theseus-and-the-pu-5b292e",
+  "date": "2026-08-11T10:17:19.805251",
+  "title": "The Ship of Theseus and the Puzzle of Persistent Identity",
+  "question": "If every part of something is gradually replaced, is it still the same thing \u2014 and if you are not made of the same atoms you were ten years ago, are you still you?",
+  "summary": "An examination of the ancient Ship of Theseus paradox and its surprisingly literal application to human bodies, minds, and even software systems, where near-total material turnover raises hard questions about what identity actually tracks.",
+  "content": "\n<p>Plutarch's ship, sailed by Theseus and preserved by the Athenians, had its rotting planks replaced one by one over the years until, eventually, not a single original plank remained. Was it still the same ship? The puzzle has outlived its wooden origins because the underlying structure \u2014 gradual, complete replacement of parts while function and form persist \u2014 turns out to describe almost everything, including us.</p>\n\n<h2>Not Just a Thought Experiment</h2>\n<p>Human bodies replace most of their cells over a period of years; the atoms making up your body today are largely not the atoms that made it up a decade ago. Yet you consider yourself continuously the same person. This isn't merely analogous to the ship \u2014 it is the same logical structure: gradual material replacement under continuity of pattern. The question the ancient philosophers debated abstractly, biology answers for us constantly and without our attention.</p>\n\n<h2>Three Broad Answers</h2>\n<p>Philosophers have offered roughly three families of solutions. The first, <strong>mereological</strong>, argues that identity was never about matter at all but about the persistence of an object's form or function through change \u2014 the ship is the same ship because it continues to serve the same role, the same design. The second, <strong>psychological continuity</strong> theory (applied to persons), holds that identity tracks an unbroken chain of memory, personality, and psychological connection rather than any physical substrate. The third, more deflationary view, argues that \"sameness\" is not a discoverable fact at all but a convention we impose for practical purposes \u2014 the question \"is it the same ship?\" doesn't have a true answer, only a useful one depending on what we care about tracking.</p>\n\n<h2>Where It Gets Sharp</h2>\n<p>The puzzle stops being merely academic in cases that force a choice between competing criteria. If Theseus's original discarded planks were secretly collected and reassembled into a second ship, which one is the \"real\" Ship of Theseus \u2014 the one with continuous function, or the one with the original matter? Applied to persons, the same tension shows up in thought experiments about gradual brain replacement, teleportation, or split consciousness: if your brain were replaced neuron by neuron with functionally identical artificial units, at what point, if any, would you cease to exist \u2014 and would you even notice?</p>\n\n<h2>Beyond Biology</h2>\n<p>The same structure recurs in software, organizations, and legal entities. A codebase where every line has been rewritten still carries the same repository history and name. A company can replace every employee and still be considered \"the same\" corporation, bound by the same contracts. These cases suggest that identity-over-time claims are less about substance and more about the kind of continuity a community has agreed to track \u2014 which is either a deep insight about the nature of persistence, or a sign that the question was underspecified from the start.</p>\n",
+  "tags": [
+    "philosophy",
+    "metaphysics",
+    "identity",
+    "consciousness",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Metaphysics Perspective",
+      "description": "Classical debates frame identity as tracking either form/function (a ship remains a ship through its role) or material continuity, with most philosophers favoring form once material turnover is total."
+    },
+    {
+      "title": "Psychological Continuity Perspective",
+      "description": "For persons specifically, identity is often argued to track unbroken chains of memory and psychological connection rather than any physical substrate, raising hard cases around amnesia, gradual brain change, and teleportation thought experiments."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "The human body genuinely undergoes near-total cellular turnover over years, meaning the Ship of Theseus is not just an analogy for human existence but a literal description of ongoing bodily replacement."
+    },
+    {
+      "title": "Deflationary / Conventionalist Perspective",
+      "description": "Some philosophers argue \"sameness\" questions have no objective answer at all \u2014 identity claims are useful conventions relative to context (legal, biological, narrative) rather than discoverable facts about the world."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Version-controlled software and long-lived distributed systems face an analogous puzzle: a system whose every component has been replaced can still be considered continuous through its history, interfaces, and lineage rather than its current implementation."
+    }
+  ],
+  "connections": [
+    "Personal identity and the psychological continuity theory",
+    "Derek Parfit's teleporter and fission thought experiments",
+    "Mereology and the study of parts and wholes",
+    "The persistence of institutions and legal personhood",
+    "Buddhist anatta (no-self) and the denial of a fixed essential identity",
+    "Biological cell turnover and the illusion of a stable body",
+    "Software versioning and the identity of long-lived codebases"
+  ],
+  "openQuestions": [
+    "Is there a principled fact of the matter about identity-over-time, or is it always a convention relative to what we care about tracking?",
+    "If gradual neuron-by-neuron replacement with functionally identical parts preserved all behavior and memory, would anything of importance have been lost?",
+    "Does psychological continuity require an unbroken chain, or could identity survive a gap (as in dreamless sleep, anesthesia, or a hypothetical teleporter)?",
+    "Why does material continuity feel so intuitively important even when we accept that our own bodies are in constant material flux?",
+    "Can group entities (companies, nations, species) have identity in the same sense individuals do, or is that a category error?"
+  ]
+}
