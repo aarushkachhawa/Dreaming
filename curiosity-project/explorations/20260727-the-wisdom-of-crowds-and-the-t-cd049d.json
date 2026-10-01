@@ -1,0 +1,53 @@
+{
+  "id": "20260727-the-wisdom-of-crowds-and-the-t-cd049d",
+  "date": "2026-07-27T10:12:25.832619",
+  "title": "The Wisdom of Crowds and the Trap of the Herd",
+  "question": "When does averaging many independent guesses beat any single expert, and when does that same crowd stampede off a cliff together?",
+  "summary": "Why aggregating opinions sometimes produces near-magical accuracy, and why the exact same crowd can also produce bubbles, panics, and catastrophic groupthink.",
+  "content": "\n<p>In 1906, Francis Galton watched villagers at a county fair guess the weight of an ox. No individual guess was particularly good. But the average of nearly 800 guesses came within one pound of the ox's true weight&mdash;closer than any single expert's estimate. This became the founding anecdote of \"the wisdom of crowds,\" a phenomenon that is real, well-documented, and mathematically explicable. It is also, disturbingly, the exact same mechanism that produces stock market bubbles and mob panics.</p>\n\n<h2>Galton's Ox and the Math Behind It</h2>\n<p>The wisdom of crowds works because individual errors, if they are independent and unbiased, tend to cancel out when averaged, leaving the shared signal intact. This is just the law of large numbers applied to opinion. The Condorcet Jury Theorem formalizes a related version: if each juror is more likely than not to be correct, and votes independently, a large jury's majority verdict becomes almost certainly correct as the jury grows&mdash;a startling result given how unreliable any single juror might be.</p>\n\n<h2>The Conditions for Wisdom</h2>\n<p>James Surowiecki's account of the phenomenon identifies the load-bearing conditions: diversity of opinion, independence (no one's guess should be influenced by anyone else's), decentralization, and a mechanism to aggregate the guesses. Break any one of these and the crowd stops being wise. Independence is the most fragile: the moment people can see others' guesses before making their own, herding begins, and the statistical magic of error-cancellation disappears.</p>\n\n<h2>When Independence Collapses</h2>\n<p>This is the exact mechanism behind information cascades. If you see the first few people in line choosing restaurant A over restaurant B, you may rationally infer they know something you don't&mdash;and follow, even if your own private information pointed to B. Multiply this across thousands of people and you get a stampede that looks like consensus but is actually a chain of individually rational people each ignoring their own weak signal in favor of the crowd's, all triggered by the first few movers. Financial bubbles, bank runs, and viral misinformation all run on this engine.</p>\n\n<h2>Markets as Crowds</h2>\n<p>Prediction markets and stock markets are, in theory, wisdom-of-crowds machines: prices aggregate dispersed information into a single number more accurate than any participant's private view. The efficient market hypothesis leans heavily on this. But markets also periodically prove that the same aggregation mechanism, once independence breaks down (everyone watching everyone else's trades, momentum feeding on itself), produces bubbles that are collectively irrational even though each trader is behaving in a locally sensible way.</p>\n\n<h2>Designing Smarter Crowds</h2>\n<p>The practical lesson is that wisdom and folly are not properties of crowds in general but of specific information architectures. Blind peer review, secret ballots, and sealed-bid auctions are all attempts to engineer independence back into group decisions. Social media, engagement-optimized feeds, and live vote tallies do close to the opposite, often by design, because visible consensus is what keeps people watching.</p>\n",
+  "tags": [
+    "psychology",
+    "economics",
+    "game-theory",
+    "sociology",
+    "decision-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics Perspective",
+      "description": "Prices in liquid markets aggregate dispersed private information efficiently under ideal conditions, but the same mechanism amplifies herding once traders begin reacting to each other rather than to fundamentals."
+    },
+    {
+      "title": "Social Psychology Perspective",
+      "description": "Conformity experiments (Asch) and information cascade models show how rational individuals can produce irrational collective outcomes once visible social proof overrides private judgment."
+    },
+    {
+      "title": "Statistics Perspective",
+      "description": "Aggregation reduces variance only when errors are independent; the moment estimates become correlated, the effective sample size collapses and the averaging benefit vanishes."
+    },
+    {
+      "title": "Complexity / Network Science Perspective",
+      "description": "The structure of who can see whose opinion determines whether a system behaves like independent averaging or like a cascading network effect, making network topology as important as individual rationality."
+    },
+    {
+      "title": "Political Science Perspective",
+      "description": "Institutions like secret ballots and blind review are deliberate engineering solutions to preserve independence in collective decision-making, treating groupthink as a design problem rather than a character flaw."
+    }
+  ],
+  "connections": [
+    "Condorcet's Jury Theorem",
+    "Information cascades and herd behavior",
+    "Prediction markets and forecasting tournaments",
+    "The efficient market hypothesis and its documented failures",
+    "Groupthink in organizational decision-making",
+    "The diversity prediction theorem (error decomposition)",
+    "Asch conformity experiments"
+  ],
+  "openQuestions": [
+    "Is there a real-time signal that reveals when a crowd has stopped being independent and started herding?",
+    "Can algorithmically curated feeds ever preserve the independence that wisdom-of-crowds effects require?",
+    "Why do aggregated novices sometimes outperform individual experts, and when does expertise still win?",
+    "Is 'the market is always right' a genuine wisdom-of-crowds claim, or does it misapply the theorem to conditions where independence has already broken down?",
+    "Could deliberately engineered disagreement make institutions like juries, boards, and forecasters more accurate rather than less?"
+  ]
+}
