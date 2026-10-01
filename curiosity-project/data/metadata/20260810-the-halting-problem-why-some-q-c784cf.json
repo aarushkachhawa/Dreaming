@@ -1,0 +1,14 @@
+{
+  "id": "20260810-the-halting-problem-why-some-q-c784cf",
+  "date": "2026-08-10T10:20:41.119634",
+  "title": "The Halting Problem: Why Some Questions Can Never Be Answered by Computation",
+  "question": "Can a computer program ever determine, in general, whether another program will finish running or loop forever?",
+  "summary": "In 1936, Alan Turing proved that no algorithm can exist that decides, for every possible program and input, whether the program halts. This is not a matter of insufficient cleverness or computing power; it is a hard limit built into the nature of computation itself, with consequences reaching into mathematics, software engineering, and the philosophy of mind.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "logic",
+    "computability",
+    "turing"
+  ]
+}
