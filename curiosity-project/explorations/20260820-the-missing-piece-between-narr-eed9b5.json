@@ -1,0 +1,52 @@
+{
+  "id": "20260820-the-missing-piece-between-narr-eed9b5",
+  "date": "2026-08-20T10:14:26.883215",
+  "title": "The Missing Piece Between Narrow AI and a General Mind",
+  "question": "What exactly separates a system that masters countless narrow tasks from one that reasons the way a human does?",
+  "summary": "Modern AI systems now write, code, and converse at levels once thought decades away, yet the gap to something recognizably general-purpose has not closed the way raw capability suggests it should \u2014 and the reason may be that the gap was never about capability at all.",
+  "content": "\n<p>A strange thing happened on the way to artificial general intelligence: systems got dramatically more capable at an enormous range of specific tasks, while the underlying question of what would make a system generally intelligent barely moved. Every few years the goalposts get described as \"just a bit further,\" but the pattern suggests the goalposts were never really about scale in the first place.</p>\n\n<h2>What \"General\" Actually Requires</h2>\n<p>Human intelligence is not simply broad \u2014 it is transferable in a specific way: a person who has never seen a screwdriver can often figure out how to use one from a single explanation, because they can map the concept of \"twisting to apply force\" from one entirely different domain. Current AI systems, however capable within their training distribution, are much weaker at this kind of zero-shot structural transfer to situations that are truly outside anything resembling their training data. The gap is not \"less knowledge\" \u2014 it is a difference in how flexibly the knowledge already held can be redeployed.</p>\n\n<h2>The World Model Problem</h2>\n<p>Many researchers now argue that the missing piece is a persistent, causal model of how the world works \u2014 not just statistical association between patterns, but an internal representation that supports asking \"what would happen if I intervened here?\" A thermostat-level system can predict correlations; a system with a causal world model can reason about counterfactuals it has never observed. Human toddlers build causal models astonishingly fast, from very little data, through active experimentation with their environment \u2014 a very different learning regime from passive exposure to enormous static datasets.</p>\n\n<h2>Embodiment and the Grounding Problem</h2>\n<p>A separate school of thought holds that intelligence cannot be fully general without a body that acts on the world and receives consequences back, because abstract concepts are ultimately grounded in sensorimotor experience \u2014 \"heavy,\" \"far,\" \"dangerous\" mean something because an embodied agent has felt effort, distance, and harm. A system that has only ever processed text is, on this view, manipulating symbols about weight without any of the experience that gives the symbol its meaning, no matter how fluently it uses the word.</p>\n\n<h2>Continual Learning Without Forgetting</h2>\n<p>A more mundane but stubborn obstacle is that most current systems learn in a fixed training phase and then stay frozen, unable to incorporate new experience the way a human continuously updates their understanding across a lifetime without catastrophically overwriting old knowledge. Solving continual learning \u2014 accumulating new competence indefinitely without degrading old competence \u2014 has proven surprisingly resistant to scale alone, suggesting it is a distinct architectural problem rather than a data problem.</p>\n\n<h2>Maybe \"General\" Is the Wrong Frame</h2>\n<p>A more skeptical position holds that \"general intelligence\" may not be a single threshold a system crosses, but a moving description of \"whatever current systems still can't do\" \u2014 in which case the search for the missing piece is really a search for an ever-receding definition, not a stable target with an achievable finish line.</p>\n",
+  "tags": [
+    "ai",
+    "artificial-general-intelligence",
+    "cognitive-science",
+    "philosophy",
+    "computer-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Machine Learning Perspective",
+      "description": "Sees scale and better training objectives as the path forward, arguing generality is an emergent property of sufficiently broad training rather than a distinct architectural ingredient."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Points to human causal reasoning and rapid, data-efficient concept formation in early childhood as evidence that generality depends on a specific kind of world model, not just more data."
+    },
+    {
+      "title": "Embodied Cognition Perspective",
+      "description": "Argues that concepts are grounded in sensorimotor experience, so a disembodied system manipulating symbols cannot achieve full generality regardless of fluency."
+    },
+    {
+      "title": "Philosophy of Mind Perspective",
+      "description": "Questions whether \"general intelligence\" names a coherent, well-defined capability at all, or is instead a shifting label for whatever current systems have not yet mastered."
+    },
+    {
+      "title": "Neuroscience Perspective",
+      "description": "Highlights how biological brains support lifelong continual learning without catastrophic forgetting, a property current artificial systems still struggle to replicate."
+    }
+  ],
+  "connections": [
+    "Causal inference and counterfactual reasoning",
+    "The symbol grounding problem in cognitive science",
+    "Catastrophic forgetting in continual learning",
+    "Zero-shot and few-shot generalization",
+    "Embodied and situated cognition theories",
+    "The frame problem in classical AI",
+    "Moravec's paradox: why easy-for-humans tasks are hard for machines"
+  ],
+  "openQuestions": [
+    "Is a persistent causal world model a prerequisite for generality, or can sufficiently rich statistical models approximate its function?",
+    "Does genuine generality require embodiment, or could a purely disembodied system ground concepts some other way?",
+    "Is continual learning without forgetting a solvable engineering problem, or does it require fundamentally different architectures than current ones?",
+    "If the definition of 'general intelligence' keeps shifting as systems improve, is it measuring a real property or just our own changing expectations?"
+  ]
+}
