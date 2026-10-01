@@ -24,6 +24,19 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-01** — `2026-10-01-slow-multiplication.html`: a fifty-seventh
+  technique, and the first made from plain arithmetic drawn as geometry —
+  the modular times table. Put N points around a circle and join each point
+  i to point i×k mod N. For whole k the chords quietly fold into a curve
+  nobody drew: k=2 a cardioid, k=3 a nephroid, and one more cusp with every
+  step after. Here k is a real number that creeps upward (chords land
+  between points by interpolation), lingering near each integer where the
+  envelope crystallises and rushing through the gaps where it dissolves
+  into moiré-like interference; each whole step is a new shape being born
+  out of the same circle. Move the cursor from left to right to raise the
+  point count from sparse string-art to a near-solid glow, click to jump to
+  a random multiplier, space to pause. Open the file directly in a browser.
+
 - **2026-09-30** — `2026-09-30-tangled-tiles.html`: a fifty-sixth technique,
   and the first built from a tiling whose meaning lives in global topology
   rather than local rules — Smith-style Truchet tiles. Every square holds
