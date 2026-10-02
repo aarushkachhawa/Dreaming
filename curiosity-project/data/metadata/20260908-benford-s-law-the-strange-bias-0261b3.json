@@ -1,0 +1,14 @@
+{
+  "id": "20260908-benford-s-law-the-strange-bias-0261b3",
+  "date": "2026-09-08T10:14:27.421437",
+  "title": "Benford's Law: The Strange Bias of the First Digit",
+  "question": "Why does the digit 1 appear as the leading digit in real-world numbers roughly six times more often than the digit 9?",
+  "summary": "A quirk first noticed in worn logarithm tables turns out to be a genuine statistical law that governs everything from river lengths to stock prices, and is now used to catch financial fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "physics",
+    "benfords-law",
+    "fraud-detection"
+  ]
+}
