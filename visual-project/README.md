@@ -24,6 +24,17 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-02** — `2026-10-02-crowded-ribbon.html`: a fifty-eighth
+  technique, and the first where a single closed curve is the whole
+  organism — differential growth. A ribbon of nodes is held by springs to
+  its neighbours and smoothed toward their midpoint, while a spatial hash
+  lets every node push away from any other that crowds it. Segments sprout
+  new nodes at random, so the ribbon only ever gets longer; with nowhere to
+  go, it folds into the labyrinthine wrinkles of coral, brain and lettuce.
+  Hue drifts along its length. Move the cursor to make growth eager near
+  it, click to plant a fresh ring, space to pause. Open the file directly
+  in a browser.
+
 - **2026-10-01** — `2026-10-01-slow-multiplication.html`: a fifty-seventh
   technique, and the first made from plain arithmetic drawn as geometry —
   the modular times table. Put N points around a circle and join each point

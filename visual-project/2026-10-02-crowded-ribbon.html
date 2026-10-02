@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crowded Ribbon</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#0a0709; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud {
+    position:fixed; top:14px; left:16px; color:#ffd9e4; font-family:'Courier New', monospace;
+    font-size:13px; line-height:1.55; text-shadow:0 0 6px rgba(255,120,160,0.45);
+    pointer-events:none; user-select:none;
+  }
+  #hint {
+    position:fixed; bottom:14px; left:16px; color:#6e5662; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; feed growth near the cursor&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; plant a new ring&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+
+// Differential growth: a closed ribbon of nodes. Each node is pulled toward
+// its two neighbours (a spring), pushed away from every node that crowds it
+// (repulsion via a spatial hash), and nudged toward a smoothed midpoint so it
+// stays fair. Segments keep sprouting new nodes at random. The ribbon never gets bigger by a rule -- it only gets longer, and the
+// crowding forces it to fold into coral, brain and lettuce-leaf wrinkles.
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+
+let cw=0, ch=0, dpr=1;
+let nodes = [];          // {x,y,vx,vy,age}
+let mouse = {x:-1e4, y:-1e4, on:false};
+let paused = false, frame = 0;
+const REST = 5, RADIUS = 13, MAXN = 9000;
+let cell = RADIUS;
+
+function resize(){
+  dpr = Math.min(2, window.devicePixelRatio||1);
+  cw = canvas.width = Math.floor(innerWidth*dpr);
+  ch = canvas.height = Math.floor(innerHeight*dpr);
+  ctx.fillStyle = '#0a0709'; ctx.fillRect(0,0,cw,ch);
+}
+window.addEventListener('resize', resize); resize();
+
+function ring(cx, cy, r, n){
+  const out = [];
+  for (let i=0;i<n;i++){
+    const a = i/n*Math.PI*2;
+    out.push({x:cx+Math.cos(a)*r*(1+0.03*Math.sin(a*3+cx)), y:cy+Math.sin(a)*r, vx:0, vy:0, age:0});
+  }
+  return out;
+}
+function seed(){
+  nodes = ring(cw/2, ch/2, Math.min(cw,ch)*0.03, 40);
+}
+seed();
+
+function step(){
+  const n = nodes.length;
+  const S = REST*dpr, R = RADIUS*dpr, R2 = R*R;
+  // spatial hash
+  const cs = R, grid = new Map();
+  for (let i=0;i<n;i++){
+    const key = Math.floor(nodes[i].x/cs)*100003 + Math.floor(nodes[i].y/cs);
+    let a = grid.get(key); if (!a){ a=[]; grid.set(key,a); } a.push(i);
+  }
+  const fx = new Float32Array(n), fy = new Float32Array(n);
+  for (let i=0;i<n;i++){
+    const p = nodes[i], a = nodes[(i+n-1)%n], b = nodes[(i+1)%n];
+    // smoothing toward neighbour midpoint
+    fx[i] += ((a.x+b.x)/2 - p.x)*0.25;
+    fy[i] += ((a.y+b.y)/2 - p.y)*0.25;
+    // springs to neighbours
+    for (const q of [a,b]){
+      const dx=q.x-p.x, dy=q.y-p.y, d=Math.hypot(dx,dy)||1e-6;
+      const f = (d-S)*0.12;
+      fx[i]+=dx/d*f; fy[i]+=dy/d*f;
+    }
+    // repulsion from crowding nodes (skip near neighbours along the ribbon)
+    const gx=Math.floor(p.x/cs), gy=Math.floor(p.y/cs);
+    for (let ox=-1;ox<=1;ox++) for (let oy=-1;oy<=1;oy++){
+      const l = grid.get((gx+ox)*100003+(gy+oy)); if(!l) continue;
+      for (const j of l){
+        if (j===i) continue;
+        let gap = Math.abs(j-i); gap = Math.min(gap, n-gap);
+        if (gap<3) continue;
+        const q = nodes[j], dx=p.x-q.x, dy=p.y-q.y, d2=dx*dx+dy*dy;
+        if (d2<R2 && d2>1e-6){
+          const d=Math.sqrt(d2), f=(1-d/R)*0.55;
+          fx[i]+=dx/d*f*S; fy[i]+=dy/d*f*S;
+        }
+      }
+    }
+    // gentle pull to the middle keeps it on screen
+    fx[i] += (cw/2-p.x)*0.00004*dpr; fy[i] += (ch/2-p.y)*0.00004*dpr;
+  }
+  for (let i=0;i<n;i++){
+    const p=nodes[i];
+    p.vx = (p.vx+fx[i])*0.55; p.vy = (p.vy+fy[i])*0.55;
+    p.x+=p.vx; p.y+=p.vy; p.age++;
+  }
+  // grow: each segment has a small chance to gain a node at its midpoint;
+  // the cursor makes insertion far likelier nearby
+  if (n < MAXN){
+    const next = [];
+    for (let i=0;i<n;i++){
+      const p=nodes[i], q=nodes[(i+1)%n];
+      next.push(p);
+      const mx=(p.x+q.x)/2, my=(p.y+q.y)/2;
+      let prob = 0.004;
+      if (mouse.on){
+        const md=Math.hypot(mx-mouse.x,my-mouse.y);
+        if (md<180*dpr) prob += 0.05*(1-md/(180*dpr));
+      }
+      if (Math.random()<prob && next.length+(n-i)<MAXN) next.push({x:mx,y:my,vx:0,vy:0,age:0});
+    }
+    nodes = next;
+  }
+}
+
+function render(){
+  ctx.fillStyle = 'rgba(10,7,9,0.16)';
+  ctx.fillRect(0,0,cw,ch);
+  const n = nodes.length;
+  ctx.lineWidth = 1.6*dpr; ctx.lineCap='round'; ctx.lineJoin='round';
+  // colour by position along the ribbon, drifting slowly: ribbon "age" as hue
+  const t = frame*0.15;
+  const seg = 6;
+  for (let s=0;s<n;s+=seg){
+    const hue = (340 + (s/n)*70 + t) % 360;
+    ctx.strokeStyle = 'hsla('+hue+',85%,66%,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(nodes[s].x, nodes[s].y);
+    for (let i=1;i<=seg;i++){ const q=nodes[(s+i)%n]; ctx.lineTo(q.x,q.y); }
+    ctx.stroke();
+  }
+  hud.innerHTML = 'crowded ribbon<br><span style="color:#ffb3c8">'+n+' nodes</span><br>'+
+    'length '+Math.round(n*REST)+' px';
+}
+
+function loop(){
+  if (!paused){ step(); step(); frame++; }
+  render();
+  requestAnimationFrame(loop);
+}
+
+addEventListener('mousemove', e=>{ mouse.x=e.clientX*dpr; mouse.y=e.clientY*dpr; mouse.on=true; });
+addEventListener('mouseleave', ()=>{ mouse.on=false; });
+canvas.addEventListener('click', e=>{
+  // plant a fresh ring where you clicked, replacing the old ribbon
+  const x=e.clientX*dpr, y=e.clientY*dpr;
+  nodes = ring(x, y, 22*dpr, 40);
+  ctx.fillStyle='#0a0709'; ctx.fillRect(0,0,cw,ch);
+});
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+loop();
+})();
+</script>
+</body>
+</html>
