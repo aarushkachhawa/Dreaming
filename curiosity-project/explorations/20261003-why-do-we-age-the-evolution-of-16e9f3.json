@@ -1,0 +1,53 @@
+{
+  "id": "20261003-why-do-we-age-the-evolution-of-16e9f3",
+  "date": "2026-10-03T10:10:43.068896",
+  "title": "Why Do We Age? The Evolution of Decline",
+  "question": "If natural selection can build a body from one cell, why can't it keep that body going indefinitely?",
+  "summary": "Aging is not a program but a consequence of weakening selection with age and of trade-offs between early vigor and late repair. Understanding why we decline hints at how flexible decline may be.",
+  "content": "\n<p>A mayfly lives a day; a Greenland shark may live four centuries; a hydra seems not to age at all. Aging is nearly universal, yet it is strange: natural selection built bodies that assemble themselves from a single cell with astonishing precision, then apparently cannot keep them running. Why?</p>\n\n<h2>Not \"For the Good of the Species\"</h2>\n<p>The old answer was that death clears space for the young. It fails, because selection acting on individuals is far stronger than selection acting on groups, and wild animals mostly die of predation, cold and disease long before senescence matters. Peter Medawar's insight in 1952 was that this is exactly the point: in nature, few individuals survive to old age, so selection has little to say about what happens there.</p>\n\n<h2>The Shadow of Selection</h2>\n<p>Medawar's \"selection shadow\" yields two classic theories. <em>Mutation accumulation</em>: harmful mutations whose effects appear late escape purging and pile up. <em>Antagonistic pleiotropy</em> (George Williams): genes that boost early survival or fertility are favored even if they harm us later. Testosterone-driven vigor, rapid cell division that fights wounds yet raises cancer risk, and inflammation that fends off infection yet damages arteries are candidate examples.</p>\n\n<h2>The Disposable Soma</h2>\n<p>Tom Kirkwood framed this economically: an organism has finite energy to split between reproduction and bodily maintenance. Perfect repair is costly, and an animal likely to die from a predator soon gains little from it. This predicts that species facing low external mortality, such as bats, birds and tortoises, should evolve slower aging. Comparative data largely agree: flight and shells protect, and protected animals live longer for their size.</p>\n\n<h2>The Biology of Decline</h2>\n<p>Mechanistically, aging has been catalogued as a set of \"hallmarks\": accumulating DNA damage, telomere shortening, epigenetic drift, loss of protein quality control, mitochondrial dysfunction, senescent cells that secrete inflammatory signals, and stem cell exhaustion. Remarkably, single-gene changes in worms, flies and mice can extend lifespan substantially, and calorie restriction extends it across many species, suggesting aging is more malleable than a simple wear-and-tear picture implies.</p>\n\n<h2>Outliers and Possibilities</h2>\n<p>Naked mole-rats resist cancer and show little mortality increase with age. Some tortoises and rockfish show negligible senescence. Humans have a puzzle of their own: menopause and long post-reproductive life, perhaps explained by the \"grandmother hypothesis,\" where older women raise inclusive fitness by helping descendants. If aging is not a fixed law but an evolved trade-off, interventions might shift it, though whether human healthspan can be extended safely is still unproven.</p>\n",
+  "tags": [
+    "biology",
+    "aging",
+    "evolution",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Selection weakens with age because few wild individuals survive long. Mutation accumulation and antagonistic pleiotropy explain why late-acting harms persist."
+    },
+    {
+      "title": "Life-History Economics",
+      "description": "The disposable soma theory treats maintenance as costly energy that competes with reproduction; low external mortality favors investing in longevity."
+    },
+    {
+      "title": "Molecular Gerontology",
+      "description": "Hallmarks such as DNA damage, epigenetic drift, senescent cells and stem cell exhaustion describe how decline unfolds, and genetic tweaks show it is surprisingly adjustable."
+    },
+    {
+      "title": "Medicine and Ethics",
+      "description": "If aging is a modifiable process, treating it could reduce many diseases at once, raising questions about equity, population and what a good lifespan means."
+    },
+    {
+      "title": "Comparative Biology",
+      "description": "Naked mole-rats, bats, tortoises and hydra show that lifespan varies by orders of magnitude, so decline is not an inevitable property of living matter."
+    }
+  ],
+  "connections": [
+    "Natural selection and its blind spots",
+    "Cancer as a failure of cellular cooperation",
+    "The paradox of cooperation and the evolution of altruism",
+    "Entropy and Time's Arrow",
+    "Calorie restriction and nutrient-sensing pathways",
+    "The Ship of Theseus: replacing cells and the persistence of self",
+    "Grandmother hypothesis and human life history"
+  ],
+  "openQuestions": [
+    "Is aging a single process with shared causes or many independent ones?",
+    "Could humans safely slow aging, and would healthspan extend along with lifespan?",
+    "Why do some species show negligible senescence while close relatives do not?",
+    "Is there a biological upper limit to human lifespan?",
+    "Would defeating age-related disease change how societies value time and renewal?"
+  ]
+}
