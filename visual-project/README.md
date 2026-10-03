@@ -24,6 +24,16 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-03** — `2026-10-03-golden-drift.html`: a fifty-ninth technique,
+  and the first built on phyllotaxis — the sunflower packing. Seed n sits at
+  angle n×θ and radius c√n. At the golden angle (137.5078°) the seeds fill
+  the disc evenly and Fibonacci spirals appear; shift θ by a fraction of a
+  degree and the packing shatters into rays, then crystallises again at
+  other rational angles. θ drifts slowly on its own through these
+  transitions. Move the cursor horizontally to turn the angle by hand, click
+  to settle back toward the golden angle, space to pause. Open the file
+  directly in a browser.
+
 - **2026-10-02** — `2026-10-02-crowded-ribbon.html`: a fifty-eighth
   technique, and the first where a single closed curve is the whole
   organism — differential growth. A ribbon of nodes is held by springs to
