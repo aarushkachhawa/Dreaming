@@ -24,6 +24,16 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-04** — `2026-10-04-silk-attractor.html`: a sixtieth technique,
+  and the first to paint with a strange attractor's density. The Clifford map
+  x' = sin(ay) + c·cos(ax), y' = sin(bx) + d·cos(by) is iterated sixty
+  thousand times a frame and tallied into a grid; brightness is the log of
+  visit counts, so the orbit's folded, silk-thin structure glows out of
+  darkness while old density fades. The four parameters glide between random
+  targets, so the fabric keeps rewriting itself. Move the cursor to tilt a
+  and b, click to leap to a fresh attractor, space to pause. Open the file
+  directly in a browser.
+
 - **2026-10-03** — `2026-10-03-golden-drift.html`: a fifty-ninth technique,
   and the first built on phyllotaxis — the sunflower packing. Seed n sits at
   angle n×θ and radius c√n. At the golden angle (137.5078°) the seeds fill

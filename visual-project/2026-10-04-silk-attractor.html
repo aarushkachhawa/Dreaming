@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Silk Attractor</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05060a; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#cfe6ff; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(120,170,255,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#55606e; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; tilt the map&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; leap to a new attractor&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Clifford attractor: x' = sin(a y) + c cos(a x), y' = sin(b x) + d cos(b y).
+// Millions of orbit points are tallied into a density grid; brightness is the
+// log of how often the orbit visited each cell, so the thin folded "silk"
+// shows. The four parameters glide between random targets, so the fabric
+// slowly rewrites itself while the old density fades.
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+let W=0, H=0, grid, img, paused=false, t=0, mx=0, my=0;
+let P = [-1.7,1.3,-0.1,-1.21], Q = P.slice();
+const PTS = 60000;
+let px = 0.1, py = 0.1;
+
+function pick(){ return [ (Math.random()*2-1)*2.1, (Math.random()*2-1)*2.1,
+  (Math.random()*2-1)*1.4, (Math.random()*2-1)*1.4 ]; }
+function resize(){
+  const s = 0.75;   // simulate at reduced resolution, upscale smoothly
+  W = Math.max(200, Math.floor(innerWidth*s)); H = Math.max(200, Math.floor(innerHeight*s));
+  canvas.width = W; canvas.height = H;
+  grid = new Float32Array(W*H); img = ctx.createImageData(W,H);
+}
+addEventListener('resize', resize); resize();
+
+function step(){
+  const a=P[0]+mx*0.15, b=P[1]+my*0.15, c=P[2], d=P[3];
+  const sc = Math.min(W,H)/ (2*(1+Math.abs(c)+0.15)) * 0.92;
+  const cx = W/2, cy = H/2;
+  for (let i=0;i<PTS;i++){
+    const nx = Math.sin(a*py)+c*Math.cos(a*px);
+    const ny = Math.sin(b*px)+d*Math.cos(b*py);
+    px=nx; py=ny;
+    if (i<0) continue;
+    const gx = (cx+px*sc)|0, gy = (cy+py*sc)|0;
+    if (gx>=0 && gx<W && gy>=0 && gy<H) grid[gy*W+gx] += 1;
+  }
+  if (!isFinite(px)||!isFinite(py)){ px=0.1; py=0.1; }
+}
+
+function draw(){
+  const g=grid, d=img.data, n=W*H;
+  let mxv=1;
+  for (let i=0;i<n;i++) if (g[i]>mxv) mxv=g[i];
+  const k = 1/Math.log(1+mxv);
+  const hue = (t*0.15)%360;
+  for (let i=0,j=0;i<n;i++,j+=4){
+    const v = Math.log(1+g[i])*k;       // 0..1
+    const w = v*v;
+    // deep indigo -> teal-violet -> pale gold
+    d[j]   = 255*Math.min(1, w*1.5 + 0.04*Math.sin(hue*0.017));
+    d[j+1] = 255*Math.min(1, w*1.05 + v*0.18);
+    d[j+2] = 255*Math.min(1, v*0.95 + 0.05);
+    d[j+3] = 255;
+    g[i] *= 0.965;                      // let the old silk fade
+  }
+  ctx.putImageData(img,0,0);
+}
+
+function loop(){
+  if (!paused){
+    t++;
+    for (let i=0;i<4;i++) P[i] += (Q[i]-P[i])*0.0035;
+    if (t%700===0) Q = pick();
+    step();
+  }
+  draw();
+  hud.innerHTML = 'silk attractor<br>a '+P[0].toFixed(3)+' &nbsp;b '+P[1].toFixed(3)+
+    '<br>c '+P[2].toFixed(3)+' &nbsp;d '+P[3].toFixed(3);
+  requestAnimationFrame(loop);
+}
+addEventListener('mousemove', e=>{ mx = e.clientX/innerWidth-0.5; my = e.clientY/innerHeight-0.5; });
+canvas.addEventListener('click', ()=>{ Q = pick(); t = 1; });
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+loop();
+})();
+</script>
+</body>
+</html>
