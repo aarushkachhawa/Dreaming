@@ -1,0 +1,14 @@
+{
+  "id": "20261004-benford-s-law-why-do-ones-lead-017a49",
+  "date": "2026-10-04T10:10:12.341269",
+  "title": "Benford's Law: Why Do Ones Lead So Often?",
+  "question": "Why do the first digits of real-world numbers favor 1 over 9, and what does that reveal about how numbers arise in nature?",
+  "summary": "In wildly different datasets, about 30% of numbers start with 1. The pattern comes from scale invariance and multiplicative growth, and it helps catch fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "fraud-detection",
+    "patterns"
+  ]
+}
