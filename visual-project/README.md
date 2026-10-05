@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-05** — `2026-10-05-parting-ways.html`: a sixty-first technique,
+  and the first to show sensitive dependence directly. Four hundred eighty
+  double pendulums are released from angles differing by one part in ten
+  million and integrated with RK4; their tips draw additive, hue-graded
+  trails. For the first seconds they swing as a single bright thread, then
+  chaos pries them apart into a fan of colour. The HUD reports the ensemble's
+  spread. Move the cursor to choose the release angles, click to release
+  again, space to pause. Open the file directly in a browser.
+
 - **2026-10-04** — `2026-10-04-silk-attractor.html`: a sixtieth technique,
   and the first to paint with a strange attractor's density. The Clifford map
   x' = sin(ay) + c·cos(ax), y' = sin(bx) + d·cos(by) is iterated sixty

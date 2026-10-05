@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Parting Ways</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8dcc8; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,120,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5d5a55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; choose the release angles&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; release again&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// 480 double pendulums released from angles that differ by one part in ten
+// million. For a few seconds they swing as one; then chaos pries them apart
+// and the single bright thread unravels into a fan of colour.
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const N = 480, EPS = 1e-7, G = 9.81, L1 = 1, L2 = 1, M1 = 1, M2 = 1;
+let W=0, H=0, paused=false, age=0, mx=0.5, my=0.35, spread=0;
+let s = new Float64Array(N*4);   // th1, th2, w1, w2
+let hueShift = 0;
+
+function release(){
+  const a = 1.2 + mx*1.9, b = 1.2 + my*1.9;
+  for (let i=0;i<N;i++){
+    s[i*4]   = a + i*EPS;
+    s[i*4+1] = b;
+    s[i*4+2] = 0; s[i*4+3] = 0;
+  }
+  age = 0; hueShift = Math.random()*360;
+  ctx.fillStyle = '#06070b'; ctx.fillRect(0,0,W,H);
+}
+function resize(){
+  const dpr = Math.min(2, devicePixelRatio||1);
+  W = canvas.width = Math.floor(innerWidth*dpr); H = canvas.height = Math.floor(innerHeight*dpr);
+  ctx.fillStyle = '#06070b'; ctx.fillRect(0,0,W,H);
+}
+addEventListener('resize', resize); resize();
+
+function deriv(y, o, out){
+  const t1=y[o], t2=y[o+1], w1=y[o+2], w2=y[o+3];
+  const d = t1-t2, c = Math.cos(d), sn = Math.sin(d);
+  const den = 2*M1 + M2 - M2*Math.cos(2*d);
+  out[0] = w1; out[1] = w2;
+  out[2] = (-G*(2*M1+M2)*Math.sin(t1) - M2*G*Math.sin(t1-2*t2)
+           - 2*sn*M2*(w2*w2*L2 + w1*w1*L1*c)) / (L1*den);
+  out[3] = (2*sn*(w1*w1*L1*(M1+M2) + G*(M1+M2)*Math.cos(t1) + w2*w2*L2*M2*c)) / (L2*den);
+}
+const k1=new Float64Array(4), k2=new Float64Array(4), k3=new Float64Array(4), k4=new Float64Array(4), tmp=new Float64Array(4);
+function rk4(i, h){
+  const o = i*4;
+  deriv(s, o, k1);
+  for (let j=0;j<4;j++) tmp[j]=s[o+j]+k1[j]*h/2; deriv(tmp,0,k2);
+  for (let j=0;j<4;j++) tmp[j]=s[o+j]+k2[j]*h/2; deriv(tmp,0,k3);
+  for (let j=0;j<4;j++) tmp[j]=s[o+j]+k3[j]*h;   deriv(tmp,0,k4);
+  for (let j=0;j<4;j++) s[o+j] += h/6*(k1[j]+2*k2[j]+2*k3[j]+k4[j]);
+}
+
+const SUB = 4, DT = 1/240;
+let prev = new Float32Array(N*2);
+function tips(i){
+  const x1 = L1*Math.sin(s[i*4]), y1 = L1*Math.cos(s[i*4]);
+  return [x1 + L2*Math.sin(s[i*4+1]), y1 + L2*Math.cos(s[i*4+1])];
+}
+function frame(){
+  const sc = Math.min(W,H)/ (2*(L1+L2)) * 0.9, cx = W/2, cy = H*0.5;
+  if (!paused){
+    // fade old trails
+    ctx.fillStyle = 'rgba(6,7,11,0.045)'; ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineWidth = Math.max(1, sc*0.006);
+    ctx.lineCap = 'round';
+    let sx=0, sy=0;
+    const px = new Float32Array(N), py = new Float32Array(N);
+    for (let i=0;i<N;i++){ const p=tips(i); px[i]=p[0]; py[i]=p[1]; }
+    for (let k=0;k<SUB;k++){
+      for (let i=0;i<N;i++) rk4(i, DT);
+    }
+    for (let i=0;i<N;i++){
+      const p = tips(i);
+      const hue = (hueShift + i/N*300) % 360;
+      ctx.strokeStyle = 'hsla('+hue+',85%,62%,0.22)';
+      ctx.beginPath();
+      ctx.moveTo(cx+px[i]*sc, cy+py[i]*sc);
+      ctx.lineTo(cx+p[0]*sc, cy+p[1]*sc);
+      ctx.stroke();
+      sx += p[0]; sy += p[1];
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    sx/=N; sy/=N;
+    let v=0;
+    for (let i=0;i<N;i++){ const p=tips(i); v += (p[0]-sx)*(p[0]-sx)+(p[1]-sy)*(p[1]-sy); }
+    spread = Math.sqrt(v/N);
+    age += SUB*DT;
+    if (age > 40) release();
+  }
+  hud.innerHTML = 'parting ways<br>t '+age.toFixed(1)+' s<br>spread '+
+    (spread<1e-3? spread.toExponential(1) : spread.toFixed(3));
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove', e=>{ mx = e.clientX/innerWidth; my = e.clientY/innerHeight; });
+canvas.addEventListener('click', release);
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+release(); frame();
+})();
+</script>
+</body>
+</html>
