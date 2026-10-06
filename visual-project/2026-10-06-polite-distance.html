@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polite Distance</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#07080c; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; image-rendering:pixelated; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8dcc8; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,120,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5d5a55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; set how much sameness each neighbour wants&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; shuffle everyone&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Schelling's segregation model. Three kinds of agent live on a torus with
+// about a tenth of the lots empty. An agent is content if at least a given
+// fraction of its occupied neighbours are its own kind; otherwise it moves to
+// a random empty lot. Nobody asks for much, yet the mix curdles into
+// territories. The cursor's height sets that modest fraction.
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const COLS = [[0,0,0],[255,122,89],[88,214,196],[245,205,92]];
+let GW=0, GH=0, grid, img, data, paused=false, moves=0, tol=0.35, mx=0.5, my=0.35;
+let happyFrac=0, like=0, still=0;
+
+function init(){
+  const asp = innerWidth/innerHeight;
+  GH = 120; GW = Math.max(60, Math.round(GH*asp));
+  canvas.width = GW; canvas.height = GH;
+  img = ctx.createImageData(GW, GH); data = img.data;
+  grid = new Uint8Array(GW*GH);
+  shuffle();
+}
+function shuffle(){
+  for (let i=0;i<grid.length;i++){
+    const r = Math.random();
+    grid[i] = r < 0.1 ? 0 : 1 + Math.floor((r-0.1)/0.3);
+    if (grid[i]>3) grid[i]=3;
+  }
+  moves = 0; still = 0;
+}
+// returns [same, occupied] among the 8 neighbours
+let ns=0, no=0;
+function look(x, y, k){
+  ns = 0; no = 0;
+  for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++){
+    if (!dx && !dy) continue;
+    const v = grid[((y+dy+GH)%GH)*GW + (x+dx+GW)%GW];
+    if (v){ no++; if (v===k) ns++; }
+  }
+}
+function step(){
+  const unhappy = [], empty = [];
+  let happy=0, agents=0, ls=0;
+  for (let y=0;y<GH;y++) for (let x=0;x<GW;x++){
+    const i=y*GW+x, k=grid[i];
+    if (!k){ empty.push(i); continue; }
+    agents++;
+    look(x,y,k);
+    if (no>0) ls += ns/no;
+    if (no===0 || ns/no >= tol) happy++; else unhappy.push(i);
+  }
+  happyFrac = happy/agents; like = ls/agents;
+  // a random subset moves each tick so the change stays visible
+  for (let u=unhappy.length-1;u>0;u--){ const j=(Math.random()*(u+1))|0; const t=unhappy[u]; unhappy[u]=unhappy[j]; unhappy[j]=t; }
+  const n = Math.min(unhappy.length, empty.length, 400);
+  for (let q=0;q<n;q++){
+    const ei = (Math.random()*empty.length)|0, e = empty[ei];
+    grid[e] = grid[unhappy[q]]; grid[unhappy[q]] = 0;
+    empty[ei] = unhappy[q]; moves++;
+  }
+  still = n===0 ? still+1 : 0;
+}
+function draw(){
+  for (let i=0;i<grid.length;i++){
+    const c = COLS[grid[i]], o=i*4;
+    data[o]=c[0]; data[o+1]=c[1]; data[o+2]=c[2]; data[o+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+function frame(){
+  tol = 0.12 + (1-my)*0.58;
+  if (!paused){
+    step(); step();
+    if (still > 120) shuffle();
+  }
+  draw();
+  hud.innerHTML = 'polite distance<br>wants '+Math.round(tol*100)+'% alike<br>content '+
+    Math.round(happyFrac*100)+'%<br>neighbours alike '+Math.round(like*100)+'%<br>moves '+moves;
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', init);
+addEventListener('mousemove', e=>{ mx=e.clientX/innerWidth; my=e.clientY/innerHeight; });
+canvas.addEventListener('click', shuffle);
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+init(); frame();
+})();
+</script>
+</body>
+</html>

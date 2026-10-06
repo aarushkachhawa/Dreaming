@@ -1940,3 +1940,18 @@ When you are done, someone should want to look. Longer than they meant to.
   the cursor to bend nearby boughs toward it like sunlight; click to plant a
   fresh tree, retiring the grove's oldest once it's full. Open the file
   directly in a browser.
+
+- **2026-10-06** — `2026-10-06-polite-distance.html`: a sixty-second
+  technique, and the first agent-based social model — Thomas Schelling's
+  1971 segregation experiment. Three kinds of agent sit on a wrapping grid
+  with a tenth of the lots empty. Each wants only that some fraction of its
+  occupied neighbours be its own kind; an agent below that line moves to a
+  random empty lot. The demands are mild, yet the scrambled confetti
+  curdles into large single-colour territories with ragged borders, far
+  more sorted than anyone individually asked for. Unlike the cellular
+  automata of earlier nights nothing here is a local rule applied in place:
+  agents relocate, so the dynamics are about migration and vacancy. Move the
+  cursor up and down to raise or lower the demanded fraction (the HUD shows
+  how content the population is and how alike neighbours actually are);
+  click to shuffle everyone; space pauses. When the town settles it
+  reshuffles itself. Open the file directly in a browser.
