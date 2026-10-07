@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drifting Dust</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; image-rendering:pixelated; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8dcc8; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,120,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5d5a55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; plant a new seed&nbsp;&nbsp;|&nbsp;&nbsp;move &mdash; the dust drifts toward the cursor&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Diffusion-limited aggregation. Single grains of dust wander at random and
+// freeze where they first touch the cluster. Tips shield the interior, so
+// the structure grows coral-like branches. Colour records arrival time.
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+let W=0, H=0, grid, img, data, paused=false, count=0, mx=0.5, my=0.5, maxR=0;
+let seeds=[], sx=0, sy=0, born=0;
+const LIFE = 14000;
+
+function hsl(h,s,l){
+  h=((h%360)+360)%360/60; const c=(1-Math.abs(2*l-1))*s, x=c*(1-Math.abs(h%2-1)), m=l-c/2;
+  let r=0,g=0,b=0;
+  if(h<1){r=c;g=x}else if(h<2){r=x;g=c}else if(h<3){g=c;b=x}else if(h<4){g=x;b=c}else if(h<5){r=x;b=c}else{r=c;b=x}
+  return [(r+m)*255|0,(g+m)*255|0,(b+m)*255|0];
+}
+function init(){
+  const asp = innerWidth/innerHeight;
+  H = 200; W = Math.max(120, Math.round(H*asp));
+  canvas.width=W; canvas.height=H;
+  img = ctx.createImageData(W,H); data = img.data;
+  reset(W/2|0, H/2|0);
+}
+function reset(x,y){
+  grid = new Int32Array(W*H); // 0 empty, else arrival index
+  for (let i=0;i<data.length;i+=4){ data[i]=6; data[i+1]=7; data[i+2]=11; data[i+3]=255; }
+  count=0; maxR=2; sx=x; sy=y; born=0;
+  stick(x,y);
+}
+function stick(x,y){
+  count++; grid[y*W+x]=count;
+  const c = hsl(200 + count*0.035, 0.75, 0.62), o=(y*W+x)*4;
+  data[o]=c[0]; data[o+1]=c[1]; data[o+2]=c[2];
+  const r = Math.hypot(x-sx,y-sy); if (r>maxR) maxR=r;
+}
+function occupied(x,y){ return x>=0&&y>=0&&x<W&&y<H&&grid[y*W+x]>0; }
+function walker(){
+  const R = maxR+8, KILL = maxR+40;
+  const a = Math.random()*6.2832;
+  let x = Math.round(sx+Math.cos(a)*R), y = Math.round(sy+Math.sin(a)*R);
+  const bx = (mx*W-sx), by = (my*H-sy), bl = Math.hypot(bx,by)||1;
+  const drift = Math.min(0.25, bl/W*0.4);
+  for (let t=0;t<40000;t++){
+    if (x<1||y<1||x>=W-1||y>=H-1) return false;
+    if (occupied(x+1,y)||occupied(x-1,y)||occupied(x,y+1)||occupied(x,y-1)){ stick(x,y); return true; }
+    const r=Math.random();
+    if (r<drift){ x += Math.sign(bx)*(Math.random()<Math.abs(bx)/bl?1:0); y += Math.sign(by)*(Math.random()<Math.abs(by)/bl?1:0); }
+    else { const d=(Math.random()*4)|0; if(d===0)x++; else if(d===1)x--; else if(d===2)y++; else y--; }
+    if (Math.abs(x-sx)>KILL||Math.abs(y-sy)>KILL){
+      // re-enter near the cluster instead of wandering far away
+      const b=Math.random()*6.2832; x=Math.round(sx+Math.cos(b)*R); y=Math.round(sy+Math.sin(b)*R);
+    }
+  }
+  return false;
+}
+function frame(){
+  if (!paused){
+    const t0=performance.now();
+    while (performance.now()-t0<10) walker();
+    born++;
+    if (count>LIFE || maxR>Math.min(W,H)/2-6){
+      // keep the finished coral a moment, then begin again somewhere else
+      if (++fade>240){ fade=0; reset(30+Math.random()*(W-60)|0, 30+Math.random()*(H-60)|0); }
+    }
+  }
+  ctx.putImageData(img,0,0);
+  hud.innerHTML='drifting dust<br>grains frozen '+count+'<br>reach '+Math.round(maxR)+' cells';
+  requestAnimationFrame(frame);
+}
+let fade=0;
+addEventListener('resize', init);
+addEventListener('mousemove', e=>{ mx=e.clientX/innerWidth; my=e.clientY/innerHeight; });
+canvas.addEventListener('click', e=>{ fade=0; reset(Math.max(8,Math.min(W-9,e.clientX/innerWidth*W|0)), Math.max(8,Math.min(H-9,e.clientY/innerHeight*H|0))); });
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+init(); frame();
+})();
+</script>
+</body>
+</html>

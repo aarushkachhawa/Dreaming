@@ -24,6 +24,16 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-07** — `2026-10-07-drifting-dust.html`: a sixty-third
+  technique, and the first built on diffusion-limited aggregation. Single
+  grains of dust wander the grid at random and freeze the instant they touch
+  the growing cluster. Tips shield the interior from the wandering grains, so
+  the cluster sprouts coral-like branches; colour records arrival time, cold
+  blue at the seed warming to red at the outermost twigs. Move the cursor to
+  bias the dust's drift toward it, click to plant a fresh seed there, space
+  to pause. A finished coral rests a moment, then a new one begins. Open the
+  file directly in a browser.
+
 - **2026-10-05** — `2026-10-05-parting-ways.html`: a sixty-first technique,
   and the first to show sensitive dependence directly. Four hundred eighty
   double pendulums are released from angles differing by one part in ten
