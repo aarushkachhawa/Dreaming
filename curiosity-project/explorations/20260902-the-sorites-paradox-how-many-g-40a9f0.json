@@ -1,0 +1,52 @@
+{
+  "id": "20260902-the-sorites-paradox-how-many-g-40a9f0",
+  "date": "2026-09-02T10:15:54.433495",
+  "title": "The Sorites Paradox: How Many Grains Make a Heap?",
+  "question": "If removing a single grain from a heap of sand never turns it into a non-heap, how can a heap ever stop being a heap?",
+  "summary": "An ancient puzzle about vague words like 'heap,' 'bald,' and 'old' turns out to sit underneath real disputes in law, medicine, and everyday judgment.",
+  "content": "\n<p>Take a heap of ten thousand grains of sand. Remove one grain. It is still obviously a heap. Repeat this step ten thousand times, removing one grain at a time, and by simple induction the pile should still be a heap even when a single grain remains \u2014 or none at all. But a single grain is not a heap. Something in this reasoning has gone wrong, yet each individual step seems undeniable. This is the Sorites paradox (from the Greek \"soros,\" heap), first posed in antiquity and still unresolved after roughly 2,300 years.</p>\n\n<h2>The Shape of the Problem</h2>\n<p>The paradox isn't really about sand. It applies to any predicate that admits borderline cases: bald (remove one hair from a full head, over and over), tall, rich, young, red versus orange, alive versus dead. In every case, an incremental change that seems too small to matter, repeated enough times, produces a change that obviously does matter. Logic says a heap-minus-one-grain is still a heap; common sense says a single grain cannot be a heap. Both premises look true, the inference looks valid, and yet the conclusion is absurd.</p>\n\n<h2>Competing Fixes</h2>\n<p>Philosophers have proposed several ways out, and none has won a decisive victory. Epistemicism holds that there actually is a sharp cutoff \u2014 some exact number of grains at which \"heap\" stops applying \u2014 we just can never know where it is, because our language wasn't built with that kind of precision in mind. Supervaluationism says a statement is true only if it comes out true under every reasonable way of sharpening the vague term; borderline cases are simply neither true nor false. Fuzzy logic rejects binary truth altogether, assigning \"heap-ness\" a value between 0 and 1 that declines gradually as grains are removed, so there's no single moment of collapse, only a smooth gradient. Contextualism argues the right cutoff shifts with conversational context \u2014 what counts as a \"heap\" in a sandbox differs from what counts as one on a beach.</p>\n\n<p>Each approach solves part of the puzzle and leaves another part unsatisfying. Epistemicism preserves classical logic but requires believing in unknowable exact boundaries that feel arbitrary. Fuzzy logic matches intuition about gradualness but complicates ordinary reasoning, since almost every everyday claim becomes a matter of degree rather than fact.</p>\n\n<h2>Not Just a Word Game</h2>\n<p>Vagueness is not a curiosity confined to philosophy seminars. Law constantly has to draw lines through inherently fuzzy territory: at what blood-alcohol level is someone \"impaired,\" at what age does a minor become an adult, when precisely does a fetus become a \"person\" for legal purposes, when does brain activity cease enough to call someone \"dead.\" Medicine faces the same problem classifying disease: how many symptoms, of what severity, make something a \"disorder\" rather than normal variation. In every case, society ends up drawing a sharp legal or clinical line through a genuinely vague underlying reality \u2014 not because the line is scientifically exact, but because decisions must be made.</p>\n\n<h2>Where It Leads</h2>\n<p>The Sorites paradox forces a choice between three uncomfortable options: give up classical either/or logic for these predicates, accept that language contains hidden precision no one can access, or accept that some questions (\"is this exact configuration of sand a heap?\") simply have no determinate answer. Most working philosophers now think vagueness is a genuine feature of the world as described by language \u2014 not merely our ignorance of a fact, and not just a technical defect to be engineered away. That, in turn, raises an uncomfortable question about how much of everyday reasoning quietly rests on words whose boundaries were never meant to be sharp.</p>\n",
+  "tags": [
+    "philosophy",
+    "logic",
+    "language",
+    "vagueness",
+    "epistemology"
+  ],
+  "perspectives": [
+    {
+      "title": "Logic Perspective",
+      "description": "Classical logic assumes every statement is true or false, but vague predicates seem to generate statements that are neither \u2014 forcing a choice between revising logic or revising our theory of language."
+    },
+    {
+      "title": "Linguistics Perspective",
+      "description": "Natural language evolved for communication, not precision measurement; vagueness may be a functional feature that lets words apply flexibly across contexts rather than a flaw to be fixed."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Law must draw crisp lines \u2014 voting age, legal death, criminal intent \u2014 through concepts that are genuinely fuzzy at the margins, making the Sorites paradox a daily practical problem, not just an abstract one."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Human categorization research shows people naturally think in graded prototypes rather than sharp boundaries \u2014 a robin is a 'better' bird than a penguin \u2014 mirroring the Sorites structure in how concepts are mentally represented."
+    },
+    {
+      "title": "Mathematics Perspective",
+      "description": "Fuzzy logic and fuzzy set theory formalize graded membership, giving heap-ness a real number between 0 and 1 instead of a binary yes/no, offering one rigorous model of vagueness."
+    }
+  ],
+  "connections": [
+    "Fuzzy logic and multi-valued truth",
+    "The Ship of Theseus and identity over time",
+    "Vagueness and line-drawing in law",
+    "Prototype theory in cognitive psychology",
+    "The continuum fallacy",
+    "Slippery slope arguments in ethics and rhetoric",
+    "Philosophy of language and the limits of reference"
+  ],
+  "openQuestions": [
+    "Is vagueness a feature of language, of thought, or of reality itself?",
+    "Could a vague predicate ever be replaced with a precise one without losing what it originally meant?",
+    "Do borderline cases have a determinate truth value we simply cannot access, or none at all?",
+    "How should law and medicine handle categories \u2014 like personhood or death \u2014 that are inherently vague but demand firm answers?"
+  ]
+}
