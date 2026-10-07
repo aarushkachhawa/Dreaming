@@ -1,0 +1,48 @@
+{
+  "id": "20260831-the-ship-of-theseus-what-makes-ed7a84",
+  "date": "2026-08-31T10:14:33.704618",
+  "title": "The Ship of Theseus: What Makes You the Same You?",
+  "question": "If every part of a thing is replaced over time, is it still the same thing\u2014and what does that mean for a body, a mind, or a piece of software?",
+  "summary": "An ancient puzzle about a rebuilt ship turns out to be a live question about bodies that replace their own cells, minds that rewrite their own memories, and software that patches itself into something unrecognizable.",
+  "content": "\n    <p>Plutarch describes a ship kept in the harbor at Athens as a monument to Theseus. Over the centuries, as its planks rot, the Athenians replace them one by one with new timber, until eventually not a single original plank remains. Is it still the Ship of Theseus? Most people's intuition says yes&mdash;identity survives gradual replacement. But Thomas Hobbes sharpened the puzzle: suppose someone collected all the discarded old planks and reassembled them into a second ship. Now there are two candidates. Which one, if either, is the real Ship of Theseus? The puzzle isn't really about ships. It's about what identity even is.</p>\n\n    <h2>You Are Also Being Rebuilt</h2>\n    <p>This isn't just a thought experiment about wood. Your body performs the same operation on itself continuously. Most cells in your gut lining are replaced within days; skin cells turn over in weeks; red blood cells last around four months; even bone is remodeled over roughly a decade. The precise \"every seven years you're a new person\" claim is an oversimplification&mdash;some neurons and lens cells last a lifetime&mdash;but the broad picture is real: the atoms making up your body today are largely not the atoms that made it up a decade ago. And yet you feel continuous. Something persists through the material turnover, and it clearly isn't the matter itself.</p>\n\n    <h2>What Actually Persists</h2>\n    <p>Philosophers have proposed different candidates for what carries identity forward when matter doesn't: continuity of form (the pattern, not the stuff, is preserved, like a river that's the same river despite every water molecule passing through), continuity of memory and psychological connectedness (John Locke's view, that you're the same person as long as an unbroken chain of memory and personality links past-you to present-you), and continuity of causal history (each stage of the ship, or the body, was produced by direct physical processes acting on the previous stage, forming an unbroken causal chain even though no single part survives). Each theory handles some cases well and breaks on others&mdash;memory theories struggle with amnesia and infancy, causal theories struggle with teleportation thought experiments, form theories struggle with the reassembled second ship.</p>\n\n    <h2>The Modern Versions</h2>\n    <p>The puzzle has quietly become urgent again in domains Plutarch never imagined. A codebase can be patched, refactored, and rewritten file by file until no original line of code remains, yet developers still speak of it as \"the same project\" with an unbroken version history&mdash;identity tracked by lineage, not content. A large language model fine-tuned repeatedly, or an AI agent whose weights are updated after every conversation, raises the same question in a stranger form: at what point, if any, does continuous updating produce a different entity rather than an evolved one? Even a Wikipedia article, edited by thousands of hands until its original text is gone, forces the same question about what \"the same article\" even means.</p>\n\n    <h2>Why the Puzzle Resists Closing</h2>\n    <p>Part of what makes the Ship of Theseus durable is that it isn't really a factual question with a hidden answer waiting to be discovered&mdash;it's a question about how we choose to draw boundaries around things that are, physically, in constant flux. Identity over time may be less a discovery than a convention we impose for practical reasons: legal, narrative, emotional. That doesn't make it trivial. Whether a person recovering from a traumatic brain injury is \"the same person,\" whether a company that's fired every original employee is \"the same company,\" and whether an upload of your mind onto new hardware would be you or merely a copy&mdash;these aren't ship-shaped puzzles for classrooms. They're the same unresolved question, wearing different clothes, about what it means for anything to endure.</p>\n    ",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "consciousness",
+    "biology"
+  ],
+  "perspectives": [
+    {
+      "title": "Metaphysics Perspective",
+      "description": "Classical theories of identity\u2014form, causal continuity, and psychological continuity\u2014each capture part of the intuition but fail on carefully constructed edge cases like the reassembled ship."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Cellular turnover means the human body is a process, not a fixed object; whatever identity is, it survives near-total material replacement on a rolling basis."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Psychological continuity theories tie personal identity to memory and narrative self-construction, which explains why amnesia and dementia feel like existential threats, not just medical ones."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Version-controlled software and continually fine-tuned AI models are modern instances of the same puzzle: identity tracked through lineage and process rather than static content."
+    }
+  ],
+  "connections": [
+    "Personal identity and Locke's memory theory",
+    "Cellular turnover and the biology of aging",
+    "Mereology, the philosophy of parts and wholes",
+    "The teleporter thought experiment in philosophy of mind",
+    "Version control and the identity of evolving software",
+    "Mind uploading and continuity of consciousness",
+    "The Sorites paradox and vague boundaries"
+  ],
+  "openQuestions": [
+    "Is identity a fact about the world, or a convention we impose for legal and narrative convenience?",
+    "If a mind were gradually uploaded neuron by neuron into a machine, would the resulting entity be you, or a copy that merely believes it's you?",
+    "Does psychological continuity theory adequately explain identity through severe amnesia, infancy, or dreamless sleep?",
+    "Could two entities both have equal claim to being 'the same' as an earlier one, as in Hobbes's reassembled ship\u2014and if so, what follows?"
+  ]
+}
