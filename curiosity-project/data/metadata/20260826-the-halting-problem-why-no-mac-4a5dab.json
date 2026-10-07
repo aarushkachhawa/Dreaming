@@ -1,0 +1,14 @@
+{
+  "id": "20260826-the-halting-problem-why-no-mac-4a5dab",
+  "date": "2026-08-26T10:16:33.996673",
+  "title": "The Halting Problem: Why No Machine Can Ever Fully Know Itself",
+  "question": "Can any computer program ever determine, in general, whether another program will finish running or loop forever?",
+  "summary": "Alan Turing proved that no algorithm can decide, for every possible program, whether that program will halt or run forever \u2014 a limit built into the structure of computation itself, with strange echoes in logic, biology, and self-knowledge.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "logic",
+    "computability",
+    "self-reference"
+  ]
+}
