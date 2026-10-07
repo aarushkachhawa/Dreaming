@@ -1,0 +1,48 @@
+{
+  "id": "20261007-what-is-money-really-a-shared--d7035e",
+  "date": "2026-10-07T10:11:09.481160",
+  "title": "What Is Money, Really? A Shared Fiction That Works",
+  "question": "Why does a piece of paper, or a number on a screen, buy a loaf of bread?",
+  "summary": "Money has no intrinsic value to most of the people who use it. It works because of coordinated belief, and that makes it one of humanity's most powerful and fragile inventions.",
+  "content": "<h2>The Barter Myth</h2>\n<p>The textbook story says people first bartered, ran into the problem of needing a \"double coincidence of wants,\" and invented money to solve it. Anthropologists such as David Graeber found little evidence for this. Early societies ran mostly on credit, gift and obligation: I give you grain now, you owe me later. Money looks less like an escape from barter and more like a formalization of debt.</p>\n<h2>Three Functions, Many Forms</h2>\n<p>Economists say money is a medium of exchange, a unit of account and a store of value. Shells, salt, silver, cigarettes in prisoner-of-war camps, and the enormous stone discs of Yap have all served. What matters is not the material but that everyone expects everyone else to accept it. Money is a convention, like driving on the right, that is valuable because others follow it.</p>\n<h2>Metal, Paper, Promise</h2>\n<p>Coins stamped by rulers tied money to state power: the king accepted them for taxes, so subjects needed them. Paper began as receipts for gold, then governments stopped promising redemption. Modern currency is fiat, valuable because the state demands taxes in it and because we trust it won't be inflated to nothing. Most money today is not even paper: it is entries in bank ledgers, created when banks make loans.</p>\n<h2>When Belief Slips</h2>\n<p>Hyperinflation in Weimar Germany or Zimbabwe shows what happens when the shared fiction cracks: prices change by the hour and people retreat to barter and foreign currency. Cryptocurrencies attempt a new answer, replacing trust in a central authority with trust in code and consensus, yet their wild volatility illustrates how hard it is for a new convention to stabilize.</p>\n<h2>Why It Shapes Us</h2>\n<p>Money lets strangers cooperate at massive scale, as Yuval Harari argues, by being a story everyone can believe regardless of religion or culture. It also turns relationships into quantities, enabling both global trade and a particular way of seeing the world as a set of prices.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "philosophy",
+    "technology"
+  ],
+  "perspectives": [
+    {
+      "title": "Anthropological",
+      "description": "Money emerged from social debt and ritual obligation, not from trade between strangers. Its roots are moral and relational before they are economic."
+    },
+    {
+      "title": "Economic",
+      "description": "Money solves coordination problems; its value rests on expectations. Monetary stability is a matter of managing those expectations."
+    },
+    {
+      "title": "State Theory",
+      "description": "Chartalists argue that taxation creates demand for currency: the state imposes a debt that only its money can discharge."
+    },
+    {
+      "title": "Technological",
+      "description": "Digital payments and blockchains test whether the trust that money requires can be moved from institutions to algorithms."
+    }
+  ],
+  "connections": [
+    "Gresham's law",
+    "Fiat currency and legal tender",
+    "Debt: The First 5000 Years",
+    "Hyperinflation",
+    "Bitcoin and decentralized consensus",
+    "Social conventions and Schelling points",
+    "Gift economies"
+  ],
+  "openQuestions": [
+    "Can money exist without a state or shared institution to back it?",
+    "Does digital money change what money fundamentally is?",
+    "How much of economic value is just collective belief?",
+    "What would a society look like without a unit of account?"
+  ]
+}
