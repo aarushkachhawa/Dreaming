@@ -1,0 +1,52 @@
+{
+  "id": "20260730-the-ship-of-theseus-and-the-pu-5f18c0",
+  "date": "2026-07-30T10:12:02.231936",
+  "title": "The Ship of Theseus and the Puzzle of Staying the Same Thing",
+  "question": "If every part of something is gradually replaced, is it still the same thing \u2014 and are you still the same person you were ten years ago?",
+  "summary": "An ancient thought experiment about a rebuilt ship turns out to be a live problem in biology, law, and personal identity: what actually makes something the same object over time, when none of its matter sticks around?",
+  "content": "\n<p>Plutarch tells of a ship that the Athenians kept afloat for centuries by replacing its rotting planks, one by one, until eventually not a single original plank remained. Was it still the Ship of Theseus? Philosophers added a twist: suppose someone collected all the discarded planks and reassembled them into a second ship. Which one is the real one \u2014 the continuously repaired vessel, or the one rebuilt from original parts?</p>\n\n<h2>Why This Isn't Just Wordplay</h2>\n<p>It's tempting to wave this away as a semantic argument about how we use the word \"ship.\" But the same structure shows up in questions that are not optional to answer. Every cell in your body is replaced on a rolling basis \u2014 most of your atoms today were not part of you a decade ago. Rivers, corporations, nations, and software codebases all persist through total material turnover. If identity requires sameness of parts, almost nothing persists at all. If it doesn't, we need another criterion \u2014 and it turns out to be surprisingly hard to state one that doesn't break under pressure.</p>\n\n<h2>Three Candidate Answers</h2>\n<p>One answer says identity tracks continuity of form: the ship stays \"the same\" because at every moment it has (almost) the same shape and function as the moment before, even though the reassembled-plank ship has the same matter but no such history. Call this the four-dimensional worm view \u2014 an object is a process traced through time, not a static thing.</p>\n\n<p>A second answer says identity is a social and legal fiction we impose for convenience: there is no fact of the matter, only useful conventions (a ship registered under one name, a person with one continuous legal identity) that let us coordinate. A third, more radical answer says strict identity over time is simply false for anything made of parts \u2014 what we call \"the same ship\" is really a sequence of different ships, linked by resemblance and causal history, and ordinary language just isn't built to notice the difference.</p>\n\n<h2>The Personal Stakes</h2>\n<p>This stops being abstract the moment you apply it to yourself. Your cells turn over, your beliefs change, your memories fade and get reconstructed rather than replayed. The psychologist and philosopher Derek Parfit argued that personal identity is not what matters in survival \u2014 what matters is psychological continuity and connectedness, which come in degrees and can even branch (as in thought experiments about teleportation or brain splitting). If he's right, questions like \"will I still be me after this operation\" or \"is the retired version of myself the same person who made these promises\" don't have sharp yes-or-no answers. They have answers that are more or less true, like asking whether a foggy morning has \"really\" become a sunny afternoon.</p>\n\n<h2>Where the Ship Sails Next</h2>\n<p>The puzzle resurfaces anywhere gradual replacement meets a demand for a sharp verdict: is an AI model the \"same\" system after fine-tuning replaces most of its weights, is a restored painting the \"same\" artwork after every visible layer of pigment has been touched up, is a Wikipedia article the \"same\" text after ten thousand edits. The Ship of Theseus isn't a quirky ancient riddle \u2014 it's the general form of every question about what survives change.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "psychology",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophy Perspective",
+      "description": "Metaphysicians distinguish numerical identity (being literally one and the same entity) from qualitative identity (being exactly alike), and debate whether persistence requires spatiotemporal continuity, sameness of matter, or something else entirely."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Nearly all the atoms in a human body are replaced over years through cellular turnover and metabolic exchange, making the ship's paradox a literal biological fact rather than a hypothetical about wooden planks."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Memory itself is reconstructive rather than a fixed recording, meaning the psychological continuity that seems to anchor personal identity is itself being rebuilt and subtly altered every time it is accessed."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Law treats corporations, nations, and rivers as persisting single entities across total turnover of members, citizens, or water molecules, revealing identity-over-time as partly a functional and institutional convention rather than a fact about matter."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Version control systems and machine learning fine-tuning make the puzzle concrete: after enough commits or gradient updates, is a codebase or a trained model still 'the same' system, or a new one wearing the old name?"
+    }
+  ],
+  "connections": [
+    "Personal identity and Derek Parfit's psychological continuity theory",
+    "The problem of the many and vague boundaries of objects",
+    "Cellular turnover and the biology of the self",
+    "Mereology, the philosophical study of parts and wholes",
+    "Legal personhood of corporations, rivers, and nations",
+    "Buddhist philosophy of anatta, the doctrine of no fixed self",
+    "The paradox of the heap (Sorites paradox) and vagueness in language"
+  ],
+  "openQuestions": [
+    "Is there an objective fact about whether an object persists, or only more and less useful ways of talking about change?",
+    "If psychological continuity comes in degrees, does that mean survival itself is a matter of degree rather than all-or-nothing?",
+    "Does the answer differ for living organisms, artifacts, and institutions, or is one theory supposed to cover all three?",
+    "What should we do with the intuition that splits pull apart \u2014 like the two ships, or a mind copied into two bodies \u2014 when both candidates seem equally 'continuous' with the original?"
+  ]
+}
