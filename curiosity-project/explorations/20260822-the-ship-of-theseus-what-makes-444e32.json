@@ -1,0 +1,48 @@
+{
+  "id": "20260822-the-ship-of-theseus-what-makes-444e32",
+  "date": "2026-08-22T10:12:41.102473",
+  "title": "The Ship of Theseus: What Makes You the Same Person Over Time?",
+  "question": "If every part of a thing is gradually replaced, is it still the same thing\u2014and if so, what exactly stayed the same?",
+  "summary": "An ancient puzzle about a rebuilt ship turns out to be a precise tool for probing what identity means for objects, organisms, and the changing self.",
+  "content": "\n<p>Plutarch records a puzzle the Athenians debated about the ship that carried Theseus home from Crete: as it aged, the Athenians replaced its rotting planks one by one, until, over decades, not a single original plank remained. Was it still the same ship? Philosophers sharpened the puzzle further: suppose someone collected all the discarded original planks and reassembled them into a second ship. Which one&mdash;the continuously repaired vessel or the reassembled original&mdash;is the \"real\" Ship of Theseus? Both have a claim, and both claims seem to contradict the other.</p>\n\n<h2>Why This Isn't Just Wordplay</h2>\n<p>It's tempting to dismiss this as an argument over labels&mdash;call the repaired ship \"Ship A\" and the reassembled one \"Ship B\" and the puzzle evaporates. But the deeper question survives the renaming: which one, if either, has genuine continuity with the ship Theseus actually sailed? That's not a question about words; it's a question about what identity over time consists of. Is it continuity of matter, continuity of form and function, continuity of causal history, or something else entirely?</p>\n\n<h2>The Human Version Is Not Hypothetical</h2>\n<p>This isn't merely a puzzle about wood. Nearly every atom in a human body is replaced over a span of years through ordinary metabolism&mdash;skin cells shed and regrow, bone remodels, even much of the water in your body turns over repeatedly. In a real and literal sense, the material substrate of \"you\" ten years ago and \"you\" today shares almost no atoms in common. Yet you consider yourself the same person, with continuous memories, responsibility for past promises, and a stake in future consequences. What actually persists isn't matter&mdash;it's something more like an unbroken causal and informational thread: memory, personality, physical pattern maintained across material turnover.</p>\n\n<p>Psychological accounts of personal identity, following philosophers like John Locke, locate the self in continuity of memory and psychological connectedness rather than in bodily material. But this account has its own failure points: severe amnesia, split-brain cases, and gradual personality change under dementia all strain the idea that memory alone carries identity intact. If memory is what makes you \"you,\" who are you after memory is gone?</p>\n\n<h2>Four Candidate Answers</h2>\n<p>Philosophers have proposed several criteria for what preserves identity through change: mereological essentialism holds that any change in parts changes the object's identity strictly&mdash;a hard-line view most people's intuitions reject. The four-dimensionalist view treats objects as sequences of \"time-slices,\" with identity being a matter of which slices belong to the same continuous spacetime worm, sidestepping the question of any single persisting \"essence.\" The causal-continuity view says identity survives as long as each state is produced by, and grounded in, the immediately prior state&mdash;gradual replacement preserves identity, sudden replacement or duplication threatens it. And a deflationary view says there simply is no deep fact of the matter&mdash;identity is a useful fiction we impose on a continuum for practical and legal convenience.</p>\n\n<h2>Where It Bites Hardest</h2>\n<p>The puzzle stops being merely academic once you apply it to things societies actually need to answer definitively: is a corporation the same legal entity after every employee, building, and product line has changed? Is a mind uploaded to a computer, atom-by-atom or neuron-by-neuron, the same person as the brain it was copied from, or merely an exact duplicate with no genuine continuity? Is someone with advanced dementia, whose memories and personality have been replaced by something unrecognizable, still bound by promises the earlier version of them made? These aren't idle thought experiments&mdash;courts, hospitals, and increasingly technologists building brain-computer interfaces have to take a stance on identity whether or not philosophy has settled the matter.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "mind",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Metaphysics Perspective",
+      "description": "Classical debates over material constitution, four-dimensionalism, and mereology treat the Ship of Theseus as a test case for what makes any composite object the same object over time."
+    },
+    {
+      "title": "Philosophy of Mind Perspective",
+      "description": "Locke's psychological continuity theory locates personal identity in memory and consciousness rather than bodily material, but faces hard cases in amnesia and radical personality change."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Cellular turnover means the human body is a genuine physical instance of the ship's paradox\u2014most tissue is replaced over a person's lifetime while the organism maintains continuous identity."
+    },
+    {
+      "title": "Law and Ethics Perspective",
+      "description": "Legal systems must operationalize identity for contracts, corporations, and personal responsibility, often adopting causal-continuity criteria by necessity rather than philosophical resolution."
+    }
+  ],
+  "connections": [
+    "Personal identity and Locke's theory of psychological continuity",
+    "Mereology and the metaphysics of composite objects",
+    "Four-dimensionalism and time-slices in philosophy of time",
+    "Mind uploading and the copy-versus-continuity problem",
+    "Free Will and the Weight of Determinism, and what a persisting self is responsible for",
+    "Cellular turnover and the biology of the aging body",
+    "Corporate personhood and legal continuity of institutions"
+  ],
+  "openQuestions": [
+    "Is there a fact of the matter about which reconstructed ship is 'the real one,' or only a convention we choose?",
+    "If a mind were copied perfectly, would the copy be you, a twin, or something with no good answer at all?",
+    "Does identity require an unbroken causal chain, or could identity survive a genuine gap, like a pattern paused and later resumed?",
+    "How much psychological change can a person undergo before we should say a genuinely different person exists in the same body?"
+  ]
+}
