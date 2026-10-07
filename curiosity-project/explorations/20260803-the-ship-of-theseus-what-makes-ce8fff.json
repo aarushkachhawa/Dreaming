@@ -1,0 +1,52 @@
+{
+  "id": "20260803-the-ship-of-theseus-what-makes-ce8fff",
+  "date": "2026-08-03T10:12:06.702584",
+  "title": "The Ship of Theseus: What Makes You, You?",
+  "question": "If every part of a thing is gradually replaced, is it still the same thing?",
+  "summary": "An ancient thought experiment about a ship rebuilt plank by plank turns out to be a live question about your own body, memory, and sense of self.",
+  "content": "\n<p>Plutarch describes a ship that the Athenians preserved by replacing its rotting planks one at a time, until, after enough years, not a single original plank remained. Was it still the ship of Theseus? A later addition sharpens the puzzle further: what if someone collected all the discarded planks and reassembled them into a second ship? Which one, if either, is the real one?</p>\n\n<h2>Not Just a Puzzle About Ships</h2>\n<p>This is not an idle riddle. Almost every atom in your body is replaced over years through ordinary metabolic turnover; your skin, blood, and much of your skeleton are made of matter that was not part of you a decade ago. Your beliefs, memories, and personality have also shifted, sometimes dramatically, since childhood. In what sense are you the same person who existed then, given that neither your material substance nor your mental content has stayed fixed?</p>\n\n<h2>Two Classic Answers</h2>\n<p>One answer looks for continuity of form or function: the ship counts as the same ship because each replacement preserved its structure and role, one plank at a time, with no sharp break. Applied to persons, this becomes a psychological continuity theory, following John Locke, where identity tracks an overlapping chain of memories and psychological connections rather than any fixed material or soul. A rival answer insists that identity requires some further fact beyond continuity of pattern: a persisting substance, or a metaphysically simple soul, that the planks or the memories merely attach to.</p>\n\n<h2>Where It Bites Hardest</h2>\n<p>The abstract puzzle turns painfully concrete in cases of severe amnesia or advanced dementia, where psychological continuity is disrupted while the body persists; in thought experiments about teleporters that destroy and reconstruct you atom by atom elsewhere; and in serious proposals for mind uploading, where the pattern of your neural connections might someday be copied onto different hardware. Each case asks the same underlying question the ship asked: is identity about the material, the pattern, or something else entirely?</p>\n\n<h2>A Different Frame Entirely</h2>\n<p>Some traditions sidestep the puzzle by rejecting its premise. Buddhist philosophy's doctrine of anatta holds that there was never a fixed, unified self to begin with, only a constantly changing stream of physical and mental processes that we conventionally label with a name. On this view, the ship of Theseus is not a puzzle to be solved but a demonstration that the whole notion of a single persisting same thing was a useful fiction from the start.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "psychology",
+    "biology"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophy Perspective",
+      "description": "Metaphysicians distinguish numerical identity (being literally one and the same entity) from qualitative identity (being exactly alike), and the ship puzzle is really a conflict about which one matters for everyday judgments."
+    },
+    {
+      "title": "Biology Perspective",
+      "description": "Cellular turnover means your body is a river, not a rock: most cells are replaced on cycles ranging from days to years, so material continuity was never really what made you you in a biological sense."
+    },
+    {
+      "title": "Psychology Perspective",
+      "description": "Narrative identity theory holds that people construct a sense of self by weaving memories into an ongoing life story, so the self is less a fixed object than an act of continuous authorship."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Law needs identity to be tractable for responsibility and rights, so it often adopts pragmatic continuity criteria, like unbroken legal personhood, rather than settling the deeper metaphysical question."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "The doctrine of anatta, or non-self, argues the search for an unchanging essence is misguided from the outset, since what we call a self is just a continuously changing bundle of processes."
+    }
+  ],
+  "connections": [
+    "John Locke and psychological continuity theory",
+    "The teleporter paradox and personal survival",
+    "Mind uploading and digital continuity of identity",
+    "Buddhist anatta and the doctrine of non-self",
+    "The Sorites paradox and vague boundaries",
+    "Cellular turnover and the biology of the body",
+    "Split-brain cases and the unity of consciousness"
+  ],
+  "openQuestions": [
+    "Is personal identity a matter of objective fact, or a practical convention we agree to apply?",
+    "If your memories were copied perfectly onto a new body, would that be you, or merely a copy who believes it is you?",
+    "Does identity require a single persisting substance, or is a well-connected chain of change sufficient?",
+    "Can a self survive a total discontinuity, like a coma or severe amnesia, and in what sense?"
+  ]
+}
