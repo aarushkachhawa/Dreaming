@@ -1,0 +1,48 @@
+{
+  "id": "20260824-the-ship-of-theseus-and-the-pu-ee11e0",
+  "date": "2026-08-24T10:14:56.878848",
+  "title": "The Ship of Theseus and the Puzzle of Persistent Identity",
+  "question": "If every part of something is gradually replaced, is it still the same thing?",
+  "summary": "An ancient thought experiment about a rebuilt ship turns out to be a live problem for how we think about bodies, minds, companies, rivers, and the self that persists through change.",
+  "content": "\n<p>Plutarch records a puzzle the Athenians debated: the ship that carried Theseus back from Crete was preserved for centuries, its rotting planks replaced one by one as they decayed, until eventually not a single original plank remained. Was it still the same ship? Philosophers later sharpened the knife: suppose someone collected every discarded plank and reassembled them into a second ship. Which one&mdash;the continuously repaired vessel or the reconstructed original&mdash;is the &lsquo;real&rsquo; Ship of Theseus? Both have a claim, and both claims seem to contradict the other.</p>\n\n<h2>Why This Isn't Just Wordplay</h2>\n<p>It is tempting to dismiss this as a semantic dispute&mdash;a fight over how we choose to use the word &lsquo;same.&rsquo; But the puzzle reappears, unbidden, in domains that matter enormously. Nearly every atom in your body will be replaced over the coming years; the cells lining your gut turn over in days, your skeleton over roughly a decade. Yet you consider yourself the same person you were as a child, connected by memory and continuous experience even though almost no physical material persists. A company can outlive every employee and every piece of equipment it started with and still be considered the same corporation. A river is never the same water twice, as Heraclitus noted, yet we still call it by one name for a thousand years.</p>\n\n<h2>Two Competing Notions of Identity</h2>\n<p>Philosophers distinguish at least two different things people mean by &lsquo;same object.&rsquo; Numerical identity asks whether it is literally one and the same entity, not merely similar&mdash;like asking whether the morning star and evening star are actually the same object (they are, both being Venus). Qualitative identity asks whether two things share all the same properties, like two identical coins fresh from a mint. The Ship of Theseus problem exposes that our everyday concept of &lsquo;same object over time&rsquo; secretly bundles together spatial continuity, causal continuity, and functional continuity, and normally these all point to the same answer&mdash;until a scenario like this pulls them apart, forcing us to notice we never had one single, coherent criterion in the first place.</p>\n\n<h2>What's at Stake for the Self</h2>\n<p>This isn't only about ships. It bears directly on personal identity: if you gradually replaced every neuron in a brain with a functionally identical artificial neuron, would the resulting mind still be you, still conscious, still the same person? Derek Parfit argued that what actually matters in survival isn't strict identity at all, but psychological continuity&mdash;overlapping chains of memory, intention, and personality connecting present you to future you, degrees of which can come in different amounts. On this view, the question &lsquo;is it really the same ship/person?&rsquo; may be a confused question, one expecting a sharp yes-or-no answer to something that is actually a matter of degree.</p>\n\n<h2>Living with an Unresolved Puzzle</h2>\n<p>Two and a half thousand years after Plutarch, there is still no consensus answer, and that may be the real lesson. The puzzle survives not because we lack facts about the ship's planks, but because our concept of identity was built for ordinary situations and simply breaks down at the edges. Rather than a defect to be patched, this might be a permanent feature of how thought works: our categories are built for practical use, not for withstanding every logically possible stress test.</p>\n",
+  "tags": [
+    "philosophy",
+    "metaphysics",
+    "identity",
+    "mind",
+    "ethics"
+  ],
+  "perspectives": [
+    {
+      "title": "Metaphysics Perspective",
+      "description": "Analytic philosophers separate numerical from qualitative identity and debate whether persistence requires spatiotemporal continuity, a continuous causal chain, or something else entirely."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "The brain constructs a felt sense of continuous selfhood from memory and narrative even though its physical substrate is in constant flux, suggesting identity is partly a story the brain tells rather than a fact about matter."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Law needs working answers to identity puzzles for practical reasons: corporations, nations, and rivers persist as legal entities through total turnover of their constituent parts because law tracks continuity of function and record, not matter."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "Buddhist thought long ago concluded there is no fixed, unchanging self at all (anatta)&mdash;what we call a person is a continuously arising and dissolving process, dissolving the Ship of Theseus puzzle by denying its premise that a stable identity exists to be threatened."
+    }
+  ],
+  "connections": [
+    "Personal identity and psychological continuity (Derek Parfit)",
+    "The teleporter/duplication thought experiments in philosophy of mind",
+    "Heraclitus and the river that is never the same twice",
+    "Anatta and the Buddhist doctrine of no-self",
+    "Corporate and legal personhood over time",
+    "Cell turnover and the physical impermanence of the body",
+    "The Sorites paradox and vague boundaries in language"
+  ],
+  "openQuestions": [
+    "Is identity a binary fact about the world, or always a matter of degree once you look closely enough?",
+    "If a mind were gradually uploaded neuron by neuron into a computer, would the digital version be you or merely a copy?",
+    "Does the self need any material continuity at all, or is narrative and memory sufficient on its own?",
+    "Are our intuitions about cases like these tracking something real, or just the limits of concepts built for simpler situations?"
+  ]
+}
