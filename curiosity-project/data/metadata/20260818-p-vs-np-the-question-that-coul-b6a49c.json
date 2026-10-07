@@ -1,0 +1,14 @@
+{
+  "id": "20260818-p-vs-np-the-question-that-coul-b6a49c",
+  "date": "2026-08-18T10:13:54.835978",
+  "title": "P vs NP: The Question That Could Break the Internet",
+  "question": "Is every problem whose solution can be quickly checked also a problem that can be quickly solved?",
+  "summary": "One of the seven Millennium Prize problems asks a deceptively simple question about the nature of difficulty itself, with a resolution that would either upend cryptography or reveal it as secure by mathematical necessity.",
+  "tags": [
+    "mathematics",
+    "computer-science",
+    "computation",
+    "cryptography",
+    "complexity-theory"
+  ]
+}
