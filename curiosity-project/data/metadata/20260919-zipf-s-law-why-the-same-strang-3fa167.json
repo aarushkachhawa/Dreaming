@@ -1,0 +1,14 @@
+{
+  "id": "20260919-zipf-s-law-why-the-same-strang-3fa167",
+  "date": "2026-09-19T10:11:09.495110",
+  "title": "Zipf's Law: Why the Same Strange Pattern Shows Up Everywhere",
+  "question": "Why does the same simple mathematical relationship \u2014 where the most common item is twice as frequent as the second, three times as frequent as the third, and so on \u2014 appear in word frequencies, city sizes, earthquake magnitudes, and internet traffic alike?",
+  "summary": "Across wildly different domains \u2014 language, cities, wealth, websites, even the notes in a piece of music \u2014 the frequency of an item is often inversely proportional to its rank. This near-universal pattern, called Zipf's Law, has no single agreed-upon explanation, despite being one of the most robust empirical regularities in complex systems.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "linguistics",
+    "complex-systems",
+    "power-laws"
+  ]
+}
