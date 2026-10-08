@@ -1965,3 +1965,13 @@ When you are done, someone should want to look. Longer than they meant to.
   how content the population is and how alike neighbours actually are);
   click to shuffle everyone; space pauses. When the town settles it
   reshuffles itself. Open the file directly in a browser.
+
+- **2026-10-08** — `2026-10-08-beating-rings.html`: a sixty-fourth
+  technique, and the archive's first moiré study. Two sources each emit
+  perfectly even concentric circles, one drifting along a slow Lissajous
+  loop and the other following the cursor. Where the two families nearly
+  agree their lines interleave into broad, sweeping hyperbolic fringes far
+  coarser than either ring spacing, and the fringes swing wildly as the
+  sources move, though nothing in the code draws a fringe. Scroll to change
+  the ring spacing; click to add up to three more sources; space pauses.
+  Open the file directly in a browser.
