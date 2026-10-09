@@ -1975,3 +1975,14 @@ When you are done, someone should want to look. Longer than they meant to.
   sources move, though nothing in the code draws a fringe. Scroll to change
   the ring spacing; click to add up to three more sources; space pauses.
   Open the file directly in a browser.
+
+- **2026-10-09** — `2026-10-09-threshold-water.html`: a sixty-fifth
+  technique, and the archive's first percolation study. Every cell of a rock
+  carries a fixed random permeability; water fills the cells below a rising
+  level p. Islands of wet cells swell, and then, within a hair of
+  p = 0.5927, one pool suddenly spans the whole rock and lights up. Nothing
+  is told to connect; the crossing is a phase transition hidden in the
+  randomness, and the tide carries p back and forth across it so the
+  moment can be watched again and again. Move the cursor up and down to take
+  the water level by hand, click to redraw the rock, space to pause. Open
+  the file directly in a browser.

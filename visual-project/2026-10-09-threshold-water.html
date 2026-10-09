@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threshold Water</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; image-rendering:pixelated; cursor:ns-resize; }
+  #hud { position:fixed; top:14px; left:16px; color:#d6eaf0; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(90,200,255,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#52616a; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move up/down &mdash; take over the water level&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; redraw the rock&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Site percolation. Every cell of a rock has a fixed random permeability u.
+// Water fills cells where u < p. Raise p slowly: islands of wet cells grow,
+// then near p = 0.5927 one cluster suddenly spans the whole rock. Nothing is
+// told to connect; the crossing is a phase transition in the randomness.
+const PC = 0.5927;
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+let N=0, M=0, u, parent, size, img, off, octx;
+let t=0, paused=false, manual=null, p=0.45;
+function seed(){ for (let i=0;i<N*M;i++) u[i]=Math.random(); }
+function resize(){
+  const cell = Math.max(4, Math.round(Math.min(innerWidth, innerHeight)/150));
+  N = Math.ceil(innerWidth/cell); M = Math.ceil(innerHeight/cell);
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  off = document.createElement('canvas'); off.width=N; off.height=M;
+  octx = off.getContext('2d'); img = octx.createImageData(N,M);
+  u = new Float32Array(N*M); parent = new Int32Array(N*M); size = new Int32Array(N*M);
+  seed();
+}
+function find(a){ while (parent[a]!==a){ parent[a]=parent[parent[a]]; a=parent[a]; } return a; }
+function join(a,b){
+  a=find(a); b=find(b); if (a===b) return;
+  if (size[a]<size[b]){ const c=a; a=b; b=c; }
+  parent[b]=a; size[a]+=size[b];
+}
+function hsl(h,s,l){
+  s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [255*f(0),255*f(8),255*f(4)];
+}
+function draw(){
+  const n=N*M;
+  for (let i=0;i<n;i++){ parent[i]=i; size[i]=u[i]<p?1:0; }
+  for (let y=0;y<M;y++) for (let x=0;x<N;x++){
+    const i=y*N+x; if (!(u[i]<p)) continue;
+    if (x>0 && u[i-1]<p) join(i,i-1);
+    if (y>0 && u[i-N]<p) join(i,i-N);
+  }
+  // biggest cluster and whether it spans top-to-bottom or left-to-right
+  let best=-1, bs=0;
+  for (let i=0;i<n;i++) if (parent[i]===i && size[i]>bs){ bs=size[i]; best=i; }
+  let top=false, bot=false, lef=false, rig=false;
+  for (let x=0;x<N;x++){ if (u[x]<p && find(x)===best) top=true; if (u[(M-1)*N+x]<p && find((M-1)*N+x)===best) bot=true; }
+  for (let y=0;y<M;y++){ if (u[y*N]<p && find(y*N)===best) lef=true; if (u[y*N+N-1]<p && find(y*N+N-1)===best) rig=true; }
+  const spans=(top&&bot)||(lef&&rig);
+  const d=img.data, glow=spans?1:0.55;
+  const core=hsl(spans?188:205,85,62), pulse=0.85+0.15*Math.sin(t*3);
+  for (let i=0;i<n;i++){
+    const o=i*4; let r,g,b;
+    if (!(u[i]<p)){
+      // dry rock: faintly lit by how close it is to being wet
+      const near=Math.max(0,1-(u[i]-p)*9);
+      r=7+near*16; g=10+near*22; b=14+near*30;
+    } else {
+      const root=find(i);
+      if (root===best){
+        // depth of wetness: cells that only just opened shimmer brightest
+        const edge=1-(p-u[i])/p, k=glow*(0.62+0.38*edge)*pulse;
+        r=core[0]*k; g=core[1]*k; b=core[2]*k;
+      } else {
+        const s=size[root], h=(300+Math.min(s,400)*0.45)%360;
+        const c=hsl(h,55,18+Math.min(26,Math.log2(s+1)*4));
+        r=c[0]; g=c[1]; b=c[2];
+      }
+    }
+    d[o]=r; d[o+1]=g; d[o+2]=b; d[o+3]=255;
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(off,0,0,innerWidth,innerHeight);
+  hud.innerHTML='threshold water<br>level p '+p.toFixed(4)+(manual!==null?' (hand)':'')+
+    '<br>critical '+PC+'<br>largest pool '+(100*bs/n).toFixed(1)+'% of rock<br>'+
+    (spans?'<span style="color:#7fe8ff">water has crossed the rock</span>':'no crossing yet');
+}
+function frame(){
+  if (!paused){
+    t+=0.016;
+    // a slow tide: p rises past the threshold and falls back again
+    const target = manual!==null ? manual : 0.5927 + 0.17*Math.sin(t*0.16) + 0.012*Math.sin(t*0.9);
+    p += (target-p)*0.15;
+    draw();
+  }
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', resize);
+addEventListener('mousemove', e=>{ manual = 0.35 + 0.5*(1-e.clientY/innerHeight); });
+canvas.addEventListener('mouseleave', ()=>{ manual=null; });
+canvas.addEventListener('click', seed);
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); frame();
+})();
+</script>
+</body>
+</html>
