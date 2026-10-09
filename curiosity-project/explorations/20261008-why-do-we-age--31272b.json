@@ -1,0 +1,53 @@
+{
+  "id": "20261008-why-do-we-age--31272b",
+  "date": "2026-10-08T10:11:13.568375",
+  "title": "Why Do We Age?",
+  "question": "If natural selection favors survival and reproduction, why hasn't evolution eliminated aging?",
+  "summary": "Aging looks like a design flaw, yet nearly every complex organism has it. Evolutionary theory suggests that selection grows weaker with age, letting harmful late-life effects slip through, and that some species barely age at all.",
+  "content": "<p>Cells repair wounds, bones knit, and a fertilized egg builds a body of trillions of cells with astonishing precision. An organism with that much maintenance machinery could in principle keep itself going indefinitely. Yet most animals deteriorate and die on a predictable schedule. Why would evolution, the great optimizer, leave such an obvious problem unsolved?</p>\n<h2>The shadow of selection</h2>\n<p>Peter Medawar's insight in the 1950s was that natural selection weakens with age. In the wild, animals die of predation, disease, and accidents. Suppose a mutation causes ruin at age 80 in a mouse. Almost no mice live to 80, so the mutation is rarely expressed and selection barely sees it. A mutation that harms you at age one is purged quickly. The result is a \"selection shadow\": late-acting damage accumulates in the gene pool simply because nobody is around to be penalized for it.</p>\n<h2>Trade-offs: antagonistic pleiotropy</h2>\n<p>George Williams added a sharper idea. Some genes help early in life and hurt later. A gene that boosts fertility or early growth will spread even if it causes tumors or brittle arteries at 70. Selection weighs early benefits heavily and late costs lightly. Aging then is not a single flaw but the accumulated bill for many bargains. Evidence includes cases where a gene that suppresses cancer through cell senescence also contributes to tissue decline.</p>\n<h2>The disposable soma</h2>\n<p>Thomas Kirkwood framed it as economics. Energy spent on perfect repair is energy not spent on reproduction. Given a risky world, the optimal strategy is to maintain the body well enough to survive its probable lifespan and no better. This predicts that species facing high external mortality should age fast and those in safe niches (bats, birds, tortoises, the Greenland shark) should live longer. Broadly, that holds.</p>\n<h2>Counterexamples that sharpen the question</h2>\n<p>Some organisms barely seem to senesce: Hydra, certain rockfish, the naked mole-rat with its flat mortality curve, and the \"immortal jellyfish\" Turritopsis, which can revert to a juvenile form. These show aging is not an inevitable consequence of physics. Biology can dodge it when the evolutionary payoff is right.</p>\n<h2>What is aging mechanistically?</h2>\n<p>Proximate causes are many: DNA damage, telomere shortening, mitochondrial dysfunction, protein aggregation, senescent cells that secrete inflammatory signals, and stem cell exhaustion. Whether these are separate causes or downstream effects of a few master programs is debated. Experiments that tweak nutrient-sensing pathways such as insulin/IGF-1 and mTOR extend lifespan in worms, flies, and mice, suggesting aging is more tunable than once assumed.</p>\n<h2>Why it matters</h2>\n<p>If aging is an accumulation of selection-neglected side effects rather than a purposeful program, it may be treatable as a set of malleable processes. The goal of geroscience is not immortality but healthspan: delaying the cluster of diseases that all share age as their main risk factor.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is not selected for; it is what is left when selection loses its grip. Mutation accumulation and antagonistic pleiotropy explain why late-life decline persists across species."
+    },
+    {
+      "title": "Molecular Biology",
+      "description": "Aging is a web of damage and signaling changes: genomic instability, senescent cells, mitochondrial decline, and altered nutrient sensing. Interventions on shared pathways extend life in model organisms."
+    },
+    {
+      "title": "Ecology",
+      "description": "Extrinsic mortality shapes lifespan. Species protected by flight, shells, burrows, or size evolve slower aging because investing in long-term maintenance pays off."
+    },
+    {
+      "title": "Medicine and Public Health",
+      "description": "Because age is the dominant risk factor for cancer, heart disease, and dementia, targeting aging itself might yield more benefit than curing diseases one at a time."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Is aging a disease, or a natural stage of life? How we define it shapes whether treating it is seen as medicine or as a refusal of mortality, and what a good life length is."
+    }
+  ],
+  "connections": [
+    "Natural selection and fitness landscapes",
+    "The second law of thermodynamics and biological repair",
+    "Cancer as a failure of cellular cooperation",
+    "Life-history theory and r/K selection strategies",
+    "Caloric restriction and nutrient sensing",
+    "Thomas Nagel's 'The Badness of Death'",
+    "Hydra and regenerative biology"
+  ],
+  "openQuestions": [
+    "Is there a fundamental upper limit to human lifespan, or only a contingent one set by evolution?",
+    "Do the many hallmarks of aging share a common root cause?",
+    "Why do closely related species differ in lifespan by an order of magnitude?",
+    "If we slow aging, will healthspan extend or will we simply prolong frailty?",
+    "Would a society of very long-lived people remain adaptable and innovative?"
+  ]
+}
