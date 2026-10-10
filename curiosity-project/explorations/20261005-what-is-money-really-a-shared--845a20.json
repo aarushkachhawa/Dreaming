@@ -1,0 +1,53 @@
+{
+  "id": "20261005-what-is-money-really-a-shared--845a20",
+  "date": "2026-10-05T10:11:36.370764",
+  "title": "What Is Money, Really? A Shared Fiction That Runs the World",
+  "question": "Why does a piece of paper, or a number on a screen, hold value that people will work and fight for?",
+  "summary": "Money is a technology for trust and coordination, not a thing with intrinsic worth. Its value rests on collective belief, institutional backing, and the sheer convenience of everyone else accepting it.",
+  "content": "<h2>The Origin Story That Probably Isn't True</h2>\n<p>Textbooks tell a tidy tale: people bartered, found it awkward because it required a double coincidence of wants, and so invented money. Anthropologists, notably David Graeber, found little evidence of pure barter economies. Small communities ran on gifts, reciprocity, and informal credit. Money, on this view, grew out of debt: records of who owed what, tracked in temple accounts in Mesopotamia long before coins existed.</p>\n<h2>Three Jobs</h2>\n<p>Economists say money does three things. It is a medium of exchange, which lets you sell to one person and buy from another. It is a unit of account, which gives different goods a common yardstick. It is a store of value, which carries purchasing power into the future. Different things have done these jobs: shells, cattle, silver, gold, banknotes, and bank balances. Almost nothing about the material matters, as long as it is scarce, recognizable, and hard to fake.</p>\n<h2>Why Worthless Things Work</h2>\n<p>Modern currency is fiat, meaning it has value by decree and not because it is convertible into metal. Why does it work? One answer is the self-fulfilling expectation: I accept it because I expect others will. That makes money a coordination equilibrium, like driving on one side of the road. A second answer is taxation. A state that demands taxes in its own currency guarantees demand for it. A third is legal and institutional backing, through courts that enforce contracts denominated in it.</p>\n<p>Because belief holds it up, money can fail when belief fails. Hyperinflation in Weimar Germany and Zimbabwe shows currencies collapsing when confidence in future acceptance evaporates.</p>\n<h2>Mostly Invisible</h2>\n<p>Most money today is not cash. It is entries in bank ledgers, created largely when banks make loans. The bits on a server count as wealth because we collectively agree they do and because legal systems enforce that agreement. Cryptocurrencies test whether the trust can be supplied by code and consensus instead of institutions.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "trust",
+    "social-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the coordination problem of exchange and lowers transaction costs. Its value is determined by supply, demand, and expectations, with central banks managing the supply."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Money may predate markets as a tool for measuring debts, obligations, and social standing, such as wergild, the price of a life. Seen this way it is a moral and social technology before it is an economic one."
+    },
+    {
+      "title": "Sociology and philosophy",
+      "description": "Money is an 'institutional fact' in John Searle's sense: it exists because we collectively treat it as existing. Like borders and marriages, it is real because shared belief sustains it."
+    },
+    {
+      "title": "Computer science",
+      "description": "Cryptocurrency recasts money as a distributed ledger problem: how can strangers agree on who owns what without a trusted referee? It proves the problem is solvable and also exposes how much institutional work ordinary money does for us."
+    },
+    {
+      "title": "Psychology",
+      "description": "Money changes behavior. People treat it as a tool of status, security, and freedom, and reminders of money can shift how cooperative or self-reliant they feel. Many people also feel losses more intensely than equal gains."
+    }
+  ],
+  "connections": [
+    "The paradox of cooperation",
+    "Debt and Mesopotamian temple economies",
+    "Game theory and coordination equilibria",
+    "Hyperinflation and the collapse of trust",
+    "Distributed ledgers and consensus protocols",
+    "Institutional facts and social ontology",
+    "Gift economies and reciprocity"
+  ],
+  "openQuestions": [
+    "Could a society function with no money at all, given modern computing and information?",
+    "What gives money value when no authority backs it, and is any such system stable?",
+    "Does digital, programmable money change what money is, or merely how it moves?",
+    "Why do people so reliably confuse the symbol of value with value itself?",
+    "How much of money's power is trust in institutions, and how much is trust in each other?"
+  ]
+}
