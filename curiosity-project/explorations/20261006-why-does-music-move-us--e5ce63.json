@@ -1,0 +1,49 @@
+{
+  "id": "20261006-why-does-music-move-us--e5ce63",
+  "date": "2026-10-06T10:11:33.152957",
+  "title": "Why Does Music Move Us?",
+  "question": "Sound waves arranged in time have no obvious survival value, so why do they give us chills, tears and the urge to dance?",
+  "summary": "Music taps prediction, reward, social bonding and memory at once. Whether it is an evolutionary adaptation or a pleasurable by-product remains openly debated.",
+  "content": "<h2>An Odd Human Universal</h2>\n<p>Every known culture makes music. Infants respond to rhythm and lullabies. Yet music does not feed, shelter or protect us. Steven Pinker famously called it auditory cheesecake, a technology that tickles faculties evolved for other jobs. Others think that dismissal is too quick.</p>\n<h2>Expectation and Reward</h2>\n<p>David Huron and Leonard Meyer argued that musical emotion arises from expectation. Our brains continually predict what comes next. When a melody resolves as expected we feel satisfaction; when it surprises us, then resolves, we feel delight. Neuroimaging shows that peak musical chills release dopamine in the striatum, the same reward circuitry engaged by food and sex, and anticipation of the peak activates it before the peak arrives.</p>\n<h2>Structure Built from Physics</h2>\n<p>Why do some intervals sound pleasant? Notes whose frequencies form simple ratios, like 2:1 (the octave) or 3:2 (the fifth), share overtones and fuse smoothly. Many cultures independently built scales around these ratios, though how much of musical taste is innate and how much learned is contested; the Western major and minor distinction is not universal.</p>\n<h2>Music as Social Glue</h2>\n<p>Synchronised singing, drumming and dancing bond groups. Studies find that people who move in time together cooperate more and trust more afterward. Some researchers propose music evolved to coordinate groups, soothe infants (Dunbar suggests it as a cheap substitute for grooming), or advertise fitness, as Darwin argued in comparing music to birdsong.</p>\n<h2>Memory and Identity</h2>\n<p>Music is tied to autobiographical memory so strongly that people with advanced dementia may still recognise and sing songs from their youth. The teenage years in particular seem to imprint lasting taste, perhaps because intense emotion strengthens memory.</p>\n<h2>Adaptation or Accident?</h2>\n<p>The question stays open. Perhaps music is a by-product of language, pattern recognition and reward systems. Perhaps it was selected for cohesion. The two are not exclusive, and a by-product can become an adaptation once culture builds on it.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "evolution",
+    "psychology",
+    "culture"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music engages prediction and the dopamine reward system, producing pleasure from anticipation and resolution without any tangible reward."
+    },
+    {
+      "title": "Evolutionary Psychology",
+      "description": "Rival accounts treat music as a by-product of other abilities or as an adaptation for bonding, mate display or infant care."
+    },
+    {
+      "title": "Physics and Acoustics",
+      "description": "Consonance reflects simple frequency ratios and shared harmonics, giving music a mathematical skeleton."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Music's forms and functions vary widely across societies, warning against assuming that Western tastes are natural universals."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the brain as a prediction machine",
+    "The music hidden in prime numbers",
+    "Pythagoras and the mathematics of harmony",
+    "Birdsong and animal vocal learning",
+    "Ritual, synchrony and group cooperation",
+    "How language learned to talk about itself",
+    "The paradox of cooperation"
+  ],
+  "openQuestions": [
+    "Is musical taste mostly innate or learned?",
+    "Why does sad music often feel pleasurable?",
+    "Did music precede language, follow it, or co-evolve with it?",
+    "Could non-human animals experience music as we do?",
+    "Why do some people feel no pleasure from music at all?"
+  ]
+}
