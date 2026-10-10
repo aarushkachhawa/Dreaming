@@ -1,0 +1,53 @@
+{
+  "id": "20260923-why-do-we-trust-that-tomorrow--fc4432",
+  "date": "2026-09-23T10:12:18.668632",
+  "title": "Why Do We Trust That Tomorrow Will Resemble Today?",
+  "question": "What justifies our confidence that the future will follow the same patterns as the past, given that we can never observe the future to check?",
+  "summary": "David Hume's problem of induction asks why we are entitled to generalize from past observations to future events. Every attempted justification seems to smuggle in the very assumption it is trying to prove, and nearly three centuries later the problem still has no fully satisfying answer.",
+  "content": "\n<p>Every time you expect the sun to rise, trust that dropped objects will fall, or rely on a scientific law that has held in a thousand past experiments, you are making an inductive leap: assuming that unobserved cases will resemble observed ones. David Hume pointed out in the eighteenth century that this leap cannot be justified by logic alone, and the discomfort his argument produces has never fully gone away.</p>\n\n<h2>Hume's Original Challenge</h2>\n<p>Hume noticed that there are only two ways to justify a belief: by demonstrative reasoning, where the conclusion follows necessarily from the premises (as in mathematics), or by reasoning concerning matters of fact, which ultimately rests on experience. Induction cannot be a demonstrative truth, because it is not a contradiction to imagine the future diverging from the past. But it also cannot be justified by experience, because any such justification, such as saying induction has worked reliably before, is itself an inductive argument, assuming the future will resemble the past in order to prove that the future will resemble the past. The argument is circular at its foundation.</p>\n\n<h2>Attempted Escapes</h2>\n<p>Philosophers have proposed many ways around the problem. Karl Popper argued that science does not need induction at all, since it proceeds by conjecture and falsification rather than by proving generalizations true. Critics note this merely relocates the problem: choosing which surviving, unfalsified theories to act on for future predictions still requires trusting that past resistance to falsification says something about future reliability. Bayesian approaches reframe induction as rational updating of probabilities given evidence, but the choice of prior probabilities, and the assumption that probability itself behaves consistently over time, imports similar unproven assumptions. Some argue induction is a brute, pragmatically justified habit of mind, not something that needs or admits of proof at all.</p>\n\n<h2>Living With an Unsolved Problem</h2>\n<p>What makes the problem of induction unusual is that almost nobody, including Hume himself, actually doubts that the sun will rise tomorrow. The gap is between what we can rigorously justify and what we cannot help but believe. This gap matters practically: it undercuts naive claims that science delivers logically certain truths, and it explains why scientific claims are always provisional, revisable in light of new evidence rather than proven once and for all.</p>\n",
+  "tags": [
+    "philosophy",
+    "epistemology",
+    "science",
+    "logic",
+    "david-hume",
+    "history-of-philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophical Perspective",
+      "description": "Hume's argument is a foundational crisis for empiricism: if experience cannot justify generalizing beyond itself, the entire edifice of empirical knowledge rests on an unproven assumption rather than a logical guarantee."
+    },
+    {
+      "title": "Scientific Perspective",
+      "description": "Working scientists sidestep the problem pragmatically, treating well-tested theories as reliable enough to act on while remaining formally open to revision, a stance closer to Popperian falsificationism than to claims of inductive proof."
+    },
+    {
+      "title": "Statistical Perspective",
+      "description": "Bayesian probability theory reframes induction as updating degrees of belief with evidence, offering a rigorous calculus for reasoning under uncertainty even though it cannot escape needing some starting assumptions about how the world behaves."
+    },
+    {
+      "title": "Evolutionary Perspective",
+      "description": "Cognitive scientists note that inductive reasoning is a deeply built-in feature of animal minds, favored by natural selection because organisms that generalized correctly about predators, food, and seasons out-survived those that did not, regardless of whether the generalizing was logically justified."
+    },
+    {
+      "title": "Pragmatist Perspective",
+      "description": "Philosophers like Hans Reichenbach argued induction should be judged not by logical proof but by whether it is the best available strategy for prediction, since if any method works at all, a suitably calibrated inductive method will eventually reveal it."
+    }
+  ],
+  "connections": [
+    "Karl Popper and the philosophy of falsificationism",
+    "Bayesian probability and rational belief updating",
+    "The grue paradox and the new riddle of induction",
+    "G\u00f6del's incompleteness theorems and the limits of formal proof",
+    "The uniformity of nature as a metaphysical assumption",
+    "Evolutionary epistemology and the origins of reasoning",
+    "The unreasonable effectiveness of mathematics in describing nature"
+  ],
+  "openQuestions": [
+    "Is there any non-circular way to justify trusting past regularities to predict the future, or is circularity unavoidable in principle?",
+    "Does the success of science over centuries count as evidence that induction works, or is that argument itself just induction in disguise?",
+    "If induction cannot be proven valid, does that undermine the authority we grant to scientific consensus in public life?",
+    "Could an intelligence be built that reasons about the unobserved future without relying on any inductive assumption at all?"
+  ]
+}

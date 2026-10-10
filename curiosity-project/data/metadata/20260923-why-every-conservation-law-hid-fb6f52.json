@@ -1,0 +1,15 @@
+{
+  "id": "20260923-why-every-conservation-law-hid-fb6f52",
+  "date": "2026-09-23T10:12:45.067319",
+  "title": "Why Every Conservation Law Hides a Symmetry",
+  "question": "What deep principle connects the conservation of energy, momentum, and charge to something as abstract as symmetry?",
+  "summary": "In 1918, Emmy Noether proved that every continuous symmetry in a physical system's laws corresponds to a conserved quantity, and vice versa. Energy is conserved because the laws of physics don't change over time; momentum is conserved because they don't change from place to place. It is one of the most quietly powerful theorems in all of science.",
+  "tags": [
+    "physics",
+    "mathematics",
+    "symmetry",
+    "conservation-laws",
+    "emmy-noether",
+    "theoretical-physics"
+  ]
+}
