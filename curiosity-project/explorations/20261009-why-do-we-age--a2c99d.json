@@ -1,0 +1,48 @@
+{
+  "id": "20261009-why-do-we-age--a2c99d",
+  "date": "2026-10-09T10:11:06.875347",
+  "title": "Why Do We Age?",
+  "question": "If natural selection perfects organisms, why does nearly every complex animal deteriorate and die?",
+  "summary": "Aging is not a physical inevitability but an evolutionary leftover: selection grows blind to harm that arrives late in life, and bodies are built to be good enough rather than to last.",
+  "content": "<h2>The puzzle</h2>\n<p>Aging looks like a flaw evolution should have eliminated. Natural selection polishes organisms for survival and reproduction, yet nearly every complex animal deteriorates with time. Some creatures barely seem to age at all: certain tortoises, rockfish, and the hydra show little rise in mortality with years. Others, like mayflies and Pacific salmon, die abruptly after breeding. So aging is neither universal nor physically unavoidable. It is something evolution <em>permits</em> in some lineages and not others.</p>\n<h2>Selection's fading grip</h2>\n<p>Peter Medawar's insight in the 1950s was that the force of natural selection weakens with age. In the wild, most individuals die early from predators, infection, or accident. A gene that harms you at 80 acts on very few carriers, because few survive to 80. A gene that harms you at 10 is purged at once. Late-acting harm sits in a \"selection shadow\" where it is effectively invisible to evolution.</p>\n<p>This yields two classic mechanisms. In <strong>mutation accumulation</strong>, harmful late-acting mutations pile up unchecked. In <strong>antagonistic pleiotropy</strong>, George Williams argued that genes boosting early fitness at the cost of late-life decline will actually be favored. High testosterone helps young males compete but raises later cancer risk; calcium deposition that builds young bone may calcify arteries in old age.</p>\n<h2>The disposable soma</h2>\n<p>Tom Kirkwood framed it as economics. An organism has limited energy to split between reproduction and bodily maintenance. Perfect repair is expensive; if the environment will probably kill you anyway, investing in a body that outlasts its expected lifespan is wasteful. This predicts that species facing heavy external mortality age fast (mice), while those with protected lives age slowly (bats, birds, and animals with shells or flight). The data broadly agree.</p>\n<h2>What actually breaks</h2>\n<p>At the cellular level, researchers list \"hallmarks\": accumulated DNA damage, shortening telomeres, epigenetic drift, failing protein quality control, mitochondrial dysfunction, and senescent \"zombie\" cells that stop dividing but secrete inflammatory signals. These are tightly interlinked, which complicates the hope of a single fix. Yet the fact that caloric restriction, certain mutations in insulin signaling, and drugs like rapamycin extend lifespan in animals suggests aging rates are surprisingly tunable.</p>\n<h2>Is aging a disease?</h2>\n<p>Medicine treats heart disease and dementia separately, but age is by far their largest risk factor. If aging itself could be slowed, the gains might exceed curing any single disease. Critics worry that framing aging as pathology blurs a natural process, and that extended lifespan without extended health simply prolongs frailty. The goal most researchers endorse is <em>healthspan</em>, not mere longevity.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary biology",
+      "description": "Aging is a by-product of weakening selection with age, through accumulated late-acting mutations and trade-offs that favor youthful vigor over long-term durability."
+    },
+    {
+      "title": "Cell biology",
+      "description": "Aging is the gradual failure of interlinked maintenance systems: DNA repair, proteostasis, mitochondria, and the buildup of senescent cells."
+    },
+    {
+      "title": "Medicine",
+      "description": "Because age drives most chronic disease, slowing its pace might do more good than curing diseases one by one, if the added years are healthy."
+    },
+    {
+      "title": "Philosophy and ethics",
+      "description": "Would a much longer life be a gift or a burden? Mortality shapes meaning, urgency, and fairness in ways that radical life extension would upend."
+    }
+  ],
+  "connections": [
+    "Entropy and the second law of thermodynamics",
+    "The disposable soma theory and life-history trade-offs",
+    "Naked mole-rats and negligible senescence",
+    "Cancer as the flip side of cellular immortality",
+    "Caloric restriction and the mTOR pathway",
+    "Social consequences of an aging population",
+    "Heritable epigenetic clocks"
+  ],
+  "openQuestions": [
+    "Is there a fundamental biological limit to human lifespan, or only the current one?",
+    "Can senescent-cell clearance or epigenetic reprogramming truly reverse aging rather than mask it?",
+    "Why do some long-lived species resist cancer so effectively?",
+    "If aging were slowed, how would societies handle inequality of access?"
+  ]
+}
