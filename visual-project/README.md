@@ -1986,3 +1986,16 @@ When you are done, someone should want to look. Longer than they meant to.
   moment can be watched again and again. Move the cursor up and down to take
   the water level by hand, click to redraw the rock, space to pause. Open
   the file directly in a browser.
+
+- **2026-10-10** — `2026-10-10-doubling-cascade.html`: a sixty-sixth
+  technique, and the archive's first bifurcation diagram. For every growth
+  rate r the logistic map x → r·x·(1−x) is iterated past its transient and
+  the places where the orbit lands are piled up in a column. One steady
+  state splits into two, then four, eight, sixteen, each split arriving
+  4.669 times sooner than the last, until at r = 3.5699 order dissolves into
+  chaos threaded with windows of calm. The view dives toward that limit,
+  shrinking by the Feigenbaum ratios sideways and vertically, so the whole
+  picture keeps reappearing at smaller scale; nothing in the code draws that
+  self-similarity. Move the cursor to pick an r and read its cycle length
+  beside a live cobweb plot; click to reverse the dive; space pauses. Open
+  the file directly in a browser.
