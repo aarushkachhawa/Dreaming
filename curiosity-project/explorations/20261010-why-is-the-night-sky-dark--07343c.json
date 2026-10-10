@@ -1,0 +1,47 @@
+{
+  "id": "20261010-why-is-the-night-sky-dark--07343c",
+  "date": "2026-10-10T10:10:03.220238",
+  "title": "Why Is the Night Sky Dark?",
+  "question": "If the universe is full of stars, why isn't every point in the night sky as bright as the Sun?",
+  "summary": "Olbers' paradox looks like a child's question, yet answering it requires a universe with a beginning. The darkness of night is quiet evidence of cosmic history.",
+  "content": "<h2>A Question Too Simple to Be Silly</h2>\n<p>Why is the sky dark at night? A child can ask it, and for centuries astronomers who tried to answer it made a quiet mistake. If the universe is infinite, eternal and uniformly filled with stars, then every line of sight must eventually end on the surface of a star. The whole sky should blaze as bright as the surface of the Sun. This is Olbers' paradox, and the fact that we are not incinerated is one of the oldest pieces of evidence about the cosmos.</p>\n<h2>The Tempting Wrong Answers</h2>\n<p>The first instinct is that distant stars are faint. True: a star's apparent brightness falls with the square of its distance. But the number of stars in a thin shell of space grows with the square of the distance too. The two effects cancel exactly, so each shell contributes the same light, and an infinite number of shells adds up to infinity.</p>\n<p>The second instinct is that dust must block the light. It cannot. Dust that absorbs starlight heats up and re-radiates it until it glows as brightly as the stars behind it. Obscuration only delays the problem.</p>\n<h2>What Actually Saves Us</h2>\n<p>The real resolution is that stars have not been shining forever. The observable universe is about 13.8 billion years old, and stars have only existed for a fraction of that. Light from beyond a finite distance has not had time to reach us, so lines of sight end not on stars but on the dark, early universe. Cosmic expansion adds a second effect: distant light is redshifted to lower energies, draining its power. Calculations suggest that finite age is the dominant factor, with redshift a smaller correction.</p>\n<p>The darkness of night therefore encodes a profound fact: the universe has a history. It is not a static, eternal stage. Edgar Allan Poe guessed something like this in 1848 in <em>Eureka</em>, long before cosmology could back him up.</p>\n<h2>The Glow Behind the Dark</h2>\n<p>The sky is not perfectly dark. Looking between the stars in microwave light reveals the cosmic microwave background, the cooled afterglow of the hot early universe. In a sense the paradox's prediction is true after all: our lines of sight do end on a glowing wall, but it is so redshifted, by a factor of about 1,100, that it appears as a faint 2.7 kelvin hum rather than a 3,000 kelvin blaze.</p>",
+  "tags": [
+    "astronomy",
+    "cosmology",
+    "physics",
+    "history-of-science"
+  ],
+  "perspectives": [
+    {
+      "title": "The Geometer",
+      "description": "Brightness drops as 1/r\u00b2 while the number of stars in a shell grows as r\u00b2. The cancellation is exact, so only a boundary on distance, or on time, can break the divergence."
+    },
+    {
+      "title": "The Thermodynamicist",
+      "description": "Starlight absorbed by dust or gas would heat it until it re-emitted equally. Equilibrium forbids hiding the light, so the answer must lie in how much energy was ever produced."
+    },
+    {
+      "title": "The Cosmologist",
+      "description": "A finite age limits how far light has travelled, and expansion redshifts what does arrive. The dark sky is a direct consequence of a universe that began."
+    },
+    {
+      "title": "The Historian of Science",
+      "description": "Kepler, Halley, Olbers and Poe all circled the problem. It shows how an unexamined assumption, an eternal static cosmos, can sit inside a question for centuries."
+    }
+  ],
+  "connections": [
+    "Big Bang cosmology and the age of the universe",
+    "The cosmic microwave background",
+    "Redshift and the expanding universe",
+    "The Fermi paradox",
+    "Time's arrow and the universe's low-entropy start",
+    "Kepler's argument for a finite universe",
+    "The horizon problem"
+  ],
+  "openQuestions": [
+    "Is the observable universe's finite horizon a feature of the whole universe or only of our patch?",
+    "If space is infinite but age is finite, what lies beyond the light we can ever see?",
+    "Would a very long-lived universe of dying stars eventually become dark for different reasons?",
+    "What other 'obvious' observations hide equally deep facts about the cosmos?"
+  ]
+}
