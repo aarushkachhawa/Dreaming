@@ -1,0 +1,49 @@
+{
+  "id": "20260920-zeno-s-paradoxes-and-the-probl-9da2f0",
+  "date": "2026-09-20T10:10:49.357672",
+  "title": "Zeno's Paradoxes and the Problem of Infinite Divisibility",
+  "question": "How can motion be possible if any distance contains infinitely many points to cross?",
+  "summary": "Twenty-five centuries ago, Zeno of Elea argued that motion is an illusion: before you can cross a room, you must cross half of it, and before that a quarter, and so on forever. Calculus tames the infinite sum, but a residue of the puzzle survives every attempt to dissolve it, touching on what space, time, and number really are.",
+  "content": "\n<p>Zeno of Elea, a student of Parmenides, wanted to prove that change and plurality are illusions.\nHe left behind a handful of paradoxes about motion that have outlived nearly everything else from\nhis era &mdash; not because they defeat modern physics, but because they keep finding new footing\nwhenever a discipline tries to explain what space and time are actually made of.</p>\n\n<h2>The Paradox</h2>\n<p>The most famous version: Achilles races a tortoise that has a head start. By the time Achilles\nreaches the tortoise's starting point, the tortoise has moved a little further. By the time Achilles\ncovers that gap, the tortoise has moved again. This repeats infinitely, and Zeno concluded that the\nfaster runner can never overtake the slower one. A companion paradox, the Dichotomy, says you can\nnever even leave a room: to reach the door you must first reach the midpoint, and before that its\nmidpoint, ad infinitum &mdash; an infinite number of tasks before any motion completes.</p>\n\n<h2>The Calculus Answer</h2>\n<p>The standard resolution, formalized by Cauchy and Weierstrass in the 19th century, is that an\ninfinite series of shrinking distances can sum to a finite number. Achilles closes an infinite\nnumber of ever-smaller gaps, but the total time and distance are both finite &mdash; 1/2 + 1/4 + 1/8\n+ &hellip; converges to 1, not infinity. Mathematically the paradox is solved: infinite divisibility\ndoes not imply infinite duration, because the pieces get small fast enough to add up to a finite\nwhole.</p>\n\n<h2>Why It Doesn't Quite Go Away</h2>\n<p>Convergence explains the sum, but not what it feels like to actually complete an infinite number\nof sub-tasks in finite time. Philosophers call this the problem of \"supertasks\": is it coherent to\nsay an infinite sequence of actions was completed, one after another, rather than merely that its\nlimit was reached? The math tells you where you end up; it is silent on whether \"traversal\" of an\nactually infinite set of points is a meaningful physical process at all, or just a description we\nimpose after the fact on a continuous motion that was never really decomposed into pieces to begin\nwith.</p>\n\n<h2>What Physics Adds</h2>\n<p>Modern physics raises a further wrinkle: is space actually infinitely divisible? General\nrelativity treats spacetime as a smooth continuum, but quantum gravity theories suggest a minimum\nmeaningful length, the Planck length, below which the very notion of \"distance\" may break down. If\nspace is not infinitely divisible at the deepest level, Zeno's premise &mdash; that any distance\ncontains infinitely many points to cross &mdash; may simply be false of the physical world, even\nthough it remains true of the idealized mathematical line we use to model it.</p>\n",
+  "tags": [
+    "mathematics",
+    "philosophy",
+    "physics",
+    "infinity",
+    "zeno",
+    "motion"
+  ],
+  "perspectives": [
+    {
+      "title": "The Mathematician",
+      "description": "Sees Zeno's paradoxes as solved by the theory of convergent infinite series: an infinite number of terms can have a finite sum, so infinite divisibility of a distance is perfectly compatible with finite time to cross it."
+    },
+    {
+      "title": "The Philosopher of Language",
+      "description": "Argues the paradox survives as a conceptual one: convergence tells us what number the process approaches, but says nothing about whether 'completing infinitely many steps' is a coherent description of an actual physical event."
+    },
+    {
+      "title": "The Physicist",
+      "description": "Points out that the paradox assumes space is infinitely divisible, a premise that candidate theories of quantum gravity, with their Planck-scale minimum length, may ultimately reject &mdash; dissolving the puzzle at its root rather than at its sum."
+    },
+    {
+      "title": "The Cognitive Scientist",
+      "description": "Notes that human intuition treats motion as continuous and primary, while treating 'infinitely many points' as a derived, after-the-fact description &mdash; which may explain why the paradox feels compelling even after it is mathematically resolved."
+    }
+  ],
+  "connections": [
+    "Cantor's work on the sizes of infinity, which gives the mathematical vocabulary for comparing infinite sets of points",
+    "The concept of a mathematical limit, which underlies the entire resolution via convergent series",
+    "Debates over whether spacetime is discrete or continuous at the Planck scale in quantum gravity",
+    "The philosophy of the continuum and whether physical space is made of points at all",
+    "Supertask thought experiments in philosophy of physics, such as Thomson's lamp",
+    "Ancient atomism (Democritus), which proposed indivisible units partly in response to puzzles like Zeno's",
+    "The history of rigor in calculus, from Newton and Leibniz's infinitesimals to Weierstrass's epsilon-delta definitions"
+  ],
+  "openQuestions": [
+    "Is physical space actually infinitely divisible, or does it bottom out at some minimum scale?",
+    "Is completing an infinite sequence of sub-tasks in finite time a coherent notion, or only a mathematical convenience?",
+    "Does the resolution via convergent series answer Zeno's actual question, or only a reformulated version of it?",
+    "If space is discrete at the smallest scale, does continuous motion become a large-scale illusion built from discrete jumps?"
+  ]
+}
