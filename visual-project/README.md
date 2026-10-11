@@ -1999,3 +1999,15 @@ When you are done, someone should want to look. Longer than they meant to.
   self-similarity. Move the cursor to pick an r and read its cycle length
   beside a live cobweb plot; click to reverse the dive; space pauses. Open
   the file directly in a browser.
+
+- **2026-10-11** — `2026-10-11-pendulum-wave.html`: a sixty-seventh
+  technique, and the archive's first pendulum wave. Twenty-one pendulums
+  hang side by side, each swinging one more time per minute than its
+  neighbour. Released together they slip out of step into travelling waves,
+  then standing waves, then two interleaved lines, three strands, four, and
+  finally what looks like scatter, until at the end of the period every bob
+  is back in phase. Nothing in the code draws a wave; each bob follows its
+  own cosine and the pattern is only the differences between neighbouring
+  frequencies, seen all at once. Move the cursor to scrub through the
+  period by hand, click to change the frequency step, space to pause. Open
+  the file directly in a browser.

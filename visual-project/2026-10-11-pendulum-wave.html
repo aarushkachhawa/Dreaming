@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pendulum Wave</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06080d; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#dfe9f2; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(120,190,255,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#556270; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; scrub time&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; change the frequency step&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// N pendulums, the k-th swinging (BASE+k) times per period T. Released together they
+// drift apart into travelling waves, standing waves, then chaos-looking scatter, and
+// at t = T every bob is back in phase. Nothing draws the waves; they are only the
+// differences between neighbouring frequencies, seen all at once.
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const N = 21, T = 60;
+let W=0, H=0, t=0, paused=false, mouseX=null, step=1, stepFrom=1, stepTo=1, stepT=1;
+const trail = [];
+function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; W=innerWidth; H=innerHeight; trail.length=0; }
+function base(){ return 24; }
+function freq(k){ return base() + k*step; }
+function angle(k, tt){ return 0.62*Math.cos(2*Math.PI*freq(k)*tt/T); }
+function phaseName(tt){
+  const f = ((tt % T)+T)%T / T;
+  if (f < 0.02 || f > 0.98) return 'all in step';
+  if (Math.abs(f-0.5) < 0.02) return 'two lines, interleaved';
+  if (Math.abs(f-0.25) < 0.02 || Math.abs(f-0.75) < 0.02) return 'four strands';
+  if (Math.abs(f-1/3) < 0.02 || Math.abs(f-2/3) < 0.02) return 'three strands';
+  return 'drifting';
+}
+function frame(){
+  if (!paused){
+    if (mouseX!==null) t = (mouseX/W)*T; else t += 0.016;
+    if (stepT<1){ stepT=Math.min(1,stepT+0.02); step = stepFrom+(stepTo-stepFrom)*(stepT*stepT*(3-2*stepT)); }
+  }
+  ctx.fillStyle='rgba(6,8,13,0.34)'; ctx.fillRect(0,0,W,H);
+  const top = H*0.1, L = H*0.62, gap = W*0.86/(N-1), x0 = W*0.07;
+  ctx.strokeStyle='rgba(180,210,240,0.25)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(x0-20, top); ctx.lineTo(x0+gap*(N-1)+20, top); ctx.stroke();
+  const pts=[];
+  for (let k=0;k<N;k++){
+    const a = angle(k,t), bx = x0+k*gap + Math.sin(a)*L*0.55, by = top + Math.cos(a)*L;
+    pts.push([bx,by]);
+    ctx.strokeStyle='rgba(150,180,210,0.18)';
+    ctx.beginPath(); ctx.moveTo(x0+k*gap, top); ctx.lineTo(bx,by); ctx.stroke();
+  }
+  // ribbon through the bobs makes the wave visible
+  ctx.strokeStyle='rgba(120,200,255,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); pts.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])); ctx.stroke();
+  for (let k=0;k<N;k++){
+    const h = 200 + 150*k/(N-1), p = pts[k];
+    const g = ctx.createRadialGradient(p[0],p[1],0,p[0],p[1],14);
+    g.addColorStop(0,'hsla('+h+',90%,75%,1)'); g.addColorStop(1,'hsla('+h+',90%,55%,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(p[0],p[1],14,0,6.2832); ctx.fill();
+  }
+  // faint timeline showing where in the period we are
+  const f = (((t%T)+T)%T)/T;
+  ctx.fillStyle='rgba(223,233,242,0.12)'; ctx.fillRect(0,H-3,W,3);
+  ctx.fillStyle='rgba(120,200,255,0.8)'; ctx.fillRect(f*W-1,H-6,3,6);
+  hud.innerHTML='pendulum wave<br>'+N+' pendulums, frequencies '+freq(0).toFixed(1)+' to '+freq(N-1).toFixed(1)+
+    '<br>step '+step.toFixed(2)+' swings per period<br>t = '+(f*100).toFixed(1)+'% of period &mdash; '+phaseName(t);
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', resize);
+addEventListener('mousemove', e=>{ mouseX=e.clientX; });
+canvas.addEventListener('mouseleave', ()=>{ mouseX=null; });
+canvas.addEventListener('click', ()=>{ stepFrom=step; stepTo = stepTo>=3 ? 1 : stepTo+1; stepT=0; });
+addEventListener('keydown', e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); frame();
+})();
+</script>
+</body>
+</html>
