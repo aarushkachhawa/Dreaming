@@ -1,0 +1,52 @@
+{
+  "id": "20260930-maxwell-s-demon-can-informatio-b9485e",
+  "date": "2026-09-30T10:11:33.197019",
+  "title": "Maxwell's Demon: Can Information Beat the Second Law?",
+  "question": "If a tiny being could sort fast molecules from slow ones, could it violate thermodynamics, and what does that reveal about information?",
+  "summary": "A nineteenth-century thought experiment ended up tying entropy to information and to the cost of erasing memory, and experiments now realize demons in the lab.",
+  "content": "<h2>The Setup</h2>\n<p>In 1867 James Clerk Maxwell imagined a box of gas divided by a wall with a tiny door. A being watches molecules and opens the door only for fast ones heading right and slow ones heading left. With no work done on the gas, one side grows hot and the other cold. That would decrease entropy, seeming to break the second law of thermodynamics.</p>\n<h2>Early Escape Attempts</h2>\n<p>Leo Szilard in 1929 simplified the problem to a single molecule and showed that the demon must measure where it is. He argued that measurement must cost entropy, linking knowledge to thermodynamics. Later, Leon Brillouin argued that seeing molecules requires light, and that photon scattering generates enough entropy to pay the bill. The argument was plausible but, as it turned out, not the deepest reason.</p>\n<h2>Landauer and Bennett</h2>\n<p>In 1961 Rolf Landauer showed that erasing one bit of information dissipates at least kT ln 2 of heat. Charles Bennett later realized that measurement can in principle be done reversibly, at no minimum cost. The trouble comes later: the demon's memory fills up. To keep operating in a cycle, it must erase its records, and that erasure pays back the entropy it saved. The second law is safe, and the accounting lives in forgetting.</p>\n<h2>Demons in the Lab</h2>\n<p>This is no longer only philosophy. Experiments have built Szilard engines from a single colloidal particle, converting information about position into work, and electronic circuits that cool by feedback. Landauer's bound has been tested in nanoscale systems at the level of single bits. Stochastic thermodynamics now includes generalized second laws that count information as a resource.</p>\n<h2>Why It Matters</h2>\n<p>The demon reframes entropy as missing information about a system's microstate. Computing has physical limits, and biology may operate near them: molecular machines that read DNA, for instance, use energy to gain and correct information. Modern chips dissipate far more than Landauer's minimum, but as devices shrink the limit becomes relevant.</p>",
+  "tags": [
+    "physics",
+    "thermodynamics",
+    "information",
+    "entropy",
+    "computation"
+  ],
+  "perspectives": [
+    {
+      "title": "Statistical mechanics",
+      "description": "Entropy counts microstates consistent with what we know, so an observer with more information can extract more work without contradicting the law."
+    },
+    {
+      "title": "Information theory",
+      "description": "Shannon's entropy and thermodynamic entropy share the same mathematics, and Landauer's principle makes the link physical."
+    },
+    {
+      "title": "Computer science",
+      "description": "Reversible computing avoids erasure and so in principle approaches zero dissipation, suggesting deep limits on energy-efficient computation."
+    },
+    {
+      "title": "Biophysics",
+      "description": "Cells run molecular demons: proofreading enzymes and ion pumps use energy to gain information about their environment."
+    },
+    {
+      "title": "Philosophy of science",
+      "description": "The debate shows how a thought experiment can survive for a century, with each resolution exposing a hidden assumption."
+    }
+  ],
+  "connections": [
+    "Time's arrow and the origin of low entropy",
+    "Shannon entropy and communication",
+    "Reversible and quantum computing",
+    "Black hole entropy and the holographic principle",
+    "Stochastic thermodynamics",
+    "Molecular motors and kinetic proofreading",
+    "Szilard's engine"
+  ],
+  "openQuestions": [
+    "Does Landauer's bound hold for quantum systems with entanglement and coherence?",
+    "How close do living cells operate to the thermodynamic cost of information processing?",
+    "Is there a fundamental observer-independent definition of entropy?",
+    "Could practical computers ever approach Landauer's limit?"
+  ]
+}
