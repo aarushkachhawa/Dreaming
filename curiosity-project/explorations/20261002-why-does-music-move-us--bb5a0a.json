@@ -1,0 +1,53 @@
+{
+  "id": "20261002-why-does-music-move-us--bb5a0a",
+  "date": "2026-10-02T10:11:30.113674",
+  "title": "Why Does Music Move Us?",
+  "question": "Why do arrangements of pitch and rhythm, with no obvious survival value, produce chills, tears and joy?",
+  "summary": "Music exploits prediction, reward, movement and social bonding all at once. The brain's pleasure in anticipated and violated expectations may explain why sound alone can feel like meaning.",
+  "content": "<h2>An evolutionary oddity</h2><p>Every known human culture makes music, yet it feeds no one and shelters no one. Darwin called it among the most mysterious faculties we possess. Why would a species devote so much time, emotion and ritual to organized sound?</p><h2>Expectation and reward</h2><p>The most productive account comes from David Huron and Leonard Meyer: music works by setting up expectations and then fulfilling, delaying or violating them. A dominant chord pulls toward the tonic; a held suspension creates tension that resolution releases. Brain imaging by Valorie Salimpoor and colleagues found that peak musical pleasure releases dopamine, first in anticipation of a favorite passage, then at the moment it arrives. Music piggybacks on the same prediction-reward circuitry that evolved for food and social cues, but with no tangible payoff.</p><h2>The body gets involved</h2><p>Rhythm engages the motor system even when we sit still. We tap, sway and entrain. Infants bounce to a beat before they can walk. Synchronized movement increases cooperation and trust in experiments, which supports the social bonding hypothesis: music may have evolved to knit groups together, in work, ritual and warfare, by aligning bodies and emotions.</p><h2>Voice and emotion</h2><p>Music also borrows from the voice. Sad music is slow, low and quiet, much like sad speech; joyful music is quick and bright. Parental lullabies and infant-directed song appear worldwide, suggesting a possible origin in mother-infant communication. Some researchers argue music is an emotional language that predates semantic language, or a by-product of it, 'auditory cheesecake' in Steven Pinker's phrase, a pleasure technology that happens to tickle several adaptations at once.</p><h2>Culture and universals</h2><p>Some features recur: octave equivalence, simple frequency ratios, regular pulse, and the presence of lullabies and dance songs. But scales, harmony and the very sense of what counts as 'consonant' vary. A study among the Tsimane of Bolivia found little innate preference for Western consonance, suggesting much of our taste is learned through exposure.</p><h2>Why chills?</h2><p>Frisson, the shiver down the spine, tends to occur at unexpected harmonies or sudden dynamic changes, and is more common in people who score high on openness to experience. It looks like a startle response reframed as pleasure, a safe stimulation of an old alarm system.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "evolution",
+    "psychology",
+    "aesthetics"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Anticipation and resolution drive dopaminergic reward. Rhythm recruits motor and timing circuits, so listening is partly a bodily act."
+    },
+    {
+      "title": "Evolutionary psychology",
+      "description": "Competing theories: music as a social glue, as a sexual display, as an extension of mother-infant vocal bonding, or as a by-product of other adaptations."
+    },
+    {
+      "title": "Music theory",
+      "description": "Tension and release in harmony, meter and melody structure expectations. Style is partly a shared set of learned probabilities about what comes next."
+    },
+    {
+      "title": "Cross-cultural anthropology",
+      "description": "Music is universal, but the specifics of scale, harmony and meaning vary widely. Many tastes once thought innate appear to be learned."
+    },
+    {
+      "title": "Philosophy of aesthetics",
+      "description": "Does music express emotion, evoke it, or merely resemble it? Philosophers debate whether pure sound can carry meaning at all."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the Bayesian brain",
+    "The mathematics of harmony and the harmonic series",
+    "The origins of language",
+    "Rhythm, entrainment and group synchrony",
+    "Dopamine and reward prediction error",
+    "Pythagoras and the numerical theory of consonance",
+    "The uncanny valley and aesthetic response"
+  ],
+  "openQuestions": [
+    "Did music precede language, follow it, or co-evolve with it?",
+    "Is consonance rooted in physics and neural coding, or mostly in cultural exposure?",
+    "Why do some people, with musical anhedonia, feel no pleasure from music despite normal hearing?",
+    "Can an AI composer produce the shiver, or does that require shared human context?",
+    "What would music from a non-human intelligence need in order for us to recognize it as music?"
+  ]
+}
