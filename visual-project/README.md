@@ -2011,3 +2011,14 @@ When you are done, someone should want to look. Longer than they meant to.
   frequencies, seen all at once. Move the cursor to scrub through the
   period by hand, click to change the frequency step, space to pause. Open
   the file directly in a browser.
+
+- **2026-10-12** — `2026-10-12-two-wings.html`: a sixty-eighth technique,
+  and the archive's first Lorenz attractor. Nine hundred points are released
+  within a hundredth of a unit of one another and integrated with RK4. Each
+  circles one wing of the butterfly, is flung to the other at a moment no one
+  can predict, and the tight cloud is stretched into a ribbon that wraps
+  both wings. Colour is the wing a point is circling, orange or blue, so the
+  switching is visible; the readout tracks how far apart the cloud has
+  spread and how it divides between wings. Move the cursor to turn the
+  attractor, click to drop a new cloud somewhere else, space to pause. Open
+  the file directly in a browser.

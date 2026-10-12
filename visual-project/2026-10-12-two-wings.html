@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Wings</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#07060b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#f0e6df; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,160,100,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#6a6068; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; turn the attractor&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; drop a new cloud there&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// The Lorenz system, integrated with RK4. A tight cloud of points starts in one small
+// place; each orbits one wing, then is flung to the other at a moment no one can
+// predict, and the cloud is stretched into a ribbon that wraps both wings.
+// Colour is the wing a point is currently circling, so the switching is visible.
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const S=10, R=28, B=8/3, DT=0.004, N=900;
+let W=0, H=0, paused=false, yaw=0.6, pitch=0.35, mx=null, my=null, swaps=0, age=0;
+let P=[];
+function seed(x,y,z){
+  P=[];
+  for (let i=0;i<N;i++) P.push({x:x+(Math.random()-.5)*0.02,y:y+(Math.random()-.5)*0.02,z:z+(Math.random()-.5)*0.02,w:x>0?1:-1});
+  swaps=0; age=0;
+}
+function f(x,y,z){ return [S*(y-x), x*(R-z)-y, x*y-B*z]; }
+function step(p){
+  const a=f(p.x,p.y,p.z);
+  const b=f(p.x+a[0]*DT/2,p.y+a[1]*DT/2,p.z+a[2]*DT/2);
+  const c=f(p.x+b[0]*DT/2,p.y+b[1]*DT/2,p.z+b[2]*DT/2);
+  const d=f(p.x+c[0]*DT,p.y+c[1]*DT,p.z+c[2]*DT);
+  p.x+=DT/6*(a[0]+2*b[0]+2*c[0]+d[0]);
+  p.y+=DT/6*(a[1]+2*b[1]+2*c[1]+d[1]);
+  p.z+=DT/6*(a[2]+2*b[2]+2*c[2]+d[2]);
+  const w = p.x>0?1:-1;
+  if (w!==p.w){ p.w=w; if (Math.random()<0.02) swaps++; }
+}
+function resize(){ canvas.width=innerWidth; canvas.height=innerHeight; W=innerWidth; H=innerHeight; ctx.fillStyle='#07060b'; ctx.fillRect(0,0,W,H); }
+function project(p){
+  const x=p.x, y=p.y, z=p.z-25;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw), cp=Math.cos(pitch), sp=Math.sin(pitch);
+  const x1=x*cy+y*sy, y1=-x*sy+y*cy;
+  const y2=y1*cp-z*sp;
+  const s=Math.min(W,H)/62;
+  return [W/2+x1*s*1.5, H/2+y2*s*1.5];
+}
+function frame(){
+  if (!paused){
+    age++;
+    if (mx!==null){ yaw=(mx/W-.5)*Math.PI*2; pitch=(my/H-.2)*1.6; } else yaw+=0.0015;
+    ctx.fillStyle='rgba(7,6,11,0.07)'; ctx.fillRect(0,0,W,H);
+    ctx.globalCompositeOperation='lighter';
+    for (const p of P){
+      const a=project(p);
+      for (let k=0;k<5;k++) step(p);
+      const b=project(p);
+      ctx.strokeStyle = p.w>0 ? 'rgba(255,150,70,0.20)' : 'rgba(80,190,255,0.20)';
+      ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(b[0],b[1]); ctx.stroke();
+    }
+    ctx.globalCompositeOperation='source-over';
+  }
+  // spread of the cloud: how far the first and last points have drifted apart
+  const dx=P[0].x-P[N-1].x, dy=P[0].y-P[N-1].y, dz=P[0].z-P[N-1].z;
+  const spread=Math.sqrt(dx*dx+dy*dy+dz*dz);
+  let left=0; for (const p of P) if (p.w<0) left++;
+  hud.innerHTML='two wings<br>'+N+' points released within 0.02 of each other<br>'+
+    'spread now '+spread.toFixed(2)+'<br>on blue wing '+Math.round(100*left/N)+'% &middot; orange '+Math.round(100*(N-left)/N)+'%';
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', resize);
+addEventListener('mousemove', e=>{ mx=e.clientX; my=e.clientY; });
+canvas.addEventListener('mouseleave', ()=>{ mx=null; my=null; });
+canvas.addEventListener('click', ()=>{ seed((Math.random()-.5)*30,(Math.random()-.5)*30,10+Math.random()*30); });
+addEventListener('keydown', e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); seed(1,1,20);
+frame();
+})();
+</script>
+</body>
+</html>
