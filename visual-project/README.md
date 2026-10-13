@@ -2022,3 +2022,13 @@ When you are done, someone should want to look. Longer than they meant to.
   spread and how it divides between wings. Move the cursor to turn the
   attractor, click to drop a new cloud somewhere else, space to pause. Open
   the file directly in a browser.
+
+- **2026-10-13** — `2026-10-13-edge-of-the-set.html`: a sixty-ninth technique,
+  and the archive's first Julia set. The parameter c walks around the edge of
+  the Mandelbrot set's main cardioid, where the Julia set sits on the verge
+  of coming apart: a single connected coastline that thins to filaments and
+  dust, then knits back together. Smooth escape-time colouring runs from deep
+  ink through teal to pale gold; a small Mandelbrot map in the corner shows
+  where c is standing. Move the cursor to push c inside or outside the edge,
+  click to leap to another place on it, space to pause. Open the file
+  directly in a browser.

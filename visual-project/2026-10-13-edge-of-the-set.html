@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edge of the Set</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05060a; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e6ecf0; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(120,200,255,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5a6270; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+  #map { position:fixed; top:14px; right:16px; width:150px; height:110px; border:1px solid rgba(160,200,255,0.25); pointer-events:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="map" width="150" height="110"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; steer the parameter&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; leap to a new place on the edge&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// A Julia set is the Mandelbrot set seen from one point. Here the parameter c walks along
+// the Mandelbrot set's cardioid edge, where the Julia set is on the verge of falling apart:
+// connected filaments thin into dust and knit back together. Smooth escape-time colouring.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const mapc=document.getElementById('map'), mctx=mapc.getContext('2d');
+const hud=document.getElementById('hud');
+const off=document.createElement('canvas'), octx=off.getContext('2d');
+const MAXIT=110, SCALE=3; // render at 1/SCALE resolution
+let W=0,H=0,w=0,h=0,img=null,paused=false,t=Math.random()*6.28,speed=0.0035,mx=null,my=null,push=0,frames=0;
+let mandel=null;
+function cardioid(a){ // boundary of the main cardioid: c = e^{ia}/2 - e^{2ia}/4
+  return [0.5*Math.cos(a)-0.25*Math.cos(2*a), 0.5*Math.sin(a)-0.25*Math.sin(2*a)];
+}
+function buildMap(){
+  const mw=mapc.width, mh=mapc.height, id=mctx.createImageData(mw,mh);
+  for (let y=0;y<mh;y++) for (let x=0;x<mw;x++){
+    const cr=-2.2+x/mw*3.2, ci=(y/mh-.5)*2.4*(mh/mw)*1.4*(3.2/ (3.2)) ;
+    let zr=0,zi=0,i=0;
+    while (i<40 && zr*zr+zi*zi<16){ const q=zr*zr-zi*zi+cr; zi=2*zr*zi+ci; zr=q; i++; }
+    const o=(y*mw+x)*4, v=i>=40?0:Math.min(255,40+i*6);
+    id.data[o]=i>=40?20:v*0.3; id.data[o+1]=i>=40?30:v*0.6; id.data[o+2]=i>=40?60:v; id.data[o+3]=255;
+  }
+  mandel=id;
+}
+function resize(){
+  W=canvas.width=innerWidth; H=canvas.height=innerHeight;
+  w=off.width=Math.ceil(W/SCALE); h=off.height=Math.ceil(H/SCALE);
+  img=octx.createImageData(w,h);
+}
+function palette(s,phase){ // deep ink -> teal -> amber -> pale gold, slowly cycling
+  const u=(s*1.1+phase)%1, g=Math.pow(Math.min(1,s*1.6),0.7);
+  const m=0.5-0.5*Math.cos(u*6.2832);
+  return [ g*(20+215*m*m), g*(40+150*m), g*(90+70*(1-m)+60*m*m) ];
+}
+function render(cr,ci,phase){
+  const sc=3.0/Math.min(w*1.0,h*1.4), d=img.data;
+  for (let y=0;y<h;y++){
+    const zi0=(y-h/2)*sc;
+    for (let x=0;x<w;x++){
+      let zr=(x-w/2)*sc, zi=zi0, i=0, r2=zr*zr, i2=zi*zi;
+      while (i<MAXIT && r2+i2<256){ zi=2*zr*zi+ci; zr=r2-i2+cr; r2=zr*zr; i2=zi*zi; i++; }
+      const o=(y*w+x)*4;
+      if (i>=MAXIT){ d[o]=6; d[o+1]=8; d[o+2]=14; }
+      else {
+        const sm=i+1-Math.log(Math.log(Math.sqrt(r2+i2)))/Math.LN2;
+        const c=palette(Math.min(1.2,sm/MAXIT*4),phase);
+        d[o]=c[0]; d[o+1]=c[1]; d[o+2]=c[2];
+      }
+      d[o+3]=255;
+    }
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0,W,H);
+}
+function drawMap(c){
+  mctx.putImageData(mandel,0,0);
+  const mw=mapc.width, mh=mapc.height;
+  const px=(c[0]+2.2)/3.2*mw, py=(c[1]/(2.4*(mh/mw)*1.4)+.5)*mh;
+  mctx.strokeStyle='rgba(255,255,255,0.9)'; mctx.lineWidth=1;
+  mctx.beginPath(); mctx.arc(px,py,4,0,6.2832); mctx.stroke();
+}
+function frame(){
+  if (!paused){
+    frames++;
+    if (mx!==null){ push+=((mx/W-.5)*0.25-push)*0.05; } else push*=0.97;
+    t+=speed;
+    // radius slightly outside the edge so we hover where the set shatters
+    const k=1+push*0.4+0.02*Math.sin(t*3.1), e=cardioid(t);
+    const cr=e[0]*k, ci=e[1]*k;
+    render(cr,ci,t*0.15);
+    drawMap([cr,ci]);
+    hud.innerHTML='edge of the set<br>c = '+cr.toFixed(4)+(ci<0?' - ':' + ')+Math.abs(ci).toFixed(4)+'i<br>'+
+      'angle '+(((t%6.2832)+6.2832)%6.2832*57.2958).toFixed(0)+'&deg; around the cardioid<br>'+
+      (k>1.0?'outside the edge: dust':'inside the edge: connected');
+  }
+  requestAnimationFrame(frame);
+}
+addEventListener('resize', ()=>{ resize(); });
+addEventListener('mousemove', e=>{ mx=e.clientX; my=e.clientY; });
+canvas.addEventListener('mouseleave', ()=>{ mx=null; my=null; });
+canvas.addEventListener('click', ()=>{ t=Math.random()*6.2832; });
+addEventListener('keydown', e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); buildMap(); frame();
+})();
+</script>
+</body>
+</html>
