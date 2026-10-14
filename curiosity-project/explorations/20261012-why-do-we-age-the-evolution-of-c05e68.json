@@ -1,0 +1,48 @@
+{
+  "id": "20261012-why-do-we-age-the-evolution-of-c05e68",
+  "date": "2026-10-12T10:10:55.182371",
+  "title": "Why Do We Age? The Evolution of Decay",
+  "question": "If natural selection favors survival, why has it not eliminated aging?",
+  "summary": "Aging looks like a flaw evolution should have fixed. The answer is that selection's power fades with age, leaving bodies tuned for reproduction rather than endurance.",
+  "content": "<h2>The Puzzle</h2>\n<p>Natural selection sharpens organisms for survival and reproduction, yet nearly every complex animal deteriorates with time. Some species barely seem to: certain tortoises, rockfish and the Greenland shark show little actuarial decline, and the hydra appears effectively non-aging. So aging is neither physically inevitable nor universal. It is something evolution <em>allowed</em>.</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight in the 1950s was that selection weakens with age. In the wild, most animals die from predators, disease or hunger long before senescence sets in. A gene that harms you at age 90 is almost never expressed in the wild, so selection cannot see it. Mutations with late-acting damage accumulate quietly in the genome, like debris in a place no one sweeps.</p>\n<h2>Trade-offs: Antagonistic Pleiotropy</h2>\n<p>George Williams added a sharper idea: some genes help when young and harm when old. A gene boosting early fertility or rapid growth will spread even if it causes cancer or arterial stiffening decades later. Aging, then, is partly the bill for youthful vigor. Calcium deposition that builds strong bones in youth may calcify arteries in age.</p>\n<h2>The Disposable Soma</h2>\n<p>Tom Kirkwood framed this as economics. Energy can go to reproduction or to repair. Perfect maintenance is costly, and an animal likely to die of accident soon is better off investing in offspring. This predicts that species facing high external mortality should age faster, which broadly holds: mice live two years, bats of similar size can live over thirty, and island opossums that escaped predators evolved slower aging.</p>\n<h2>Mechanisms Beneath the Theory</h2>\n<p>At the cellular level, aging involves damage accumulation: telomere shortening, mutations, misfolded proteins, mitochondrial dysfunction, senescent cells that refuse to die and secrete inflammatory signals. Pathways such as insulin/IGF-1 and mTOR link nutrition to lifespan; caloric restriction extends life in many species. Evolutionary theory says <em>why</em>; molecular biology says <em>how</em>.</p>\n<h2>Can It Be Changed?</h2>\n<p>If aging is a set of tunable trade-offs rather than a hard law, interventions become conceivable: clearing senescent cells, modulating mTOR, partial cellular reprogramming. Whether these can add healthy years without paying the pleiotropic price evolution warns about remains open.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "health"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is not selected for but tolerated: the force of selection declines with age, so late-life harms go unchecked and trade-offs favor early reproduction."
+    },
+    {
+      "title": "Cell Biology",
+      "description": "Aging is accumulated molecular damage and failing maintenance: telomere erosion, senescent cells, protein aggregation and mitochondrial decline."
+    },
+    {
+      "title": "Medicine",
+      "description": "Treating age itself as the root risk factor for cancer, dementia and heart disease reframes disease-by-disease medicine as geroscience."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Does death give life meaning, or is that a consoling story we tell about a biological accident? Extending life raises questions of identity, inequality and purpose."
+    }
+  ],
+  "connections": [
+    "Antagonistic pleiotropy and trade-offs in design",
+    "Thermodynamics and entropy as a background to decay",
+    "The cooperation paradox: individual versus group interests in the body",
+    "Cancer as cellular evolution within an organism",
+    "Caloric restriction and the economics of energy",
+    "The ship of Theseus: is a body with replaced cells the same person?",
+    "Demographic inequality and who gets longevity"
+  ],
+  "openQuestions": [
+    "Is there a maximum human lifespan, or only a current one?",
+    "Can we separate the benefits of youthful growth from their late-life costs?",
+    "Would radically longer lives change how societies handle power, work and reproduction?",
+    "Why do some species show negligible senescence, and what could humans borrow?",
+    "Is aging one process or many that merely coincide?"
+  ]
+}
