@@ -1,0 +1,48 @@
+{
+  "id": "20261009-why-does-music-move-us--56a668",
+  "date": "2026-10-09T10:11:36.275257",
+  "title": "Why Does Music Move Us?",
+  "question": "Why do organized patterns of sound, with no clear survival purpose, evoke some of our deepest emotions?",
+  "summary": "Music seems to exploit the brain's prediction machinery, its sensitivity to voices, and its drive to synchronize with others, but whether it is an adaptation or a happy accident is still debated.",
+  "content": "<h2>A strange universal</h2>\n<p>Every known human culture makes music, yet music has no obvious survival value. It does not feed us or shelter us, and still a few notes can bring us to tears or give us chills. Why would arrangements of sound carry such emotional force?</p>\n<h2>Expectation as the engine</h2>\n<p>Music theorist Leonard Meyer proposed that musical emotion arises from the play of expectation. Our brains continually predict what comes next, based on the patterns of the music we have absorbed. When the prediction is confirmed we feel satisfaction; when it is delayed, we feel tension; when it is violated in an interesting way, we feel surprise. A cadence resolving to the tonic feels like arrival precisely because we were led to expect it. Composers are, in effect, choreographers of prediction.</p>\n<p>Neuroimaging supports this. Peak emotional moments in music release dopamine, first in anticipation of the climactic passage and then at the moment itself, the same reward circuitry engaged by food and social bonds.</p>\n<h2>Sound that resembles voices</h2>\n<p>Another view holds that music borrows from the emotional prosody of speech. Sad speech is slow, low, and quiet; joyful speech is faster and higher. Music built on these contours may trigger the same recognition systems. Cross-cultural studies find that listeners unfamiliar with a tradition can still often tell calm from agitated music, though judgments of \"happy\" and \"sad\" tied to major and minor modes appear to be more learned than innate.</p>\n<h2>Why did it evolve?</h2>\n<p>Darwin guessed music arose in courtship. Others argue it is social glue: synchronized singing and drumming bond groups and coordinate collective action, and lullabies soothe infants when caregivers must set them down. Steven Pinker famously called music \"auditory cheesecake,\" a pleasurable by-product of faculties evolved for language, auditory scene analysis, and emotion. The evidence for a dedicated adaptation remains contested, though rhythm entrainment, which humans do effortlessly and most animals do not, hints at something special.</p>\n<h2>Culture and the limits of universals</h2>\n<p>The twelve-tone Western scale is not natural law. Consonance relates to simple frequency ratios, but tuning systems around the world divide the octave differently, and what feels consonant partly depends on exposure. Music is likely a collaboration between constraints of the auditory system and the endless inventiveness of culture.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "psychology",
+    "evolution",
+    "culture"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Emotion in music emerges from prediction and reward: dopamine surges both in anticipation of and during peak moments."
+    },
+    {
+      "title": "Evolutionary psychology",
+      "description": "Competing accounts cast music as a courtship display, a tool for group bonding, a parent-infant soothing system, or a by-product of other adaptations."
+    },
+    {
+      "title": "Music theory",
+      "description": "Tension and resolution, built from harmony, rhythm, and form, are manipulated deliberately to guide listeners' expectations."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Scales, instruments, and the very meaning of music vary widely, warning against assuming that Western conventions are universal."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the Bayesian brain",
+    "The origin of language and prosody",
+    "Rhythmic entrainment in humans and parrots",
+    "Pythagorean ratios and the mathematics of harmony",
+    "Ritual, trance, and collective ceremony",
+    "Musical anhedonia and amusia",
+    "Algorithmic composition and AI-generated music"
+  ],
+  "openQuestions": [
+    "Is musical emotion mostly innate or learned?",
+    "Why can humans keep a beat while most animals cannot?",
+    "Can music generated without any lived experience move us in the same way, and what would that imply?",
+    "Why do we enjoy sad music?"
+  ]
+}
