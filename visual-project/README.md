@@ -2032,3 +2032,13 @@ When you are done, someone should want to look. Longer than they meant to.
   where c is standing. Move the cursor to push c inside or outside the edge,
   click to leap to another place on it, space to pause. Open the file
   directly in a browser.
+
+- **2026-10-14** — `2026-10-14-restless-triangle.html`: a seventieth
+  technique, and the archive's first chaos game. A point jumps a fraction of
+  the way toward a randomly chosen corner of a polygon, again and again; with
+  the classic rule a triangle yields the Sierpinski gasket. Here the fraction
+  and a small twist in each jump drift slowly, so the gasket never settles:
+  it swells, spirals and tears into new filigree. Colour is the corner most
+  recently chosen, and brightness accumulates where the orbit lingers. Move
+  the cursor to bend the rule, click to add a corner (three to seven), space
+  to pause. Open the file directly in a browser.

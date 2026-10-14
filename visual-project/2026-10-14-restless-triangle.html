@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Restless Triangle</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06070c; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8e4f0; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(140,160,255,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#605c70; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; bend the rule&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; change the number of corners&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// The chaos game. A point jumps a fixed fraction of the way toward a randomly chosen
+// corner of a polygon, over and over. With the classic rule a triangle yields the
+// Sierpinski gasket. Here the fraction and a small rotation of each jump drift slowly,
+// so the gasket never settles: it twists, swells and tears into new filigree.
+// Colour is the corner most recently chosen; brightness accumulates where the orbit lingers.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+let W=0,H=0,paused=false,t=0,mx=null,my=null,n=3,hist=null,img=null,buf=null;
+const PER=60000;
+let px=0.1,py=0.2;
+const cols=[[255,120,90],[90,200,255],[250,220,110],[170,120,255],[110,255,170],[255,130,200],[255,170,80]];
+function resize(){
+  W=canvas.width=innerWidth; H=canvas.height=innerHeight;
+  hist=new Float32Array(W*H*3); img=ctx.createImageData(W,H); buf=img.data; clear();
+}
+function clear(){ hist.fill(0); }
+function rule(){
+  let r=0.5+0.18*Math.sin(t*0.0011)+0.07*Math.sin(t*0.0037);
+  let a=0.35*Math.sin(t*0.0007+1);
+  if (mx!==null){ r=0.3+0.45*(mx/W); a=(my/H-0.5)*1.4; }
+  if (n===3 && mx===null) r=Math.min(0.62,Math.max(0.38,r));
+  return [r,a];
+}
+function iter(){
+  const [r,a]=rule(), ca=Math.cos(a), sa=Math.sin(a);
+  const R=Math.min(W,H)*0.42, cx=W/2, cy=H/2+R*0.06;
+  const vx=[],vy=[];
+  for (let i=0;i<n;i++){ const th=-Math.PI/2+i*2*Math.PI/n; vx.push(cx+R*Math.cos(th)); vy.push(cy+R*Math.sin(th)); }
+  for (let k=0;k<PER;k++){
+    const i=(Math.random()*n)|0;
+    const dx=vx[i]-px, dy=vy[i]-py;
+    px+=r*(dx*ca-dy*sa); py+=r*(dx*sa+dy*ca);
+    if (k<20) continue;
+    const X=px|0, Y=py|0;
+    if (X<0||Y<0||X>=W||Y>=H) { if (Math.abs(px)>1e6||Math.abs(py)>1e6){px=cx;py=cy;} continue; }
+    const c=cols[i%cols.length], o=(Y*W+X)*3;
+    hist[o]+=c[0]; hist[o+1]+=c[1]; hist[o+2]+=c[2];
+  }
+  return r;
+}
+function render(){
+  const N=W*H; let mx2=1;
+  for (let i=0;i<N*3;i++) hist[i]*=0.985;
+  for (let i=0;i<N*3;i++) if (hist[i]>mx2) mx2=hist[i];
+  const k=1/Math.log(1+mx2*0.02);
+  for (let i=0,j=0;i<N;i++,j+=4){
+    const o=i*3;
+    buf[j]=255*Math.min(1,Math.log(1+hist[o]*0.02)*k*1.1);
+    buf[j+1]=255*Math.min(1,Math.log(1+hist[o+1]*0.02)*k*1.1);
+    buf[j+2]=255*Math.min(1,Math.log(1+hist[o+2]*0.02)*k*1.1);
+    buf[j+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+function frame(){
+  let r=rule()[0];
+  if (!paused){ t++; r=iter(); render(); }
+  hud.innerHTML='restless triangle<br>corners '+n+'<br>jump '+r.toFixed(3)+' of the way'+(Math.abs(r-0.5)<0.01&&n===3?' &mdash; the classic gasket':'');
+  requestAnimationFrame(frame);
+}
+addEventListener('resize',resize);
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+addEventListener('mouseleave',()=>{mx=null;my=null;});
+addEventListener('click',()=>{ n=n>=7?3:n+1; clear(); });
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); frame();
+})();
+</script>
+</body>
+</html>
