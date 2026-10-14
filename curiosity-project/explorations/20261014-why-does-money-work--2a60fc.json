@@ -1,0 +1,48 @@
+{
+  "id": "20261014-why-does-money-work--2a60fc",
+  "date": "2026-10-14T10:11:02.751781",
+  "title": "Why Does Money Work?",
+  "question": "Pieces of paper and entries in databases buy real goods. What actually gives money its value?",
+  "summary": "Money is worth something because we all expect others to accept it, a self-sustaining belief anchored in trust, debt and the power of states.",
+  "content": "<h2>A Strange Kind of Object</h2>\n<p>A banknote is a rectangle of cotton and ink worth almost nothing as material. A bank balance is not even that: it is a pattern of charges in a data center. Yet people hand over their labor, their land and their time for these things without hesitation. What makes them valuable? The honest answer is that they are valuable because we collectively expect others to accept them. Money is a belief that holds itself up.</p>\n<h2>The Textbook Story and Its Problems</h2>\n<p>The classic account says barter was clumsy, because it needs a \"double coincidence of wants\". People therefore drifted toward a commonly desired good, such as salt, shells or gold, and that good became money. It is a tidy story, but anthropologists such as David Graeber have noted that there is little evidence of large barter economies preceding money. Small communities mostly ran on gift exchange and credit: I owe you a favor, you owe me one. Money may have begun as a way of recording debts, not of replacing barter.</p>\n<h2>Three Functions, One Fragile Equilibrium</h2>\n<p>Money is usually said to do three jobs: a medium of exchange, a unit of account, and a store of value. Each job reinforces the others. I accept money because I expect to spend it, and I expect to spend it because others accept it. This is a coordination game with two stable outcomes: everyone accepts it, or nobody does. Both are self-fulfilling. That is why currencies can survive for centuries and also why they can collapse within weeks, as in hyperinflations, when expectations tip from one equilibrium to the other.</p>\n<h2>What Backs a Currency?</h2>\n<p>Gold standards made the backing feel physical, but gold's value is itself mostly social, since its industrial uses are modest. Modern fiat money is backed by the state's willingness to accept it for taxes, plus the general expectation of stability. Chartalists argue that taxes create demand for the currency: if you must pay in the state's token, you will work to obtain it. Cryptocurrencies test the opposite proposition, that scarcity and shared belief alone can sustain value without a sovereign.</p>\n<h2>Trust Is the Real Substrate</h2>\n<p>Money may be best understood as a technology for trust between strangers. It lets me cooperate with someone I will never meet again, because I do not need to trust them, only the token. In that sense money is a memory of social obligation made portable. Societies that lose trust in their institutions often fall back on cigarettes, foreign currency or favors.</p>",
+  "tags": [
+    "economics",
+    "money",
+    "philosophy",
+    "social-science",
+    "trust"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics (Menger and the commodity view)",
+      "description": "Money emerged spontaneously as the most marketable good. Value starts in usefulness and scarcity, and the medium of exchange role grows from it."
+    },
+    {
+      "title": "Anthropology (Graeber)",
+      "description": "Credit and debt came first. Money formalized obligations among people who already knew one another, and coins came later with armies and states."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Money is a coordination equilibrium. Accepting it is rational only if everyone else accepts it, so it can exist or vanish by shared expectation."
+    },
+    {
+      "title": "Chartalism / Modern Monetary Theory",
+      "description": "The state creates demand for its currency by requiring taxes to be paid in it, giving the token value independent of any commodity."
+    }
+  ],
+  "connections": [
+    "Emergence and self-organizing systems",
+    "Schelling points and coordination games",
+    "Hyperinflation and tipping points",
+    "Cryptocurrency and distributed consensus",
+    "Language as a shared convention",
+    "The paradox of cooperation",
+    "Social trust and institutions"
+  ],
+  "openQuestions": [
+    "Can a currency survive with no state and no commodity behind it, or does it always borrow trust from something else?",
+    "Is money a human invention or a natural result of any complex exchange network?",
+    "What happens to value when most transactions are mediated by algorithms rather than people?",
+    "Would a society without money be fairer, or only less efficient?"
+  ]
+}
