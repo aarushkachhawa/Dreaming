@@ -2042,3 +2042,13 @@ When you are done, someone should want to look. Longer than they meant to.
   recently chosen, and brightness accumulates where the orbit lingers. Move
   the cursor to bend the rule, click to add a corner (three to seven), space
   to pause. Open the file directly in a browser.
+
+- **2026-10-15** — `2026-10-15-falling-rules.html`: a seventy-first technique,
+  and the archive's first elementary cellular automaton. Each cell consults an
+  eight-bit rule about itself and its two neighbours; every row is born from
+  the one above and the history falls down the screen. The rule number glides
+  one bit at a time between the famous ones (90, 30, 110, 54 ...), so nested
+  triangles melt into noise and noise into drifting gliders. Colour is the age
+  of a cell's lineage, warm when new and cool when long-lived. Move the cursor
+  to choose any rule from 0 to 255, click to jump to a random one, space to
+  pause. Open the file directly in a browser.

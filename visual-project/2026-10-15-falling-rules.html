@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Falling Rules</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#07080d; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; image-rendering:pixelated; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8e4f0; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(140,160,255,0.4); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#605c70; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; choose the rule&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; jump to a random rule&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Elementary cellular automata. Each cell looks at itself and its two neighbours and
+// consults a rule (a number 0-255, its eight-bit lookup table). Every row is born from
+// the one above and the history falls down the screen. The rule number drifts slowly
+// through the tidy ones (90, 30, 110, 54 ...) and the picture changes character:
+// nested triangles, noise, drifting gliders. Colour is the age of a cell's lineage.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const CELL=3, SPEED=2;
+let W=0,H=0,cols=0,rows=0,paused=false,mx=null,rule=90,target=90,img=null,buf=null;
+let cur=null,age=null,grid=null,ages=null,head=0;
+const famous=[90,30,110,54,45,22,126,150,18,106,73,60,105,182,129,25];
+const names={90:'Sierpinski',30:'chaos',110:'universal',54:'gliders',45:'noise',22:'lace',126:'filigree',150:'XOR web',60:'skew gasket',18:'thin gasket',105:'knots'};
+function resize(){
+  W=canvas.width=Math.ceil(innerWidth/CELL); H=canvas.height=Math.ceil(innerHeight/CELL);
+  cols=W; rows=H; img=ctx.createImageData(W,H); buf=img.data;
+  grid=new Uint8Array(cols*rows); ages=new Uint8Array(cols*rows);
+  cur=new Uint8Array(cols); age=new Uint8Array(cols); head=0;
+  seed();
+}
+function seed(){ cur.fill(0); age.fill(0); cur[cols>>1]=1; if (Math.random()<0.5) for (let i=0;i<cols;i++) if (Math.random()<0.04) cur[i]=1; }
+function step(r){
+  const nx=new Uint8Array(cols), na=new Uint8Array(cols);
+  for (let i=0;i<cols;i++){
+    const l=cur[(i+cols-1)%cols], c=cur[i], rr=cur[(i+1)%cols];
+    const v=(r>>((l<<2)|(c<<1)|rr))&1;
+    nx[i]=v; na[i]=v?(c?Math.min(255,age[i]+1):0):0;
+  }
+  cur=nx; age=na;
+  if (cur.every(v=>v===0)) seed();
+}
+function pushRow(){
+  const o=head*cols; grid.set(cur,o); ages.set(age,o); head=(head+1)%rows;
+}
+function paint(){
+  for (let y=0;y<rows;y++){
+    const src=((head+y)%rows)*cols;
+    for (let x=0;x<cols;x++){
+      const j=(y*cols+x)*4;
+      if (grid[src+x]){
+        const a=Math.min(1,ages[src+x]/40), fade=0.45+0.55*(y/rows);
+        buf[j]=(255*(1-a)+90*a)*fade; buf[j+1]=(130*(1-a)+210*a)*fade; buf[j+2]=(90*(1-a)+255*a)*fade;
+      } else { buf[j]=7; buf[j+1]=8; buf[j+2]=13; }
+      buf[j+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+}
+let tick=0;
+function frame(){
+  if (!paused){
+    tick++;
+    if (mx!==null) target=Math.round(mx/innerWidth*255);
+    else if (tick%420===0) target=famous[(Math.random()*famous.length)|0];
+    // glide toward the target one bit-step at a time so the picture morphs rather than snaps
+    if (tick%6===0 && rule!==target){
+      const diff=rule^target; let b=0;
+      for (let k=7;k>=0;k--) if (diff>>k&1){ b=k; break; }
+      rule^=(1<<b);
+    }
+    for (let s=0;s<SPEED;s++){ step(rule); pushRow(); }
+    paint();
+  }
+  hud.innerHTML='falling rules<br>rule '+rule+(names[rule]?' &mdash; '+names[rule]:'')+'<br>'+rule.toString(2).padStart(8,'0')+(rule!==target?' &rarr; '+target:'');
+  requestAnimationFrame(frame);
+}
+addEventListener('resize',resize);
+addEventListener('mousemove',e=>{mx=e.clientX;});
+addEventListener('mouseleave',()=>{mx=null;});
+addEventListener('click',()=>{ target=(Math.random()*256)|0; mx=null; seed(); });
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); frame();
+})();
+</script>
+</body>
+</html>
