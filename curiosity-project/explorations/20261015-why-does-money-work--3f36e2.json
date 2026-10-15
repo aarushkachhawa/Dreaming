@@ -1,0 +1,53 @@
+{
+  "id": "20261015-why-does-money-work--3f36e2",
+  "date": "2026-10-15T10:11:23.330149",
+  "title": "Why Does Money Work?",
+  "question": "Why do we accept worthless pieces of paper and digital numbers in exchange for real goods and labor?",
+  "summary": "Money is a shared belief held up by states, debts and expectation. Its history suggests credit and accounts came before coins, and that its value is a fragile coordination equilibrium.",
+  "content": "<h2>The Puzzle</h2>\n<p>A banknote is a rectangle of cotton and ink worth almost nothing as material. A bank balance is a number in a database. Yet people will work a lifetime for them and trade real goods in return. Money works because nearly everyone expects everyone else to accept it. What sort of thing is that?</p>\n<h2>The Barter Myth</h2>\n<p>The textbook story says money arose from barter: swapping goats for grain is awkward because it needs a \"double coincidence of wants\", so societies adopted a common commodity. Anthropologists such as David Graeber argued the evidence is thin. Small communities mostly ran on gift exchange, reciprocity and credit; people kept mental ledgers of who owed whom. Barter appears mainly between strangers, or after systems of credit collapse.</p>\n<h2>Debt Before Coin</h2>\n<p>Mesopotamian temples kept accounts in silver-denominated units centuries before coins existed, and clay tablets record debts, not cash payments. Coinage appeared around 600 BCE in Lydia and spread alongside armies: states paid soldiers in coin and then demanded taxes in that same coin, which gave it a guaranteed use. This is the heart of chartalist theory: a currency has value in part because the sovereign will accept it for what you owe.</p>\n<h2>Three Jobs, One Instrument</h2>\n<p>Economists say money does three things: it is a medium of exchange, a unit of account, and a store of value. These can come apart. In high inflation, people price things in dollars (unit of account) while holding pesos only briefly. Cigarettes in prison camps and rai stones on Yap show how nearly anything can take on the role if the group coordinates on it.</p>\n<h2>A Coordination Game</h2>\n<p>Game theory frames money as an equilibrium: I accept it because I expect you will. There are many possible equilibria, and which one a society lands on can be shaped by history, law or accident. Equilibria can also fail suddenly. Hyperinflations, from Weimar Germany to Zimbabwe, are collapses of shared expectation rather than of any physical resource.</p>\n<h2>New Forms</h2>\n<p>Bitcoin attempted to replace institutional trust with computation and scarcity, while most digital money today is bank liabilities moved by messaging systems. Both tests ask the same question: what must be common knowledge for a token to be money?</p>",
+  "tags": [
+    "economics",
+    "anthropology",
+    "history",
+    "game-theory",
+    "society"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and serves as exchange medium, unit of account and store of value, though the three roles can separate."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Early economies ran on credit, gifts and obligation. Barter is a late, stranger-to-stranger phenomenon, and money began as a record of debt."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Money is a coordination equilibrium sustained by mutual expectation. Because other equilibria exist, collapse can be abrupt."
+    },
+    {
+      "title": "State Theory of Money",
+      "description": "Governments create demand for a currency by requiring taxes be paid in it, giving it durable value independent of material."
+    },
+    {
+      "title": "Cryptography",
+      "description": "Cryptocurrencies try to substitute verifiable computation for institutional trust, testing which pieces of money can be decentralized."
+    }
+  ],
+  "connections": [
+    "The paradox of cooperation",
+    "Emergence of institutions",
+    "Hyperinflation and expectation collapse",
+    "Gift economies and reciprocity",
+    "Schelling points and focal coordination",
+    "Distributed ledgers and consensus",
+    "The history of coinage in Lydia"
+  ],
+  "openQuestions": [
+    "Is money fundamentally a commodity, a debt, or a social convention?",
+    "What makes some currencies collapse while others survive shocks?",
+    "Can trust be fully replaced by computation, or does it just move?",
+    "Would a society with perfect record-keeping need money at all?",
+    "How would money work between civilizations with no shared state?"
+  ]
+}
