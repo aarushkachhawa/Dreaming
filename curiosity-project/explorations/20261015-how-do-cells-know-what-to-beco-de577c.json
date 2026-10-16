@@ -1,0 +1,53 @@
+{
+  "id": "20261015-how-do-cells-know-what-to-beco-de577c",
+  "date": "2026-10-15T10:11:23.543862",
+  "title": "How Do Cells Know What to Become?",
+  "question": "How does a single fertilized egg, with identical genes in every cell, build a precisely patterned body?",
+  "summary": "Morphogenesis combines self-organizing chemistry, positional gradients, noisy-but-robust gene networks and physical forces. Form is computed by the collective, with no blueprint and no architect.",
+  "content": "<h2>The Puzzle</h2>\n<p>A human body begins as one cell and ends as trillions, arranged into hands with five fingers, eyes in the front of the head, a heart on the left. Every cell carries the same genome, and no central architect directs placement. How does a uniform genome produce form?</p>\n<h2>Turing's Insight</h2>\n<p>In 1952 Alan Turing showed that two interacting chemicals, one that activates and one that inhibits and diffuses faster, can turn a uniform mixture into spots or stripes. Patterns arise from instability, not instructions. Reaction-diffusion has since been linked to digit spacing, hair follicles and animal coat patterns, and experiments on mouse digits suggest it plays a real role.</p>\n<h2>Positional Information</h2>\n<p>Lewis Wolpert offered a different picture: cells read their position from a concentration gradient of a signaling molecule, a morphogen, and respond by thresholds, like a French flag with blue, white and red zones. In the fruit fly embryo, the Bicoid gradient does just this, switching on gap genes at different concentrations, which in turn set up the segments and Hox genes that specify body regions.</p>\n<h2>Noisy Yet Precise</h2>\n<p>Molecules are few and noisy, yet embryos form reliably. Cells average over time and space, cross-regulate their neighbors, and use feedback to sharpen boundaries. Precision is achieved by the network, not by individual components.</p>\n<h2>Mechanics Matter</h2>\n<p>Genes are not the whole story. Tissues fold, buckle and flow. Differential growth wrinkles the brain, tension shapes the gut, and cells sense the stiffness of their surroundings. Form emerges from chemical signals coupled to physical forces.</p>\n<h2>Beyond the Embryo</h2>\n<p>Salamanders regenerate limbs and flatworms regrow heads from fragments, suggesting a stored target shape. Michael Levin's group has shown that bioelectric patterns can redirect regeneration, raising the idea that tissues compute a target anatomy. Whether this is a deep principle or an elaboration of gene networks remains contested.</p>",
+  "tags": [
+    "biology",
+    "development",
+    "self-organization",
+    "complexity",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematical Biology",
+      "description": "Turing's reaction-diffusion systems show how uniform states spontaneously break symmetry into spots and stripes."
+    },
+    {
+      "title": "Developmental Genetics",
+      "description": "Morphogen gradients like Bicoid provide positional information; thresholds switch on cascades of genes that define segments."
+    },
+    {
+      "title": "Biophysics",
+      "description": "Tissue mechanics, tension and stiffness shape organs, feeding back on gene expression and cell fate."
+    },
+    {
+      "title": "Systems Biology",
+      "description": "Robustness arises from network feedback, spatial and temporal averaging, and redundancy that tame molecular noise."
+    },
+    {
+      "title": "Regenerative Biology",
+      "description": "Regeneration and bioelectric signaling hint that tissues store and pursue target anatomies, a contested but provocative idea."
+    }
+  ],
+  "connections": [
+    "Emergence: how complexity arises from simplicity",
+    "Turing patterns and animal coats",
+    "Hox genes and body plans",
+    "Cellular automata and Conway's Life",
+    "Stem cells and cell fate landscapes",
+    "Regeneration in planarians and axolotls",
+    "Convergent evolution of form"
+  ],
+  "openQuestions": [
+    "Is there a stored 'target form' in tissues, or only dynamics that happen to converge?",
+    "How is robust precision achieved from noisy molecules?",
+    "How do genes encode physical shape, and not just cell types?",
+    "Can we program tissues to regrow organs by rewriting their signals?",
+    "How did evolution tune such systems without foresight?"
+  ]
+}
