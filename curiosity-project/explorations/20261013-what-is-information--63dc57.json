@@ -1,0 +1,48 @@
+{
+  "id": "20261013-what-is-information--63dc57",
+  "date": "2026-10-13T10:11:08.065819",
+  "title": "What Is Information?",
+  "question": "Is information just a measure of surprise, or is it a fundamental ingredient of physical reality?",
+  "summary": "From Shannon's bits to Landauer's heat cost and holographic bounds, information has moved from a communications engineering idea to a candidate foundation of physics, while meaning remains unresolved.",
+  "content": "<h2>The Slippery Concept</h2>\n<p>We say we live in the Information Age, yet \"information\" resists definition. Is it the meaning of a message, a physical thing, or a measure of surprise? The 20th century gave a surprisingly precise answer, and then discovered that answer reached into physics itself.</p>\n<h2>Shannon's Move</h2>\n<p>In 1948 Claude Shannon deliberately set meaning aside. Information, he said, is the reduction of uncertainty. A fair coin flip carries one bit; a message you already knew carries none. Entropy, H = -\u03a3 p log p, measures the average surprise of a source. This made information quantifiable and led to a theorem: any noisy channel has a capacity below which error-free communication is possible. Compression, error-correcting codes, and the entire digital world follow.</p>\n<h2>Entropy Twice</h2>\n<p>Shannon's formula matches the form of Boltzmann and Gibbs entropy in thermodynamics. This is no coincidence. Maxwell's demon, which seems to sort fast and slow molecules for free, is defeated by the fact that the demon must store and eventually erase information. Landauer showed that erasing one bit costs at least kT ln 2 of heat. Information is physical: it lives in matter and obeys energy accounting.</p>\n<h2>Algorithmic Information</h2>\n<p>Kolmogorov and Chaitin asked a different question: how long is the shortest program that outputs a given string? A string of a million zeros is simple; a random one is incompressible. This gives a notion of complexity independent of probability, but it is uncomputable, tying into G\u00f6del and Turing's limits.</p>\n<h2>It from Bit?</h2>\n<p>John Wheeler suggested that physical reality arises from yes-no questions. The holographic principle shows the maximum entropy of a region scales with its boundary area, not its volume, hinting that information may be fundamental to spacetime. Quantum theory treats states as information, and the no-cloning theorem limits copying it.</p>\n<h2>Where Is the Meaning?</h2>\n<p>Shannon's theory ignores semantics. Yet DNA, language, and minds seem to carry information that matters. Attempts to define meaningful or functional information tie it to a receiver and a purpose, perhaps to survival itself.</p>",
+  "tags": [
+    "information theory",
+    "physics",
+    "mathematics",
+    "computation"
+  ],
+  "perspectives": [
+    {
+      "title": "Communication Engineering",
+      "description": "Shannon defined information as reduced uncertainty, enabling compression and reliable communication over noisy channels without reference to meaning."
+    },
+    {
+      "title": "Thermodynamics",
+      "description": "Landauer's principle links erasing a bit to heat dissipation, resolving Maxwell's demon and showing information is physical."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Kolmogorov complexity measures information as the shortest description, connecting randomness, compression, and uncomputability."
+    },
+    {
+      "title": "Fundamental Physics",
+      "description": "Wheeler's 'it from bit' and holographic bounds suggest spacetime and matter may emerge from informational structure."
+    }
+  ],
+  "connections": [
+    "Maxwell's demon",
+    "Black hole entropy and the holographic principle",
+    "G\u00f6del's incompleteness and uncomputability",
+    "Time's Arrow and entropy",
+    "DNA as a code",
+    "Quantum no-cloning",
+    "Emergence"
+  ],
+  "openQuestions": [
+    "Is information fundamental, or only a useful description?",
+    "Can a rigorous theory of semantic information be built?",
+    "Is the universe computable?",
+    "What happens to information that falls into a black hole?",
+    "How does the brain turn bits into meaning?"
+  ]
+}
