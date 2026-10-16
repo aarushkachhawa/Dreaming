@@ -1,0 +1,49 @@
+{
+  "id": "20261014-why-do-we-age--ec0375",
+  "date": "2026-10-14T10:11:18.520822",
+  "title": "Why Do We Age?",
+  "question": "If bodies can build and repair themselves so well, why do they eventually fail, and why do some animals barely age at all?",
+  "summary": "Aging is not a built-in clock but the shadow of weakening natural selection and the trade-offs that buy youthful vigor at the cost of old age.",
+  "content": "<h2>Evolution's Blind Spot</h2>\n<p>Aging looks like a design flaw. Cells repair wounds, bones knit, and a single fertilized egg builds a body of trillions of cells without error. Why can't the same machinery keep that body going? Some animals barely age at all: certain tortoises, rockfish and the Greenland shark live for centuries, and the hydra shows no clear rise in mortality with age. Aging is not a physical inevitability. It is something evolution allowed.</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight was that natural selection weakens with age. In the wild, most animals die from predators, disease or hunger long before old age, so a gene that causes harm only late in life is almost never seen by selection. Mutations that ruin us at 80 accumulate because nothing removes them. Aging is, in part, what happens in the region where evolution stops caring.</p>\n<h2>Trade-offs: Antagonistic Pleiotropy</h2>\n<p>George Williams added a sharper idea. A gene that boosts early fitness, such as faster growth, stronger fertility or a more aggressive immune response, will be favored even if it harms us later. Selection sells our old age to buy a better youth. Cellular senescence illustrates this: halting damaged cells suppresses cancer in the young, yet the accumulated senescent cells contribute to inflammation and tissue decline later.</p>\n<h2>Disposable Soma</h2>\n<p>Thomas Kirkwood framed it as budgeting. An organism has limited energy to spend on reproduction versus maintenance. Perfect repair is costly, and if the world is dangerous it is wasted. Species facing high external mortality, like mice, evolve fast and die young. Species with protection, like bats, birds and naked mole-rats, repeatedly evolve unusually long lives for their size, which supports the theory.</p>\n<h2>Can It Be Slowed?</h2>\n<p>Caloric restriction, mutations in insulin and mTOR signaling, and removal of senescent cells all extend lifespan in animals, sometimes dramatically in worms and modestly in mice. This suggests aging is a coordinated program of regulated trade-offs, not only random wear, and so it may be tunable. Whether humans can gain healthy years safely, rather than merely more years, remains unproven.</p>",
+  "tags": [
+    "biology",
+    "aging",
+    "evolution",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Theory",
+      "description": "Selection's strength declines with age, so late-acting harmful genes accumulate and early-benefit genes are favored despite later costs."
+    },
+    {
+      "title": "Cell Biology",
+      "description": "Telomere shortening, DNA damage, senescent cells and mitochondrial decline are mechanisms through which the evolutionary trade-offs are carried out."
+    },
+    {
+      "title": "Comparative Biology",
+      "description": "Hydra, naked mole-rats, Greenland sharks and bats show that lifespan is highly flexible, and that aging is not universal or fixed."
+    },
+    {
+      "title": "Medicine and Ethics",
+      "description": "Treating aging itself, rather than individual diseases, could extend healthspan, but raises questions about inequality, population and the meaning of a finite life."
+    }
+  ],
+  "connections": [
+    "Natural selection and its limits",
+    "Entropy and Time's arrow",
+    "Cancer as a cost of long-lived bodies",
+    "Sleep, dreaming and cellular repair",
+    "Emergence in multicellular life",
+    "The Ship of Theseus and cell turnover",
+    "Sexual reproduction and the germline"
+  ],
+  "openQuestions": [
+    "Is there a biological upper limit to human lifespan, or only an engineering problem?",
+    "Why do some species evolve negligible senescence while close relatives do not?",
+    "Would removing aging change what we value, such as ambition, memory and risk?",
+    "Can interventions that help in mice be safely translated to humans?",
+    "Is death itself ever adaptive for a population, or only a by-product?"
+  ]
+}
