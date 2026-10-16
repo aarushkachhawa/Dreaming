@@ -2052,3 +2052,13 @@ When you are done, someone should want to look. Longer than they meant to.
   of a cell's lineage, warm when new and cool when long-lived. Move the cursor
   to choose any rule from 0 to 255, click to jump to a random one, space to
   pause. Open the file directly in a browser.
+
+- **2026-10-16** — `2026-10-16-slow-harmonograph.html`: a seventy-second
+  technique, and the archive's first harmonograph. Two damped pendulums drive
+  a pen along x and two along y; the curve is the sum of four decaying sines,
+  so it spirals inward as the swings die. Frequencies sit near small
+  whole-number ratios and a slow detune turns the closed rosette into
+  drifting, unravelling lace. Colour walks around the hue wheel with time and
+  brightens where the swing is strongest. Move the cursor to detune the
+  pendulums, click to start a new drawing, space to pause. Open the file
+  directly in a browser.

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slow Harmonograph</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#08070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece6dc; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,120,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#6a6258; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; detune the pendulums&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; start a new drawing&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// A harmonograph: two damped pendulums drive the pen along x, two along y.
+// Each pendulum is a decaying sine; the pen traces their sum, so the curve spirals
+// inward as the swings die. Frequencies sit near small whole-number ratios, and a slow
+// detune turns the closed rosette into a drifting, unravelling lace.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+let W=0,H=0,paused=false,mx=null,my=null,t=0,drawn=0,count=0;
+let P=null,detune=0,hue=30;
+const ratios=[[2,3],[3,4],[1,2],[4,5],[3,5],[5,6],[2,1.5]];
+function rnd(a,b){ return a+Math.random()*(b-a); }
+function resize(){
+  W=canvas.width=innerWidth; H=canvas.height=innerHeight;
+  ctx.fillStyle='#08070b'; ctx.fillRect(0,0,W,H);
+  fresh();
+}
+function fresh(){
+  const r=ratios[(Math.random()*ratios.length)|0];
+  const base=rnd(1.2,2.2);
+  P={
+    f:[base, base*r[0]/r[1]*2, base*r[1]/r[0], base*1.5],
+    ph:[rnd(0,6.28),rnd(0,6.28),rnd(0,6.28),rnd(0,6.28)],
+    d:[rnd(0.012,0.02),rnd(0.012,0.02),rnd(0.012,0.02),rnd(0.012,0.02)],
+    r:[1,0.8,1,0.8]
+  };
+  P.f[1]=base*r[0]/r[1]; P.f[2]=base*r[1]/r[0]*0.5; P.f[3]=base*r[0]/r[1]*0.5+base*0.5;
+  t=0; hue=rnd(10,60); count++;
+  ctx.fillStyle='rgba(8,7,11,1)'; ctx.fillRect(0,0,W,H);
+}
+function pos(tt){
+  const s=Math.min(W,H)*0.21, de=detune*0.02;
+  const x=s*(P.r[0]*Math.sin(tt*P.f[0]+P.ph[0])*Math.exp(-P.d[0]*tt)
+            +P.r[1]*Math.sin(tt*(P.f[1]+de)+P.ph[1])*Math.exp(-P.d[1]*tt));
+  const y=s*(P.r[2]*Math.sin(tt*P.f[2]+P.ph[2])*Math.exp(-P.d[2]*tt)
+            +P.r[3]*Math.sin(tt*(P.f[3]-de)+P.ph[3])*Math.exp(-P.d[3]*tt));
+  return [W/2+x*1.0, H/2+y*1.0];
+}
+function frame(){
+  if (!paused){
+    // slowly fade the old lines so the drawing breathes
+    ctx.fillStyle='rgba(8,7,11,0.012)'; ctx.fillRect(0,0,W,H);
+    if (mx!==null) detune=(mx/W-0.5)*2+((my/H-0.5)*0.6);
+    else detune=Math.sin(performance.now()/9000)*0.8;
+    const dt=0.012;
+    let p=pos(t);
+    ctx.lineWidth=1; ctx.lineCap='round';
+    for (let i=0;i<14;i++){
+      const q=pos(t+dt), fade=Math.exp(-0.018*t);
+      ctx.strokeStyle='hsla('+((hue+t*3)%360)+',80%,'+(55+20*fade)+'%,'+(0.25+0.6*fade).toFixed(3)+')';
+      ctx.beginPath(); ctx.moveTo(p[0],p[1]); ctx.lineTo(q[0],q[1]); ctx.stroke();
+      p=q; t+=dt; drawn++;
+    }
+    if (Math.exp(-0.012*t)<0.04) fresh();
+  }
+  hud.innerHTML='slow harmonograph<br>drawing no. '+count+'<br>detune '+detune.toFixed(2)+'<br>swing '+(Math.exp(-0.012*t)*100).toFixed(0)+'%';
+  requestAnimationFrame(frame);
+}
+addEventListener('resize',resize);
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+addEventListener('mouseleave',()=>{mx=null;my=null;});
+addEventListener('click',()=>{ fresh(); });
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+resize(); frame();
+})();
+</script>
+</body>
+</html>
