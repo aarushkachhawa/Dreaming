@@ -1,0 +1,47 @@
+{
+  "id": "20261016-why-does-music-move-us--a2e8f2",
+  "date": "2026-10-16T10:10:51.566725",
+  "title": "Why Does Music Move Us?",
+  "question": "Why do organised patterns of sound, with no obvious survival value, produce chills, tears and joy in nearly every human culture?",
+  "summary": "Music is universal, emotionally powerful and biologically puzzling. Theories range from by-product of language to tool for social bonding to a hack on the brain's prediction machinery.",
+  "content": "<p>No known human society lacks music. Bone flutes at least 40,000 years old have been found in European caves. Infants respond to rhythm before they speak. Yet music does not obviously feed, shelter or protect anyone. Why does it grip us so hard?</p>\n<h2>Expectation and Reward</h2>\n<p>Leonard Meyer proposed in 1956 that musical emotion arises from the manipulation of expectation. Modern neuroscience supports this: the brain constantly predicts what comes next, and music plays with those predictions, delaying a resolution, then granting it. Brain imaging by Salimpoor and colleagues showed dopamine release in the striatum, first in anticipation of a favourite passage and then at its peak. The thrill of chills is closely tied to the same reward circuitry used for food and social contact.</p>\n<h2>Why These Patterns?</h2>\n<p>Many cultures favour simple frequency ratios such as the octave and fifth, which relate to how the cochlea and auditory cortex process harmonics. But preferences are not fixed: the Tsimane of Bolivia, with little exposure to Western music, seem indifferent to the consonance Westerners find pleasant, suggesting that a good deal is learned. Rhythmic entrainment, moving together in time, looks more universal, and appears to be rare among other animals, though some parrots and sea lions can do it.</p>\n<h2>Competing Origin Stories</h2>\n<ul>\n<li><strong>Auditory cheesecake:</strong> Steven Pinker's suggestion that music is a pleasurable by-product of faculties that evolved for language and hearing.</li>\n<li><strong>Social glue:</strong> synchronised singing and dancing bond groups, release endorphins and coordinate action.</li>\n<li><strong>Sexual selection:</strong> Darwin thought music evolved for courtship, like birdsong.</li>\n<li><strong>Mother-infant bonding:</strong> lullabies and infant-directed song as the original musical context.</li>\n</ul>\n<h2>An Open Case</h2>\n<p>These explanations are not exclusive, and each struggles to explain why music feels meaningful rather than merely pleasant. Music has no fixed semantics, yet it can convey sadness or triumph with startling precision. Perhaps that is the point: it moves the body and the mind directly, without passing through propositions.</p>",
+  "tags": [
+    "neuroscience",
+    "music",
+    "evolution",
+    "psychology"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music hijacks the brain's prediction and reward systems, producing dopamine release through expectation, surprise and resolution."
+    },
+    {
+      "title": "Evolutionary Psychology",
+      "description": "Music may be an adaptation for bonding groups and infants, or a by-product of language and auditory scene analysis; the evidence does not yet decide."
+    },
+    {
+      "title": "Ethnomusicology",
+      "description": "What counts as consonant, pleasant or even musical varies across cultures, warning against mistaking Western taste for human nature."
+    },
+    {
+      "title": "Philosophy of Art",
+      "description": "Music expresses emotion without describing anything. Does it represent feelings, arouse them, or simply embody their dynamic shape?"
+    }
+  ],
+  "connections": [
+    "Predictive processing in the brain",
+    "The Music Hidden in Prime Numbers",
+    "How Language Learned to Talk About Itself",
+    "The Uncanny Valley",
+    "Entrainment and synchronisation in physics",
+    "The Unreasonable Effectiveness of Mathematics"
+  ],
+  "openQuestions": [
+    "Is music an adaptation, a by-product, or something culture invented and the brain adopted?",
+    "Why is the ability to keep a beat so rare among animals?",
+    "How much of musical emotion is learned versus built into the auditory system?",
+    "Can a theory of expectation explain why we replay songs we already know perfectly?",
+    "Why does sad music often feel pleasurable?"
+  ]
+}
