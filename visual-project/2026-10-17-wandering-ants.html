@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wandering Ants</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#08070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; image-rendering:pixelated; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece6dc; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,120,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#6a6258; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; steer the ants' appetite&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; new rule, new colony&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Langton's ant, generalised: each cell holds a colour index; an ant reads it, turns left or
+// right according to a rule string (e.g. "RL" is the classic ant, "RLLR" a symmetric builder),
+// advances the cell's colour, and steps forward. A few ants share one grid and trample each
+// other's roads, so order, chaos and the long diagonal "highways" keep trading places.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const CELL=3;
+const rules=['RL','LLRR','LRRRRRLLR','RRLLLRLLLRRR','RLR','LRRL','RLLR','LLRRRLRLRLLR'];
+let W=0,H=0,gw=0,gh=0,grid,img,buf32,paused=false,mx=null,my=null;
+let rule='RL',turns=[],pal=[],ants=[],steps=0,ri=0,speed=60;
+function rnd(a,b){ return a+Math.random()*(b-a); }
+function hsl(h,s,l){
+  s/=100; l/=100; const k=n=>(n+h/30)%12, a=s*Math.min(l,1-l);
+  const f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));
+  return [Math.round(f(0)*255),Math.round(f(8)*255),Math.round(f(4)*255)];
+}
+function rgb32(c){ return (255<<24)|(c[2]<<16)|(c[1]<<8)|c[0]; }
+function setup(){
+  W=canvas.width=Math.ceil(innerWidth/CELL); H=canvas.height=Math.ceil(innerHeight/CELL);
+  gw=W; gh=H; grid=new Uint8Array(gw*gh);
+  img=ctx.createImageData(W,H); buf32=new Uint32Array(img.data.buffer);
+  newColony(false);
+}
+function newColony(advance){
+  if (advance) ri=(ri+1+((Math.random()*(rules.length-1))|0))%rules.length;
+  rule=rules[ri]; turns=rule.split('').map(c=>c==='R'?1:-1);
+  const n=turns.length, h0=rnd(0,360);
+  pal=[rgb32([8,7,11])];
+  for (let i=1;i<n;i++) pal.push(rgb32(hsl((h0+i*(300/n))%360,70,35+45*i/n)));
+  grid.fill(0); buf32.fill(pal[0]); steps=0;
+  ants=[];
+  const k=2+((Math.random()*3)|0);
+  for (let i=0;i<k;i++) ants.push({x:(gw*(0.3+0.4*Math.random()))|0,y:(gh*(0.3+0.4*Math.random()))|0,d:(Math.random()*4)|0});
+}
+const DX=[0,1,0,-1], DY=[-1,0,1,0];
+function run(n){
+  const nt=turns.length;
+  for (let s=0;s<n;s++){
+    for (let a=0;a<ants.length;a++){
+      const an=ants[a], i=an.y*gw+an.x, c=grid[i];
+      an.d=(an.d+turns[c]+4)&3;
+      const nc=(c+1)%nt; grid[i]=nc; buf32[i]=pal[nc];
+      an.x=(an.x+DX[an.d]+gw)%gw; an.y=(an.y+DY[an.d]+gh)%gh;
+    }
+    steps++;
+  }
+}
+function frame(){
+  if (!paused){
+    speed=mx!==null?Math.round(10+Math.pow(mx/innerWidth,2)*900):60+Math.round(40*Math.sin(performance.now()/7000));
+    run(speed);
+    ctx.putImageData(img,0,0);
+  }
+  hud.innerHTML='wandering ants<br>rule '+rule+'<br>ants '+ants.length+'<br>steps '+steps.toLocaleString()+'<br>appetite '+speed+'/frame';
+  requestAnimationFrame(frame);
+}
+addEventListener('resize',setup);
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+addEventListener('mouseleave',()=>{mx=null;my=null;});
+addEventListener('click',()=>{ newColony(true); });
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+setup(); frame();
+})();
+</script>
+</body>
+</html>

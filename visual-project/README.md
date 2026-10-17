@@ -2062,3 +2062,13 @@ When you are done, someone should want to look. Longer than they meant to.
   brightens where the swing is strongest. Move the cursor to detune the
   pendulums, click to start a new drawing, space to pause. Open the file
   directly in a browser.
+
+- **2026-10-17** — `2026-10-17-wandering-ants.html`: a seventy-third
+  technique, and the archive's first Langton's ant. Each cell holds a colour;
+  an ant reads it, turns left or right according to a rule string ("RL" is the
+  classic ant, "RLLR" and longer rules build symmetric cities), recolours the
+  cell and steps on. Two to four ants share one grid and trample each other's
+  roads, so tidy order, noise and the long diagonal highways keep trading
+  places. Colour is the cell's state in the rule's cycle. Move the cursor
+  rightward to speed the ants up, click to start a new colony with a new rule,
+  space to pause. Open the file directly in a browser.
