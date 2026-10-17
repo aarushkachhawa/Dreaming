@@ -1,0 +1,47 @@
+{
+  "id": "20261017-olbers-paradox-why-is-the-nigh-071a0d",
+  "date": "2026-10-17T10:10:34.245780",
+  "title": "Olbers' Paradox: Why Is the Night Sky Dark?",
+  "question": "If the universe is full of stars, why isn't every line of sight ending on a bright stellar surface?",
+  "summary": "A child's question that haunted astronomers for centuries, and whose answer turned out to be the finite age of the universe itself.",
+  "content": "<h2>The Puzzle</h2>\n<p>Suppose the universe is infinite, eternal, static, and roughly uniformly filled with stars. Then any line of sight, if extended far enough, must eventually hit a stellar surface. The sky should glow like the surface of a star. Yet at night it is black. This is Olbers' paradox, named for Heinrich Olbers (1823), though Kepler, Halley and de Ch\u00e9seaux had worried at it earlier.</p>\n<h2>Why the Naive Argument Seems Airtight</h2>\n<p>Consider a thin spherical shell of stars at distance r. Its area grows as r&sup2;, so it contains more stars in proportion; each star's light dims as 1/r&sup2;. The two effects cancel: every shell contributes equal brightness, and infinitely many shells sum to infinity. Nearer stars would block farther ones, but that only changes the picture to \"the sky is uniformly as bright as a stellar surface\".</p>\n<h2>Failed Rescues</h2>\n<p>Olbers suggested interstellar dust absorbs the light. It cannot: in an eternal universe the dust would heat until it glowed as brightly as the stars. A fractal distribution of stars, with ever larger voids, can dodge the sum, but observations show matter is homogeneous on large scales. An expanding universe was not yet on the table.</p>\n<h2>The Real Answer</h2>\n<p>Two assumptions fail. The universe has a finite age, about 13.8 billion years, so we only see light from stars within that light-travel distance; the shells run out. And the universe expands, redshifting distant light and draining its energy. Calculations show the finite age dominates: even without expansion, stars have not shone long enough to fill the sky. If you could see the earliest light, you would find a wall of glowing plasma, 380,000 years after the Big Bang, redshifted into the cosmic microwave background. The sky is not entirely dark: it glows at 2.7 kelvin, in microwaves.</p>\n<h2>A Lesson in Method</h2>\n<p>Edgar Allan Poe guessed in 1848 that the universe's youth might be the reason, in the prose-poem <em>Eureka</em>. A simple observation, made from a backyard, constrained cosmology before telescopes could measure it. The paradox shows how an \"obvious\" background assumption (an eternal, static cosmos) can hide inside a clean piece of reasoning.</p>",
+  "tags": [
+    "astronomy",
+    "cosmology",
+    "physics",
+    "history-of-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Physics",
+      "description": "The sum diverges only if the universe is infinitely old. Finite age limits the observable volume, and expansion further dims distant light. The dark sky is evidence for the Big Bang model."
+    },
+    {
+      "title": "History of Science",
+      "description": "The paradox was proposed by Kepler to argue for a finite universe, later used against it, and finally resolved only once relativity and observational cosmology arrived. Poe anticipated the answer in a poem."
+    },
+    {
+      "title": "Mathematics",
+      "description": "The divergent shell series is a neat example of how cancellation (r squared against 1/r squared) can make a seemingly innocuous sum blow up, and of how the addition of a cutoff restores convergence."
+    },
+    {
+      "title": "Philosophy",
+      "description": "The argument is an a priori demonstration that a simple picture of the universe is wrong, using only the fact of darkness. It is a model case of an observation functioning as a refutation."
+    }
+  ],
+  "connections": [
+    "Cosmic microwave background and the first light of the universe",
+    "Hubble's law and the expanding universe",
+    "Redshift and the stretching of wavelengths",
+    "Fermi paradox: another conclusion from a silent sky",
+    "The anthropic principle and why observers see this universe",
+    "Heat death and the future darkness of the cosmos",
+    "Particle horizons and the limits of the observable universe"
+  ],
+  "openQuestions": [
+    "Does the universe extend infinitely beyond our horizon, and could we ever know?",
+    "Will the sky look different, or be less informative, to observers in the far future when other galaxies have receded from view?",
+    "What other everyday observations quietly constrain cosmology?",
+    "Is the homogeneity assumption true at scales we can never observe?"
+  ]
+}
