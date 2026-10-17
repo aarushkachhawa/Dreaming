@@ -1,0 +1,51 @@
+{
+  "id": "20261017-what-is-money-and-why-do-we-be-b13fee",
+  "date": "2026-10-17T10:11:03.809153",
+  "title": "What Is Money, and Why Do We Believe in It?",
+  "question": "How can worthless paper and glowing numbers on a screen command real goods, labor and loyalty?",
+  "summary": "Money is a shared fiction that works because everyone expects everyone else to accept it. Its history is a story about trust, debt and the state.",
+  "content": "<h2>The Barter Myth</h2>\n<p>The textbook story says money arose to fix barter: swapping a cow for shoes requires a double coincidence of wants, so people adopted a common commodity. Anthropologists such as David Graeber found little evidence for pure barter economies. Small communities ran on gifts, reciprocity and credit, with tallies of who owed whom. Money looks less like a convenient commodity than a way of recording debt.</p>\n<h2>Three Functions, One Tension</h2>\n<p>Money is a medium of exchange, a unit of account and a store of value. These can come apart: cigarettes in prisoner-of-war camps served as currency, while in hyperinflation people refuse to store value in the national currency yet keep pricing in it for a while. A good money must be scarce enough to hold value, but available enough to lubricate trade.</p>\n<h2>Commodity, Credit and Fiat</h2>\n<p>Gold and silver gave money intrinsic uses and natural scarcity. Banks then issued notes redeemable in metal, and creating deposits when lending expanded the supply beyond the metal. Most modern money is fiat: it has value because the state demands taxes in it, and because everyone expects others to accept it. The government's tax claim gives the currency an anchor of demand.</p>\n<h2>A Coordination Equilibrium</h2>\n<p>Game-theoretically, money is a self-fulfilling equilibrium. I accept it because I expect you will. Such equilibria can collapse: bank runs, currency crises, and hyperinflation show what happens when expectations flip. Cryptocurrencies attempt to replace institutional trust with cryptographic rules and distributed consensus, but still depend on the shared belief that they will be accepted.</p>\n<h2>Why It Matters</h2>\n<p>Money lets strangers cooperate at scale, but it also abstracts away relationships, turning obligations into quantities. Yuval Harari calls it the most universal system of mutual trust ever devised. Understanding it as belief and institutions, not substance, clarifies why monetary systems can feel permanent and still be fragile.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "game-theory"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and lowers transaction costs. Its supply and the demand to hold it determine inflation, which makes monetary policy a matter of managing expectations."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Early economies relied on credit, gifts and social obligation. Money emerged alongside states, armies and taxation, as a way of measuring and enforcing debt."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Money is a coordination equilibrium sustained by mutual expectation. Multiple equilibria exist, including collapse, and shifts between them can be abrupt."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Searle treats money as an institutional fact: it counts as money because we collectively accept that it does. Social reality is made of such agreements."
+    },
+    {
+      "title": "Technology",
+      "description": "From clay tokens to ledgers to digital payments and blockchains, each new medium re-implements the same core function of keeping a trusted record of who owes what."
+    }
+  ],
+  "connections": [
+    "Debt: The First 5000 Years and the barter myth",
+    "Gresham's law: bad money drives out good",
+    "Bank runs and self-fulfilling prophecies",
+    "Searle and institutional facts",
+    "Hyperinflation in Weimar Germany and Zimbabwe",
+    "Blockchain consensus and trustless systems",
+    "The origin of writing in Mesopotamian accounting"
+  ],
+  "openQuestions": [
+    "Can money exist without any state or institutional backing, or does it always rely on one?",
+    "What would a society look like if debt records, not currency, were the main medium?",
+    "Do digital currencies change the nature of trust, or just relocate it?",
+    "Is there a limit to how abstract a store of value can be before it fails?"
+  ]
+}
