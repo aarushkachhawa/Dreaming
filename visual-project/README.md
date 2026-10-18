@@ -2072,3 +2072,12 @@ When you are done, someone should want to look. Longer than they meant to.
   places. Colour is the cell's state in the rule's cycle. Move the cursor
   rightward to speed the ants up, click to start a new colony with a new rule,
   space to pause. Open the file directly in a browser.
+
+- **2026-10-18** — `2026-10-18-rolling-gears.html`: a seventy-fourth
+  technique, and the archive's first spirograph. A small gear rolls inside a
+  ring while a pen, set off-centre on the gear, traces a hypotrochoid. The
+  gear's size creeps slowly, so each near-closed rosette unwinds into the
+  next, and the pen's offset breathes the petals open and shut. Old loops
+  fade while the hue walks the wheel. Move the cursor rightward to push the
+  pen further from the gear's centre, click to pick new gears on fresh paper,
+  space to pause. Open the file directly in a browser.

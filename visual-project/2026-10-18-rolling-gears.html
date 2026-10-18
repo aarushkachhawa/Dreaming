@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rolling Gears</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#07080c; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8e4da; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(140,200,255,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5e6068; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; slide the pen along the arm&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; new gears, fresh paper&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// A spirograph: a small gear of radius r rolls inside a ring of radius R, and a pen sits at
+// distance d from the small gear's centre. The pen traces a hypotrochoid. Ratios of nearby
+// integers close the curve after a few turns; the ratio drifts slowly, so each rosette
+// unwinds into the next, and the pen's offset (the cursor) breathes the petals open and shut.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+let W=0,H=0,S=0,paused=false,mx=null,my=null;
+let R=1,r=0.3,d=0.6,t=0,hue=0,drift=0,pairs=[],pi=0,lastX=null,lastY=null,sinceClear=0,dFrac=0.7;
+function rnd(a,b){ return a+Math.random()*(b-a); }
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  W=canvas.width=innerWidth*dpr; H=canvas.height=innerHeight*dpr; S=Math.min(W,H)*0.46;
+  fresh();
+}
+function fresh(){
+  ctx.fillStyle='#07080c'; ctx.fillRect(0,0,W,H);
+  // pick a pair (ring teeth, gear teeth) with a non-trivial ratio
+  const ring=[96,105,120,144][(Math.random()*4)|0];
+  let g; do { g=(ring*rnd(0.14,0.4))|0; } while (g<=12 || g===ring);
+  r=g/ring; R=1; t=0; hue=rnd(0,360); dFrac=rnd(0.45,0.95); lastX=null; sinceClear=0;
+  drift=rnd(0.004,0.012)*(Math.random()<0.5?-1:1);
+}
+function point(a){
+  const k=(R-r)/r, dd=d*r;
+  return [(R-r)*Math.cos(a)+dd*Math.cos(k*a), (R-r)*Math.sin(a)-dd*Math.sin(k*a)];
+}
+function step(n){
+  const da=0.012;
+  ctx.lineWidth=Math.max(1,S/520); ctx.lineCap='round';
+  for (let i=0;i<n;i++){
+    t+=da;
+    const [x,y]=point(t);
+    const px=W/2+x*S, py=H/2+y*S;
+    if (lastX!==null){
+      ctx.strokeStyle='hsla('+((hue+t*3)%360)+',75%,'+(48+14*Math.sin(t*0.37))+'%,0.85)';
+      ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(px,py); ctx.stroke();
+    }
+    lastX=px; lastY=py;
+    // the ratio slowly unwinds: gear radius creeps, so the rosette never quite closes
+    r+=drift*0.0004*Math.sin(t*0.01+1);
+    r=Math.max(0.1,Math.min(0.42,r));
+  }
+  sinceClear+=n;
+}
+function frame(){
+  if (!paused){
+    d=mx!==null? 0.25+1.0*(mx/innerWidth) : dFrac+0.18*Math.sin(performance.now()/6000);
+    // gentle fade so old loops dim and new petals read clearly
+    ctx.fillStyle='rgba(7,8,12,0.004)'; ctx.fillRect(0,0,W,H);
+    step(40);
+    if (sinceClear>26000) { /* let the layers breathe, then start over softly */
+      ctx.fillStyle='rgba(7,8,12,0.85)'; ctx.fillRect(0,0,W,H); sinceClear=0; hue+=47; r=Math.max(0.1,Math.min(0.42,r*rnd(0.8,1.2)));
+    }
+  }
+  hud.innerHTML='rolling gears<br>ring 1 : gear '+r.toFixed(3)+'<br>pen reach '+d.toFixed(2)+'<br>turns '+(t/(2*Math.PI)).toFixed(0);
+  requestAnimationFrame(frame);
+}
+addEventListener('resize',setup);
+addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+addEventListener('mouseleave',()=>{mx=null;my=null;});
+addEventListener('click',fresh);
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+setup(); frame();
+})();
+</script>
+</body>
+</html>
