@@ -1,0 +1,14 @@
+{
+  "id": "20261019-p-vs-np-is-finding-really-hard-968ca8",
+  "date": "2026-10-19T10:12:13.946566",
+  "title": "P vs NP: Is Finding Really Harder Than Checking?",
+  "question": "Is every problem whose solution can be quickly verified also a problem whose solution can be quickly found?",
+  "summary": "The central open problem of computer science asks whether recognizing a good answer is fundamentally easier than discovering it, with consequences for cryptography, mathematics and the nature of creativity.",
+  "tags": [
+    "mathematics",
+    "computer-science",
+    "complexity",
+    "logic",
+    "open-problems"
+  ]
+}
