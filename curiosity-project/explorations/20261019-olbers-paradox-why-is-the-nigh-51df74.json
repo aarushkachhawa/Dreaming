@@ -1,0 +1,47 @@
+{
+  "id": "20261019-olbers-paradox-why-is-the-nigh-51df74",
+  "date": "2026-10-19T10:12:45.124859",
+  "title": "Olbers' Paradox: Why Is the Night Sky Dark?",
+  "question": "If the universe is vast and full of stars, why isn't every point of the night sky as bright as the surface of the Sun?",
+  "summary": "A child's question that rules out an eternal, static, infinite universe. The darkness of night is evidence that the cosmos has a finite history, and the missing glare survives as the cosmic microwave background.",
+  "content": "<h2>A Childishly Simple Puzzle</h2>\n<p>Why is the night sky dark? If the universe were infinite, static and eternal, filled uniformly with stars, every line of sight would end on a stellar surface, and the sky would blaze like the surface of a star. This is Olbers' paradox, discussed by Kepler, Halley and Heinrich Olbers in 1823. More distant stars look dimmer, but there are more of them in proportion, and the two effects cancel exactly.</p>\n<h2>Failed Rescues</h2>\n<p>Olbers suggested interstellar dust absorbs the light. It does not work: the dust would heat up and glow until it radiated as brightly as the stars. Another idea, that stars are arranged fractally so that they thin out, is not supported by observation; the universe is homogeneous on large scales. Redshift dims distant light, but by itself it is not the main cure.</p>\n<h2>The Real Answer: A Universe With a Beginning</h2>\n<p>The dominant resolution is that the observable universe has a finite age, about 13.8 billion years. Light from stars beyond a certain distance has not yet had time to reach us, so lines of sight mostly end in darkness before they hit a star. Stars themselves have finite lifetimes, and the first formed only a few hundred million years after the Big Bang. Edgar Allan Poe's 1848 prose poem <em>Eureka</em> proposed this very idea, long before cosmology could back it. Calculations show the finite age matters far more than expansion: even with no expansion, the sky would be about a hundred thousand times too dark to be bright.</p>\n<h2>The Sky Is Not Actually Dark</h2>\n<p>Look at it in microwaves and the sky glows uniformly at 2.7 kelvin: the cosmic microwave background. It is the light from the hot early universe, stretched by cosmic expansion by a factor of about 1,100. Here redshift does matter: the \"wall of fire\" that Olbers' reasoning predicts exists, but it is at the edge of the observable universe, and its light has cooled from glowing plasma at roughly 3,000 kelvin to a faint microwave hiss.</p>\n<h2>What a Dark Sky Tells Us</h2>\n<p>A simple observation, that it gets dark, rules out a whole class of cosmologies: infinite, eternal, static ones. It is an early example of a philosophical argument becoming a physical one, and the darkness is a clue that time had a beginning.</p>",
+  "tags": [
+    "cosmology",
+    "physics",
+    "astronomy",
+    "history-of-science"
+  ],
+  "perspectives": [
+    {
+      "title": "The Cosmologist",
+      "description": "The universe has a finite age, so only a finite region is visible. Redshift further converts the earliest light to microwaves, leaving visible-light skies dark."
+    },
+    {
+      "title": "The Historian of Science",
+      "description": "From Kepler to Poe, thinkers used the paradox to probe infinity. It shows how a 'naive' observation can survive centuries until the right framework arrives."
+    },
+    {
+      "title": "The Thermodynamicist",
+      "description": "In equilibrium everything would sit at the stellar temperature. The dark sky is a signature of a universe far from equilibrium, with hot stars radiating into cold space."
+    },
+    {
+      "title": "The Philosopher",
+      "description": "The argument derives a fact about the whole cosmos from the most trivial datum, nightfall, a striking case of empirical reasoning about the infinite."
+    }
+  ],
+  "connections": [
+    "The Big Bang and the cosmic microwave background",
+    "Time's arrow and the low entropy of the early universe",
+    "The Fermi paradox: another puzzle from looking at the sky",
+    "Hubble's law and the expanding universe",
+    "Stellar lifetimes and nucleosynthesis",
+    "Poe's Eureka and speculative cosmology",
+    "Why is there something rather than nothing?"
+  ],
+  "openQuestions": [
+    "Is the universe spatially infinite, and could we ever know?",
+    "Would a far-future universe, with stars burned out, answer Olbers' paradox differently?",
+    "What does the horizon of the observable universe imply about what lies beyond it?",
+    "How do cosmic inflation models alter the initial conditions behind the paradox's resolution?"
+  ]
+}
