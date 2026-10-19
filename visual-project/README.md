@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-19** — `2026-10-19-borrowed-circles.html`: a seventy-fifth
+  technique, and the first to rebuild a shape from rotating circles. A closed
+  curve is resampled and run through a discrete Fourier transform; the
+  coefficients become a chain of epicycles, each riding the rim of the last,
+  and one pen at the end redraws the shape. The number of circles in use
+  breathes, so the figure blurs to a soft ghost and sharpens again. Drag to
+  draw your own closed shape for the circles to borrow, click for a random
+  one, space to pause. Open the file directly in a browser.
+
 - **2026-10-07** — `2026-10-07-drifting-dust.html`: a sixty-third
   technique, and the first built on diffusion-limited aggregation. Single
   grains of dust wander the grid at random and freeze the instant they touch
