@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-20** — `2026-10-20-orbiting-roots.html`: a seventy-sixth
+  technique, and the first to paint Newton's method. Every pixel is a starting
+  point that falls, step by step, into one root of a polynomial; colour is the
+  root it reaches and brightness is how quickly it arrives, so basins glow
+  around each root and fractal borders knot between them. The roots slowly
+  orbit, so the basins breathe, fold and tear. Move the cursor to pull the
+  first root toward it, click to reshuffle with three to seven roots, space to
+  pause. Open the file directly in a browser.
+
 - **2026-10-19** — `2026-10-19-borrowed-circles.html`: a seventy-fifth
   technique, and the first to rebuild a shape from rotating circles. A closed
   curve is resampled and run through a discrete Fourier transform; the
