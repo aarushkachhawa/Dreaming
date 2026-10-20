@@ -1,0 +1,46 @@
+{
+  "id": "20261020-why-is-the-night-sky-dark--6aa640",
+  "date": "2026-10-20T10:11:45.622987",
+  "title": "Why Is the Night Sky Dark?",
+  "question": "If the universe is full of stars, why isn't every line of sight ending on a bright stellar surface?",
+  "summary": "Olbers' paradox looks like a child's question, yet answering it requires a universe with a beginning, a finite speed of light, and expansion.",
+  "content": "<h2>The Puzzle</h2>\n<p>Suppose the universe is infinite, eternal, and uniformly filled with stars. Look in any direction: your line of sight must eventually hit a star's surface, just as in a dense forest every line of sight ends on a tree trunk. The whole sky should glow as bright as the Sun's disc. It doesn't. This is Olbers' paradox, discussed by Kepler, Halley and Olbers, and it is a quiet refutation of an entire cosmology.</p>\n<h2>Why Distance Doesn't Save Us</h2>\n<p>Distant stars are dimmer, falling off as 1/r\u00b2. But the number of stars in a shell at distance r grows as r\u00b2. The two cancel: each shell contributes the same light, and infinitely many shells sum to infinite brightness. Dust that absorbs light does not rescue the argument either, because absorbing matter heats up until it glows as brightly as what it absorbed.</p>\n<h2>The Wrong Answers and the Right One</h2>\n<p>Olbers suggested interstellar dust. Others proposed that stars are arranged fractally so that gaps grow with scale. Neither works cleanly. The real resolution is that the premises are false: the universe is not eternal. Stars have finite lifetimes and the observable universe is about 13.8 billion years old, so we only receive light from a finite sphere. Even if every direction eventually hit a star, most of the light has not had time to arrive.</p>\n<p>Edgar Allan Poe guessed this in 1848: the void beyond is so distant that no ray from it has yet reached us. Modern calculation shows a subtler point, though. Stars live long enough that finite age alone would still leave the sky far brighter than observed; it is the expansion of space, which redshifts distant light and drains its energy, that accounts for most of the darkness.</p>\n<h2>What the Dark Sky Tells Us</h2>\n<p>The darkness of night is therefore evidence about cosmic history. The one sky that is bright in every direction, the cosmic microwave background, is the glow of the early universe itself, redshifted by a factor of about 1,100 from fire into microwaves. Olbers' paradox became a doorway to the Big Bang before anyone had the tools to think of one.</p>",
+  "tags": [
+    "cosmology",
+    "physics",
+    "astronomy",
+    "paradoxes"
+  ],
+  "perspectives": [
+    {
+      "title": "Physics",
+      "description": "The sky is dark because of finite cosmic age and redshift from expansion; the microwave background is the 'Olbers glow' we do see."
+    },
+    {
+      "title": "History of Science",
+      "description": "A thought experiment from the 1600s carried a hidden argument against an eternal static cosmos two centuries before observation could confirm it."
+    },
+    {
+      "title": "Philosophy of Science",
+      "description": "A simple everyday observation can falsify a grand set of assumptions, showing how theory-laden even 'obvious' premises are."
+    },
+    {
+      "title": "Mathematics",
+      "description": "A divergent sum is tamed by redefining the domain: the cutoffs in distance and time make the series finite."
+    }
+  ],
+  "connections": [
+    "Big Bang cosmology",
+    "Cosmic microwave background",
+    "Hubble's law and redshift",
+    "Particle horizons",
+    "Thermodynamics of absorption and re-emission",
+    "Kepler's finite-universe argument",
+    "Poe's Eureka"
+  ],
+  "openQuestions": [
+    "Does the universe have a true beginning, or only a beginning of the observable phase?",
+    "What would the night sky look like to an observer in a far-future, more expanded universe?",
+    "How many other 'obvious' observations hide a refutation of our current assumptions?"
+  ]
+}
