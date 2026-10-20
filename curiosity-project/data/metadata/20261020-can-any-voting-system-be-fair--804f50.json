@@ -1,0 +1,14 @@
+{
+  "id": "20261020-can-any-voting-system-be-fair--804f50",
+  "date": "2026-10-20T10:11:45.901240",
+  "title": "Can Any Voting System Be Fair?",
+  "question": "Is there a way to combine individual preferences into a collective choice that satisfies every reasonable fairness criterion?",
+  "summary": "Arrow's impossibility theorem proves that no ranked voting system with three or more options can satisfy a small set of intuitively reasonable fairness conditions at once.",
+  "tags": [
+    "mathematics",
+    "politics",
+    "social-choice",
+    "philosophy",
+    "game-theory"
+  ]
+}
