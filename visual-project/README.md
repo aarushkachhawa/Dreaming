@@ -24,6 +24,16 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-21** — `2026-10-21-mirrored-infinity.html`: a seventy-seventh
+  technique, and the first to tile hyperbolic space. Three mirrors, two straight
+  and one circular, bound a single triangle in the Poincare disk; every pixel is
+  folded back through them until it lands inside, and the count of reflections
+  sets its colour, so one triangle repeats forever, shrinking toward the rim.
+  The disk drifts by Mobius maps and slowly turns, so the tiles stream past
+  like a walk through impossible architecture. Move the cursor to steer the
+  centre, click to cycle through eight tilings, space to pause. Open the file
+  directly in a browser.
+
 - **2026-10-20** — `2026-10-20-orbiting-roots.html`: a seventy-sixth
   technique, and the first to paint Newton's method. Every pixel is a starting
   point that falls, step by step, into one root of a polynomial; colour is the

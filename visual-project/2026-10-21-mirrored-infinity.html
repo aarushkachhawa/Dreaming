@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mirrored Infinity</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8e4da; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,120,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5e6068; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; drag the disk's centre toward the cursor&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; change the tiling&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// A hyperbolic tiling in the Poincare disk, made with three mirrors. Two mirrors are straight
+// lines through the centre at angle pi/p; the third is a circle orthogonal to the boundary,
+// placed so the triangle between them has angles pi/2, pi/p, pi/q. Every pixel is folded
+// back through the mirrors until it lands in that one triangle; the number of reflections
+// it took decides its colour, so the single triangle is repeated forever, shrinking toward
+// the rim. Moving through the space is a Mobius map of the disk: the tiles flow past.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const off=document.createElement('canvas'), octx=off.getContext('2d');
+const TILINGS=[[7,3],[5,4],[8,3],[4,5],[3,7],[6,4],[9,3],[4,6]];
+let W=0,H=0,img=null,ti=0,tick=0,paused=false,mouse=null,ax=0,ay=0;
+let alpha,cosA,sinA,cx,cr2,hueShift=0.08;
+const SCALE=3, MAXF=70;
+function setTiling(){
+  const p=TILINGS[ti][0], q=TILINGS[ti][1];
+  alpha=Math.PI/p; cosA=Math.cos(alpha); sinA=Math.sin(alpha);
+  const s=Math.sin(Math.PI/q), c=Math.cos(Math.PI/q);
+  const d2=(c*c)/(cosA*cosA-s*s);
+  cx=Math.sqrt(d2); cr2=d2-1;
+}
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+  W=Math.max(80,Math.round(canvas.width/SCALE/dpr*1.2)); H=Math.max(60,Math.round(canvas.height/SCALE/dpr*1.2));
+  off.width=W; off.height=H; img=octx.createImageData(W,H);
+}
+function hsl(h,s,l){
+  h=((h%1)+1)%1;
+  const a=s*Math.min(l,1-l), f=n=>{ const k=(n+h*12)%12; return l-a*Math.max(-1,Math.min(k-3,9-k,1)); };
+  return [f(0)*255,f(8)*255,f(4)*255];
+}
+function render(){
+  const d=img.data, twoA=2*alpha, aspect=W/H;
+  // slow rotation of the whole disk
+  const rot=tick*0.0016, cr=Math.cos(rot), sr=Math.sin(rot);
+  const a2=ax*ax+ay*ay;
+  let p=0;
+  for (let j=0;j<H;j++){
+    const v=(j/H-0.5)*2.15;
+    for (let i=0;i<W;i++){
+      const u=(i/W-0.5)*2.15*aspect;
+      const rr=u*u+v*v;
+      if (rr>=1){ // outside the disk: a faint vignette
+        const g=Math.max(0,0.07-0.05*(rr-1));
+        d[p]=g*255*0.8; d[p+1]=g*255*0.85; d[p+2]=g*255; d[p+3]=255; p+=4; continue;
+      }
+      // rotate then Mobius translate by -a:  z -> (z-a)/(1-conj(a) z)
+      let x0=u*cr-v*sr, y0=u*sr+v*cr;
+      const nr=x0-ax, ni=y0-ay;
+      const dr=1-(ax*x0+ay*y0), di=-(ax*y0-ay*x0);
+      const m=dr*dr+di*di;
+      let x=(nr*dr+ni*di)/m, y=(ni*dr-nr*di)/m;
+      let flips=0, inv=0, i2=0;
+      for (; i2<MAXF; i2++){
+        let ang=Math.atan2(y,x), r=Math.sqrt(x*x+y*y);
+        let t=ang/twoA; t=t-Math.floor(t); let a=t*twoA;
+        if (a>alpha){ a=twoA-a; flips++; }
+        x=r*Math.cos(a); y=r*Math.sin(a);
+        const dx=x-cx, q=dx*dx+y*y;
+        if (q<cr2){ const k=cr2/q; x=cx+dx*k; y*=k; flips++; inv++; } else break;
+      }
+      const w=1-(x*x+y*y);
+      const edgeFade=Math.min(1, (1-rr)*9);
+      // hyperbolic-ish distances to the three mirrors of the folded triangle
+      const w2=Math.max(w,1e-4);
+      const d1=Math.abs(y)/w2;
+      const d2=Math.abs(x*sinA-y*cosA)/w2;
+      const d3=Math.abs(Math.sqrt((x-cx)*(x-cx)+y*y)-Math.sqrt(cr2))/w2;
+      const dm=Math.min(d1,d2,d3);
+      const line=Math.exp(-dm*14);
+      const par=flips&1;
+      const hue=0.58+hueShift*inv*0.55+par*0.42+tick*0.00018+0.05*Math.sin(d3*3);
+      const rings=0.5+0.5*Math.cos(d3*13+par*3.14);
+      const base=hsl(hue,0.72,0.20+0.22*rings*(1-0.5*par));
+      const gl=hsl(hue+0.45,0.6,0.78);
+      const glow=Math.min(1,line*1.15);
+      let R=base[0]*(1-glow)+gl[0]*glow, G=base[1]*(1-glow)+gl[1]*glow, B=base[2]*(1-glow)+gl[2]*glow;
+      const dim=edgeFade*(1-0.25*Math.min(1,inv/12));
+      d[p]=R*dim; d[p+1]=G*dim; d[p+2]=B*dim; d[p+3]=255; p+=4;
+    }
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0,canvas.width,canvas.height);
+}
+function drift(){
+  let tx,ty;
+  if (mouse){ tx=mouse[0]*0.8; ty=mouse[1]*0.8; }
+  else { tx=0.62*Math.sin(tick*0.0043); ty=0.62*Math.sin(tick*0.0031+1.3); }
+  ax+=(tx-ax)*0.05; ay+=(ty-ay)*0.05;
+  const n=Math.sqrt(ax*ax+ay*ay); if (n>0.93){ ax*=0.93/n; ay*=0.93/n; }
+}
+function frame(){
+  if (!paused){ tick++; drift(); render(); }
+  hud.innerHTML='mirrored infinity<br>tiling {'+TILINGS[ti][0]+','+TILINGS[ti][1]+'}<br>three mirrors, one triangle, forever';
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{
+  const aspect=innerWidth/innerHeight;
+  mouse=[(e.clientX/innerWidth-0.5)*2.15*aspect,(e.clientY/innerHeight-0.5)*2.15];
+});
+addEventListener('mouseleave',()=>{ mouse=null; });
+canvas.addEventListener('click',()=>{ ti=(ti+1)%TILINGS.length; setTiling(); });
+addEventListener('resize',setup);
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+setTiling(); setup(); frame();
+})();
+</script>
+</body>
+</html>
