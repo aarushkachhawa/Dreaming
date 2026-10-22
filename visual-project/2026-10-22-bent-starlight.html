@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bent Starlight</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04050a; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e8e4da; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(140,180,255,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#5e6068; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; carry the heavier mass&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; change the mass ratio&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Gravitational lensing by two point masses. Every screen pixel is a ray of light; the lens
+// equation  beta = theta - sum m_i (theta - p_i) / |theta - p_i|^2  says where on the distant
+// sky that ray really started. The sky is a field of stars, a slow spiral galaxy and a thin
+// nebula, all in the source plane. Bend the rays and the sky is smeared into Einstein rings,
+// doubled, and torn along caustics where the two masses' shadows meet. The masses orbit each
+// other; the cursor drags the heavier one.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const off=document.createElement('canvas'), octx=off.getContext('2d');
+const RATIOS=[[1,1],[1,0.5],[1,0.2],[1,0.08],[1,0.02],[1,0.7]];
+let W=0,H=0,img=null,ri=1,tick=0,paused=false,mouse=null,gx=0,gy=0;
+const SCALE=2;
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+  W=Math.max(80,Math.round(canvas.width/SCALE/dpr*1.2)); H=Math.max(60,Math.round(canvas.height/SCALE/dpr*1.2));
+  off.width=W; off.height=H; img=octx.createImageData(W,H);
+}
+function hash(x,y){
+  let h=(x*374761393+y*668265263)|0; h=(h^(h>>>13))*1274126177|0; return ((h^(h>>>16))>>>0)/4294967296;
+}
+// star colour from temperature-ish value
+function starCol(t){ return [0.7+0.3*t, 0.8+0.1*Math.sin(t*3.1), 1.0-0.35*t]; }
+function sky(sx,sy,t,out){
+  let r=0,g=0,b=0;
+  // stars: jittered grid at two densities
+  for (let L=0;L<2;L++){
+    const sc=L?9:4.2, ux=sx*sc, uy=sy*sc, ix=Math.floor(ux), iy=Math.floor(uy);
+    for (let dj=-1;dj<=1;dj++) for (let di=-1;di<=1;di++){
+      const cx=ix+di, cy=iy+dj, h=hash(cx+L*91,cy-L*53);
+      if (h<0.55) continue;
+      const px=cx+hash(cx,cy+7)*0.8+0.1, py=cy+hash(cx+3,cy)*0.8+0.1;
+      const dx=(ux-px)/sc, dy=(uy-py)/sc, d2=dx*dx+dy*dy;
+      const size=(0.00006+0.00016*hash(cx,cy+19))/(L?2.2:1);
+      const tw=0.75+0.25*Math.sin(t*2+h*40);
+      const v=Math.exp(-d2/size)*tw*(L?0.8:1.4);
+      if (v>0.003){ const c=starCol(hash(cx+5,cy+5)); r+=v*c[0]; g+=v*c[1]; b+=v*c[2]; }
+    }
+  }
+  // spiral galaxy, centred off to one side, slowly turning
+  const gxs=sx-0.18, gys=sy+0.05, gr=Math.sqrt(gxs*gxs+gys*gys*1.6)+1e-4, ga=Math.atan2(gys*1.26,gxs);
+  const arm=0.5+0.5*Math.cos(2*(ga-2.6*Math.log(gr+0.02)-t*0.15));
+  const gv=Math.exp(-gr*5.5)*(0.25+0.9*arm)+Math.exp(-gr*gr*900)*1.3;
+  r+=gv*1.0; g+=gv*0.8; b+=gv*0.62;
+  // faint nebula
+  const n=Math.sin(sx*3.1+Math.sin(sy*2.3+t*0.05)*1.7)*Math.sin(sy*2.7-Math.cos(sx*1.9)*1.3)
+        +0.5*Math.sin((sx+sy)*7.3);
+  const nv=Math.max(0,n-0.25)*0.18;
+  r+=nv*0.45; g+=nv*0.2; b+=nv*0.75;
+  out[0]=r; out[1]=g; out[2]=b;
+}
+const col=[0,0,0];
+function render(){
+  const d=img.data, aspect=W/H, t=tick*0.016;
+  const rat=RATIOS[ri], m1=0.020*rat[0], m2=0.020*rat[1];
+  // barycentric orbit; the heavy mass is pulled toward the cursor
+  const sep=0.30, ang=t*0.35;
+  const q=m2/(m1+m2);
+  const bx=gx, by=gy;
+  const p1x=bx-q*sep*Math.cos(ang),       p1y=by-q*sep*Math.sin(ang);
+  const p2x=bx+(1-q)*sep*Math.cos(ang),   p2y=by+(1-q)*sep*Math.sin(ang);
+  const e2=0.0004;
+  let p=0;
+  for (let j=0;j<H;j++){
+    const v=(j/H-0.5)*1.6;
+    for (let i=0;i<W;i++){
+      const u=(i/W-0.5)*1.6*aspect;
+      let ax=u-p1x, ay=v-p1y, r1=ax*ax+ay*ay+e2;
+      let cx=u-p2x, cy=v-p2y, r2=cx*cx+cy*cy+e2;
+      const sx=u-m1*ax/r1-m2*cx/r2, sy=v-m1*ay/r1-m2*cy/r2;
+      sky(sx,sy,t,col);
+      // event-horizon-ish darkening right at each mass, and a soft magnification glow
+      const h1=Math.min(1,r1/(e2*5)), h2=Math.min(1,r2/(e2*5));
+      const k=h1*h2;
+      let R=col[0]*k, G=col[1]*k, B=col[2]*k;
+      // tone map
+      R=1-Math.exp(-R*1.3); G=1-Math.exp(-G*1.3); B=1-Math.exp(-B*1.3);
+      d[p]=R*255; d[p+1]=G*255; d[p+2]=B*255; d[p+3]=255; p+=4;
+    }
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0,canvas.width,canvas.height);
+  hud.innerHTML='BENT STARLIGHT<br>masses '+rat[0].toFixed(2)+' : '+rat[1].toFixed(2)+'<br>separation '+sep.toFixed(2);
+}
+function loop(){
+  if (!paused){
+    tick++;
+    const asp=W/H;
+    let tx=0,ty=0;
+    if (mouse){ tx=(mouse.x-0.5)*1.6*asp*0.6; ty=(mouse.y-0.5)*1.6*0.6; }
+    else { tx=0.18*Math.sin(tick*0.004); ty=0.1*Math.cos(tick*0.0031); }
+    gx+=(tx-gx)*0.05; gy+=(ty-gy)*0.05;
+  }
+  render(); requestAnimationFrame(loop);
+}
+addEventListener('mousemove',e=>{ mouse={x:e.clientX/innerWidth,y:e.clientY/innerHeight}; });
+addEventListener('mouseleave',()=>{ mouse=null; });
+addEventListener('click',()=>{ ri=(ri+1)%RATIOS.length; });
+addEventListener('keydown',e=>{ if (e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+addEventListener('resize',setup);
+setup(); loop();
+})();
+</script>
+</body>
+</html>

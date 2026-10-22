@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-22** — `2026-10-22-bent-starlight.html`: a seventy-eighth
+  technique, and the first to bend light. Two masses orbit each other and every
+  pixel is a ray traced back through their gravity to the sky it really came
+  from: a field of stars, a slow spiral galaxy and a thin nebula. Where the
+  rays bend, the galaxy is smeared into arcs, doubled, and torn along the
+  caustics between the two shadows. Move the cursor to carry the heavier mass,
+  click to change the mass ratio, space to pause. Open the file directly in a
+  browser.
+
 - **2026-10-21** — `2026-10-21-mirrored-infinity.html`: a seventy-seventh
   technique, and the first to tile hyperbolic space. Three mirrors, two straight
   and one circular, bound a single triangle in the Poincare disk; every pixel is
