@@ -1,0 +1,49 @@
+{
+  "id": "20260731-the-problem-of-induction-why-i-205678",
+  "date": "2026-07-31T10:12:29.345421",
+  "title": "The Problem of Induction: Why 'It Worked Before' Isn't Proof",
+  "question": "What actually justifies our confidence that the future will resemble the past?",
+  "summary": "David Hume showed that our entire practice of learning from experience\u2014expecting the sun to rise, trusting physics, believing in cause and effect\u2014rests on an assumption that cannot be logically proven without circularity.",
+  "content": "\n<p>The sun has risen every day of recorded history. You are, reasonably, confident it will rise tomorrow. But try to justify that confidence without simply repeating the pattern: \"It has always happened, therefore it will happen again\" is not a logical proof, it's a restatement of the problem. To make it a proof, you'd need an additional premise\u2014something like \"the future resembles the past\"\u2014but the only evidence anyone has ever offered for that premise is that the future has, so far, resembled the past. The argument eats its own tail. David Hume identified this in the eighteenth century, and nobody has found a way out that doesn't just relocate the problem.</p>\n\n<h2>The Structure of the Trap</h2>\n<p>Hume divided all reasoning into two kinds: relations of ideas (logic, mathematics, true by definition, like \"all bachelors are unmarried\") and matters of fact (claims about the world, like \"bread nourishes\"). Inductive inferences\u2014generalizing from observed cases to unobserved ones\u2014are matters of fact, so they can't be proven the way a mathematical theorem is proven. But they also can't be justified empirically without assuming the very principle in question: that unobserved instances will resemble observed ones. Any attempt to justify induction either smuggles in an unproven assumption or uses induction itself to justify induction, which is circular. Hume's conclusion was not that induction is false\u2014he trusted the sun would rise as much as anyone\u2014but that our trust in it is a psychological habit, not a rationally grounded certainty.</p>\n\n<h2>Why Science Can't Simply Shrug This Off</h2>\n<p>This isn't an idle philosophical puzzle; it sits at the foundation of empirical science itself. Every scientific law is an inductive generalization: gravity behaved consistently in a trillion observed instances, so we expect it to behave consistently in the next one. Karl Popper tried to route around the problem by arguing science doesn't really \"prove\" theories through induction at all\u2014it only ever falsifies them through deduction, and a theory's survival under repeated attempts at falsification is not the same as inductive proof of its truth. This softens the problem but doesn't dissolve it: choosing to keep acting on an unfalsified theory rather than a falsified one is itself a bet that past resilience predicts future resilience.</p>\n\n<h2>The Pragmatic and Probabilistic Rescues</h2>\n<p>Later philosophers offered partial escapes rather than solutions. Pragmatists argued that even if induction can't be proven to work, it's the only strategy that could possibly work if the world has any regularities at all\u2014so adopting it is rational even without a guarantee, the way betting on the only strategy that gives you a chance is rational even if you can't be sure you'll win. Bayesians reframe belief itself as a matter of degree, updated by evidence according to probability theory, sidestepping the demand for certainty by only ever claiming degrees of confidence\u2014though Bayesian updating still needs a prior probability assigned to \"the future resembles the past\" before it can even begin, which just moves the unjustified assumption one level back rather than removing it.</p>\n\n<h2>Living Inside an Unprovable Habit</h2>\n<p>What makes Hume's problem so durable is that it doesn't threaten any particular belief\u2014it threatens the method by which we hold basically all empirical beliefs at once, including the belief that Hume's argument itself, being built from words and logic that have \"worked\" before, is trustworthy. We can't function without induction; deciding to cross a street depends on physics continuing to behave. The honest position, nearly three centuries on, is that induction is a practice we cannot live without and cannot logically ground\u2014and that this gap between practical necessity and rational justification is simply a permanent feature of being a finite mind trying to know an unbounded future.</p>\n",
+  "tags": [
+    "philosophy",
+    "epistemology",
+    "induction",
+    "philosophy-of-science",
+    "david-hume",
+    "logic"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophy Perspective",
+      "description": "Hume's original argument remains logically airtight: no non-circular justification for induction has ever been produced, only reframings that relocate rather than resolve the gap."
+    },
+    {
+      "title": "Philosophy of Science Perspective",
+      "description": "Popperian falsificationism reframes science as deductive rather than inductive, but the decision to trust unfalsified theories going forward still imports an inductive assumption through the back door."
+    },
+    {
+      "title": "Statistics and Bayesian Perspective",
+      "description": "Treating belief as probability rather than certainty softens the demand for proof, but any prior probability assigned to regularity in nature is itself an unjustified starting assumption, not a solution."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Human (and animal) brains appear hardwired to extract statistical regularities and predict forward from them; induction may be less a chosen epistemic strategy than an evolved feature of any mind built to survive in a semi-regular world."
+    }
+  ],
+  "connections": [
+    "Karl Popper's falsificationism and the demarcation problem",
+    "Bayesian epistemology and prior probabilities",
+    "Nelson Goodman's 'grue' paradox and the new riddle of induction",
+    "The uniformity of nature as an unprovable metaphysical assumption",
+    "Skepticism and the limits of empirical knowledge",
+    "Statistical learning theory and generalization bounds in machine learning",
+    "Causation and Hume's parallel critique of cause and effect"
+  ],
+  "openQuestions": [
+    "Is there any possible argument that could justify induction without presupposing it, or is the circularity truly inescapable in principle?",
+    "Does the practical success of science count as evidence that induction is reliable, or is that just the circle again in different clothing?",
+    "If induction is an evolved cognitive habit rather than a rational proof, does that undermine or simply explain our confidence in it?",
+    "How should machine learning systems, which are essentially industrialized induction, be understood in light of a problem with no logical solution?"
+  ]
+}
