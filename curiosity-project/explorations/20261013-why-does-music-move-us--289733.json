@@ -1,0 +1,48 @@
+{
+  "id": "20261013-why-does-music-move-us--289733",
+  "date": "2026-10-13T10:10:52.760364",
+  "title": "Why Does Music Move Us?",
+  "question": "Why does organized sound evoke such deep emotion, and why is it universal across human cultures?",
+  "summary": "Music engages the brain's prediction and reward systems, binds groups through synchrony, and may be either an evolutionary adaptation or a spectacular by-product of other abilities.",
+  "content": "<h2>A Strange Pleasure</h2>\n<p>Music has no obvious survival value. It cannot be eaten, it does not shelter us, and yet every known human culture makes it. A sequence of air-pressure changes can bring a person to tears or send a chill down the spine. Why?</p>\n<h2>Prediction and Surprise</h2>\n<p>Leonard Meyer and, later, David Huron argued that musical emotion arises from expectation. The brain constantly predicts what comes next: the next note, the beat, the resolution of a chord. Music satisfies, delays, or violates those predictions. A dominant chord creates tension; the tonic resolves it. Neuroimaging shows that anticipating a favorite musical peak releases dopamine in the caudate, and the peak itself in the nucleus accumbens, the same reward circuitry engaged by food and sex.</p>\n<h2>Why These Notes?</h2>\n<p>Consonance seems to track simple frequency ratios: an octave is 2:1, a fifth is 3:2. The overtone series of any vibrating string contains these ratios, so the ear is bathed in them from birth. But cultural learning matters greatly. Some Amazonian groups with little exposure to Western music do not rate consonant chords as more pleasant, suggesting that much of our taste is learned rather than hard-wired.</p>\n<h2>Evolutionary Hypotheses</h2>\n<p>Darwin guessed music arose in courtship. Others propose social bonding: synchronized singing and dancing coordinate groups and build trust, much like grooming. Steven Pinker famously called music \"auditory cheesecake\", a by-product of faculties evolved for language and emotion. Evidence for music-as-bonding is growing: infants calm to lullabies across cultures, and groups that move in time cooperate more.</p>\n<h2>Rhythm and the Body</h2>\n<p>Few animals can synchronize to a beat; humans do it effortlessly, and a few parrots and sea lions can too. Beat perception links auditory and motor areas, which may explain why we cannot sit still to groove. Rhythm turns listening into a physical, shared act.</p>\n<h2>Meaning Without Words</h2>\n<p>Music is not a language, but it has syntax-like structure, and processing musical syntax overlaps with language areas. It conveys mood and motion without referring to anything, which may be exactly why it feels so profound.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "evolution",
+    "psychology"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Emotional response to music comes from anticipation and reward: dopamine is released as the brain predicts, delays, and resolves musical patterns."
+    },
+    {
+      "title": "Evolutionary Psychology",
+      "description": "Music may have evolved for mate attraction or group bonding, or arisen as a by-product of language and auditory faculties, as Pinker's cheesecake argument suggests."
+    },
+    {
+      "title": "Physics and Mathematics",
+      "description": "Consonance relates to simple frequency ratios and the harmonic series, giving music a mathematical skeleton."
+    },
+    {
+      "title": "Cultural Anthropology",
+      "description": "Scales, harmony, and what counts as pleasant vary widely, showing that learning and culture shape musical taste as much as biology."
+    }
+  ],
+  "connections": [
+    "The harmonic series and Pythagorean tuning",
+    "Predictive processing in the brain",
+    "Language and syntax",
+    "Entrainment and synchrony",
+    "Lullabies and infant cognition",
+    "The Unreasonable Effectiveness of Mathematics",
+    "Bird song and vocal learning"
+  ],
+  "openQuestions": [
+    "Is music an adaptation or a by-product?",
+    "Which features of music are truly universal?",
+    "Why do sad songs feel pleasurable?",
+    "Why are so few species able to keep a beat?",
+    "Could music from an alien species be recognizable to us?"
+  ]
+}
