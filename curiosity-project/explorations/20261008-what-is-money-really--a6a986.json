@@ -1,0 +1,53 @@
+{
+  "id": "20261008-what-is-money-really--a6a986",
+  "date": "2026-10-08T10:11:57.767265",
+  "title": "What Is Money, Really?",
+  "question": "Why do we accept scraps of paper and digits on a screen in exchange for real goods and labor?",
+  "summary": "Money works because of shared expectations, not intrinsic value. From shell beads to central bank reserves to cryptocurrencies, its history is a story of trust, institutions, and collective belief.",
+  "content": "<p>A banknote is worth almost nothing as paper. A balance in a bank app is worth nothing as physical matter. Yet people work for decades to accumulate them. What makes something money, and why does it succeed when it succeeds?</p>\n<h2>The textbook functions</h2>\n<p>Economists define money by three roles: a medium of exchange, a unit of account, and a store of value. Money solves the \"double coincidence of wants\": in barter, I need to find someone who has what I want and wants what I have. A commonly accepted intermediary dissolves that friction.</p>\n<h2>The barter myth</h2>\n<p>The familiar story says money emerged from barter as people converged on a convenient commodity such as gold. Anthropologists like David Graeber have argued that evidence for widespread barter economies is thin. Small communities more often ran on gift exchange and informal credit, tracking who owed whom. On this view, money began as a ledger of debts, and coins came later, partly to pay armies and to let states collect taxes.</p>\n<h2>Value from belief</h2>\n<p>Gold has industrial uses but its monetary value far exceeds them. A fiat currency has none at all. The common thread is common knowledge: I accept it because I expect you will, and you because you expect others will. This makes money a coordination equilibrium. It is stable while trust holds and can collapse abruptly, as in hyperinflations when people rush to dump currency, each rational individually and ruinous collectively.</p>\n<h2>The state and the banks</h2>\n<p>Modern money is mostly created by commercial banks when they make loans, not printed by governments. Banks record a deposit and a loan simultaneously, expanding the money supply. Central banks backstop this system and set interest rates. Chartalists argue that money's value is anchored by the state demanding taxes in its own currency, creating base demand for it.</p>\n<h2>Digital and decentralized money</h2>\n<p>Bitcoin proposed money with no issuer, using a public ledger secured by computation and a fixed supply. It raised the question of whether scarcity plus consensus suffices, or whether stable value requires institutions that can respond to crises. Central bank digital currencies take another path, digitizing state money. Meanwhile, most money everywhere is already just entries in databases.</p>\n<h2>What this suggests</h2>\n<p>Money is a technology for coordinating trust among strangers. Its substance is social: a network of promises. That explains both its power and its fragility, and why debates about it blend economics, politics, and philosophy.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "society",
+    "technology"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money reduces transaction costs, enabling specialization and trade. Its value depends on expected acceptance, supply management, and confidence in the issuer."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Early economies relied on gift and credit relations. Money may have originated as a moral and social accounting of debt rather than a convenience for barter."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Accepted currency is a coordination equilibrium with multiple possible states. Bank runs and hyperinflation are shifts to a bad equilibrium triggered by lost confidence."
+    },
+    {
+      "title": "Political Theory",
+      "description": "States shape money through taxation, legal tender laws, and monetary policy, so control of money is entangled with sovereignty and power."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Digital currency is a replicated database problem: how to prevent double-spending without a trusted central party. Blockchains offer one answer at a high cost in energy and complexity."
+    }
+  ],
+  "connections": [
+    "Graeber's 'Debt: The First 5,000 Years'",
+    "Fractional reserve banking and credit creation",
+    "Hyperinflation in Weimar Germany and Zimbabwe",
+    "Bitcoin and the Byzantine generals problem",
+    "Schelling points and coordination games",
+    "Modern Monetary Theory and chartalism",
+    "Yap stone money and the nature of ledgers"
+  ],
+  "openQuestions": [
+    "Can money exist without any central authority and still be stable in a crisis?",
+    "Is money a thing, a relationship, or an information system?",
+    "What happens to social trust when payments become fully traceable and programmable?",
+    "Could a currency be anchored by something other than scarcity or state power?",
+    "Why do some communities develop local currencies that succeed or fail?"
+  ]
+}
