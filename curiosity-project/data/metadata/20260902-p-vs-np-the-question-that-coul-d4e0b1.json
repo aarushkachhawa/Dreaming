@@ -1,0 +1,14 @@
+{
+  "id": "20260902-p-vs-np-the-question-that-coul-d4e0b1",
+  "date": "2026-09-02T10:16:26.031502",
+  "title": "P vs NP: The Question That Could Break the Internet",
+  "question": "If a computer can quickly check that a solution to a problem is correct, can it always find that solution quickly too?",
+  "summary": "One of the biggest open problems in mathematics asks whether verifying an answer is fundamentally easier than finding it \u2014 and the answer would reshape cryptography, creativity, and computation itself.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "complexity-theory",
+    "p-vs-np",
+    "cryptography"
+  ]
+}
