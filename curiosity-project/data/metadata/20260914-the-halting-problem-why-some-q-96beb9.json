@@ -1,0 +1,14 @@
+{
+  "id": "20260914-the-halting-problem-why-some-q-96beb9",
+  "date": "2026-09-14T10:11:44.082584",
+  "title": "The Halting Problem: Why Some Questions Have No Algorithm",
+  "question": "Can a computer ever decide, in general, whether another program will finish running or loop forever?",
+  "summary": "Alan Turing proved that no algorithm can determine, for every possible program, whether it halts or runs forever. The proof is a short piece of self-reference with enormous consequences for what computation can and can't do.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "logic",
+    "computation",
+    "turing"
+  ]
+}

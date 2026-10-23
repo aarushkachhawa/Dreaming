@@ -1,0 +1,48 @@
+{
+  "id": "20260914-why-do-we-laugh-the-strange-ev-3a91ef",
+  "date": "2026-09-14T10:12:14.770727",
+  "title": "Why Do We Laugh? The Strange Evolution of Humor",
+  "question": "Laughter serves no obvious survival function, yet every human culture has it. What is it actually for?",
+  "summary": "Laughter predates language, appears in other primates, and follows the same neural and social scripts across every culture ever studied. Tracing its evolutionary roots reveals it as less about jokes and more about bonding, safety signals, and social bookkeeping.",
+  "content": "\n<p>Only about 10-20% of laughter follows anything you'd recognize as a joke. Most of it erupts in ordinary conversation &mdash; \"I'll see you there,\" followed by a laugh, is a completely typical utterance. This single fact, documented by psychologist Robert Provine after recording thousands of hours of natural laughter, undermines the assumption that laughter exists to reward wit. Something older and more social seems to be going on.</p>\n\n<h2>Older Than Language</h2>\n<p>Chimpanzees, bonobos, gorillas, and orangutans all produce a breathy, panting vocalization during rough-and-tumble play that shares acoustic structure with human laughter, and even rats emit ultrasonic \"laughter\" chirps when tickled or during play. This suggests laughter is not a byproduct of human intelligence or language but a much older signal, likely originating as a \"play face\" and play vocalization that told a play-fighting partner: this is not a real attack, stay relaxed, keep going. Human laughter appears to be an elaboration of that ancient safety signal, later recruited for far more sophisticated social work.</p>\n\n<h2>The Bonding Function</h2>\n<p>Laughter is intensely contagious &mdash; we are roughly thirty times more likely to laugh in the presence of others than alone, even at things we don't find funny, which is why laugh tracks work at all. Robin Dunbar's research links laughter to the brain's endorphin system: shared laughter triggers an opioid response similar to grooming in other primates, and because laughing together is faster than one-on-one grooming, it may have let early humans maintain larger social bonds within bigger groups. Under this account, humor is almost incidental &mdash; a reliable trigger for a mechanism whose real function is cementing group cohesion.</p>\n\n<h2>What Makes Something Funny</h2>\n<p>Most theories of humor converge on some version of \"benign violation\": something has to break an expectation, norm, or pattern (a violation) while simultaneously being safe, harmless, or resolvable (benign). A pun violates linguistic expectation; slapstick violates physical dignity; irony violates literal meaning &mdash; but only if no one is really hurt and the frame is understood to be play. This is why the same event (someone slipping on ice) can be hilarious or horrifying depending entirely on whether real harm followed, and why tickling yourself doesn't produce laughter: there's no genuine uncertainty or \"violation\" when you fully control the stimulus.</p>\n\n<h2>A Signal With Teeth</h2>\n<p>Laughter isn't just warm and cooperative, though. It's also used to mark status, exclude outsiders, and enforce norms &mdash; laughing at someone rather than with them is a universally recognized form of social punishment, and shared in-group laughter at an outsider's expense reinforces boundaries as much as it builds bonds. Evolutionary accounts that focus only on bonding risk missing this darker, equally ancient half of the story: laughter as a tool for signaling who belongs and who doesn't.</p>\n",
+  "tags": [
+    "psychology",
+    "evolution",
+    "humor",
+    "cognition",
+    "sociology"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology Perspective",
+      "description": "Laughter's presence in play behavior across great apes and even rodents suggests deep homology: a signal that arose to make rough play safe, later exapted for complex human social bonding."
+    },
+    {
+      "title": "Neuroscience Perspective",
+      "description": "Laughter triggers endorphin release and activates brain reward circuitry similarly to physical touch, explaining why shared laughter feels intimate and why it can substitute for grooming in large social groups."
+    },
+    {
+      "title": "Psychology Perspective",
+      "description": "The benign-violation theory explains humor's structure: an expectation must be broken, but safely, for amusement rather than alarm to result. The same event can be comic or distressing depending only on context."
+    },
+    {
+      "title": "Sociology Perspective",
+      "description": "Laughter functions as social currency &mdash; not only building in-group cohesion but marking hierarchy and excluding outsiders, making it as much a tool of power as of affiliation."
+    }
+  ],
+  "connections": [
+    "Play behavior and its evolutionary origins in mammals",
+    "Robin Dunbar's social brain hypothesis and grooming",
+    "The benign-violation theory of humor",
+    "Contagious behaviors and mirror neuron systems",
+    "Emotional expression and universal facial signals (Paul Ekman)",
+    "In-group/out-group dynamics and social bonding",
+    "Endorphins, oxytocin, and the biochemistry of social connection"
+  ],
+  "openQuestions": [
+    "Why can't people tickle themselves, and what does that reveal about the role of surprise or lack of control in triggering laughter?",
+    "Is a sense of humor a genuinely selected trait in mate choice, or a byproduct of general intelligence signaling?",
+    "How much of humor is universal across cultures versus deeply dependent on shared context and language?",
+    "Could artificial agents ever laugh in the socially meaningful sense, or only simulate its acoustic signature?"
+  ]
+}
