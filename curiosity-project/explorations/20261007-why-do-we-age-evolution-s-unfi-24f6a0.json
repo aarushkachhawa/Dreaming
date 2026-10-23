@@ -1,0 +1,48 @@
+{
+  "id": "20261007-why-do-we-age-evolution-s-unfi-24f6a0",
+  "date": "2026-10-07T10:11:09.314003",
+  "title": "Why Do We Age? Evolution's Unfinished Maintenance",
+  "question": "If evolution builds such remarkable bodies, why does it let them fall apart?",
+  "summary": "Aging isn't programmed in the way a clock is. It looks like what happens when natural selection stops caring, though a few animals seem to have opted out entirely.",
+  "content": "<h2>An Evolutionary Paradox</h2>\n<p>A mouse lives two years; a bowhead whale can live two centuries; a Greenland shark perhaps four. A body able to build itself from a single cell would seem able to repair itself indefinitely. Yet nearly everything complex deteriorates. Why would selection allow it?</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight in the 1950s: in the wild, most animals die from predators, disease or accidents long before old age. Imagine a harmful gene that acts only at age 80. Almost no individual carries it to expression, so selection barely sees it. The strength of natural selection declines with age, and mutations that act late accumulate freely. Aging is not selected for; it is simply not selected against.</p>\n<h2>Trade-offs and Thrift</h2>\n<p>George Williams added <em>antagonistic pleiotropy</em>: a gene that helps early in life (faster growth, higher fertility) can be favored even if it harms later. Calcium deposition that builds bone in youth may clog arteries in age. The <em>disposable soma</em> theory of Tom Kirkwood frames it economically: an organism has finite energy, and investing in perfect repair costs reproduction. Evolution funds maintenance only as long as the body is likely to be around to benefit.</p>\n<h2>The Damage Itself</h2>\n<p>Proximate causes are many: accumulated DNA damage, shortening telomeres, misfolded proteins, mitochondrial decline, senescent cells that stop dividing but secrete inflammatory signals, and shifts in epigenetic patterns. Researchers now speak of hallmarks of aging, and interventions such as clearing senescent cells, caloric restriction, and drugs like rapamycin extend lifespan in animals, suggesting the process is more malleable than assumed.</p>\n<h2>Exceptions that Teach</h2>\n<p>The naked mole-rat shows little rise in mortality with age. Some <em>Hydra</em> appear not to senesce. The jellyfish <em>Turritopsis dohrnii</em> can revert to a juvenile form. These show that aging is not physically inevitable, only evolutionarily unexceptional. Species in safe niches, such as bats, birds and burrowers, tend to live long for their size, matching the theory's prediction.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is a by-product of weakening selection and resource trade-offs, not an adaptation. Predicting lifespan from extrinsic mortality works across many species."
+    },
+    {
+      "title": "Molecular Biology",
+      "description": "Aging emerges from many interacting forms of damage and dysregulation, so there may be no single cause, and no single cure."
+    },
+    {
+      "title": "Medical",
+      "description": "Treating aging itself, rather than each disease in turn, could compress morbidity: more years of health, not just more years."
+    },
+    {
+      "title": "Ethical",
+      "description": "Radical life extension raises questions about inequality, population, and what meaning mortality gives to a human life."
+    }
+  ],
+  "connections": [
+    "Disposable soma theory",
+    "Telomeres and the Hayflick limit",
+    "Cellular senescence",
+    "Caloric restriction and rapamycin",
+    "Naked mole-rats",
+    "Entropy and repair (time's arrow)",
+    "Evolutionary medicine"
+  ],
+  "openQuestions": [
+    "Is there a biological upper limit to human lifespan?",
+    "Can aging be reversed, or only slowed?",
+    "Why do some species show negligible senescence?",
+    "Would curing aging change what it means to be human?"
+  ]
+}
