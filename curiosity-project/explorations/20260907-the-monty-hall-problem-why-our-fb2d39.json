@@ -1,0 +1,49 @@
+{
+  "id": "20260907-the-monty-hall-problem-why-our-fb2d39",
+  "date": "2026-09-07T10:14:34.353160",
+  "title": "The Monty Hall Problem: Why Our Brains Fight the Right Answer",
+  "question": "Why does switching doors double your odds of winning a game show prize, and why do even mathematicians initially refuse to believe it?",
+  "summary": "A simple game show puzzle exposed a permanent flaw in human probabilistic reasoning: our intuitions treat information as if it doesn't matter, when in fact it's the whole game.",
+  "content": "\n<p>Three doors. Behind one is a car, behind the other two, goats. You pick a door. Before opening it, the host, who knows what's behind every door, opens a different door to reveal a goat, then asks: do you want to switch to the remaining door, or stay with your original pick? Most people's gut says it can't matter &mdash; two doors are left, so it must be fifty-fifty. That gut feeling is wrong, and in 1990 it triggered one of the great public math controversies of the twentieth century.</p>\n\n<h2>The Setup That Broke a Nation's Math</h2>\n<p>When columnist Marilyn vos Savant correctly answered a reader's question about this puzzle in Parade magazine &mdash; switching doubles your odds of winning, from one-third to two-thirds &mdash; she received thousands of letters disagreeing, many from people with PhDs. Some accused her of being the reason America was falling behind in math education. The problem, named for game show host Monty Hall, wasn't a trick question. It was correct, well-posed, and almost everyone's intuition about it was simply mistaken.</p>\n\n<h2>The Answer Nobody Wants</h2>\n<p>The key is that the host's action is not random. He always opens a door you didn't pick, and he always reveals a goat, never the car. That means his choice carries information about where the car is. When you first pick a door, you have a one-third chance of being right and a two-thirds chance the car is behind one of the other two doors. Opening a goat door doesn't change those original odds &mdash; it just concentrates the entire two-thirds probability that was spread across the two doors you didn't pick onto the single door that's left. Switching means betting on that two-thirds pile. Staying means betting on your original one-third guess, forever.</p>\n\n<h2>Why Intuition Fails So Hard</h2>\n<p>Human probabilistic reasoning evolved for quick, rough judgments under uncertainty, not for tracking how new evidence should update old beliefs, which is exactly what this problem demands. Psychologists call the underlying mistake the equiprobability bias: when people see two remaining options, they assume the options must be equally likely, ignoring how those options came to be the ones remaining. The host's constrained, non-random choice is invisible to intuition but is doing all the mathematical work. Even seeing the correct simulation run a thousand times, some people continue to insist fifty-fifty is right &mdash; a rare case where formal proof and repeated demonstration both fail to overcome intuition on contact.</p>\n\n<h2>Not Just a Parlor Trick</h2>\n<p>The same structure &mdash; where a knowledgeable actor's constrained choice reveals hidden information &mdash; shows up far beyond game shows. It's a clean illustration of Bayesian updating, the formal machinery for revising probability estimates as new evidence arrives, which underlies everything from medical diagnosis to spam filters to courtroom reasoning about evidence. Doctors interpreting a positive test result, given a rare disease's base rate, are fighting the exact same equiprobability instinct that makes people stay with their original door.</p>\n\n<h2>The Deeper Lesson</h2>\n<p>Monty Hall endures not because the arithmetic is hard &mdash; it isn't &mdash; but because it's a rare, reproducible window into how badly human intuition handles conditional probability, even among people trained to reason formally. It suggests that a great deal of everyday decision-making under uncertainty, from investing to medical choices to legal judgments, may be running on the same broken shortcut: treating \"two options remain\" as \"the options are equally likely,\" and quietly discarding the information embedded in how those options came to remain at all.</p>\n",
+  "tags": [
+    "mathematics",
+    "probability",
+    "psychology",
+    "cognitive-bias",
+    "game-theory"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematics Perspective",
+      "description": "The problem is a clean exercise in conditional probability: the host's non-random, informed choice shifts probability mass rather than leaving it evenly split, and the result can be proven rigorously and verified by simulation."
+    },
+    {
+      "title": "Psychology & Cognitive Science Perspective",
+      "description": "The equiprobability bias, our tendency to assume remaining options are equally likely regardless of how they became the remaining options, explains why the correct answer feels wrong even after it's proven."
+    },
+    {
+      "title": "Bayesian Epistemology Perspective",
+      "description": "Monty Hall is a minimal, uncluttered example of updating beliefs on new evidence, the same formal move at the heart of scientific reasoning, medical diagnosis, and legal inference."
+    },
+    {
+      "title": "Decision Theory Perspective",
+      "description": "The puzzle demonstrates that the value of information depends entirely on how it was generated, not just on what it superficially reveals, a distinction that matters enormously in real-world strategic and financial decisions."
+    }
+  ],
+  "connections": [
+    "Bayesian reasoning and updating beliefs on evidence",
+    "Base rate neglect in medical and legal decision-making",
+    "The boy-or-girl paradox and other probability puzzles",
+    "Cognitive biases and heuristics in judgment under uncertainty",
+    "Game theory and strategic information revelation",
+    "The paradox of cooperation and reasoning about others' incentives",
+    "Information theory and how evidence reduces uncertainty"
+  ],
+  "openQuestions": [
+    "Why does the correct answer continue to feel wrong even after a rigorous proof or a thousand simulated trials?",
+    "What other everyday decisions are secretly structured like Monty Hall, where we ignore how our options came to be narrowed?",
+    "Can training in formal probability durably fix the equiprobability bias, or does the intuition always creep back under time pressure?",
+    "How much of human overconfidence in fifty-fifty judgments traces back to this same failure to track the source of evidence?",
+    "Are there cultures or educational systems that produce measurably better intuitions for conditional probability, and if so why?"
+  ]
+}
