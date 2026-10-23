@@ -1,0 +1,46 @@
+{
+  "id": "20261023-endosymbiosis-the-merger-that--c5b395",
+  "date": "2026-10-23T10:11:45.778191",
+  "title": "Endosymbiosis: The Merger That Made Complex Life",
+  "question": "Why did complex cells arise only once, and was it a partnership rather than a gradual climb?",
+  "summary": "Mitochondria were once free-living bacteria swallowed by another cell. That single merger may have unlocked the energy budget that complex life requires.",
+  "content": "<h2>Two Kinds of Cell</h2>\n<p>Life on Earth splits into small, simple prokaryotes (bacteria and archaea) and large, intricate eukaryotes: us, plants, fungi, amoebae. For roughly two billion years life stayed simple. Then, at least once, something changed. Lynn Margulis argued in the 1960s that eukaryotes arose from symbiosis, a claim first met with scorn and now textbook fact.</p>\n<h2>The Evidence</h2>\n<p>Mitochondria carry their own small circular DNA, divide like bacteria, have double membranes, and their genes place them within the alpha-proteobacteria. Chloroplasts descend similarly from cyanobacteria. Meanwhile the host cell's genetic lineage sits within the archaea, probably related to the Asgard group. We are, in a literal sense, a chimera of two domains.</p>\n<h2>The Energy Argument</h2>\n<p>Nick Lane proposes that the crucial gain was energy. Bacteria generate power across their outer membrane, so as they grow larger their energy per gene shrinks. Mitochondria internalised those membranes, giving a eukaryote vastly more energy per gene, which funded large genomes, elaborate regulation and eventually multicellularity. The merger was not just one more adaptation but a change of economics.</p>\n<h2>Why Only Once?</h2>\n<p>All known eukaryotes descend from a single common ancestor containing mitochondria. Independent repeats have not been found, suggesting the event was improbable, perhaps requiring a rare chance such as an archaeon living inside a bacterial partner's metabolic loop. If so, complex life might be rare in the universe even where microbes are common, a possible answer to the Fermi paradox.</p>\n<h2>Conflict Within</h2>\n<p>The partnership is not harmonious. Mitochondria still carry their own genes, and conflicts between nuclear and mitochondrial genomes affect ageing, inheritance and disease. Cooperation emerged from, and is stabilised against, potential betrayal.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "origin-of-life",
+    "symbiosis"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Major transitions often arise through cooperation and merger, not just gradual mutation; evolution can also combine entire genomes."
+    },
+    {
+      "title": "Bioenergetics",
+      "description": "Energy per gene, set by membrane surface, limits prokaryote complexity; mitochondria broke that ceiling."
+    },
+    {
+      "title": "Astrobiology",
+      "description": "If the merger was a freak accident, microbial life may be common while animals and plants are exceedingly rare."
+    },
+    {
+      "title": "History of Science",
+      "description": "Margulis's idea was rejected by many journals before DNA evidence vindicated it, showing how paradigm shifts can be resisted."
+    }
+  ],
+  "connections": [
+    "The Fermi paradox",
+    "The paradox of cooperation",
+    "The chemistry before life",
+    "Emergence and complexity",
+    "Convergent evolution",
+    "Horizontal gene transfer"
+  ],
+  "openQuestions": [
+    "Did the host cell or the mitochondrion come first in complexity, and who was the partner?",
+    "Could a second eukaryogenesis happen, or are the conditions gone?",
+    "Is energy really the bottleneck, or did something else limit prokaryotes?",
+    "How common are such mergers elsewhere in the universe?"
+  ]
+}
