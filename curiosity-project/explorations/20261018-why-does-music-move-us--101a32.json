@@ -1,0 +1,52 @@
+{
+  "id": "20261018-why-does-music-move-us--101a32",
+  "date": "2026-10-18T10:10:38.254533",
+  "title": "Why Does Music Move Us?",
+  "question": "Why does an arrangement of sounds with no obvious survival value produce chills, tears, and joy in every known human culture?",
+  "summary": "Music is universal, ancient, and emotionally powerful, yet it feeds no one and shelters no one. Competing theories treat it as a by-product, a social glue, or a prediction game our brains love to play.",
+  "content": "<p>Archaeologists have found bone flutes more than 40,000 years old, and no human society has ever been found without music. Yet music has no obvious function. Why would natural selection leave us so vulnerable to organised sound?</p>\n<h2>Expectation and Reward</h2>\n<p>Leonard Meyer argued in the 1950s that musical emotion comes from expectation: a melody sets up a prediction, and delay, fulfilment, or violation produces feeling. Modern neuroscience supports this. Brain imaging by Salimpoor and colleagues shows dopamine released in the caudate during anticipation of a favourite passage, and in the nucleus accumbens at the peak itself, the same reward circuitry engaged by food and sex. Music is a prediction-error machine that is safe to play with.</p>\n<h2>Why Would Evolution Care?</h2>\n<p>Darwin guessed music arose in courtship, like birdsong. Others, such as Robin Dunbar, suggest it works as social grooming at scale: singing and dancing together synchronise bodies and release endorphins, binding groups too large for one-to-one grooming. Steven Pinker famously called music \"auditory cheesecake\", a technology that pushes buttons evolved for language and emotion without any adaptive purpose of its own. A fourth view, from infant studies, sees music as rooted in the lullaby: the rhythmic, melodic call between parent and child that soothes and bonds.</p>\n<h2>Structure Shared Across Cultures</h2>\n<p>Surprisingly many features recur worldwide: octave equivalence, small-integer frequency ratios, regular pulse, and lullabies that sound like lullabies even to listeners from unrelated cultures. Yet there is also deep variation. Western listeners find certain dissonances unpleasant that Tsimane villagers in Bolivia, with little exposure to Western music, do not rank differently from consonances. Some preferences look innate; others are learned.</p>\n<h2>Meaning Without Reference</h2>\n<p>Music does not describe anything, yet it feels meaningful. Philosophers like Susanne Langer say it mirrors the form of feeling: rising tension, release, stillness. Our bodies seem to hear motion in it, which is why it makes us tap, sway, and \"feel\" the sadness of a slow minor melody. Embodied accounts suggest we map sound onto gesture and speech prosody, so a sad piece resembles a slow, low, quiet sigh.</p>\n<p>Probably all of these are partly true. Music piggybacks on prediction, language, movement, and social bonding, and once the machinery was in place culture elaborated it into something that exceeds any single origin.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "evolution",
+    "psychology",
+    "culture"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music engages the dopamine reward system through anticipation and resolution, with chills tied to peaks of prediction and surprise."
+    },
+    {
+      "title": "Evolutionary psychology",
+      "description": "Competing hypotheses: sexual selection, group bonding, parent-infant communication, or a by-product of other adaptations."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Music appears in every culture, with shared tendencies like pulse and octave but wide variation in scales, timbre, and social role."
+    },
+    {
+      "title": "Philosophy of aesthetics",
+      "description": "How purely formal patterns can carry emotional meaning without referring to anything outside themselves."
+    },
+    {
+      "title": "Embodied cognition",
+      "description": "We understand sound partly as imagined movement and vocal gesture, which grounds musical feeling in the body."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the brain",
+    "How language learned to talk",
+    "The paradox of cooperation and group bonding",
+    "Mathematics of harmonic ratios and the prime numbers",
+    "Time's arrow and the experience of rhythm",
+    "Birdsong and sexual selection",
+    "Emotion and the hard problem of consciousness"
+  ],
+  "openQuestions": [
+    "Is any musical preference truly innate, or is all of it shaped by exposure?",
+    "Did music or language come first, or did they share a common ancestor?",
+    "Why do sad songs feel pleasurable when real sadness does not?",
+    "Would an alien intelligence recognise our music as music?"
+  ]
+}
