@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cup of Light</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#07060a; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#eadfcb; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(255,190,110,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#62594f; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; carry the lamp&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; change the number of bounces&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Light in a mirrored cup. A point lamp sits inside a circular mirror and sends out a fan of
+// rays. Each ray reflects off the wall again and again, and every segment is drawn additively,
+// so the light piles up where rays crowd together: the bright envelope is a caustic. With the
+// lamp at the rim it is a cardioid; as the lamp slides toward the centre it opens into a
+// nephroid, then a rosette of folds. The lamp drifts on its own; the cursor carries it.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const BOUNCES=[1,2,3,5,8,14];
+let W=0,H=0,R=0,cx=0,cy=0,bi=2,t=0,paused=false,mouse=null,lx=0,ly=0,lastMove=-99;
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+  W=canvas.width; H=canvas.height; cx=W/2; cy=H/2; R=Math.min(W,H)*0.44;
+}
+function lamp(){
+  if (mouse && t-lastMove<6){
+    let dx=(mouse.x*W/innerWidth-cx)/R, dy=(mouse.y*H/innerHeight-cy)/R, d=Math.hypot(dx,dy);
+    if (d>0.985){ dx*=0.985/d; dy*=0.985/d; }
+    return [dx,dy];
+  }
+  // slow Lissajous wander that reaches the rim and the centre
+  const r=0.5+0.48*Math.sin(t*0.13), a=t*0.071+Math.sin(t*0.05)*1.3;
+  return [r*Math.cos(a), r*Math.sin(a)];
+}
+function frame(){
+  if (!paused) t+=1/60;
+  const target=lamp();
+  lx+=(target[0]-lx)*0.08; ly+=(target[1]-ly)*0.08;
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#07060a'; ctx.fillRect(0,0,W,H);
+  // soft cup glow
+  const g=ctx.createRadialGradient(cx,cy,R*0.2,cx,cy,R*1.05);
+  g.addColorStop(0,'rgba(40,24,18,0.55)'); g.addColorStop(1,'rgba(12,8,10,0.0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  const N=Math.min(1400,Math.round(R*1.6)), nb=BOUNCES[bi];
+  const px=lx, py=ly;
+  ctx.lineWidth=Math.max(1,R/700);
+  for (let pass=0;pass<2;pass++){
+    ctx.beginPath();
+    // bounce k drawn in a colour that cools as the light ages
+    for (let i=0;i<N;i++){
+      let x=px, y=py, a=(i+(pass?0.5:0))/N*Math.PI*2, dx=Math.cos(a), dy=Math.sin(a);
+      ctx.moveTo(cx+x*R, cy+y*R);
+      for (let k=0;k<=nb;k++){
+        // intersect ray with unit circle: |p + s d|^2 = 1
+        const b=x*dx+y*dy, c=x*x+y*y-1, s=-b+Math.sqrt(Math.max(0,b*b-c));
+        x+=dx*s; y+=dy*s;
+        ctx.lineTo(cx+x*R, cy+y*R);
+        // reflect about the normal (x,y)
+        const dn=dx*x+dy*y; dx-=2*dn*x; dy-=2*dn*y;
+      }
+    }
+    ctx.strokeStyle=pass?'rgba(90,150,255,0.045)':'rgba(255,150,60,0.05)';
+    ctx.stroke();
+  }
+  // the rim and the lamp
+  ctx.globalCompositeOperation='source-over';
+  ctx.strokeStyle='rgba(235,215,185,0.55)'; ctx.lineWidth=Math.max(1.5,R/300);
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+  const lg=ctx.createRadialGradient(cx+lx*R,cy+ly*R,0,cx+lx*R,cy+ly*R,R*0.05);
+  lg.addColorStop(0,'rgba(255,248,230,1)'); lg.addColorStop(1,'rgba(255,200,120,0)');
+  ctx.fillStyle=lg; ctx.beginPath(); ctx.arc(cx+lx*R,cy+ly*R,R*0.05,0,Math.PI*2); ctx.fill();
+  const d=Math.hypot(lx,ly);
+  hud.innerHTML='CUP OF LIGHT<br>lamp at '+(d*100).toFixed(0)+'% of the radius<br>'+nb+' reflection'+(nb>1?'s':'')+' per ray';
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{mouse={x:e.clientX,y:e.clientY};lastMove=t;});
+addEventListener('touchmove',e=>{const p=e.touches[0];mouse={x:p.clientX,y:p.clientY};lastMove=t;},{passive:true});
+addEventListener('click',()=>{bi=(bi+1)%BOUNCES.length;});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-23** — `2026-10-23-cup-of-light.html`: a seventy-ninth
+  technique, and the first to let light pile up into a caustic. A lamp sits
+  inside a circular mirror and sends out a fan of rays; each reflects off the
+  wall again and again and every segment is drawn additively, so the light
+  gathers into a glowing envelope: a cardioid with the lamp at the rim, a
+  nephroid toward the centre. Move the cursor to carry the lamp, click to
+  change the number of bounces, space to pause. Open the file directly in a
+  browser.
+
 - **2026-10-22** — `2026-10-22-bent-starlight.html`: a seventy-eighth
   technique, and the first to bend light. Two masses orbit each other and every
   pixel is a ray traced back through their gravity to the sky it really came
