@@ -1,0 +1,48 @@
+{
+  "id": "20260921-the-sorites-paradox-when-does--a73410",
+  "date": "2026-09-21T10:12:41.245878",
+  "title": "The Sorites Paradox: When Does a Heap Stop Being a Heap?",
+  "question": "If removing one grain of sand never turns a heap into a non-heap, how can a heap ever disappear?",
+  "summary": "An ancient logic puzzle about heaps of sand exposes a strange gap between how language works and how the world actually is\u2014one that still troubles philosophers, lawyers, and AI systems today.",
+  "content": "\n<p>Take a heap of a million grains of sand. Remove one grain. Is it still a heap? Obviously yes\u2014one grain can't possibly matter. Repeat this reasoning, one grain at a time, and each step seems undeniable. Yet if you accept every single step, you're forced to accept the conclusion that a single grain of sand, sitting alone on the ground, is a heap. Something has clearly gone wrong, but it's remarkably hard to say exactly where.</p>\n\n<h2>An Ancient Problem That Never Went Stale</h2>\n<p>This is the Sorites paradox (from the Greek 'soros', heap), attributed to the philosopher Eubulides in the fourth century BCE. It isn't really about sand. It's about any predicate that admits borderline cases: 'tall', 'bald', 'rich', 'red', 'adult'. There is no single hair whose removal makes a man go from not-bald to bald. There is no single dollar that makes someone rich. Yet clearly some people are bald and some are not, some are rich and some are not. Vagueness seems to be built into the very words we use to carve up reality.</p>\n\n<h2>Three Ways Philosophers Have Tried to Escape</h2>\n<p>One response, epistemicism, insists there really is a sharp cutoff\u2014some exact number of grains that separates heap from non-heap\u2014we simply cannot know where it is, because our language was never precise enough to fix it. A second response, supervaluationism, says 'heap' is genuinely indeterminate in the borderline zone: statements there are neither true nor false, only 'super-true' if true under every reasonable way of sharpening the term. A third response, fuzzy logic, abandons the binary of true/false altogether and lets 'heapness' come in degrees, so that a pile of 500 grains might be 0.6 true as a heap. None of these solutions is fully satisfying, which is itself the interesting part.</p>\n\n<h2>Why It's Not Just a Word Game</h2>\n<p>The Sorites paradox has real teeth outside the seminar room. Legal systems draw hard lines through vague continuous properties constantly: you are a minor until the stroke of midnight on your eighteenth birthday, then suddenly an adult, though nothing about you changed in that instant. Medical diagnoses like 'obese' or 'clinically depressed' are threshold judgments imposed on continuous variables. Self-driving cars must decide, in vague lighting, whether an object is a pedestrian or a shadow\u2014a machine version of the heap problem with consequences measured in lives.</p>\n\n<h2>A Feature of Thought, Not a Bug in the World</h2>\n<p>Perhaps the deepest lesson of the paradox is that vagueness isn't a flaw we could fix with more precise dictionaries. Vague predicates are useful precisely because they let us communicate efficiently about a continuous, high-dimensional world using a small vocabulary. The paradox exists because we are trying to force gradients into categories, and the world, stubbornly, refuses to hand us sharp boundaries. The heap dissolves grain by grain; our certainty about what to call it dissolves right along with it.</p>\n",
+  "tags": [
+    "philosophy",
+    "logic",
+    "language",
+    "vagueness",
+    "epistemology"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophy Perspective",
+      "description": "The paradox tests classical logic's commitment to bivalence\u2014the idea that every statement is either true or false\u2014and has driven the development of entire alternative logics to handle vagueness."
+    },
+    {
+      "title": "Linguistics Perspective",
+      "description": "Vague predicates like 'tall' or 'heap' are context-sensitive and gradable, meaning their truth conditions shift with comparison classes, which linguists model using degree semantics rather than fixed thresholds."
+    },
+    {
+      "title": "Law Perspective",
+      "description": "Legal systems must impose bright-line rules (voting age, blood alcohol limits, poverty thresholds) onto continuous phenomena, making the Sorites paradox an unavoidable practical problem rather than an abstract puzzle."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Fuzzy logic and machine learning classifiers confront the Sorites problem directly whenever they must draw a decision boundary through a continuous feature space, such as classifying an image as 'cat' versus 'not cat'."
+    }
+  ],
+  "connections": [
+    "Fuzzy logic and degrees of truth",
+    "The problem of the many and vague object boundaries",
+    "Bivalence and the law of excluded middle in classical logic",
+    "Legal bright-line rules versus standards",
+    "Category theory in cognitive psychology and prototype theory",
+    "Ship of Theseus and identity over gradual change",
+    "Threshold effects in medical diagnosis"
+  ],
+  "openQuestions": [
+    "Is vagueness a genuine feature of reality, or purely an artifact of imprecise language?",
+    "Can any logic fully resolve borderline cases without simply relocating the paradox to a new boundary?",
+    "Should legal and medical systems abandon sharp thresholds in favor of continuous, probabilistic judgments?",
+    "Do machine learning systems 'solve' the Sorites paradox, or just hide it inside a confidence score?"
+  ]
+}
