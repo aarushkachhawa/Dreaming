@@ -1,0 +1,14 @@
+{
+  "id": "20260812-why-no-voting-system-can-be-pe-cbbeff",
+  "date": "2026-08-12T10:17:21.643573",
+  "title": "Why No Voting System Can Be Perfectly Fair",
+  "question": "Is it mathematically possible to design a voting system that always fairly aggregates individual preferences into a group decision?",
+  "summary": "Kenneth Arrow proved that no ranked voting system can simultaneously satisfy a small set of reasonable fairness conditions when there are three or more options \u2014 a result that turns 'just design a better voting system' from an engineering problem into a mathematical impossibility.",
+  "tags": [
+    "mathematics",
+    "political-science",
+    "economics",
+    "game-theory",
+    "philosophy"
+  ]
+}
