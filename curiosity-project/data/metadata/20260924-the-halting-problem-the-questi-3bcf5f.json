@@ -1,0 +1,15 @@
+{
+  "id": "20260924-the-halting-problem-the-questi-3bcf5f",
+  "date": "2026-09-24T10:11:59.583423",
+  "title": "The Halting Problem: The Question No Computer Can Answer",
+  "question": "Can a single, general algorithm ever exist that predicts, for any program and any input, whether that program will finish running or loop forever?",
+  "summary": "In 1936, Alan Turing proved that no such algorithm can exist\u2014not because we haven't found it yet, but because its existence would generate a logical contradiction. The Halting Problem is computer science's own incompleteness theorem: a hard boundary on what computation can ever know about itself, discovered before the first electronic computer was built.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "logic",
+    "computability",
+    "turing",
+    "philosophy"
+  ]
+}
