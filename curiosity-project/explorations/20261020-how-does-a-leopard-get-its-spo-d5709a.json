@@ -1,0 +1,47 @@
+{
+  "id": "20261020-how-does-a-leopard-get-its-spo-d5709a",
+  "date": "2026-10-20T10:11:45.764871",
+  "title": "How Does a Leopard Get Its Spots?",
+  "question": "How can identical cells, following the same genome, self-organize into stripes, spots and organs without a blueprint?",
+  "summary": "Alan Turing's reaction-diffusion model showed that two interacting chemicals can spontaneously break symmetry and paint patterns, a template for how biology builds form from uniformity.",
+  "content": "<h2>A Mathematician Looks at Embryos</h2>\n<p>In 1952, shortly before his death, Alan Turing published 'The Chemical Basis of Morphogenesis'. His question was how a ball of identical cells becomes a body with structure. His answer was surprising: two chemicals, one that promotes its own production (an activator) and one that suppresses it (an inhibitor) and diffuses faster, can turn a perfectly uniform mixture unstable. Tiny random fluctuations grow into regular waves of concentration.</p>\n<h2>Short-Range Activation, Long-Range Inhibition</h2>\n<p>The mechanism is intuitive. Where activator concentration happens to rise, it makes more of itself and also more inhibitor. The inhibitor spreads farther, suppressing activation in a ring around each peak. The result is spacing: peaks separated by a characteristic wavelength set by diffusion rates and reaction speeds. Change the geometry and the same equations produce spots, stripes or labyrinths. A small animal's tail has too little room for spots and becomes striped, which matches what we see in leopards and cheetahs.</p>\n<h2>Evidence and Caveats</h2>\n<p>Turing patterns have been confirmed in digit formation in mouse limbs, the ridges of the palate, hair follicle spacing, and the stripes of zebrafish, where the 'chemicals' are actually interacting pigment cells. Many real systems turn out to be Turing-like in logic but not in molecular detail. Meanwhile, other mechanisms, such as morphogen gradients and mechanical forces, do much of the work in the fruit fly body plan, so reaction-diffusion is one tool among several.</p>\n<h2>Why It Matters</h2>\n<p>The deep lesson is that genes need not encode a picture. They encode rates and interactions, and form emerges from dynamics. This reframes development as a physical process and suggests that evolution can tune a few parameters to produce dramatically different patterns, which may help explain how animals diversify so quickly.</p>",
+  "tags": [
+    "biology",
+    "mathematics",
+    "development",
+    "self-organization",
+    "emergence"
+  ],
+  "perspectives": [
+    {
+      "title": "Developmental Biology",
+      "description": "Pattern is generated during growth by interacting signals; the genome specifies the parameters of the process, not the finished pattern."
+    },
+    {
+      "title": "Mathematics",
+      "description": "A linear stability analysis shows a homogeneous state becomes unstable to perturbations of a specific wavelength when diffusion rates differ enough."
+    },
+    {
+      "title": "Evolution",
+      "description": "Small changes in reaction or diffusion parameters yield very different coats, so diversity can arise without inventing new machinery."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Reaction-diffusion systems are used in graphics and in models of distributed computation, echoing cellular automata."
+    }
+  ],
+  "connections": [
+    "Turing's morphogenesis paper",
+    "Cellular automata and Conway's Life",
+    "Morphogen gradients in Drosophila",
+    "Zebrafish stripe formation",
+    "Symmetry breaking in physics",
+    "Belousov-Zhabotinsky reaction",
+    "D'Arcy Thompson's On Growth and Form"
+  ],
+  "openQuestions": [
+    "How often does real development rely on true Turing mechanisms versus look-alikes?",
+    "How do patterns stay robust to noise during growth?",
+    "Could we program tissues by designing reaction-diffusion circuits synthetically?"
+  ]
+}

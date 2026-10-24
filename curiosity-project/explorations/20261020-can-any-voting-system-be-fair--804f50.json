@@ -1,0 +1,47 @@
+{
+  "id": "20261020-can-any-voting-system-be-fair--804f50",
+  "date": "2026-10-20T10:11:45.901240",
+  "title": "Can Any Voting System Be Fair?",
+  "question": "Is there a way to combine individual preferences into a collective choice that satisfies every reasonable fairness criterion?",
+  "summary": "Arrow's impossibility theorem proves that no ranked voting system with three or more options can satisfy a small set of intuitively reasonable fairness conditions at once.",
+  "content": "<h2>The Dream of a Fair Count</h2>\n<p>Democracy seems to promise that if we gather everyone's preferences, a fair procedure can extract the will of the people. In 1951 Kenneth Arrow showed that this dream hits a wall. Starting from a few modest requirements, he proved that no rule can meet them all when there are at least three options.</p>\n<h2>The Conditions</h2>\n<p>Arrow asked that a ranking rule be: <em>unrestricted</em> (it handles any set of voter rankings), <em>unanimous</em> (if everyone prefers A to B, so does the result), <em>independent of irrelevant alternatives</em> (the social ranking of A and B depends only on how voters rank A versus B), and <em>non-dictatorial</em> (no single voter always decides). The theorem: the only rules satisfying the first three are dictatorships.</p>\n<h2>Why It Bites</h2>\n<p>The root is the Condorcet cycle: with three voters ranking A>B>C, B>C>A and C>A>B, majority rule says A beats B, B beats C and C beats A. The group is irrational even though each member is rational. Real systems show their own pathologies: plurality voting suffers from spoiler candidates, as when a third candidate splits a majority; ranked-choice can elect someone who would lose head to head against others; Borda counts can be manipulated by adding irrelevant options.</p>\n<h2>Escape Routes</h2>\n<p>The theorem does not say elections are meaningless. It says you must give something up. Approval and score voting use cardinal information rather than rankings, escaping Arrow's framework though inviting other problems. The Gibbard-Satterthwaite theorem adds that any reasonable rule invites strategic voting. Single-peaked preferences, where options lie on one dimension, restore consistency, which may explain why left-right politics works as well as it does. Choosing a voting system becomes a choice about which failure we can live with.</p>",
+  "tags": [
+    "mathematics",
+    "politics",
+    "social-choice",
+    "philosophy",
+    "game-theory"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematics",
+      "description": "Arrow's theorem is a clean impossibility result about functions from preference profiles to rankings, proved via the notion of a decisive coalition."
+    },
+    {
+      "title": "Political Science",
+      "description": "Different systems trade off spoiler effects, strategic voting and legitimacy; institutions shape which candidates even run."
+    },
+    {
+      "title": "Philosophy",
+      "description": "If there is no neutral aggregation, what does 'the will of the people' mean? Rousseau's general will faces a formal challenge."
+    },
+    {
+      "title": "Economics",
+      "description": "Social choice theory underlies welfare economics, where comparing utilities across persons is the crux."
+    }
+  ],
+  "connections": [
+    "Condorcet paradox",
+    "Gibbard-Satterthwaite theorem",
+    "Approval and score voting",
+    "Median voter theorem",
+    "Rousseau's general will",
+    "Mechanism design",
+    "Ranked-choice voting"
+  ],
+  "openQuestions": [
+    "Which fairness condition is most worth abandoning in practice?",
+    "Can deliberation reshape preferences so that cycles become rare?",
+    "How should we weigh intensity of preference against one-person-one-vote?"
+  ]
+}
