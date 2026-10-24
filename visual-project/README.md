@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-24** — `2026-10-24-thin-skin.html`: an eightieth technique, and
+  the first to colour by interference. A soap film is seen by reflected light,
+  where colour depends only on thickness: red, green and blue are each
+  strengthened or cancelled as light bounces between the film's two surfaces.
+  Thickness is a drainage gradient plus drifting waves, a slow swirl and the
+  ripples you leave behind; where it thins to nothing the film goes black.
+  Move the cursor to stir the film, click to change how it is held, space to
+  pause. Open the file directly in a browser.
+
 - **2026-10-23** — `2026-10-23-cup-of-light.html`: a seventy-ninth
   technique, and the first to let light pile up into a caustic. A lamp sits
   inside a circular mirror and sends out a fan of rays; each reflects off the
