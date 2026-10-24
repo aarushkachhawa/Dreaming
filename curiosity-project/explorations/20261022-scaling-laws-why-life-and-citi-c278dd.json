@@ -1,0 +1,47 @@
+{
+  "id": "20261022-scaling-laws-why-life-and-citi-c278dd",
+  "date": "2026-10-22T10:12:03.899175",
+  "title": "Scaling Laws: Why Life and Cities Obey Hidden Arithmetic",
+  "question": "Why do metabolic rates, lifespans, and even city economies follow simple power laws across enormous ranges of size?",
+  "summary": "From mice to elephants, energy use scales with mass to the three-quarters power. Cities show a similar quiet regularity, suggesting that networks, not species or cultures, set the rules.",
+  "content": "<p>An elephant is about 100,000 times heavier than a mouse, yet it burns only about 10,000 times as much energy. Plot metabolic rate against body mass on log axes for animals from shrews to whales and you get a startlingly straight line with slope near 3/4. This is Kleiber's law, noticed in 1932 and still debated.</p>\n<h2>Why Three-Quarters?</h2>\n<p>If metabolism simply tracked surface area, the exponent would be 2/3; if it tracked volume, 1. West, Brown, and Enquist proposed that the answer lies in distribution networks. Blood vessels must be space-filling, branch hierarchically, and have terminal units (capillaries) of fixed size. Optimizing such a fractal network yields a 3/4 exponent, with the surprising bonus that an extra dimension of effective space is gained from the branching geometry.</p>\n<h2>Pace of Life</h2>\n<p>Consequences ripple outward. Because larger animals use less energy per gram, their heartbeats are slower and lifespans longer. Strikingly, the total number of heartbeats in a lifetime is roughly similar across mammals, around a billion, with humans a notable exception thanks to modern medicine.</p>\n<h2>Cities as Organisms?</h2>\n<p>Geoffrey West and Luis Bettencourt found that cities follow their own scaling laws. Infrastructure such as roads and gas stations scales sublinearly (exponent about 0.85), showing economies of scale like biology. But wealth, patents, and crime scale superlinearly (about 1.15): double a city, and per-person output rises by roughly 15 percent. Cities accelerate with size, while organisms slow down.</p>\n<h2>The Catch</h2>\n<p>Biological growth levels off because sublinear scaling means resources eventually cannot keep up. Superlinear growth of cities implies unbounded growth, but needs ever-faster cycles of innovation to avoid collapse. Critics also note that the biological exponent varies between groups and that fitting power laws is statistically treacherous, so universality may be approximate.</p>",
+  "tags": [
+    "biology",
+    "complexity",
+    "physics",
+    "cities"
+  ],
+  "perspectives": [
+    {
+      "title": "Physics",
+      "description": "Scaling laws are signatures of universality: when a system is governed by geometry and conservation constraints, microscopic details wash out and simple exponents emerge."
+    },
+    {
+      "title": "Biology",
+      "description": "Metabolic scaling explains lifespan, growth, and ecology, yet exceptions and varied exponents suggest that network geometry is only part of the story."
+    },
+    {
+      "title": "Urban Science",
+      "description": "Cities concentrate social interaction, and since interactions drive innovation, output grows faster than population, along with costs like crime and disease spread."
+    },
+    {
+      "title": "Statistics",
+      "description": "Straight lines on log-log plots are easy to over-interpret; many mechanisms generate power laws, so fit alone cannot prove which one is at work."
+    }
+  ],
+  "connections": [
+    "Emergence: how complexity arises from simplicity",
+    "Fractals and self-similarity",
+    "Convergent evolution",
+    "The unreasonable effectiveness of mathematics",
+    "Zipf's law in language and city sizes",
+    "Why we age",
+    "Networks and phase transitions"
+  ],
+  "openQuestions": [
+    "Is there a single mechanism behind 3/4 scaling, or several that coincidentally agree?",
+    "Can cities escape the finite-time singularity implied by superlinear growth?",
+    "Do scaling laws apply to companies, ecosystems, and the internet in the same way?",
+    "What does the three-quarters exponent say about how evolution selects for network designs?"
+  ]
+}
