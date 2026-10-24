@@ -1,0 +1,48 @@
+{
+  "id": "20261024-why-do-we-age--b31b63",
+  "date": "2026-10-24T10:10:50.947141",
+  "title": "Why Do We Age?",
+  "question": "Natural selection built bodies that can develop from a single cell and repair wounds. Why can't it keep them going indefinitely?",
+  "summary": "Aging is not programmed in the way most people assume. It emerges from the weakening of selection with age, and from trade-offs that favor early vigor over late survival.",
+  "content": "<h2>A Puzzle for Darwin</h2>\n<p>Aging looks like a flaw that evolution should have fixed. A salamander regrows a limb, and a hydra shows negligible senescence. Yet most animals decline predictably. Why would selection tolerate it?</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight (1952) was that natural selection loses strength with age. In the wild, most animals die from predators, disease, or accidents before old age. A mutation that harms you at 90 is invisible to selection if almost nobody lives to 90. Harmful late-acting mutations therefore accumulate in the genome, unopposed. This is the mutation accumulation theory.</p>\n<h2>Trade-offs</h2>\n<p>George Williams added antagonistic pleiotropy: a gene that boosts early fertility or growth can be favored even if it harms later life. Calcium deposition that builds strong young bones may also harden arteries in old age. Selection counts the early benefit and ignores the late cost.</p>\n<h2>The Disposable Soma</h2>\n<p>Tom Kirkwood framed it economically. Energy spent on perfect repair is energy not spent on reproduction. The optimal investment in maintenance is 'good enough' for the expected lifespan. Mice, with high extrinsic mortality, repair minimally and live two years. Bats and naked mole-rats, safer in caves and burrows, live decades.</p>\n<h2>Evidence and Exceptions</h2>\n<p>Island opossums, freed from predators, evolved longer lives, as predicted. Calorie restriction extends life in many species, perhaps by shifting resources toward maintenance. Naked mole-rats barely show increased mortality with age, and Greenland sharks may live four centuries. These cases show lifespan is evolutionarily tunable, not fixed by physics.</p>\n<p>The deepest implication is that aging is not a single process with a single switch. It is many small failures that selection never bothered to prevent, which is why interventions targeting one pathway, such as senescent cells or mTOR signaling, produce modest rather than miraculous gains.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "The Evolutionary Theorist",
+      "description": "Aging is the by-product of declining selection pressure, not an adaptation. No gene was selected to kill us."
+    },
+    {
+      "title": "The Molecular Biologist",
+      "description": "Damage accumulates: DNA mutations, telomere shortening, protein aggregation, mitochondrial decline. Hallmarks of aging describe how, not why."
+    },
+    {
+      "title": "The Physician",
+      "description": "Treating aging as the root risk factor for most chronic disease reframes medicine from fighting diseases one at a time to slowing decline itself."
+    },
+    {
+      "title": "The Ethicist",
+      "description": "Longer lives raise questions of inequality, resources, and whether a lifespan's finitude gives it meaning."
+    }
+  ],
+  "connections": [
+    "Medawar's shadow of selection",
+    "Disposable soma theory",
+    "Naked mole-rats and Greenland sharks",
+    "Telomeres and the Hayflick limit",
+    "Cancer as the cost of cellular immortality",
+    "Calorie restriction and mTOR",
+    "Why we dream / sleep as maintenance"
+  ],
+  "openQuestions": [
+    "Is there a fundamental upper limit on human lifespan, or only an evolved one?",
+    "Why do some species show negligible senescence without paying obvious costs?",
+    "Would interventions that treat one hallmark of aging produce a net healthspan benefit?",
+    "Is aging a disease to be cured or a natural process to be accepted?"
+  ]
+}
