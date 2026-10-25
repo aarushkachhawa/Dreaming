@@ -1,0 +1,49 @@
+{
+  "id": "20260815-the-sorites-paradox-how-many-g-7edc7d",
+  "date": "2026-08-15T10:13:20.539396",
+  "title": "The Sorites Paradox: How Many Grains Make a Heap?",
+  "question": "If removing a single grain never turns a heap into a non-heap, how can a heap ever stop being a heap?",
+  "summary": "A children's-riddle-sounding puzzle about heaps of sand turns out to expose a real crack in classical logic: most of the words we use every day \u2014 tall, bald, rich, old, red \u2014 have no sharp boundary, and that vagueness resists every attempt to patch it with more precise definitions.",
+  "content": "\n    <p>Start with a heap of ten thousand grains of sand. Remove one grain. Still a heap, obviously \u2014 one grain can't matter. Remove another. Still a heap. Repeat this reasoning enough times and you're forced, by a chain of individually undeniable steps, to conclude that a single grain, or even zero grains, is a heap. Something has gone wrong, but pinpointing exactly where turns out to be surprisingly hard.</p>\n\n    <h2>Not a Trick, a Real Problem</h2>\n    <p>The Sorites paradox (from the Greek <em>soros</em>, \"heap\") isn't a wordplay gimmick like \"this sentence is false.\" Every premise in the chain looks true, the logic connecting them is valid, and yet the conclusion is absurd. Something must give: either one of the premises is false (some specific grain-count really is the sharp cutoff between heap and non-heap), or the logic itself needs revision, or \"heap\" was never a precise concept to begin with and classical true/false logic doesn't apply to it cleanly.</p>\n\n    <p>The same structure appears everywhere once you look. How many hairs can you lose before you're bald? How many dollars before you're rich? How few nanometers of wavelength before red becomes orange? Almost every predicate describing a continuum \u2014 tall, old, warm, drunk, competent \u2014 has this property: no single unit ever seems to make the difference, yet the extremes are obviously different.</p>\n\n    <h2>Three Unsatisfying Fixes</h2>\n    <p>Philosophers have tried several repairs. <strong>Epistemicism</strong>, defended by Timothy Williamson, bites the bullet: there really is an exact grain count that separates heap from non-heap, we simply can never know which one, because \"heap\" is governed by usage patterns too complex for any mind to track precisely. This preserves classical logic at the cost of a very strange kind of hidden fact.</p>\n\n    <p><strong>Supervaluationism</strong> instead says \"heap\" has many admissible ways of being made precise, and a statement is true only if it comes out true on every one of them, false only if it's false on all of them \u2014 and in the murky middle range, neither. This avoids postulating a hidden sharp line but gives up the classical law that every statement is either true or false.</p>\n\n    <p><strong>Fuzzy logic</strong>, developed by Lotfi Zadeh initially for engineering rather than philosophy, allows statements to be true to a degree between 0 and 1 \u2014 9,000 grains is \"heap\" to degree 0.97, 12 grains to degree 0.02. This matches intuition well but requires replacing two-valued logic across the board, a large price for solving one puzzle.</p>\n\n    <h2>Why It's Not Just Academic</h2>\n    <p>Vagueness isn't a curiosity confined to sand \u2014 it sits at the center of law (how much force counts as \"reasonable\"?), medicine (when does a fetus become \"viable,\" when does a patient count as \"brain dead\"?), and even the sorites-adjacent problem of personal identity over time, where gradual replacement of cells or memories raises the same \"does one small change matter\" structure applied to a self rather than a heap. Every legal and ethical system that draws lines on a continuum \u2014 voting age, drunk-driving limits, poverty thresholds \u2014 is implicitly picking a spot on a Sorites series and defending it as if it weren't arbitrary.</p>\n",
+  "tags": [
+    "philosophy",
+    "logic",
+    "language",
+    "vagueness",
+    "epistemology"
+  ],
+  "perspectives": [
+    {
+      "title": "Logic Perspective",
+      "description": "Classical logic assumes every well-formed statement is true or false with no middle ground, but the Sorites series shows ordinary predicates violate this assumption. Non-classical logics (fuzzy, paraconsistent, supervaluational) exist largely to accommodate cases like this."
+    },
+    {
+      "title": "Linguistics Perspective",
+      "description": "Vague predicates may be a functional feature of language, not a bug: precise thresholds would require speakers to memorize arbitrary boundaries for thousands of everyday words, while vagueness lets meaning be negotiated contextually and efficiently."
+    },
+    {
+      "title": "Cognitive Science Perspective",
+      "description": "Human categorization appears to work by prototype and similarity rather than necessary-and-sufficient conditions \u2014 we judge 'heap-ness' by comparison to typical heaps, which naturally produces graded, boundary-less category membership rather than sharp cutoffs."
+    },
+    {
+      "title": "Law Perspective",
+      "description": "Legal systems must convert Sorites-structured continua (age, harm, intent, negligence) into binding sharp lines for practical enforcement, effectively resolving the paradox by fiat rather than by principle \u2014 a pragmatic, not philosophical, solution."
+    }
+  ],
+  "connections": [
+    "Fuzzy logic and degrees of truth",
+    "The problem of vagueness in natural language semantics",
+    "Personal identity and the Ship of Theseus",
+    "Prototype theory in cognitive categorization",
+    "Legal line-drawing and arbitrary thresholds",
+    "Epistemicism and the limits of knowable precision",
+    "Continuum fallacies in political and ethical reasoning"
+  ],
+  "openQuestions": [
+    "Is vagueness a feature of the world, of our language, or purely of our knowledge?",
+    "Can any logic fully resolve the Sorites paradox without sacrificing something intuitive about truth?",
+    "Do vague concepts have hidden precise boundaries we simply cannot access, as epistemicism claims?",
+    "If personal identity is Sorites-structured, is there ever a fact of the matter about when 'you' stop being you?",
+    "Should legal and medical thresholds acknowledge their arbitrariness explicitly, or does that undermine their authority?"
+  ]
+}
