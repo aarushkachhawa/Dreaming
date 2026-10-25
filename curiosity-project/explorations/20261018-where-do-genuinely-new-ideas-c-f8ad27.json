@@ -1,0 +1,48 @@
+{
+  "id": "20261018-where-do-genuinely-new-ideas-c-f8ad27",
+  "date": "2026-10-18T10:10:21.088364",
+  "title": "Where Do Genuinely New Ideas Come From?",
+  "question": "What allows minds to generate ideas that are truly new, rather than just recombinations of what they already know?",
+  "summary": "Creativity looks like magic from the inside, yet every account of it ends up describing recombination plus selection. Whether that is the whole story, or whether something more is hiding in the word 'novel', remains contested.",
+  "content": "<p>Every creative act seems to present a puzzle. If a new idea were fully determined by what you already knew, it would not be new; if it were not determined by anything, it would be random noise. Real creativity lives in the narrow band between the two.</p>\n<h2>The Recombination Story</h2>\n<p>Arthur Koestler called it <em>bisociation</em>: two previously unrelated frames of thought collide and a joke, a metaphor, or a discovery results. Gutenberg joined the wine press to the coin punch. Darwin joined Malthus's population arithmetic to the breeder's pigeon loft. On this view nothing comes from nowhere; novelty is a new edge in the graph of old ideas.</p>\n<h2>Generate and Select</h2>\n<p>Donald Campbell proposed that creative thought is \"blind variation and selective retention\", the same algorithm as biological evolution running inside the skull. The mind produces many candidate combinations, mostly unconsciously, and a judging process keeps the few that fit. This explains why incubation (walking away from a problem) helps: the generator keeps running while the critic is quiet. It also explains why experts are not always the most creative; strong expertise prunes the candidate pool before it can surprise you.</p>\n<h2>Three Kinds of Newness</h2>\n<p>Margaret Boden distinguishes <em>combinational</em> creativity (unfamiliar blends), <em>exploratory</em> creativity (finding unvisited corners of an existing style, like a new fugue in Bach's rules), and <em>transformational</em> creativity (changing the rules of the space itself, as when Schoenberg abandoned tonality or Riemann abandoned Euclid's fifth postulate). The third is the hard one: ideas that are literally impossible within the old space, and so could not have been reached by any amount of searching inside it.</p>\n<h2>Constraint as Fuel</h2>\n<p>Paradoxically, creativity often rises with constraint. The sonnet, the twelve-bar blues, and the limited budget all shrink the search space enough that the mind must find a clever, unexpected path. Total freedom is usually paralysing.</p>\n<h2>Machines Enter the Room</h2>\n<p>Modern generative models make the question practical. They demonstrably produce combinations no one has seen. Whether that counts as creativity depends on what you think is missing: intention, taste, stakes, or a sense of why the result matters. AlphaGo's move 37 was transformational in effect, upending centuries of Go intuition, yet it came from search plus learned evaluation, which is exactly the generate-and-select recipe.</p>\n<p>Perhaps the honest conclusion is that \"genuinely new\" is a matter of perspective on the generating system. Relative to the space of what the system could have predicted about itself, novelty is real; relative to a God's-eye view of all possible combinations, nothing is ever created, only discovered.</p>",
+  "tags": [
+    "creativity",
+    "psychology",
+    "cognition",
+    "ai",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Cognitive science",
+      "description": "Creativity as associative search: spreading activation across semantic networks, with unusual links more likely during relaxed or defocused states."
+    },
+    {
+      "title": "Evolutionary epistemology",
+      "description": "Ideas as replicators. Blind variation and selective retention operate on thoughts the way they do on genes, with taste and context as the environment."
+    },
+    {
+      "title": "Art and craft",
+      "description": "Practitioners emphasise constraint, iteration, and volume: most creative output is discarded, and skill lies largely in recognising which fragments are worth keeping."
+    },
+    {
+      "title": "Artificial intelligence",
+      "description": "Generative systems show recombination at scale can surprise even their makers, forcing us to say precisely what human creativity adds, if anything."
+    }
+  ],
+  "connections": [
+    "Emergence and complex systems",
+    "Evolution by natural selection",
+    "G\u00f6del's incompleteness and escaping formal systems",
+    "The hard problem of consciousness and intentionality",
+    "Convergent evolution and the 'adjacent possible'",
+    "Dreaming as offline recombination",
+    "Scientific revolutions and paradigm shifts"
+  ],
+  "openQuestions": [
+    "Is transformational creativity ever more than recombination at a higher level of description?",
+    "Does creativity require intention or understanding, or only novel, valuable output?",
+    "Why do the best ideas so often arrive after we stop trying?",
+    "Can a system evaluate its own novelty without already having the concept it is judging?"
+  ]
+}

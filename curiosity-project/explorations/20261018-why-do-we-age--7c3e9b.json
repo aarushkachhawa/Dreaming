@@ -1,0 +1,48 @@
+{
+  "id": "20261018-why-do-we-age--7c3e9b",
+  "date": "2026-10-18T10:10:52.402659",
+  "title": "Why Do We Age?",
+  "question": "If natural selection built bodies capable of developing from one cell into an adult, why can't it keep them repaired indefinitely?",
+  "summary": "Ageing is not an obvious product of selection, since an immortal organism would seem to have an edge. The best explanations say selection weakens with age, leaving the body to decay in ways it never had to fix.",
+  "content": "<p>A fertilised egg can build a heart, a brain, and a skeleton with astonishing precision. Yet the finished organism cannot maintain itself for more than a few decades. Some creatures, like the hydra, show almost no senescence; others, like mayflies, age within a day. Why the variation, and why not repair forever?</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight in 1952 was that natural selection is blind to what happens late in life. In the wild, most individuals die from predation, disease, or accident long before old age, so a gene that does harm at age 80 is almost never exposed to selection. Harmful late-acting mutations accumulate in the genome simply because no one is around to be punished for them.</p>\n<h2>Trade-offs: Antagonistic Pleiotropy</h2>\n<p>George Williams added that genes with several effects can be favoured if they help the young and harm the old. A gene boosting early fertility or bone growth, but causing calcification of arteries later, wins the evolutionary bargain. The disposable soma theory of Tom Kirkwood frames it as economics: energy spent on perfect repair is energy not spent on reproduction, and the optimal investment falls short of immortality.</p>\n<h2>Evidence from Species</h2>\n<p>The predictions fit. Animals with low extrinsic mortality, such as bats, tortoises, and naked mole-rats, tend to live far longer for their size. Opossums on a predator-free island evolved slower ageing within a few thousand years. Caloric restriction extends lifespan in many species, as if the body shifts its budget from reproduction to repair when times are lean.</p>\n<h2>The Mechanisms</h2>\n<p>At the cellular level ageing shows up as shortened telomeres, accumulating DNA damage, misfolded proteins, mitochondrial decline, and senescent cells that secrete inflammatory signals. These look like many separate failures, yet pathways such as insulin signalling and mTOR modulate them together, which is why single-gene mutations can lengthen worm lifespans several-fold.</p>\n<h2>Is Ageing Treatable?</h2>\n<p>If ageing is an unselected by-product, not a program, there may be no single switch to flip. But if it is largely regulated by a few conserved pathways, drugs like rapamycin or removal of senescent cells may delay many age-related diseases at once. Whether this extends maximum lifespan or only the healthy portion of it is still unknown.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "ageing",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary theory",
+      "description": "Selection weakens with age, so late-acting harms accumulate or are traded for early benefits: mutation accumulation and antagonistic pleiotropy."
+    },
+    {
+      "title": "Cell biology",
+      "description": "Ageing as the sum of telomere loss, DNA damage, protein misfolding, mitochondrial dysfunction, and senescent cells."
+    },
+    {
+      "title": "Ecology",
+      "description": "Lifespan tracks external mortality risk: species safe from predators evolve slower ageing."
+    },
+    {
+      "title": "Medicine and ethics",
+      "description": "Treating ageing as a modifiable risk factor raises questions of access, population structure, and what a good lifespan means."
+    }
+  ],
+  "connections": [
+    "Natural selection and fitness landscapes",
+    "Entropy and time's arrow",
+    "Convergent evolution of long-lived species",
+    "The chemistry before life and the origin of repair",
+    "Ship of Theseus and the replacement of cells",
+    "Emergence in complex systems",
+    "Why we sleep and dream, and bodily maintenance"
+  ],
+  "openQuestions": [
+    "Is there a biological limit to human lifespan, or only an engineering one?",
+    "Do animals that don't age, like hydra, hold lessons that apply to us?",
+    "Is ageing one process or many that merely look alike?",
+    "Would extending healthy life change what we value or how we organise society?"
+  ]
+}
