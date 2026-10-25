@@ -1,0 +1,47 @@
+{
+  "id": "20261010-the-problem-of-induction-why-t-c3b534",
+  "date": "2026-10-10T10:10:32.674732",
+  "title": "The Problem of Induction: Why Trust the Future?",
+  "question": "What justifies the belief that the future will resemble the past, when every justification seems to assume it?",
+  "summary": "Hume showed that all inference from experience rests on an assumption it cannot prove. Three centuries of replies have refined the problem more than they have dissolved it.",
+  "content": "<h2>The Sun Will Rise Tomorrow. Prove It.</h2>\n<p>Every day of your life, the Sun has risen. You infer that it will rise tomorrow. David Hume asked in the 1730s what justifies that step, and found no answer that does not already assume what it is trying to prove. This is the problem of induction, and it remains unresolved in its original form.</p>\n<h2>Hume's Dilemma</h2>\n<p>Hume divided knowledge into relations of ideas (logic and mathematics, certain but empty of facts) and matters of fact (about the world, but never certain). That the future will resemble the past is not a logical truth, since its denial is not self-contradictory. So it must be a matter of fact, and we could only support it by observing that the future has resembled the past. But that argument is itself inductive. We reason in a circle.</p>\n<h2>Attempts to Escape</h2>\n<p><strong>Probability.</strong> Perhaps induction is merely probable, not certain. But the inference from past frequency to future probability needs the same uniformity assumption.</p>\n<p><strong>Popper.</strong> Science does not use induction at all; it proposes bold conjectures and tries to refute them. Critics reply that we still rely on surviving theories to predict, which smuggles induction back in.</p>\n<p><strong>Reliabilism and pragmatism.</strong> Hans Reichenbach argued that if any method can find regularities, induction will; nothing is lost by trying it. This is a vindication of use, not of truth.</p>\n<p><strong>Bayesianism.</strong> Rational updating from priors is coherent, but the choice of priors carries the assumption in at the start.</p>\n<h2>Goodman's New Riddle</h2>\n<p>Nelson Goodman made it worse. Define 'grue': green if observed before 2100, blue after. All emeralds seen so far are both green and grue. Why project 'green' rather than 'grue'? Evidence cannot choose, so induction needs a notion of natural kinds or simplicity that logic alone does not supply.</p>\n<h2>Living With It</h2>\n<p>We cannot stop using induction. Evolution built brains that expect regularity, and those that did not were poorly represented among our ancestors. That is explanation, not justification, but it may be as far as an honest answer goes.</p>",
+  "tags": [
+    "philosophy",
+    "epistemology",
+    "philosophy-of-science",
+    "logic"
+  ],
+  "perspectives": [
+    {
+      "title": "The Skeptic (Hume)",
+      "description": "No deductive argument supports the uniformity of nature, and any inductive one is circular. Our expectations are habits of the mind, not conclusions of reason."
+    },
+    {
+      "title": "The Falsificationist (Popper)",
+      "description": "Science advances by conjecture and refutation, so no inductive support is required. Yet reliance on corroborated theories for action reintroduces the issue."
+    },
+    {
+      "title": "The Pragmatist (Reichenbach)",
+      "description": "If any rule can succeed at finding regularities, induction will, so using it is rational by dominance even without a guarantee of success."
+    },
+    {
+      "title": "The Evolutionary Epistemologist",
+      "description": "Brains that expected regularities survived. This explains our inductive habit but cannot certify it, since the argument itself uses past survival to project forward."
+    }
+  ],
+  "connections": [
+    "Goodman's grue paradox",
+    "Bayesian epistemology and priors",
+    "Popper's falsificationism",
+    "Kant's response: causation as a category of the mind",
+    "The no-free-lunch theorems in machine learning",
+    "Occam's razor and simplicity",
+    "Russell's inductivist chicken"
+  ],
+  "openQuestions": [
+    "Is there a non-circular justification for induction, or is the demand itself confused?",
+    "Can the notion of 'natural kind' be grounded without already presupposing induction?",
+    "Do the no-free-lunch theorems in machine learning restate Hume's problem formally?",
+    "If induction fails in some regime, how would we ever find out?"
+  ]
+}
