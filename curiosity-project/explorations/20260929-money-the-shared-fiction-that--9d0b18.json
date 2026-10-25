@@ -1,0 +1,53 @@
+{
+  "id": "20260929-money-the-shared-fiction-that--9d0b18",
+  "date": "2026-09-29T10:11:24.456003",
+  "title": "Money: The Shared Fiction That Runs the World",
+  "question": "Why does a piece of paper, or a number on a screen, have value when nobody can eat it?",
+  "summary": "Money is worth something only because we collectively act as though it is. Understanding how that agreement forms, holds and breaks reveals what kind of thing an institution is.",
+  "content": "<h2>The puzzle</h2>\n<p>A banknote has almost no intrinsic use. Yet strangers hand over labor and food for it. Money works because each person accepts it expecting that others will too. Its value lives in a network of expectations, not in the object.</p>\n<h2>The origin story is probably wrong</h2>\n<p>Textbooks say barter was clumsy, so people invented money. Anthropologists such as David Graeber found little evidence of pure barter economies. Small communities ran on gifts, reputation and mutual credit. Early Mesopotamian records show accounts of debts denominated in grain and silver long before coins. Coinage, around 600 BCE in Lydia, arrived largely alongside states that needed to pay soldiers and collect taxes.</p>\n<h2>What makes something money</h2>\n<p>Economists list three functions: a medium of exchange, a unit of account and a store of value. Historically, cowrie shells, salt, tobacco, cigarettes in prisoner-of-war camps and gold have all served. What they share is scarcity that is hard to fake and general acceptability. Once enough people accept an item, the acceptance is self-reinforcing, a coordination equilibrium: I accept it because you will.</p>\n<h2>Trust and its failure</h2>\n<p>Modern money is mostly bank deposits, created when banks lend. It is backed by law, by taxes payable in that currency and by trust in institutions. When the trust breaks, as in Weimar Germany or Zimbabwe, prices explode within days because everyone races to spend before others lose faith. Cryptocurrencies attempt to replace institutional trust with cryptographic rules, but they still depend on a community believing the tokens will remain valuable.</p>\n<h2>A deeper lesson</h2>\n<p>Philosopher John Searle called money a social fact: it exists because we collectively assign it a status function. Corporations, borders and laws work the same way. These fictions are real in their effects, letting millions of strangers cooperate, which may be the human species' most consequential trick.</p>",
+  "tags": [
+    "economics",
+    "anthropology",
+    "philosophy",
+    "social-science",
+    "history"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and lowers transaction costs. Its value is a self-fulfilling equilibrium anchored by scarcity, monetary policy and expectations about future acceptance."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Money likely grew out of debt, obligation and status, not barter. Social credit systems and ritual payments long preceded coins."
+    },
+    {
+      "title": "Social ontology",
+      "description": "Money is a social fact created by collective intentionality. Its existence depends on shared belief and declared status, not physical properties."
+    },
+    {
+      "title": "History of the state",
+      "description": "States made currencies dominant by demanding taxes in them. Coinage and sovereignty grew together, tying money's value to political power."
+    },
+    {
+      "title": "Computer science and cryptography",
+      "description": "Blockchains recast money as a distributed ledger secured by protocol. They shift where trust sits without removing the need for social consensus."
+    }
+  ],
+  "connections": [
+    "Coordination games and Schelling points",
+    "The paradox of cooperation",
+    "Debt and obligation in early civilizations",
+    "Hyperinflation and collapse of trust",
+    "Searle and social reality",
+    "Language as a shared convention",
+    "Distributed ledgers and consensus algorithms"
+  ],
+  "openQuestions": [
+    "Can a monetary system exist with no ultimate reliance on a sovereign or shared belief?",
+    "Would a world of purely digital, programmable money change what money means?",
+    "Is inflation fundamentally a monetary or a psychological phenomenon?",
+    "Which other institutions depend on collective belief as much as money does?",
+    "How does trust in money erode, and can the tipping point be predicted?"
+  ]
+}
