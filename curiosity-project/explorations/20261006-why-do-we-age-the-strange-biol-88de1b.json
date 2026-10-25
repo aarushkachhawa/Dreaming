@@ -1,0 +1,48 @@
+{
+  "id": "20261006-why-do-we-age-the-strange-biol-88de1b",
+  "date": "2026-10-06T10:11:03.930993",
+  "title": "Why Do We Age? The Strange Biology of Growing Old",
+  "question": "Evolution polished eyes, wings and brains to astonishing precision, so why has it never fixed the breakdown of the body with time?",
+  "summary": "Aging is not a program nature installed but a shadow cast by weakening natural selection. Genes that help the young and harm the old slip through, and bodies spend resources on reproduction rather than perfect repair.",
+  "content": "<h2>The Puzzle of a Flaw Nature Never Fixed</h2>\n<p>A salamander regrows a limb. A hydra seems not to age at all. A Greenland shark may live four centuries. Yet most animals, humans included, decline in a predictable arc. If evolution can build a vertebrate eye, why can't it keep a body in repair?</p>\n<h2>Selection Fades with Age</h2>\n<p>Peter Medawar and J.B.S. Haldane saw the key in the 1950s. In the wild, most animals die of predation, disease or hunger long before old age. A mutation that causes harm at age 90 is almost invisible to natural selection, because few individuals ever reach 90 to feel its effect. Selection's grip is strong on the young and fades like a tide going out. Harmful late-acting mutations therefore accumulate, a process called <em>mutation accumulation</em>.</p>\n<h2>Trade-offs: Antagonistic Pleiotropy</h2>\n<p>George Williams added a sharper idea. Some genes help early and hurt late, and selection will keep them. High testosterone aids youthful reproduction but raises prostate cancer risk later. Efficient inflammation fights childhood infections but fuels arterial disease in the old. Aging, on this view, is the bill for early advantages.</p>\n<h2>The Disposable Soma</h2>\n<p>Tom Kirkwood framed it as economics. An organism has finite energy to split between reproduction and maintenance. Perfect repair is costly, and an animal likely to be eaten at two years gains little from a body built to last twenty. So bodies are tuned to be good enough for the expected lifespan. This explains why small, hunted animals age fast and why bats and birds, which can escape predators by flight, tend to live longer than similar-sized ground mammals.</p>\n<h2>Mechanisms Beneath the Theory</h2>\n<p>The evolutionary logic needs physical machinery. Candidates include telomere shortening, accumulated DNA damage, mitochondrial decline, misfolded proteins, senescent cells that refuse to die and secrete inflammatory signals, and epigenetic drift. Experiments are intriguing: restricting calories extends life in many species, and mutations in insulin signalling can double a roundworm's lifespan.</p>\n<h2>Is Aging a Disease?</h2>\n<p>If aging is not programmed, perhaps it can be slowed without breaking anything essential. Drugs like rapamycin and metformin, and clearing senescent cells, show benefits in animals. But the trade-off theory warns that every intervention may cost something elsewhere, and that extending healthspan differs from extending lifespan.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine",
+    "life"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is a by-product of weakening selection with age. It is not adaptive and nothing was designed to make us die."
+    },
+    {
+      "title": "Physiology and Cell Biology",
+      "description": "Aging is the accumulation of molecular damage, from DNA lesions to senescent cells, that repair systems cannot fully reverse."
+    },
+    {
+      "title": "Medicine and Geroscience",
+      "description": "Because aging drives most chronic disease, targeting its shared mechanisms might delay many illnesses at once."
+    },
+    {
+      "title": "Philosophy and Ethics",
+      "description": "Would a longer life be a better one? Mortality shapes meaning, urgency and the turnover of generations, and life extension raises questions of fairness."
+    }
+  ],
+  "connections": [
+    "Natural selection and the limits of optimization",
+    "Entropy and why ordered systems decay",
+    "Cancer as the flip side of cellular immortality",
+    "Senescence in bacteria and plants",
+    "The cultural meaning of death",
+    "Why we dream and how sleep repairs the brain"
+  ],
+  "openQuestions": [
+    "Is there a biological upper limit to human lifespan, or only a statistical one?",
+    "Can aging be treated without trading off cancer risk?",
+    "Why do some species show negligible senescence?",
+    "Would extending healthspan change how societies are structured?",
+    "Is aging one process or many loosely related ones?"
+  ]
+}
