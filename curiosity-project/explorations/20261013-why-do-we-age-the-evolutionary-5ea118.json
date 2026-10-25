@@ -1,0 +1,48 @@
+{
+  "id": "20261013-why-do-we-age-the-evolutionary-5ea118",
+  "date": "2026-10-13T10:10:31.952283",
+  "title": "Why Do We Age? The Evolutionary Logic of Decline",
+  "question": "If natural selection rewards survival, why do organisms deteriorate and die on a schedule?",
+  "summary": "Aging is not an engineering flaw but a consequence of weakening selection, early-life trade-offs, and limited energy budgets. Understanding this reframes whether it can be slowed.",
+  "content": "<h2>The Puzzle</h2>\n<p>A bacterium that divides is, in a sense, immortal: its lineage has run for billions of years. Yet most animals grow, mature, and then decline on a predictable schedule. Aging is strange because natural selection should favor organisms that keep repairing themselves. Why does the repair stop?</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight in the 1950s was that selection's grip weakens with age. In the wild, most animals die from predators, cold, or disease long before old age. A gene that harms you at 80 is rarely tested by selection, because few individuals carry it that long. Harmful late-acting mutations therefore accumulate in the genome, like debris in a place where nobody sweeps.</p>\n<h2>Trade-offs: Antagonistic Pleiotropy</h2>\n<p>George Williams added a sharper idea: some genes help when young and harm when old. Strong bone-building and rapid cell division aid early survival and reproduction, but the same machinery may promote cancer or calcification later. Selection takes the early benefit and ignores the late bill. Aging, on this view, is not a failure of design but the price of success.</p>\n<h2>The Disposable Soma</h2>\n<p>Thomas Kirkwood framed it as economics. An organism has finite energy to split between reproduction and maintenance. Perfect upkeep is expensive; if an animal will probably be eaten at two years old, spending resources to last fifty is wasteful. This predicts that species facing high external mortality (mice) age fast, while those with protection (bats, tortoises, naked mole-rats) age slowly. The evidence broadly supports this.</p>\n<h2>What Breaks Down</h2>\n<p>At the molecular level, aging involves damaged DNA, shortening telomeres, misfolded proteins, mitochondrial decline, senescent cells that refuse to die while secreting inflammatory signals, and exhausted stem cells. Researchers disagree on which are causes and which are symptoms. Interventions like caloric restriction, rapamycin, and clearing senescent cells extend life in animals, suggesting aging is more malleable than once thought.</p>\n<h2>Is Aging a Disease?</h2>\n<p>If aging is the largest risk factor for nearly every chronic illness, treating diseases one by one is like bailing out a leaking boat. Yet defining aging as a disease raises questions about what counts as a normal human life, and who would benefit from extended healthspan.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging arises because selection weakens after reproduction, letting late-acting harmful mutations accumulate and favoring genes that trade later health for early vigor."
+    },
+    {
+      "title": "Energy Economics",
+      "description": "The disposable soma theory treats the body as a budget: resources spent on perfect repair are resources not spent on reproduction, so repair is tuned to expected lifespan."
+    },
+    {
+      "title": "Molecular Biology",
+      "description": "Aging is a web of damage processes, from DNA lesions and telomere erosion to senescent cells, each a potential target for intervention."
+    },
+    {
+      "title": "Medical Ethics",
+      "description": "Extending healthspan could reduce suffering enormously, but raises questions of access, population, and what a good life span means."
+    }
+  ],
+  "connections": [
+    "Entropy and the second law",
+    "Natural selection and trade-offs",
+    "Cancer as a cost of multicellularity",
+    "Naked mole-rats and negligible senescence",
+    "Hormesis and stress resistance",
+    "Immortal jellyfish Turritopsis",
+    "The Ship of Theseus and cell turnover"
+  ],
+  "openQuestions": [
+    "Is there a fundamental limit to maximum human lifespan?",
+    "Which hallmarks of aging are root causes versus downstream effects?",
+    "Why do some species show almost no senescence?",
+    "Would slowing aging extend healthy years or merely prolong frailty?",
+    "Can aging be treated as one process or is it many?"
+  ]
+}
