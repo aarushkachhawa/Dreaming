@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-25** — `2026-10-25-folding-thread.html`: an eighty-first
+  technique, and the first to draw a single line that fills a plane. The
+  Hilbert curve is built by subdivision: every vertex splits into four, each
+  new one starting on its parent and unfolding into place, so the thread
+  breathes between a few strokes and thousands, hue running along its length
+  and the strokes drawn additively so crowded places glow. Click to switch
+  to the closed Moore loop and cycle the palette, move the cursor to push the
+  thread aside, space to pause. Open the file directly in a browser.
+
 - **2026-10-24** — `2026-10-24-thin-skin.html`: an eightieth technique, and
   the first to colour by interference. A soap film is seen by reflected light,
   where colour depends only on thickness: red, green and blue are each
