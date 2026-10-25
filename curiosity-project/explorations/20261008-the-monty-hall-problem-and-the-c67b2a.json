@@ -1,0 +1,52 @@
+{
+  "id": "20261008-the-monty-hall-problem-and-the-c67b2a",
+  "date": "2026-10-08T10:11:34.696197",
+  "title": "The Monty Hall Problem and the Limits of Intuition",
+  "question": "Why does almost everyone, including professional mathematicians, get a simple three-door probability puzzle wrong?",
+  "summary": "Switching doors in the Monty Hall game wins two-thirds of the time, yet the intuitive answer is fifty-fifty. The puzzle reveals how conditional probability, information, and the host's knowledge quietly reshape odds.",
+  "content": "<p>You face three doors. Behind one is a car, behind the others goats. You pick door 1. The host, who knows where the car is, opens door 3 to reveal a goat and offers you the chance to switch to door 2. Should you? Most people say it makes no difference: two doors remain, so it is 50/50. They are wrong. Switching wins two-thirds of the time.</p>\n<h2>The counting argument</h2>\n<p>Your first pick has a one-in-three chance of being right. That does not change when the host opens a door. So the remaining two-thirds probability, which belonged to \"the car is behind one of the other doors,\" now concentrates on the single unopened door. Equivalently: if you initially chose a goat (two chances in three), the host is forced to reveal the only other goat, so switching lands on the car. Switching wins exactly when your first guess was wrong.</p>\n<h2>Why intuition fails</h2>\n<p>The 50/50 intuition treats the situation as a fresh two-option choice, forgetting the history that produced it. The host's action is not random: he never opens your door and never reveals the car. His choice carries information precisely because it is constrained by what he knows. If the host instead opened a random door and happened to reveal a goat, the odds really would be 50/50. The same visible scene hides different probabilities depending on the process that generated it.</p>\n<h2>A scandal in print</h2>\n<p>When Marilyn vos Savant published the correct answer in 1990, thousands of readers wrote in to disagree, including many with doctorates. The mathematician Paul Erd\u0151s reportedly accepted the answer only after seeing a computer simulation. Simulation is indeed the quickest cure for doubt: play it a thousand times and watch switchers win about 667.</p>\n<h2>The Bayesian view</h2>\n<p>Bayes' theorem makes it formal. Let C1 be \"car behind door 1\" and O3 \"host opens door 3.\" P(O3|C1) = 1/2 (he may choose either goat door), P(O3|C2) = 1 (forced), and P(O3|C3) = 0. Multiplying by priors of 1/3 and normalizing gives P(C1|O3) = 1/3 and P(C2|O3) = 2/3. The crucial term is the likelihood of the host's behavior, which intuition ignores.</p>\n<h2>Generalizing</h2>\n<p>With 100 doors, you pick one and the host opens 98 goat doors, leaving yours and one other. Now the intuition flips: obviously the survivor is suspicious. The structure is identical, but the scale makes the host's filtering visible. Similar structures appear in medical testing, where base rates matter, and in courtroom reasoning, where the prosecutor's fallacy confuses P(evidence|innocent) with P(innocent|evidence).</p>\n<h2>Lessons</h2>\n<p>Probability is about information, not about objects. The numbers attached to a situation depend on what an observer knows and how that knowledge was obtained. Our minds are good at counting visible options and bad at modeling the hidden process behind them.</p>",
+  "tags": [
+    "mathematics",
+    "probability",
+    "cognition",
+    "statistics",
+    "psychology"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematics",
+      "description": "Conditional probability and Bayes' theorem show that the host's constrained action updates the odds unevenly: the switched-to door inherits all the probability the opened door lost."
+    },
+    {
+      "title": "Cognitive Psychology",
+      "description": "People rely on a simplistic 'equal outcomes' heuristic and anchor on the number of remaining options, ignoring the generating process. Commitment to an initial choice adds an endowment-like bias against switching."
+    },
+    {
+      "title": "Philosophy of Probability",
+      "description": "Are probabilities facts about the world or about an agent's information? Monty Hall favors the epistemic view: the same car location is 1/3 or 2/3 likely depending on what you know."
+    },
+    {
+      "title": "Education",
+      "description": "Simulations, the 100-door variant, and frequency framing ('out of 300 games...') dramatically improve understanding, suggesting natural-frequency reasoning is more intuitive than abstract probability."
+    },
+    {
+      "title": "Game Theory",
+      "description": "The host's strategy matters. If he is adversarial and offers a switch only when you picked the car, switching becomes a mistake. The correct answer depends on knowing his rules."
+    }
+  ],
+  "connections": [
+    "Bayes' theorem and conditional probability",
+    "The prosecutor's fallacy",
+    "Base-rate neglect in medical testing",
+    "The boy-or-girl paradox",
+    "Selection effects and survivorship bias",
+    "Kahneman and Tversky's heuristics and biases",
+    "Frequentist versus Bayesian interpretations"
+  ],
+  "openQuestions": [
+    "Why does a clear mathematical proof so rarely overcome a strong intuition?",
+    "How should we teach probability so that the right reasoning feels natural?",
+    "Where do hidden 'host-like' filtering processes distort the information we encounter in daily life?",
+    "Is there a precise sense in which probabilities are subjective?"
+  ]
+}
