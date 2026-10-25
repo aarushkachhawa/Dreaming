@@ -1,0 +1,48 @@
+{
+  "id": "20261007-arrow-s-impossibility-theorem--1b8c2b",
+  "date": "2026-10-07T10:11:09.141142",
+  "title": "Arrow's Impossibility Theorem: Can Democracy Be Fair?",
+  "question": "Is there any voting system that turns individual preferences into a collective choice without paradox or injustice?",
+  "summary": "In 1951 Kenneth Arrow proved that no ranked voting system can satisfy a handful of obviously reasonable fairness conditions at once. Democracy's arithmetic has a built-in tension.",
+  "content": "<h2>The Puzzle of Adding Up Wills</h2>\n<p>Suppose three friends rank pizza, sushi and tacos. Alice: pizza &gt; sushi &gt; tacos. Bao: sushi &gt; tacos &gt; pizza. Carmen: tacos &gt; pizza &gt; sushi. Pizza beats sushi two to one. Sushi beats tacos two to one. Tacos beats pizza two to one. The group prefers pizza to sushi to tacos to pizza, a cycle, even though every individual is perfectly consistent. This is the Condorcet paradox, noticed in 1785, and it shows that \"the will of the people\" can fail to exist as a coherent thing.</p>\n<h2>What Arrow Proved</h2>\n<p>Kenneth Arrow asked whether a cleverer rule could avoid such cycles. He listed conditions any fair rule should meet: <em>unrestricted domain</em> (voters may rank options any way they like), <em>Pareto efficiency</em> (if everyone prefers A to B, so does the group), <em>independence of irrelevant alternatives</em> (the group's ranking of A versus B depends only on how voters rank A versus B), and <em>non-dictatorship</em> (no single voter always determines the outcome). With three or more options, no rule that produces a complete, consistent group ranking satisfies all four. The only rules that survive are dictatorships.</p>\n<h2>Why It Bites</h2>\n<p>Independence is the subtle condition. Plurality voting violates it through spoilers: a third candidate who cannot win can still flip the result between the other two. Ranked-choice voting can show non-monotonic behavior, where ranking a candidate higher hurts them. Borda counting, which scores by rank position, is vulnerable to the mere addition of a clone option shifting the outcome. Every real system pays the Arrow tax somewhere.</p>\n<h2>Escaping the Theorem</h2>\n<p>Arrow assumed ranked ballots. If voters instead give cardinal scores, as in range or approval voting, the theorem's premises no longer apply, though a different result, the Gibbard-Satterthwaite theorem, says any reasonable system gives some voters an incentive to vote strategically. Another escape is restricting the domain: if preferences are \"single-peaked\" along a left-right line, majority rule is well behaved (the median voter theorem). The theorem does not say democracy fails; it says there is no free lunch in aggregation.</p>\n<h2>Why It Matters Beyond Elections</h2>\n<p>The same structure appears whenever many criteria must be merged into one ranking: comparing universities, scoring job candidates, or aligning an AI system with the values of many people. Any aggregation method embeds value judgments, and the theorem tells us that the judgment cannot be fully hidden behind neutral math.</p>",
+  "tags": [
+    "mathematics",
+    "politics",
+    "social-choice",
+    "philosophy",
+    "economics"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematical",
+      "description": "A clean impossibility result: a set of axioms with no model except dictatorship, in the same family as G\u00f6del and Bell, where intuitive demands turn out jointly unsatisfiable."
+    },
+    {
+      "title": "Political Science",
+      "description": "Real elections are less pathological than worst cases. Empirically, cycles are rare because preferences cluster along a few dimensions, so Arrow's theorem is more a warning about edge cases than a daily failure."
+    },
+    {
+      "title": "Philosophical",
+      "description": "Perhaps the premise is wrong: a collective may have no single preference ordering, and insisting on one is a category mistake. Democracy may be a process of deliberation, not a calculation."
+    },
+    {
+      "title": "Economic",
+      "description": "Welfare economics hoped to sum utilities across people. Arrow showed that using only ordinal comparisons makes this impossible, pushing the field toward interpersonal utility comparisons."
+    }
+  ],
+  "connections": [
+    "Condorcet jury theorem",
+    "Median voter theorem",
+    "Gibbard-Satterthwaite theorem",
+    "G\u00f6del's incompleteness (limits of axiom systems)",
+    "Mechanism design",
+    "Value alignment in AI",
+    "Quadratic voting"
+  ],
+  "openQuestions": [
+    "Which Arrow condition should we give up, and does the answer depend on context?",
+    "Can deliberation reshape preferences enough to avoid cycles in practice?",
+    "How should AI systems aggregate conflicting human values?",
+    "Is there a meaningful notion of collective preference at all?"
+  ]
+}
