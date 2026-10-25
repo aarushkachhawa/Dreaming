@@ -1,0 +1,49 @@
+{
+  "id": "20260913-dark-matter-the-universe-s-mis-334ca5",
+  "date": "2026-09-13T10:12:32.410903",
+  "title": "Dark Matter: The Universe's Missing Mass",
+  "question": "Every galaxy we can see spins as if it weighs far more than the matter inside it accounts for\u2014so what is the other eighty-five percent of the universe's mass actually made of?",
+  "summary": "Decades of astronomical evidence point to an invisible substance that outweighs ordinary matter five to one, yet it has never been directly detected in any laboratory on Earth.",
+  "content": "\n<p>In the 1970s, astronomer Vera Rubin measured how fast stars orbit at the edges of spiral galaxies and found something that shouldn't have been possible. According to Newtonian gravity, stars far from a galaxy's center should orbit more slowly than stars near the dense core, the same way outer planets orbit the sun more slowly than inner ones. Instead, Rubin found that rotation speeds stayed roughly flat all the way to the visible edge of the galaxy and beyond. Something was holding those outer stars in their fast orbits that wasn't visible in any telescope.</p>\n\n<h2>The Case for Something Unseen</h2>\n<p>Rubin's galaxy rotation curves were just the beginning. Gravitational lensing\u2014the bending of light around massive objects predicted by general relativity\u2014reveals mass in galaxy clusters far exceeding what stars, gas, and dust could account for. The Bullet Cluster, formed by two colliding clusters of galaxies, offers what many physicists consider the most direct evidence: the visible gas (which interacts and slows down in the collision) separates spatially from the inferred mass (which passes straight through, tracked via lensing), exactly as expected if most of the mass consists of particles that don't interact with light or ordinary matter except through gravity.</p>\n\n<p>The cosmic microwave background, the leftover radiation from the early universe, independently pins down the total matter budget of the cosmos: roughly 27% dark matter, 5% ordinary matter, and 68% dark energy (a separate and even stranger mystery). These numbers come from a completely different method than galaxy rotation curves, yet they agree with striking precision, which is why most cosmologists treat dark matter's existence as well-established even though no one has ever isolated a particle of it.</p>\n\n<h2>What It Might Be</h2>\n<p>The leading candidate for decades was the WIMP\u2014a Weakly Interacting Massive Particle, a hypothetical particle that would interact with ordinary matter only through gravity and the weak nuclear force. Enormous detectors have been built deep underground, shielded from cosmic rays, specifically to catch the rare event of a WIMP colliding with an atomic nucleus. None has ever produced a confirmed detection, and the parameter space for WIMPs has been shrinking for years, pushing physicists to take other candidates more seriously: axions (ultralight particles originally proposed to solve an unrelated problem in particle physics), primordial black holes formed in the first moments after the Big Bang, and sterile neutrinos that don't interact via the ordinary weak force at all.</p>\n\n<h2>The Skeptical Alternative</h2>\n<p>Not every physicist accepts that dark matter is a substance at all. Modified Newtonian Dynamics, or MOND, proposes instead that our theory of gravity itself breaks down at the extremely low accelerations found at galactic edges, and that no missing mass is needed if gravity simply behaves differently than Newton or Einstein predicted at those scales. MOND fits certain galaxy rotation curves remarkably well without invoking any new particle, but it struggles badly with cluster-scale phenomena like the Bullet Cluster and fails to match the cosmic microwave background data as precisely as the standard dark matter model does. Most working cosmologists consider MOND a serious but ultimately losing alternative, though a persistent minority keeps refining it.</p>\n\n<h2>Living With an Unsolved Mystery</h2>\n<p>What makes dark matter remarkable as a scientific problem is the gap between confidence and knowledge: the evidence for something extra is overwhelming and comes from wildly independent lines of inquiry, yet the identity of that something has eluded direct detection for over half a century of dedicated searching. It's a rare case in modern physics where we're nearly certain something exists and almost totally ignorant of what it is.</p>\n",
+  "tags": [
+    "physics",
+    "astronomy",
+    "cosmology",
+    "dark-matter",
+    "astrophysics"
+  ],
+  "perspectives": [
+    {
+      "title": "Observational Astronomy Perspective",
+      "description": "Galaxy rotation curves, gravitational lensing, and the Bullet Cluster provide independent, converging evidence for unseen mass, measured through entirely different techniques that agree with each other."
+    },
+    {
+      "title": "Particle Physics Perspective",
+      "description": "Underground detectors hunting for WIMPs have come up empty for decades, shifting theoretical attention toward axions, sterile neutrinos, and primordial black holes as alternative dark matter candidates."
+    },
+    {
+      "title": "Cosmology Perspective",
+      "description": "The cosmic microwave background independently confirms the universe's dark matter fraction, tying galaxy-scale observations to the physics of the early universe just fractions of a second after the Big Bang."
+    },
+    {
+      "title": "Theoretical Skeptic's Perspective",
+      "description": "MOND and related modified-gravity theories argue the missing mass is an illusion created by an incomplete theory of gravity, though they struggle to explain cluster collisions as cleanly as particle dark matter does."
+    }
+  ],
+  "connections": [
+    "Dark energy and the accelerating expansion of the universe",
+    "General relativity and gravitational lensing",
+    "The standard model of particle physics and its incompleteness",
+    "The cosmic microwave background and early-universe cosmology",
+    "The Fermi Paradox and the search for extraterrestrial life",
+    "Galaxy formation and large-scale cosmic structure",
+    "Underground particle detectors and direct-detection experiments"
+  ],
+  "openQuestions": [
+    "Will any direct-detection experiment ever isolate a dark matter particle, or will it remain inferred only from gravity?",
+    "Could dark matter be made of more than one type of particle rather than a single uniform substance?",
+    "Can modified gravity theories ever be reconciled with cluster-collision evidence like the Bullet Cluster?",
+    "Does the failure to detect WIMPs after decades of searching suggest a fundamentally wrong theoretical approach?",
+    "What would it mean for physics if dark matter turned out to interact with itself in ways ordinary matter doesn't?"
+  ]
+}
