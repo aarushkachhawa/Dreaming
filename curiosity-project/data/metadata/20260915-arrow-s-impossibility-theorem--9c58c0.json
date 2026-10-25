@@ -1,0 +1,15 @@
+{
+  "id": "20260915-arrow-s-impossibility-theorem--9c58c0",
+  "date": "2026-09-15T10:12:34.480907",
+  "title": "Arrow's Impossibility Theorem: Why No Voting System Is Fair",
+  "question": "Is there a way to combine everyone's preferences into a single fair group decision \u2014 or is 'fair voting' a mathematical impossibility?",
+  "summary": "In 1951, economist Kenneth Arrow proved something startling: no voting system, however cleverly designed, can satisfy a small set of entirely reasonable fairness conditions once there are three or more options. The flaw isn't in any particular election method \u2014 it's baked into the mathematics of aggregating preferences at all.",
+  "tags": [
+    "mathematics",
+    "political-science",
+    "economics",
+    "game-theory",
+    "voting",
+    "social-choice-theory"
+  ]
+}
