@@ -1,0 +1,53 @@
+{
+  "id": "20261002-money-the-shared-fiction-we-al-3ed83e",
+  "date": "2026-10-02T10:11:13.155306",
+  "title": "Money: The Shared Fiction We All Believe",
+  "question": "Why does a piece of paper, or a number on a screen, hold value when it has almost no value in itself?",
+  "summary": "Money works because everyone expects everyone else to accept it. It is a ledger of trust, a technology for coordinating strangers, and a collective belief that becomes true by being believed.",
+  "content": "<h2>The oddity</h2><p>A banknote is worth less than the paper in a book, yet a stranger will hand over a loaf of bread for it. Most of the world's money is now not even paper but entries in databases. Its value cannot come from what it is. It comes from what everyone expects it to do.</p><h2>Three jobs</h2><p>Economists say money serves as a medium of exchange, a unit of account and a store of value. Barter fails because it needs a 'double coincidence of wants': the baker must want what the shoemaker has, exactly when the shoemaker wants bread. Money breaks that deadlock by letting trade be split into two steps, sell for money, then buy with it.</p><h2>The myth of barter</h2><p>The textbook story says money arose from barter as people converged on a convenient commodity. Anthropologists such as David Graeber argued the evidence points elsewhere: early societies ran on credit, gift and obligation, and ledgers. Mesopotamian temples recorded debts on clay tablets long before coins existed. On this view money began as a way of keeping score, and coins came later, partly to pay soldiers and tax subjects.</p><h2>Value as a self-fulfilling expectation</h2><p>If I accept a note because I expect you will, and you because you expect someone else will, value is a coordination equilibrium. It is stable when trust is high and brittle when it is not. Hyperinflation in Weimar Germany or Zimbabwe shows the equilibrium collapsing: once people expect money to lose value they spend it faster, which makes it lose value faster.</p><h2>What backs it</h2><p>Modern state money, or fiat, is backed by the state's power to demand taxes in it, along with legal tender rules and central bank credibility. Gold-backed money looks more solid, but gold's own price is also a belief, one with a long track record. Cryptocurrencies test the idea in public: can scarcity and cryptographic ledgers replace institutional trust? So far their value looks driven mostly by the same expectations they were meant to bypass.</p><h2>Why it matters</h2><p>Yuval Noah Harari calls money the most successful story ever told, because it lets millions of strangers cooperate without liking or knowing each other. Seen this way, money is less an object than a protocol, a piece of social software that humans run on shared belief.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "trust",
+    "social-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and lowers transaction costs. Its value is a coordination equilibrium sustained by the expectation of future acceptance."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Evidence from early societies suggests credit and debt came before coinage. Money may have started as a social ledger and a tool of obligation rather than a barter commodity."
+    },
+    {
+      "title": "Game theory",
+      "description": "Accepting money is rational only if others accept it. That makes it a convention with multiple equilibria, including a collapse equilibrium where nobody trusts it."
+    },
+    {
+      "title": "Political economy",
+      "description": "States create and enforce money through taxation and law. Who controls issuance shapes who gets to spend first and who bears inflation."
+    },
+    {
+      "title": "Philosophy of social reality",
+      "description": "John Searle's account of institutional facts: money counts as money in context C because we collectively accept it. Its existence depends on shared attitudes, not physical properties."
+    }
+  ],
+  "connections": [
+    "Searle and institutional facts",
+    "Hyperinflation and bank runs",
+    "The Prisoner's Dilemma and the paradox of cooperation",
+    "Clay tablets and the origins of writing and accounting",
+    "Blockchain and decentralized trust",
+    "Gold standard and the Bretton Woods system",
+    "Language as another shared convention"
+  ],
+  "openQuestions": [
+    "Can a currency be sustained by cryptographic rules alone, with no institutional trust underneath?",
+    "If money is mostly credit, who is the ultimate creditor in a world of fiat currency?",
+    "Will cash and bank notes disappear, and what social freedoms depend on them?",
+    "Are there social conventions as powerful as money that we have failed to notice?",
+    "What would economic coordination look like without any universal medium of exchange?"
+  ]
+}
