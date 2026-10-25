@@ -1,0 +1,48 @@
+{
+  "id": "20260805-the-antikythera-mechanism-a-co-8c52ba",
+  "date": "2026-08-05T10:14:36.168086",
+  "title": "The Antikythera Mechanism: A Computer from 60 BCE",
+  "question": "How did an ancient Greek device compute astronomical positions with gearing precision the world would not see again for over a thousand years?",
+  "summary": "A shipwrecked bronze mechanism of interlocking gears reveals that sophisticated analog computation existed in the ancient world, then vanished so completely that its rediscovery rewrote the history of technology.",
+  "content": "\n    <p>In 1901, sponge divers exploring a Roman-era shipwreck off the Greek island of Antikythera pulled up a corroded lump of bronze, unremarkable next to the statues and amphorae also aboard. It sat in a museum drawer for decades before anyone realized the lump contained gear teeth. X-ray and CT scanning in the 2000s finally revealed what it actually was: at least 30 interlocking bronze gears, some with teeth under a millimeter apart, forming a mechanical computer that modeled the motions of the sun, moon, and possibly all five planets known to antiquity.</p>\n\n    <h2>The Core Question</h2>\n    <p>The device could predict lunar and solar eclipses, track the irregular motion of the moon using a clever pin-and-slot mechanism that mimics elliptical orbital variation centuries before Kepler described ellipses mathematically, and display the four-year cycle of the ancient Olympic and other Panhellenic games. This is not a curiosity or a toy\u2014it is precision engineering that assumes a working theory of astronomical cycles and translates that theory directly into physical, geared motion. Turn a hand crank, and the gears compute.</p>\n\n    <p>What makes this genuinely strange is the gap it implies. No comparable geared device appears in the historical or archaeological record for over 1,000 years afterward\u2014the next machines approaching this gear complexity are medieval European astronomical clocks. Either the Antikythera mechanism was a singular, isolated marvel, or it was the surviving fragment of a tradition of Hellenistic precision engineering that has otherwise been entirely lost to time, fire, war, and the simple fact that bronze gets melted down and reused.</p>\n\n    <h2>Why This Matters</h2>\n    <p>The mechanism forces a reconsideration of what \"ancient\" technology means. We tend to draw a clean line from simple ancient tools to a slow, steady climb toward modern complexity. The Antikythera mechanism sits in flat contradiction to that story: a device whose gear-cutting precision, differential gearing, and mathematical sophistication would not be casually matched again until clockmakers of the 1300s and 1400s\u2014and whose underlying astronomical mathematics draws on Babylonian observational records combined with Greek geometric theory, itself evidence of a genuinely international ancient science.</p>\n\n    <p>It also reframes what counts as a \"computer.\" Long before electricity, silicon, or even Pascal's mechanical adding machine, someone built a device that took an input (a date) and mechanically computed an output (celestial positions) through pure geometric relationships encoded in metal.</p>\n\n    <h2>What We Still Don't Know</h2>\n    <p>We don't know who built it, though textual clues point toward the tradition of Archimedes and later Hellenistic astronomers on Rhodes. We don't know how many were made, whether it was one-of-a-kind or a commercial product, or what other instruments like it existed and were lost. The ship it traveled on was likely carrying looted Greek treasures to Rome, which means we may only know of this technology by the accident of a storm and a shipwreck.</p>\n    ",
+  "tags": [
+    "history-of-science",
+    "ancient-greece",
+    "engineering",
+    "astronomy",
+    "technology"
+  ],
+  "perspectives": [
+    {
+      "title": "History of Technology Perspective",
+      "description": "The mechanism's differential gearing predates its next known use by over a millennium, suggesting lost engineering traditions rather than a single inexplicable genius working in isolation."
+    },
+    {
+      "title": "Astronomy Perspective",
+      "description": "The device encodes real astronomical cycles\u2014the Metonic, Saros, and Callippic cycles\u2014showing Hellenistic astronomers had accurate, predictive models of celestial motion long before heliocentrism."
+    },
+    {
+      "title": "Archaeology Perspective",
+      "description": "The mechanism was recovered only by shipwreck accident, raising the unsettling possibility that most ancient technological achievement is simply invisible to us, destroyed or melted down rather than preserved."
+    },
+    {
+      "title": "Philosophy of Science Perspective",
+      "description": "The device blurs the boundary between 'science' as abstract theory and 'technology' as applied tool, since its gears are a physical embodiment of a mathematical model, not just a device built from one."
+    }
+  ],
+  "connections": [
+    "Babylonian astronomical record-keeping and cycle prediction",
+    "The history of clockwork and medieval astronomical clocks",
+    "Archimedes and Hellenistic mechanical engineering",
+    "Analog versus digital computation",
+    "The Library of Alexandria and losses of ancient knowledge",
+    "Orbital mechanics and Kepler's laws of planetary motion",
+    "Underwater archaeology and shipwreck preservation"
+  ],
+  "openQuestions": [
+    "Were there other devices like the Antikythera mechanism, now lost, that formed a broader tradition?",
+    "Who specifically designed and built it, and was it built for scientific use, elite display, or both?",
+    "What other 'impossible for their time' artifacts might be sitting unrecognized in museum collections?",
+    "How much of ancient technical knowledge disappeared simply because metal objects get melted down and reused across centuries?"
+  ]
+}
