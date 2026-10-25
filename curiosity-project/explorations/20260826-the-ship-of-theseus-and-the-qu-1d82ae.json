@@ -1,0 +1,53 @@
+{
+  "id": "20260826-the-ship-of-theseus-and-the-qu-1d82ae",
+  "date": "2026-08-26T10:17:56.872538",
+  "title": "The Ship of Theseus and the Question of What Makes You, You",
+  "question": "If nearly every cell in your body is eventually replaced and your beliefs, memories, and personality shift over decades, in what sense are you the same person you were ten years ago?",
+  "summary": "An ancient thought experiment about a ship whose planks are gradually replaced turns out to be a serious challenge to the idea of a stable, continuous self \u2014 one that biology, philosophy, and contemplative traditions each answer differently.",
+  "content": "\n    <p>Plutarch posed it as a puzzle about a ship: if the ship in which the Athenian hero Theseus sailed was preserved by replacing each rotting plank with a new one, until eventually not a single original plank remained, is it still the same ship? And if someone collected all the discarded original planks and reassembled them elsewhere, which one \u2014 the continuously repaired ship, or the reconstructed original \u2014 would be the \"real\" Ship of Theseus? The puzzle sounds like idle wordplay until you realize it describes you.</p>\n\n    <h2>You Are Also a Ship of Theseus</h2>\n    <p>Most of the atoms in your body will be replaced over time through ordinary metabolic turnover; skin, gut lining, and blood cells cycle especially fast, and even much of your skeleton remodels over a decade. Meanwhile your opinions, memories, tastes, and even personality traits shift, sometimes dramatically, across a lifetime. The person who reads this sentence is, in a strict material and psychological sense, not made of the same \"planks\" as the person who existed ten years ago. Yet almost everyone feels certain they are still the same individual \u2014 the same locus of experience, the same bearer of old promises and debts, the same person who should feel pride or regret about things their earlier self did.</p>\n\n    <h2>Two Different Questions Hiding in One Puzzle</h2>\n    <p>Philosophers separate this into at least two distinct questions. One is about numerical identity: is this the very same entity as before, full stop, the way \"the morning star\" and \"the evening star\" turn out to be the same planet? The other is about qualitative or psychological continuity: does the current self share enough overlapping memory, personality, and connectedness with the earlier self to count as a continuation of it, even if no single persisting \"thing\" links them? Philosopher Derek Parfit argued the first kind of identity may not even be the fact that matters \u2014 what matters for questions like survival, self-interest, and moral responsibility might really be the second: degrees of psychological connectedness, which can come in shades rather than all-or-nothing.</p>\n\n    <h2>What Traditions Outside Philosophy Say</h2>\n    <p>Long before Parfit, Buddhist philosophy arrived at a related but more radical conclusion with the doctrine of anatta, or \"non-self\": there is no unchanging essential self at all, only a continuously arising and passing stream of physical and mental processes that conventionally get labeled with a name. On this view, the puzzle dissolves not because we find the right criterion for sameness, but because the demand for a single, stable, continuous \"thing\" called the self was confused from the start. Neuroscience offers a complementary picture: the brain actively constructs a \"narrative self,\" a story stitched together largely after the fact from memory, prediction, and social context, rather than reading off some pre-existing essence.</p>\n\n    <h2>Why the Puzzle Has Teeth</h2>\n    <p>This isn't merely academic. Legal and moral systems assume enough continuity of identity to hold a 70-year-old responsible for a crime committed at 20, or to let a person's advance directive bind the very different person they may become after a diagnosis of dementia. Thought experiments about teleportation, brain uploading, and split-brain patients push the puzzle even further, asking whether a perfect physical or informational copy of you would actually be you, or merely someone who sincerely believes they are.</p>\n    ",
+  "tags": [
+    "philosophy",
+    "identity",
+    "consciousness",
+    "psychology",
+    "metaphysics"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophy Perspective",
+      "description": "Metaphysicians distinguish numerical identity from psychological continuity, asking whether personal identity requires a single persisting substance or merely overlapping chains of memory and character."
+    },
+    {
+      "title": "Neuroscience Perspective",
+      "description": "The brain builds a 'narrative self' after the fact, stitching memories and predictions into a coherent story \u2014 the feeling of a stable self may be a useful construction rather than a discovered fact."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "The doctrine of anatta holds there is no fixed, unchanging self at all \u2014 only a continuously changing stream of physical and mental events conventionally labeled with a name."
+    },
+    {
+      "title": "Psychology Perspective",
+      "description": "Longitudinal studies of personality show meaningful but incomplete stability over decades, suggesting identity is a matter of degree rather than a binary fact."
+    },
+    {
+      "title": "Legal and Ethical Perspective",
+      "description": "Systems of moral and legal responsibility quietly assume enough continuity of identity to punish, reward, and bind people to commitments made by their much younger or much different past selves."
+    }
+  ],
+  "connections": [
+    "Derek Parfit's work on personal identity and what matters in survival",
+    "The Buddhist doctrine of anatta (non-self)",
+    "Teleporter and brain-uploading thought experiments",
+    "The narrative self and autobiographical memory in neuroscience",
+    "Split-brain studies and the unity of consciousness",
+    "Cellular turnover and the biology of the aging body",
+    "Legal theories of responsibility and continuity of the person over time"
+  ],
+  "openQuestions": [
+    "Is personal identity a single fact that either holds or doesn't, or a matter of degree, like psychological connectedness?",
+    "Would a perfect physical duplicate of you, created instantaneously, actually be you, or merely someone who believes they are?",
+    "If there is no fixed self, as some contemplative traditions claim, what grounds moral responsibility for past actions?",
+    "Does radical personality change \u2014 after trauma, illness, or profound experience \u2014 mean a person has, in some meaningful sense, ceased to exist and been replaced?",
+    "Can any single criterion (memory, body, personality, or narrative) ever fully capture what we mean by 'being the same person', or is the concept itself a useful fiction?"
+  ]
+}
