@@ -1,0 +1,14 @@
+{
+  "id": "20260909-p-vs-np-the-question-that-coul-b677f4",
+  "date": "2026-09-09T10:15:32.991497",
+  "title": "P vs NP: The Question That Could Break the Internet",
+  "question": "Is verifying a solution always fundamentally easier than finding one from scratch \u2014 or could every hard problem secretly have a fast shortcut we simply haven't discovered?",
+  "summary": "P vs NP is a one-million-dollar unsolved math problem with a strange property: almost everyone believes they know the answer, yet no one can prove it. The answer would either validate the security of the entire internet or shatter it overnight.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "complexity-theory",
+    "cryptography",
+    "logic"
+  ]
+}
