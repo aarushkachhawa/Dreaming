@@ -1,0 +1,47 @@
+{
+  "id": "20261025-where-does-money-get-its-value-22bccb",
+  "date": "2026-10-25T10:10:35.205856",
+  "title": "Where Does Money Get Its Value?",
+  "question": "Why will people hand over real goods for paper, metal or digital entries that are worthless in themselves?",
+  "summary": "Money is a shared belief that works because everyone expects everyone else to accept it. Its history shows that trust, credit and institutions matter more than the material it is made of.",
+  "content": "<h2>A Strange Kind of Object</h2>\n<p>A banknote is a piece of cotton and linen paper. A bank balance is a line in a database. Yet a farmer will give you a year of wheat for either. Money looks like a thing but behaves like a relationship: its value rests on the expectation that others will take it tomorrow at a similar rate.</p>\n<h2>The Barter Myth</h2>\n<p>The textbook story says that people first bartered, ran into the problem of needing a \"double coincidence of wants,\" and so invented coins. The anthropologist David Graeber and others argued that evidence for widespread barter economies is thin. Early Mesopotamian societies seem to have run on credit and ledgers, with temple accounts recording debts in units of grain and silver long before coinage appeared around 600 BCE in Lydia. On this view money began as a unit of account for obligations, and the trading medium came later.</p>\n<h2>Three Competing Theories</h2>\n<p>The metallist view says money is valuable because the commodity is: gold has intrinsic uses and scarcity. The state theory says money is valuable because governments demand taxes in it, which forces everyone to want it. The convention view, rooted in game theory, says money is a coordination equilibrium: if everyone else accepts it, you should too. These are less rivals than layers. Taxes can seed demand, scarcity can anchor confidence, and convention sustains use.</p>\n<h2>Fragility and Collapse</h2>\n<p>Because the foundation is belief, it can fail. Hyperinflation in Weimar Germany and Zimbabwe showed that money can lose value faster than prices can be printed. Cigarettes served as currency in prisoner-of-war camps, and people reverted to them when official money failed. Cryptocurrencies are a live experiment in whether pure convention plus cryptographic scarcity can replace institutional backing. Their volatility suggests that trust built on code differs from trust built on law and tax obligation.</p>\n<h2>Why It Matters</h2>\n<p>Money is perhaps the oldest information technology. It compresses countless preferences into a single price signal, letting strangers cooperate at scale. That power depends on a fiction we collectively maintain, which makes it both astonishingly robust and quietly precarious.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "social-systems"
+  ],
+  "perspectives": [
+    {
+      "title": "Anthropological",
+      "description": "Money emerged from debt and social obligation, not from barter. Ledgers and moral accounting come first, and coins second."
+    },
+    {
+      "title": "Game-theoretic",
+      "description": "Money is a self-fulfilling equilibrium: accepting it is rational only because others accept it, so multiple equilibria, including collapse, exist."
+    },
+    {
+      "title": "Political",
+      "description": "States create demand through taxation and legal tender laws, which makes money inseparable from sovereignty and power."
+    },
+    {
+      "title": "Technological",
+      "description": "Digital payments and blockchains reduce reliance on trusted intermediaries, but shift the question of trust to code, governance and market liquidity."
+    }
+  ],
+  "connections": [
+    "Coordination games and Schelling points",
+    "Hyperinflation and the loss of trust",
+    "Gresham's law, bad money drives out good",
+    "Debt and credit in ancient Mesopotamia",
+    "Fiat money and the end of the gold standard",
+    "Cryptocurrency and decentralized consensus",
+    "Shared fictions in Harari's account of Homo sapiens"
+  ],
+  "openQuestions": [
+    "Can a currency with no institutional backing remain stable at the scale of a nation?",
+    "Is money primarily a medium of exchange, a unit of account, or a store of trust?",
+    "What would a society without money have to replace, and could it?",
+    "How does digital money change the relationship between citizens and states?"
+  ]
+}
