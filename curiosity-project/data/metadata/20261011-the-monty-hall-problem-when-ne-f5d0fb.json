@@ -1,0 +1,13 @@
+{
+  "id": "20261011-the-monty-hall-problem-when-ne-f5d0fb",
+  "date": "2026-10-11T10:10:36.942578",
+  "title": "The Monty Hall Problem: When New Information Hides in Plain Sight",
+  "question": "Why does opening a door you didn't choose change the odds in favour of switching, and why does intuition fail so badly here?",
+  "summary": "Switching doors wins two thirds of the time. The puzzle shows that probability depends on the process generating the evidence, not just the evidence itself.",
+  "tags": [
+    "probability",
+    "mathematics",
+    "cognition",
+    "bayesian-reasoning"
+  ]
+}
