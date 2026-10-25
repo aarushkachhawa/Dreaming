@@ -1,0 +1,48 @@
+{
+  "id": "20260722-personal-identity-and-the-ship-8b1a10",
+  "date": "2026-07-22T10:11:07.946390",
+  "title": "Personal Identity and the Ship of Theseus",
+  "question": "If every part of you is replaced over time, in what sense are you still you?",
+  "summary": "An exploration of what makes a person the same person over time, from ancient paradoxes about ships to modern neuroscience, teleportation thought experiments, and the unsettling possibility that personal identity is a useful fiction rather than a fact.",
+  "content": "\n<p>The ancient Greeks told a story about a ship. Theseus sails it home to Athens, and the city preserves it as a monument, replacing each rotting plank with new timber as the years pass. Eventually every original plank is gone. Is it still the ship of Theseus? Now suppose someone collects all the discarded planks and reassembles them elsewhere. Which one is the real ship &mdash; the continuously repaired vessel in the harbor, or the reconstructed original in the warehouse?</p>\n\n<p>The puzzle is not really about ships. It is about you. The atoms in your body are almost entirely replaced over years through ordinary metabolism. Your memories are edited every time you recall them. The personality you had at seven bears only a loose resemblance to the one you have now. Yet you feel, with total conviction, that you are one continuous person who was once a child and will one day be old. What exactly is that continuity tracking?</p>\n\n<h2>Candidate Answers, and Why Each One Breaks</h2>\n<p>Philosophers have proposed several criteria for identity over time. Bodily continuity says you are the same person as long as your physical organism persists &mdash; but this fails for the plank-swap problem, since gradual replacement seems compatible with survival while a single catastrophic swap does not, even though the endpoints can be identical. Psychological continuity says identity tracks an unbroken chain of overlapping memories and personality traits &mdash; but this struggles with amnesia, dementia, and the simple fact that you cannot remember being a two-year-old, which would imply that infant-you and current-you are strictly different people by the theory's own logic.</p>\n\n<p>The teleporter thought experiment sharpens the problem. A machine scans every atom in your body, destroys the original, and reconstructs an atom-for-atom duplicate on Mars. The duplicate has all your memories and insists it is you. Did you survive, or did you die and get replaced by a very convincing copy? Now imagine the machine malfunctions and fails to destroy the original: there are now two people, both equally convinced they are you, both with equal claim to your past. Whatever identity is, it cannot be a matter of degree between two candidates who are each internally certain of being the one true continuation.</p>\n\n<h2>The Radical Option: There Is No Fact of the Matter</h2>\n<p>Derek Parfit argued that this is exactly the lesson to draw: personal identity is not what matters. What matters is psychological continuity and connectedness, which come in degrees and can branch, split, or fade without there being a further fact about whether \"the same person\" survived. On this view, asking whether teleported-you is really you is like asking whether a river that splits into two deltas is really the same river as the one upstream &mdash; a question that feels urgent only because our language forces a yes-or-no answer onto something that is genuinely a matter of degree.</p>\n\n<p>This has real stakes. Our entire apparatus of promises, punishment, and prudent planning for the future assumes that the person who will inherit tomorrow's consequences is determinately the same person acting today. If identity is actually a graded, sometimes-indeterminate relation, then the moral weight we place on \"your future self\" may need to be renegotiated rather than assumed.</p>\n",
+  "tags": [
+    "philosophy",
+    "personal-identity",
+    "consciousness",
+    "mind",
+    "metaphysics"
+  ],
+  "perspectives": [
+    {
+      "title": "Philosophy Perspective",
+      "description": "The debate splits between substance views, which posit a persisting self or soul that grounds identity, and reductionist views, which argue identity just is certain physical or psychological relations holding between time-slices, and nothing more."
+    },
+    {
+      "title": "Neuroscience Perspective",
+      "description": "The brain has no fixed self module. Neural correlates of self-representation are distributed and constantly updated, and split-brain patients show that even the sense of a unified subject can be experimentally divided."
+    },
+    {
+      "title": "Buddhist Philosophy Perspective",
+      "description": "The doctrine of anatta, or non-self, arrived independently at Parfit's conclusion over two thousand years earlier: the self is a process, not a thing, and the felt sense of a persistent I is a construction that causes unnecessary suffering when clung to."
+    },
+    {
+      "title": "Legal Perspective",
+      "description": "Law needs a working answer regardless of the metaphysics: contracts, criminal responsibility, and inheritance all presuppose that the person signing, offending, or dying is determinately continuous with the person who acts on those consequences later."
+    }
+  ],
+  "connections": [
+    "The Sorites paradox and the logic of vague boundaries",
+    "Split-brain experiments and the unity of consciousness",
+    "Buddhist and Humean accounts of the self as bundle rather than substance",
+    "Thought experiments in mind uploading and digital immortality",
+    "The problem of diachronic rationality: why sacrifice for a future self at all",
+    "Narrative identity theory: the self as a story we construct, not a fact we discover",
+    "Corporate personhood as another case where identity is legally stipulated rather than metaphysically found"
+  ],
+  "openQuestions": [
+    "If psychological continuity can branch, does that mean survival itself is not an all-or-nothing matter?",
+    "Should moral and legal responsibility depend on strict personal identity, or on something weaker like degree of continuity?",
+    "Is the felt sense of being a single continuous self necessary for functioning minds, even if it is metaphysically ungrounded?",
+    "Would gradual mind uploading, one neuron at a time, preserve identity in a way that sudden teleportation does not?"
+  ]
+}
