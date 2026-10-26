@@ -1,0 +1,13 @@
+{
+  "id": "20261025-benford-s-law-why-do-numbers-p-7dc423",
+  "date": "2026-10-25T10:10:35.039291",
+  "title": "Benford's Law: Why Do Numbers Prefer to Start with One?",
+  "question": "Why do the leading digits of real-world data, from river lengths to tax returns, favor 1 over 9 by a factor of six?",
+  "summary": "In many natural datasets about 30% of numbers begin with 1 and under 5% with 9. The pattern comes from scale invariance, and it is now used to catch fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "patterns",
+    "fraud-detection"
+  ]
+}
