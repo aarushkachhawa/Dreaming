@@ -1,0 +1,47 @@
+{
+  "id": "20261026-what-is-money-really--a73266",
+  "date": "2026-10-26T10:12:03.621425",
+  "title": "What Is Money, Really?",
+  "question": "Why do we accept scraps of paper and glowing numbers on screens in exchange for real goods and labor?",
+  "summary": "Money works because everyone expects everyone else to accept it. Its history, from clay tokens to central bank reserves, is a story of shared belief hardened into institutions.",
+  "content": "<h2>A Useful Fiction</h2>\n<p>A banknote has almost no intrinsic value. You cannot eat it, and the paper is worth far less than its face value. Yet strangers hand you real goods for it. Money is a coordination device: it is valuable because we all expect it to be accepted later.</p>\n<h2>Three Jobs</h2>\n<p>Economists say money does three things: it is a medium of exchange that avoids the need for a \"double coincidence of wants,\" a unit of account that lets us compare prices, and a store of value that carries purchasing power through time. Different things have done these jobs unevenly. Cigarettes in prisoner-of-war camps and Rai stones on Yap did the first better than the third.</p>\n<h2>Barter Myth, Debt Reality</h2>\n<p>The textbook story says barter was clumsy so people invented coins. Anthropologists such as David Graeber found little evidence of barter economies. Instead, early societies seem to have run on credit and obligation, tracked on Mesopotamian clay tablets, long before coinage appeared around 600 BCE in Lydia. On this view money began as a record of who owes whom.</p>\n<h2>Who Makes It?</h2>\n<p>Today most money is bank deposits created when banks make loans, backed by central bank reserves and by the state's willingness to accept it for taxes. Cryptocurrencies attempt a different answer, replacing trust in institutions with trust in a protocol, but they still depend on a social belief that others will want the tokens.</p>\n<h2>Fragile Belief</h2>\n<p>Hyperinflations show what happens when the shared expectation collapses: within months, prices double daily and people revert to barter or foreign currency. Money is as strong as the coordination it supports.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "social-science",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Mainstream Economics",
+      "description": "Money solves the double coincidence problem and lowers transaction costs, emerging spontaneously from commodities that are durable, divisible and widely wanted."
+    },
+    {
+      "title": "Chartalism and State Theory",
+      "description": "The state creates demand for its currency by requiring taxes be paid in it, giving it value."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Early economies ran on credit, gift and obligation; money abstracts and quantifies social debts."
+    },
+    {
+      "title": "Philosophy of Social Reality",
+      "description": "Money is an institutional fact, existing because people collectively treat something as money, like Searle's status functions."
+    }
+  ],
+  "connections": [
+    "The paradox of cooperation and trust",
+    "Language as a shared convention",
+    "Emergence of markets from local trades",
+    "Game theory and Schelling points",
+    "Information theory and price signals",
+    "The Ship of Theseus: what makes an institution persist?"
+  ],
+  "openQuestions": [
+    "Could a money exist with no state or shared institution backing it?",
+    "Is the barter-first story entirely wrong or only incomplete?",
+    "What happens to money when most transactions are automated by AI agents?",
+    "Is there a fundamental limit on how far purely belief-based value can stretch?"
+  ]
+}

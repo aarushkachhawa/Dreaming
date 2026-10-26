@@ -1,0 +1,46 @@
+{
+  "id": "20261026-the-problem-of-induction-7fd73b",
+  "date": "2026-10-26T10:11:35.634146",
+  "title": "The Problem of Induction",
+  "question": "Why should the fact that the sun has risen every day so far give us any reason to expect it tomorrow?",
+  "summary": "Every scientific prediction assumes the future will resemble the past, yet that assumption cannot be justified without assuming it. Hume's puzzle remains one of philosophy's most stubborn.",
+  "content": "<h2>Hume's Uncomfortable Question</h2>\n<p>In the 18th century David Hume noticed something strange about everyday reasoning. We believe bread will nourish us and fire will burn us because it always has. But what licenses the jump from \"every observed case\" to \"every case\"? Logic alone does not: the premises of an inductive argument can all be true while the conclusion is false.</p>\n<h2>The Circle</h2>\n<p>The obvious reply is that induction has worked well in the past. But that is itself an inductive argument, using induction to justify induction. Hume's point was not that induction fails, only that no non-circular argument shows it will keep succeeding. Reason, he concluded, cannot be what drives our expectations; habit is.</p>\n<h2>The Grue Twist</h2>\n<p>Nelson Goodman sharpened the problem. Define \"grue\" as \"green if observed before 2100, blue afterward.\" Every emerald seen so far is both green and grue. Evidence supports both generalizations equally, yet we feel only \"green\" is natural. The difficulty is not just whether to project the past, but which patterns count as projectable at all.</p>\n<h2>Attempts at Escape</h2>\n<p>Karl Popper argued science never uses induction: it proposes bold conjectures and tries to refute them. Critics reply that trusting a theory that survived testing to guide action is induction in disguise. Bayesians offer a formal calculus for updating beliefs, but the result depends on prior probabilities, which must come from somewhere. Reliabilists say we need not justify induction, only use a method that happens to track the truth.</p>\n<h2>Why It Still Matters</h2>\n<p>Machine learning makes the problem concrete. A model generalizes from training data to new cases only because of inductive biases built into it. The \"no free lunch\" theorems show that no learner outperforms any other averaged over all possible worlds. Induction works only because our world is structured, and that is itself a fact we learned from experience.</p>",
+  "tags": [
+    "philosophy",
+    "epistemology",
+    "science",
+    "logic"
+  ],
+  "perspectives": [
+    {
+      "title": "Hume: Habit, Not Reason",
+      "description": "Our expectations come from psychological custom. This explains behaviour but offers no rational guarantee."
+    },
+    {
+      "title": "Popper: Falsification",
+      "description": "Science advances by refuting conjectures, so it needs no positive inductive support, though practical reliance on survivors is contested."
+    },
+    {
+      "title": "Bayesian Epistemology",
+      "description": "Rational belief is updated by probability theory; induction is justified relative to priors, which shifts rather than removes the problem."
+    },
+    {
+      "title": "Machine Learning",
+      "description": "Learners succeed only given inductive bias matching the world's structure; no free lunch theorems formalize Hume."
+    }
+  ],
+  "connections": [
+    "G\u00f6del's incompleteness: limits of justification within a system",
+    "Bayes' theorem and prior beliefs",
+    "Popper's falsificationism",
+    "Occam's razor and simplicity",
+    "No free lunch theorems",
+    "Evolution as a source of cognitive priors"
+  ],
+  "openQuestions": [
+    "Is there any non-circular justification of induction, or is demanding one confused?",
+    "What makes some predicates, like green, projectable and others, like grue, not?",
+    "Did evolution give us good priors, and does that answer Hume or just relocate him?",
+    "Could the laws of nature change, and would we ever be able to tell?"
+  ]
+}
