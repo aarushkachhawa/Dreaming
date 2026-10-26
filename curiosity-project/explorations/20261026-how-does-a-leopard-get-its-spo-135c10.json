@@ -1,0 +1,48 @@
+{
+  "id": "20261026-how-does-a-leopard-get-its-spo-135c10",
+  "date": "2026-10-26T10:11:49.395687",
+  "title": "How Does a Leopard Get Its Spots?",
+  "question": "How can a uniform ball of cells, following identical genetic instructions, produce stripes, spots and other repeating patterns?",
+  "summary": "Alan Turing showed that two interacting chemicals, one spreading faster than the other, can spontaneously break symmetry and paint patterns. Living tissue appears to use the trick, with many variations.",
+  "content": "<h2>Symmetry That Breaks Itself</h2>\n<p>An early embryo is nearly uniform, yet becomes a body with stripes, digits and spots. Every cell carries the same genome, so a pattern must arise from interaction, not from a blueprint that lists each mark. In 1952, shortly before his death, Alan Turing published a mathematical answer.</p>\n<h2>Activators and Inhibitors</h2>\n<p>Imagine two chemicals. The activator makes more of itself and also makes an inhibitor. The inhibitor suppresses the activator and diffuses faster. A small random bump of activator grows, but the fast-spreading inhibitor shuts down activator in a ring around it. Peaks end up evenly spaced, with the spacing set by the diffusion rates. Spots, stripes and labyrinths all fall out of the same equations by changing parameters.</p>\n<h2>Evidence in Real Animals</h2>\n<p>For decades biologists doubted this was more than a toy. Then researchers found it in the mouse palate ridges, in the spacing of hair follicles and feather buds, and in the digit pattern of limbs, where reducing Hox gene dosage gives extra, thinner fingers, just as Turing-style models predict. Zebrafish stripes involve interacting pigment cells that repel and attract each other, a cellular rather than purely chemical version of the same logic. Even the tapering tail of a leopard fits: spots on the body, stripes on the tail, because narrow geometry favors stripes.</p>\n<h2>Why It Matters</h2>\n<p>The idea reframes genes as setting parameters of a self-organizing process rather than drawing the picture. It also explains why patterns vary between individuals while keeping a recognisable style: the rules are fixed, the details depend on noise.</p>",
+  "tags": [
+    "biology",
+    "mathematics",
+    "development",
+    "self-organization",
+    "complexity"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematical View",
+      "description": "Reaction-diffusion equations have a diffusion-driven instability; pattern wavelength is determined by the ratio of diffusion rates and reaction kinetics."
+    },
+    {
+      "title": "Developmental Biology",
+      "description": "Genes encode the ingredients and rates, not the final layout. Mutants that change spacing support this."
+    },
+    {
+      "title": "Evolutionary View",
+      "description": "Simple tunable mechanisms let evolution vary coats and fins quickly by nudging parameters, explaining the diversity of animal markings."
+    },
+    {
+      "title": "Physics of Self-Organization",
+      "description": "Pattern forms far from equilibrium, driven by energy flow, like convection cells or sand ripples."
+    }
+  ],
+  "connections": [
+    "Emergence and simple local rules",
+    "Conway's Game of Life",
+    "Belousov-Zhabotinsky reaction",
+    "Turing's computing legacy",
+    "Convergent evolution of camouflage",
+    "Fractals and the Mandelbrot set",
+    "Morphogen gradients and French flag model"
+  ],
+  "openQuestions": [
+    "How often do real tissues use true Turing mechanisms versus other pattern-forming processes?",
+    "How do patterns stay robust to noise and tissue growth?",
+    "Can we predict a species' coat from its genes?",
+    "Could the same principle explain large-scale structures like galaxies or ecosystems' vegetation bands?"
+  ]
+}
