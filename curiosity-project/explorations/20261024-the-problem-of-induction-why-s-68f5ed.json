@@ -1,0 +1,52 @@
+{
+  "id": "20261024-the-problem-of-induction-why-s-68f5ed",
+  "date": "2026-10-24T10:10:37.261213",
+  "title": "The Problem of Induction: Why Should the Future Resemble the Past?",
+  "question": "Every prediction we make assumes the future will resemble the past. What justifies that assumption, and can it be justified without circular reasoning?",
+  "summary": "Hume showed that no amount of past observation logically guarantees what comes next. Three centuries of responses reveal how much of science rests on a bet we cannot prove.",
+  "content": "<h2>The Sun Will Rise Tomorrow (Probably)</h2>\n<p>You expect the sun to rise tomorrow because it always has. But 'it always has' is a statement about the past, and 'it will' is a statement about the future. To bridge them, you seem to need a premise: the future will resemble the past. David Hume noticed in 1739 that this premise cannot be established by logic, since its denial is not contradictory, and cannot be established by experience, since using experience to justify it assumes the very thing in question.</p>\n<h2>Why It Bites</h2>\n<p>The problem is not skepticism about distant futures. It undermines every generalization: that bread nourishes, that electrons repel, that antibiotics work. Bertrand Russell's chicken is fed every morning by the farmer, and each feeding strengthens its confidence in the farmer's benevolence, until the morning it is not fed. The chicken's inductive evidence was perfect right up to the moment it failed.</p>\n<h2>Attempts at a Solution</h2>\n<p>Some argue induction is justified because it has worked so far, but this is induction justifying itself. Others retreat to probability, yet Bayesian reasoning needs prior probabilities, and priors smuggle in assumptions about uniformity. Nelson Goodman sharpened the puzzle with 'grue': an object is grue if observed before 2030 and green, or after and blue. Every emerald seen so far confirms 'all emeralds are green' and 'all emeralds are grue' equally. Nothing in the data alone tells us which pattern deserves projection.</p>\n<h2>Living With the Bet</h2>\n<p>Karl Popper declared that science does not use induction at all: it conjectures and tries to refute. Critics reply that choosing to rely on corroborated theories for future action is induction in disguise. Pragmatists like Hans Reichenbach offered a vindication: if any method can succeed at predicting, induction will eventually find the pattern, so nothing is lost by using it. It is a conditional guarantee, not a proof.</p>\n<p>Perhaps the honest conclusion is that induction is not a conclusion at all but a precondition. Evolution built brains that expect regularity, and creatures with grue-like expectations did not survive to ask the question. That explains why we believe it, though not why we are right.</p>",
+  "tags": [
+    "philosophy",
+    "epistemology",
+    "science",
+    "logic",
+    "hume"
+  ],
+  "perspectives": [
+    {
+      "title": "The Skeptic (Hume)",
+      "description": "Induction rests on habit, not reason. We cannot help expecting regularity, but we cannot justify it."
+    },
+    {
+      "title": "The Falsificationist (Popper)",
+      "description": "Science proceeds by bold conjecture and refutation. Theories are never confirmed, only corroborated by surviving tests."
+    },
+    {
+      "title": "The Bayesian",
+      "description": "Rational belief updates by conditioning on evidence, but the choice of priors encodes assumptions about how orderly the world is."
+    },
+    {
+      "title": "The Evolutionary Naturalist",
+      "description": "Brains tuned to regularity were selected because they predicted well. This is a causal story for our belief, not a logical justification."
+    },
+    {
+      "title": "The Physicist",
+      "description": "Conservation laws and symmetries, such as invariance under time translation, give principled reasons to expect stable laws, though they are themselves inductively inferred."
+    }
+  ],
+  "connections": [
+    "Goodman's new riddle of induction and 'grue'",
+    "Bayesian priors and Occam's razor / Solomonoff induction",
+    "Popper's falsifiability and the demarcation problem",
+    "Russell's inductivist chicken",
+    "Noether's theorem: symmetry and conservation",
+    "Machine learning generalization and the no-free-lunch theorem",
+    "Kuhn's paradigm shifts as failures of projection"
+  ],
+  "openQuestions": [
+    "Is there any non-circular justification of induction, or is the demand itself ill-posed?",
+    "Why does the universe appear to obey compact, projectible laws at all?",
+    "Does no-free-lunch in machine learning show induction needs built-in bias, and where does ours come from?",
+    "Could the laws of physics change, and what would evidence for that even look like?"
+  ]
+}
