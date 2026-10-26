@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-26** — `2026-10-26-one-at-a-time.html`: an eighty-second
+  technique, and the archive's first double-slit experiment. Particles arrive
+  singly, each landing at one point drawn from the two-slit probability
+  (cos² fringes under a single-slit envelope). Early on the screen looks like
+  noise; as thousands accumulate, bands emerge, with a live histogram tracing
+  them. Click to watch which slit each particle takes and the interference
+  term vanishes, leaving two plain humps. Move the cursor sideways to change
+  the slit spacing, space to pause. Open the file directly in a browser.
+
 - **2026-10-25** — `2026-10-25-folding-thread.html`: an eighty-first
   technique, and the first to draw a single line that fills a plane. The
   Hilbert curve is built by subdivision: every vertex splits into four, each
