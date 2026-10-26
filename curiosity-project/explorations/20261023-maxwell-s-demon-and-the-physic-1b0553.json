@@ -1,0 +1,46 @@
+{
+  "id": "20261023-maxwell-s-demon-and-the-physic-1b0553",
+  "date": "2026-10-23T10:11:21.500761",
+  "title": "Maxwell's Demon and the Physics of Information",
+  "question": "Can information be physical, and does knowing something cost energy?",
+  "summary": "A nineteenth-century thought experiment about a tiny sorting creature ended up showing that erasing a bit of information has an unavoidable thermodynamic price.",
+  "content": "<h2>The Demon at the Door</h2>\n<p>In 1867 James Clerk Maxwell imagined a tiny being guarding a door between two chambers of gas. It lets fast molecules pass one way and slow ones the other, so one side heats up and the other cools without any work being done. That would break the second law of thermodynamics: entropy would fall in an isolated system. For over a century, physicists argued about where the trick fails.</p>\n<h2>Measurement Is Not the Culprit</h2>\n<p>Leo Szilard in 1929 reduced the puzzle to a single molecule in a box and argued that the demon's measurement must generate entropy. The answer seemed settled, until Charles Bennett and Rolf Landauer revisited it. Landauer showed that measuring can in principle be done reversibly, at no minimum cost. What cannot be free is <em>forgetting</em>.</p>\n<h2>Landauer's Principle</h2>\n<p>The demon has a finite memory. To keep operating it must eventually erase old records to make room for new ones. Erasing a bit, collapsing two possible states into one, dissipates at least kT ln 2 of heat into the environment. That heat pays back exactly the entropy the demon seemed to steal. The second law survives, and information joins energy and matter as something with physical consequences.</p>\n<h2>Experiments</h2>\n<p>This is no longer only a thought experiment. Small colloidal particles and single-electron circuits have been used as demons that convert information into work, and the Landauer limit has been measured in nanoscale systems. Modern computers dissipate millions of times more than the limit, so there is room for efficiency, but a floor exists.</p>\n<h2>Why It Matters</h2>\n<p>The result ties thermodynamics to computation and suggests that the arrow of time is partly about memory: we remember the past because records are cheap to write and costly to erase. It also reshapes questions about black holes, where information appears to be destroyed, and about life, which maintains order by processing information about its environment.</p>",
+  "tags": [
+    "physics",
+    "information",
+    "thermodynamics",
+    "computation"
+  ],
+  "perspectives": [
+    {
+      "title": "Physics",
+      "description": "Entropy is a bookkeeping quantity; the demon's memory must be counted as part of the system, and its erasure restores the books."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Reversible computation can in principle avoid dissipation, so energy cost attaches to irreversible steps like overwriting, not to computing itself."
+    },
+    {
+      "title": "Biology",
+      "description": "Cells act like molecular demons, using sensors and feedback to harvest free energy, and paying for it by resetting their internal states."
+    },
+    {
+      "title": "Philosophy",
+      "description": "If information has physical weight, the old split between matter and meaning gets harder to maintain: knowledge becomes a physical resource."
+    }
+  ],
+  "connections": [
+    "Time's arrow and the second law",
+    "Shannon entropy and communication theory",
+    "Black hole information paradox",
+    "Reversible and quantum computing",
+    "Schr\u00f6dinger's 'What is Life?'",
+    "Maxwell's equations and electromagnetism"
+  ],
+  "openQuestions": [
+    "Is there any fundamental meaning to 'information' independent of a physical carrier?",
+    "Does the Landauer limit hold in quantum systems with entanglement?",
+    "Do black holes truly erase information, and what would that cost?",
+    "How close can biological systems get to thermodynamic limits of computation?"
+  ]
+}

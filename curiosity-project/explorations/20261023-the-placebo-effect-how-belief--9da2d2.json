@@ -1,0 +1,46 @@
+{
+  "id": "20261023-the-placebo-effect-how-belief--9da2d2",
+  "date": "2026-10-23T10:11:45.665761",
+  "title": "The Placebo Effect: How Belief Becomes Biology",
+  "question": "How can an inert pill change the body, and what does that say about mind and medicine?",
+  "summary": "Placebos relieve pain, ease nausea and shift symptoms through expectation, learning and ritual, revealing the brain as an active participant in healing.",
+  "content": "<h2>A Pill With Nothing In It</h2>\n<p>In 1955 Henry Beecher claimed that about a third of patients improve on placebos. That figure is now regarded as overstated, because much of the improvement in trials is natural recovery, regression to the mean and reporting bias. Yet after subtracting those, genuine effects remain, especially for pain, nausea, fatigue and depression-like symptoms.</p>\n<h2>Mechanisms, Not Magic</h2>\n<p>Placebo analgesia is blocked by naloxone, which blocks opioid receptors, so expectation of relief triggers the brain's own endogenous opioids. In Parkinson's disease, placebo treatment has been shown to release dopamine in the striatum. Imaging reveals changes in pain-related regions like the anterior cingulate and insula. The effect is physiological, not merely a polite lie from patients.</p>\n<h2>Prediction and Learning</h2>\n<p>A modern view treats the brain as a predictive machine. Perception of pain blends incoming signals with prior expectation. A convincing context, such as a white coat, an injection or a brand name, shifts the prior. Conditioning also plays a part: if a drug was paired with relief before, the cues alone can partly reproduce it, even affecting immune responses in animal experiments.</p>\n<h2>Limits and Surprises</h2>\n<p>Placebos do not shrink tumours or cure infections. Bigger pills, injections and expensive-seeming ones work better than small, cheap-seeming ones. Remarkably, 'open-label' placebos, given with honesty about their nature, still helped some patients with irritable bowel syndrome and chronic back pain, suggesting ritual and care matter even without deception.</p>\n<h2>Its Shadow: Nocebo</h2>\n<p>Negative expectations cause real side effects. Patients told about possible symptoms report them more, even from sugar pills. Words in the clinic are therefore active ingredients, with ethical weight.</p>",
+  "tags": [
+    "neuroscience",
+    "medicine",
+    "psychology",
+    "mind-body"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Expectation recruits endogenous opioid, dopamine and cannabinoid systems; the placebo is the brain medicating itself through a cue."
+    },
+    {
+      "title": "Clinical Medicine",
+      "description": "Trials need placebo controls to separate drug effects from context, yet the context itself is a legitimate therapeutic tool."
+    },
+    {
+      "title": "Ethics",
+      "description": "Can a clinician harness placebo response without deceiving patients? Open-label studies suggest honesty and benefit may coexist."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Healing rituals across cultures work partly through meaning, authority and care, which are placebo ingredients under another name."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the Bayesian brain",
+    "The hard problem of consciousness",
+    "Psychoneuroimmunology",
+    "Nocebo effects and mass psychogenic illness",
+    "Randomized controlled trials",
+    "Conditioning and Pavlov"
+  ],
+  "openQuestions": [
+    "How much of the effect of antidepressants is expectation?",
+    "Can placebo response be amplified safely and ethically in routine care?",
+    "Why do some people respond strongly and others not at all?",
+    "Where does 'mind over body' end, and does it ever alter disease course?"
+  ]
+}
