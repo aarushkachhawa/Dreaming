@@ -1,0 +1,53 @@
+{
+  "id": "20261027-creativity-and-novelty-where-d-f62bc7",
+  "date": "2026-10-27T10:13:48.930397",
+  "title": "Creativity and Novelty: Where Do New Ideas Come From?",
+  "question": "What allows minds to generate genuinely new ideas rather than merely recombining old ones?",
+  "summary": "Creativity looks like magic until you notice it is constrained search plus selection. But whether recombination can ever produce true novelty, or only the discovery of what was latent, remains contested.",
+  "content": "<p>Every new idea seems to arrive from nowhere. Yet nobody has produced one from a true vacuum: Darwin had Malthus, Picasso had African masks, Einstein had Maxwell's equations and a patent office full of clock-synchronization schemes. So what, exactly, is the thing we call novelty?</p>\n<h2>The Recombination View</h2>\n<p>The oldest deflationary answer says creativity is combination. Arthur Koestler called it <em>bisociation</em>: colliding two previously unconnected frames of reference. Gutenberg joined the wine press to the coin punch. On this view the mind holds a huge vocabulary of parts, and creativity is the skill of finding unlikely pairings that nonetheless fit.</p>\n<h2>Search in a Constrained Space</h2>\n<p>Margaret Boden distinguished three kinds of creativity. <em>Combinational</em> creativity joins familiar ideas. <em>Exploratory</em> creativity pushes to the edges of an existing style, as a jazz player exhausts a chord progression. <em>Transformational</em> creativity changes the space itself: atonal music, non-Euclidean geometry. The third is the hard case, because from inside the old rules the new idea is not merely unlikely but impossible.</p>\n<h2>Generate and Test</h2>\n<p>Donald Campbell argued that creative thought mirrors evolution: blind variation followed by selective retention. Most mental variations are junk and are discarded before we notice them. What feels like insight is the surviving tip of a vast unconscious filtering. This explains why prolific creators have high hit rates only in aggregate: Bach, Edison and Picasso all produced enormous quantities of mediocre work.</p>\n<h2>The Role of Constraints and Incubation</h2>\n<p>Paradoxically, constraints help. A sonnet's fourteen lines force the poet away from the first obvious phrase. Studies of insight show that stepping away from a problem lets over-strong associations fade, so remote ones can surface. Sleep, walking and boredom all appear to loosen the grip of the dominant frame.</p>\n<h2>Can Machines Do It?</h2>\n<p>Modern generative models make the question practical. They clearly produce combinations nobody has seen. Whether they can perform transformational leaps, or only interpolate within the distribution they were trained on, is an open empirical and conceptual dispute, and it forces us to say what we thought humans were doing.</p>",
+  "tags": [
+    "creativity",
+    "psychology",
+    "cognition",
+    "philosophy",
+    "ai"
+  ],
+  "perspectives": [
+    {
+      "title": "Cognitive Science",
+      "description": "Creativity is spreading activation across semantic networks plus executive control that selects among candidates; highly creative people show more flexible, less hierarchical associative structure."
+    },
+    {
+      "title": "Evolutionary Epistemology",
+      "description": "Ideas undergo blind variation and selective retention, just like organisms. Novelty is cheap; the filter is where intelligence lives."
+    },
+    {
+      "title": "Romantic / Phenomenological",
+      "description": "Creators report inspiration as received rather than constructed. This subjective experience may simply be what unconscious search feels like from inside, or it may indicate something not captured by search models."
+    },
+    {
+      "title": "Mathematics and Platonism",
+      "description": "Mathematicians often feel they discover rather than invent. If so, novelty is subjective: the idea was always there and the mind merely arrived at it."
+    },
+    {
+      "title": "Machine Learning",
+      "description": "Generative models show that high-dimensional interpolation can look strikingly inventive, which sharpens the question of where interpolation ends and genuine invention begins."
+    }
+  ],
+  "connections": [
+    "Emergence and how complex wholes arise from simple parts",
+    "Biological evolution as a creative process without a designer",
+    "Why we dream and the role of sleep in remote association",
+    "G\u00f6del's incompleteness: truths that escape any fixed rule system",
+    "Kuhn's paradigm shifts as transformational creativity in science",
+    "The adjacent possible in Stuart Kauffman's theory of innovation",
+    "Improvisation in jazz as real-time exploratory search"
+  ],
+  "openQuestions": [
+    "Is there a principled difference between a very unlikely recombination and a truly new concept?",
+    "Can transformational creativity be explained by search, or does changing the search space require something else?",
+    "Why do constraints so often increase rather than decrease creative output?",
+    "If a system can generate and rank ideas better than people, would it be creative or merely effective?",
+    "Does the feeling of insight track anything real about the process that produced the idea?"
+  ]
+}
