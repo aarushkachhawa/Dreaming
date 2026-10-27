@@ -24,6 +24,14 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-27** — `2026-10-27-iron-tide.html`: an eighty-third technique, and
+  the archive's first ferrofluid. A film of magnetic liquid on a hex lattice
+  rises into spikes where the field of several drifting magnets is strong,
+  saturating so the peaks stay crisp. Each spike leans along the field and
+  carries a wet glint; hue marks the polarity of the nearest pole. Move the
+  cursor to drag a south pole through the fluid, click to re-pole the magnets
+  with a new palette, space to pause. Open the file directly in a browser.
+
 - **2026-10-26** — `2026-10-26-one-at-a-time.html`: an eighty-second
   technique, and the archive's first double-slit experiment. Particles arrive
   singly, each landing at one point drawn from the two-slit probability
