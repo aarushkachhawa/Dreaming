@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-28** — `2026-10-28-hidden-corner.html`: an eighty-fourth
+  technique, and the archive's first tesseract. The sixteen corners of a
+  four-dimensional cube turn in all six coordinate planes at once, then are
+  projected twice, from 4D to 3D and from 3D to the screen. Thirty-two glowing
+  edges leave fading trails, tinted by depth along the fourth axis, so the
+  inner cube seems to pass itself inside out. Move the cursor to steer the
+  speed and strength of the 4D rotation, click for a new palette and spin,
+  space to pause. Open the file directly in a browser.
+
 - **2026-10-27** — `2026-10-27-iron-tide.html`: an eighty-third technique, and
   the archive's first ferrofluid. A film of magnetic liquid on a hex lattice
   rises into spikes where the field of several drifting magnets is strong,
