@@ -1,0 +1,47 @@
+{
+  "id": "20261022-why-do-we-age-the-puzzle-of-bi-ccfa78",
+  "date": "2026-10-22T10:11:38.960809",
+  "title": "Why Do We Age? The Puzzle of Biological Decline",
+  "question": "If natural selection favors survival and reproduction, why has it allowed every complex animal to deteriorate with age?",
+  "summary": "Aging looks like a design flaw, yet it is nearly universal. Evolutionary theory suggests selection grows blind to the late-life, while molecular biology reveals the damage it left unrepaired.",
+  "content": "<p>A mouse lives two years; a bowhead whale over two centuries; a Greenland shark perhaps four. A hydra seems to barely age at all. Aging is not a law of physics, since living things can in principle repair themselves indefinitely. So why do most of us fall apart?</p>\n<h2>Selection's Fading Shadow</h2>\n<p>Peter Medawar noticed in the 1950s that in the wild, most animals die from predators, disease, or accidents long before old age. A gene that harms you only at age 80 is almost invisible to selection, because few individuals ever reach 80. The force of natural selection declines with age, so late-acting harmful mutations accumulate in the gene pool unchecked.</p>\n<h2>Trading Youth for Old Age</h2>\n<p>George Williams extended this: some genes may be actively favored because they help early in life while costing later. High testosterone aids young reproduction but may raise cancer risk later; calcium deposition builds bone but may harden arteries. This is antagonistic pleiotropy, and it turns aging into the price of early vigor.</p>\n<h2>The Disposable Soma</h2>\n<p>Tom Kirkwood framed it as economics. An organism has finite energy to split between reproduction and bodily maintenance. Perfect repair is costly, and if the environment will likely kill you anyway, investing in reproduction pays better. This predicts that species facing heavy predation age quickly, which fits the data: bats and birds, which can flee danger, outlive similarly sized ground mammals.</p>\n<h2>The Molecular Ledger</h2>\n<p>Mechanistically, aging seems to be an accumulation of damage and drift: shortened telomeres, mutations, misfolded proteins, mitochondrial decline, senescent cells that refuse to die and secrete inflammatory signals, and epigenetic changes that blur cell identity. Interventions like caloric restriction, rapamycin, and clearing senescent cells extend lifespan in animals, hinting that the rate of aging is tunable.</p>\n<h2>Is Aging a Disease?</h2>\n<p>If aging is the root cause of most chronic illness, treating it could be worth more than curing cancer and heart disease individually. Yet defining it as a disease raises thorny questions about what counts as normal, and whether extending lifespan without healthspan is a gift or a burden.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is not selected for; it is what remains when selection weakens with age. Mutation accumulation and antagonistic pleiotropy explain why bodies are built to last only as long as they typically survive in the wild."
+    },
+    {
+      "title": "Molecular Biology",
+      "description": "Aging is a web of interacting damage processes, such as telomere erosion, senescent cells, and mitochondrial dysfunction. The hallmarks framework tries to treat them as separate, targetable problems."
+    },
+    {
+      "title": "Medicine and Public Health",
+      "description": "Because age is the biggest risk factor for most major diseases, slowing aging could compress morbidity, giving people more healthy years rather than just more years."
+    },
+    {
+      "title": "Ethics and Philosophy",
+      "description": "Would radical life extension deepen inequality, stall social change, or drain life of meaning? Mortality shapes how we value time, so removing it may change what we value."
+    }
+  ],
+  "connections": [
+    "Entropy and the second law of thermodynamics",
+    "Cancer as a failure of cellular cooperation",
+    "Time's Arrow",
+    "The Ship of Theseus and personal identity",
+    "Immortal jellyfish and hydra",
+    "Life-history theory and r/K selection",
+    "The paradox of cooperation among cells"
+  ],
+  "openQuestions": [
+    "Is there a hard biological limit to human lifespan, or only a current one?",
+    "Do all the hallmarks of aging share a single upstream cause?",
+    "Why do some long-lived species, like naked mole rats, resist cancer and decline?",
+    "Would reversing aging in cells restore a whole organism, or just reset one clock among many?"
+  ]
+}
