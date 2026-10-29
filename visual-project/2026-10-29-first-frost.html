@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>First Frost</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04070d; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#d6e2f0; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(150,200,255,0.3); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#51596a; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; steer the humidity&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; seed a new crystal&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Snowflake growth after Reiter's cellular model. Water vapour diffuses across a hexagonal
+// lattice; a cell next to ice is "receptive" and stops diffusing, hoarding what arrives
+// (plus a little gamma per step) until it crosses 1 and freezes. Receptive cells cannot
+// share, so tips that stick out grow faster than the bays between them, and six-fold
+// symmetry sprouts branches from a single seed. Humidity (beta) and gamma pick the habit:
+// plates, stars, or ferns. No symmetry is imposed; the hex grid does all of it.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const N=280, SZ=N*N;
+const off=document.createElement('canvas'); off.width=N; off.height=N;
+const octx=off.getContext('2d'), img=octx.createImageData(N,N);
+let s=new Float32Array(SZ), s2=new Float32Array(SZ), u=new Float32Array(SZ);
+let beta=0.55, gamma=0.0005, alpha=1.0, mx=0.5, steps=0, paused=false, hold=0, hue=205;
+let mouse=null, lastMove=-99, T=0, radius=0, ice=0;
+const PRESETS=[[0.40,0.0010],[0.65,0.0001],[0.80,0.0003],[0.50,0.0000],[0.90,0.0001]];
+let preset=-1;
+function reset(){
+  if (preset<0) preset=Math.floor(Math.random()*PRESETS.length);
+  beta=PRESETS[preset][0]; gamma=PRESETS[preset][1]; mx=beta;
+  s.fill(beta); s2.fill(beta); steps=0; hold=0; radius=0; ice=0;
+  hue=190+Math.random()*50;
+  s[(N>>1)*N+(N>>1)]=1;
+  mouse=null;
+}
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+}
+// even-r offset hex neighbours
+function step(){
+  const b=Math.max(0.3,Math.min(0.95,mx));
+  const a2=alpha/12; // alpha/2 times mean over six neighbours
+  for (let y=1;y<N-1;y++){
+    const odd=y&1;
+    for (let x=1;x<N-1;x++){
+      const i=y*N+x;
+      const n1=i-1,n2=i+1;
+      const n3=odd?i-N+1:i-N-1, n4=i-N, n5=odd?i+N+1:i+N-1, n6=i+N;
+      // receptive if frozen or touching frozen
+      if (s[i]>=1||s[n1]>=1||s[n2]>=1||s[n3]>=1||s[n4]>=1||s[n5]>=1||s[n6]>=1) u[i]=0;
+      else u[i]=s[i];
+    }
+  }
+  let mxr=0, cnt=0;
+  for (let y=1;y<N-1;y++){
+    const odd=y&1;
+    for (let x=1;x<N-1;x++){
+      const i=y*N+x;
+      const n1=i-1,n2=i+1;
+      const n3=odd?i-N+1:i-N-1, n4=i-N, n5=odd?i+N+1:i+N-1, n6=i+N;
+      const nb=u[n1]+u[n2]+u[n3]+u[n4]+u[n5]+u[n6];
+      let v=s[i];
+      const recept=(u[i]===0);
+      let nv;
+      if (recept) nv=v+gamma+a2*(nb-6*u[i]);
+      else nv=u[i]+a2*(nb-6*u[i]);
+      s2[i]=nv;
+      if (nv>=1){
+        cnt++;
+        const dx=x+0.5*odd-N/2, dy=(y-N/2)*0.866, r=Math.sqrt(dx*dx+dy*dy);
+        if (r>mxr) mxr=r;
+      }
+    }
+  }
+  // fixed vapour at the boundary
+  for (let k=0;k<N;k++){ s2[k]=b; s2[(N-1)*N+k]=b; s2[k*N]=b; s2[k*N+N-1]=b; }
+  const t=s; s=s2; s2=t;
+  ice=cnt; radius=mxr; steps++;
+}
+function draw(){
+  const d=img.data;
+  const h=hue;
+  for (let i=0;i<SZ;i++){
+    const v=s[i], o=i*4;
+    let r,g,bl;
+    if (v>=1){
+      const k=Math.min(1,(v-1)*1.5);       // thicker ice reads brighter
+      r=150+90*k; g=200+45*k; bl=250;
+    } else {
+      const k=v*v*0.55;                     // vapour as a faint blue mist
+      const m=hsl(h,0.6,0.10+0.18*k);
+      r=m[0]; g=m[1]; bl=m[2];
+      if (v>0.995){ r=100; g=160; bl=230; } // the freezing edge
+    }
+    d[o]=r; d[o+1]=g; d[o+2]=bl; d[o+3]=255;
+  }
+  octx.putImageData(img,0,0);
+  const S=Math.min(canvas.width,canvas.height);
+  const w=S, hh=S*0.866;
+  ctx.fillStyle='#04070d'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(off,(canvas.width-w)/2,(canvas.height-hh)/2,w,hh);
+}
+function hsl(h,sa,l){
+  const a=sa*Math.min(l,1-l);
+  const f=n=>{const k=(n+h/30)%12; return 255*(l-a*Math.max(-1,Math.min(k-3,9-k,1)));};
+  return [f(0),f(8),f(4)];
+}
+function frame(){
+  if (!paused){
+    if (mouse && T-lastMove<6) mx+=(mouse.y/innerHeight*0.6+0.3-mx)*0.02;
+    if (radius<N/2-14){ for (let k=0;k<3;k++) step(); }
+    else { hold++; if (hold>420){ preset=-1; reset(); } }
+    T+=1/60;
+  }
+  draw();
+  hud.innerHTML='FIRST FROST<br>cells frozen: '+ice+'<br>humidity: '+mx.toFixed(2)+' &nbsp; gamma: '+gamma.toFixed(4);
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{mouse={x:e.clientX,y:e.clientY};lastMove=T;});
+addEventListener('touchmove',e=>{const p=e.touches[0];mouse={x:p.clientX,y:p.clientY};lastMove=T;},{passive:true});
+addEventListener('click',()=>{ preset=(preset+1+Math.floor(Math.random()*(PRESETS.length-1)))%PRESETS.length; reset(); });
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup(); reset(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

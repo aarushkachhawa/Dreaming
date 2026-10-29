@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-29** — `2026-10-29-first-frost.html`: an eighty-fifth technique,
+  and the archive's first snowflake. Reiter's cellular model on a hexagonal
+  lattice: water vapour diffuses, cells touching ice stop sharing and hoard
+  what arrives until they freeze, so tips outrun the bays between them. One
+  seed grows six-fold branches with no symmetry imposed; the lattice does it
+  all. Move the cursor vertically to change the humidity, click to seed a new
+  crystal with a different habit (plate, star, fern), space to pause. Open the
+  file directly in a browser.
+
 - **2026-10-28** — `2026-10-28-hidden-corner.html`: an eighty-fourth
   technique, and the archive's first tesseract. The sixteen corners of a
   four-dimensional cube turn in all six coordinate planes at once, then are
