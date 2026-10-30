@@ -24,6 +24,16 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-30** — `2026-10-30-unfolded-strip.html`: an eighty-sixth
+  technique, and the archive's first paper-folding curve. A strip is folded in
+  half again and again, then opened so every crease turns the same way; which
+  way each crease turns is fixed entirely by the folds before it. The crease
+  angle is a free dial, so the strip lies straight at zero, becomes the dragon
+  at ninety degrees and unfurls in between, while the fold count climbs and
+  wraps so it is folded afresh. Colour runs along the strip's length. Move the
+  cursor to open the creases, click to fold a new strip, space to pause. Open
+  the file directly in a browser.
+
 - **2026-10-29** — `2026-10-29-first-frost.html`: an eighty-fifth technique,
   and the archive's first snowflake. Reiter's cellular model on a hexagonal
   lattice: water vapour diffuses, cells touching ice stop sharing and hoard

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unfolded Strip</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#0a0807; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e2d8cc; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(230,170,120,0.3); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#62584e; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; open the creases&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; fold a new strip&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Paper-folding (dragon) curve. Fold a strip of paper in half, again and again, then open it
+// so every crease makes the same quarter turn: the turn at crease k is decided only by the
+// folds before it (s' = s, 1, reverse-and-flip(s)). Here the crease angle is a free dial: at
+// zero the strip lies straight, at ninety degrees it is the dragon, and in between it
+// unfurls. The number of folds also climbs slowly, so the strip keeps being folded again.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const MAXF=14, CH=48;
+let W=0,H=0,t=0,paused=false,mx=0.5,mouse=null,lastMove=-99;
+let hue0=24, flip=1, scale=0, ox=0, oy=0, seed=[1];
+let turns=[], N=0;
+function build(base){
+  let s=base.slice();
+  for (let i=0;i<MAXF;i++){
+    const r=[]; for (let j=s.length-1;j>=0;j--) r.push(-s[j]);
+    s=s.concat([1],r);
+  }
+  turns=s; N=s.length+1;
+}
+build(seed);
+const X=new Float32Array(1<<(MAXF+2)), Y=new Float32Array(1<<(MAXF+2));
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; W=canvas.width; H=canvas.height;
+}
+function frame(){
+  if (!paused) t+=1/60;
+  if (mouse && t-lastMove<5) mx+=(mouse.x/innerWidth-mx)*0.06;
+  else mx+=(0.5+0.45*Math.sin(t*0.07)-mx)*0.02;
+  // crease angle: 0 (flat strip) .. ~100 degrees
+  const ang=(0.02+mx*1.0)*Math.PI*0.5*1.1*flip;
+  // folds creep upward then wrap, so the strip is re-folded again and again
+  const folds=Math.min(MAXF, 6+((t*0.35)%(MAXF-5)));
+  const n=Math.min(N-1, Math.floor(Math.pow(2,folds)));
+  let x=0,y=0,h=0,mnx=0,mxx=0,mny=0,mxy=0;
+  X[0]=0;Y[0]=0;
+  for (let i=0;i<n;i++){
+    x+=Math.cos(h); y+=Math.sin(h);
+    X[i+1]=x; Y[i+1]=y;
+    if (x<mnx)mnx=x; if (x>mxx)mxx=x; if (y<mny)mny=y; if (y>mxy)mxy=y;
+    if (i<turns.length) h+=turns[i]*ang;
+  }
+  const bw=mxx-mnx||1, bh=mxy-mny||1;
+  const target=Math.min(W*0.84/bw, H*0.84/bh);
+  scale+= ((scale?target:target)-scale)*(scale?0.08:1);
+  const cx=(mnx+mxx)/2, cy=(mny+mxy)/2;
+  ox+=(W/2-cx*scale-ox)*(ox?0.08:1); oy+=(H/2-cy*scale-oy)*(oy?0.08:1);
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='rgba(10,8,7,0.35)'; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.lineWidth=Math.max(0.8,Math.min(2.2,scale*0.5))*(W/1400+0.6);
+  const per=Math.ceil(n/CH);
+  for (let c=0;c<CH;c++){
+    const a=c*per; if (a>=n) break;
+    const b=Math.min(n,a+per);
+    const u=c/CH;
+    ctx.strokeStyle='hsla('+(hue0+u*80+t*4)+',75%,'+(48+14*Math.sin(u*6.28+t))+'%,0.5)';
+    ctx.beginPath(); ctx.moveTo(X[a]*scale+ox,Y[a]*scale+oy);
+    for (let i=a+1;i<=b;i++) ctx.lineTo(X[i]*scale+ox,Y[i]*scale+oy);
+    ctx.stroke();
+  }
+  hud.innerHTML='UNFOLDED STRIP<br>folds: '+folds.toFixed(1)+' &nbsp; creases: '+n+'<br>crease angle: '+(Math.abs(ang)*180/Math.PI).toFixed(0)+'&deg;';
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{mouse={x:e.clientX,y:e.clientY};lastMove=t;});
+addEventListener('touchmove',e=>{const p=e.touches[0];mouse={x:p.clientX,y:p.clientY};lastMove=t;},{passive:true});
+addEventListener('click',()=>{
+  // a new strip: the first few folds are chosen by hand, the rest follow the rule
+  seed=[]; const k=1+Math.floor(Math.random()*3);
+  for (let i=0;i<k;i++) seed.push(Math.random()<0.5?1:-1);
+  build(seed);
+  hue0=Math.random()*360; flip=Math.random()<0.5?1:-1; t=0;
+  ctx.globalCompositeOperation='source-over'; ctx.fillStyle='#0a0807'; ctx.fillRect(0,0,W,H);
+});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
