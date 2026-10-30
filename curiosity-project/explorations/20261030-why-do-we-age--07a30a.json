@@ -1,0 +1,47 @@
+{
+  "id": "20261030-why-do-we-age--07a30a",
+  "date": "2026-10-30T10:10:41.617830",
+  "title": "Why Do We Age?",
+  "question": "If natural selection built bodies capable of astonishing self-repair, why does it let them fall apart?",
+  "summary": "Aging is not a program evolution wrote but a gap it never filled: selection weakens with age, leaving room for damage, trade-offs, and late-acting costs to accumulate.",
+  "content": "<h2>The puzzle</h2><p>A fertilized egg builds a human being from a single cell, repairing errors along the way. A salamander regrows a limb. Yet the same machinery that assembled you cannot keep you intact past about ninety years. Aging looks like a failure of engineering, but evolution is not an engineer with goals. The question is why selection tolerates it.</p>\n<h2>The shadow of selection</h2><p>Peter Medawar's insight in the 1950s was that natural selection cares about reproduction, and the force of selection declines with age. In the wild, most animals die from predators, disease, or hunger long before old age. A gene that kills you at 80 is invisible to selection if almost nobody reaches 80; a gene that helps you at 20 is strongly favored. Harmful late-acting mutations therefore accumulate in the genome, not because they are advantageous, but because nothing removes them.</p>\n<h2>Trade-offs and the disposable soma</h2><p>George Williams added antagonistic pleiotropy: genes that boost early fitness at a late cost will be selected. Calcification that heals bones in youth may clog arteries in age. Tom Kirkwood's disposable soma theory frames it as budgeting: an organism has finite energy to spend on reproduction or on perfect maintenance, and the optimum is rarely perfect maintenance. This predicts that species facing high external mortality should age fast, and indeed mice, with many predators, live briefly, while bats, tortoises, and naked mole-rats, who are protected by flight, shells, or burrows, live remarkably long.</p>\n<h2>Mechanisms</h2><p>Proximate causes are many: DNA damage, shortening telomeres, mitochondrial dysfunction, protein misfolding, senescent cells that stop dividing but secrete inflammatory signals, and stem cell exhaustion. Whether these are a single process or a dozen loosely related ones is itself contested.</p>\n<h2>Can it be changed?</h2><p>Caloric restriction, certain mutations in insulin signaling, and drugs such as rapamycin extend lifespan in worms, flies, and mice. Clearing senescent cells improves health in mice. Whether such interventions generalize to humans, and whether extending healthspan differs from extending lifespan, is unresolved. Some argue aging is a disease to be treated; others that it is the unavoidable background against which diseases occur.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary biology",
+      "description": "Aging is the product of weakened selection at late ages, not an adaptation. Mutation accumulation and antagonistic pleiotropy explain why bodies decay."
+    },
+    {
+      "title": "Cell biology",
+      "description": "Aging is damage: telomere attrition, senescent cells, and mitochondrial decline compound until tissues cannot renew themselves."
+    },
+    {
+      "title": "Medicine",
+      "description": "If aging drives most chronic disease, treating its root could be more effective than fighting cancer, heart disease, and dementia one at a time."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Is death a harm, and would an indefinitely extended life be desirable? Mortality shapes meaning, urgency, and the turnover of generations."
+    }
+  ],
+  "connections": [
+    "Entropy and the second law of thermodynamics",
+    "Time's arrow",
+    "Cancer as a failure of cooperation among cells",
+    "The evolution of cooperation",
+    "Immortal jellyfish and hydra",
+    "Population ageing and economics",
+    "Ship of Theseus: the body's constant replacement"
+  ],
+  "openQuestions": [
+    "Is there a biological limit to human lifespan, or only an engineering one?",
+    "Is aging one process or many independent ones?",
+    "Why do some species show negligible senescence?",
+    "Would treating aging extend healthy years or merely prolong frailty?"
+  ]
+}
