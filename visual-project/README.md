@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-10-31** — `2026-10-31-quantum-carpet.html`: an eighty-seventh
+  technique, and the archive's first quantum carpet. A particle in a box starts
+  as a narrow packet; each energy level turns at its own rate, so the packet
+  smears across the box, then the phases realign and it splits into two, three,
+  four copies at fractions of the revival time, and is whole again at the full
+  period. Space runs across, time runs down, brightness is probability. Move
+  the cursor to choose where the next particle starts, click to release it
+  (at rest or moving), space to pause. Open the file directly in a browser.
+
 - **2026-10-30** — `2026-10-30-unfolded-strip.html`: an eighty-sixth
   technique, and the archive's first paper-folding curve. A strip is folded in
   half again and again, then opened so every crease turns the same way; which
