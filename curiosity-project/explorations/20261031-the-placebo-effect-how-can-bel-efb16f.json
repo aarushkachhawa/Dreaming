@@ -1,0 +1,48 @@
+{
+  "id": "20261031-the-placebo-effect-how-can-bel-efb16f",
+  "date": "2026-10-31T10:11:04.551695",
+  "title": "The Placebo Effect: How Can Belief Change the Body?",
+  "question": "How can an inert pill relieve real symptoms, and what does that say about the relationship between mind and body?",
+  "summary": "Placebos can reduce pain, tremor and nausea, even when patients know they are taking one. The effect reveals that expectation is an active biological input, though it has clear limits.",
+  "content": "<p>In 1955 Henry Beecher reported that about a third of patients improved after receiving a sham treatment. The figure was later criticized, because much of what looks like a placebo response is regression to the mean, natural recovery and measurement bias. But after the noise is stripped away, a real residual remains, and it can be measured in the brain.</p>\n<h2>What Is Real</h2>\n<p>Placebo analgesia is the best-studied case. Expecting pain relief triggers the release of endogenous opioids, and the effect can be blocked by naloxone, an opioid antagonist. Imaging shows reduced activity in pain-processing regions. In Parkinson's disease, a placebo injection prompts measurable dopamine release in the striatum. The body's own pharmacy is being activated by belief.</p>\n<h2>What Is Not</h2>\n<p>Placebos do not shrink tumours or cure infections. A large meta-analysis by Hr\u00f3bjartsson and G\u00f8tzsche found little effect on objective outcomes, with the strongest effects on subjective ones such as pain, nausea and fatigue. This pattern suggests that placebos change the experience and regulation of symptoms, not the underlying pathology.</p>\n<h2>Honest Placebos</h2>\n<p>Ted Kaptchuk's trials of open-label placebos told patients with irritable bowel syndrome that the pills were inert and still saw improvement over no treatment. This suggests that ritual, attention and the expectation of care matter even without deception, though the studies are small and the results need replication.</p>\n<h2>A Predictive-Brain Reading</h2>\n<p>In predictive-processing theories, perception blends sensory signals with prior expectations. Pain is not a raw readout of tissue damage but the brain's best inference about threat. A credible treatment shifts the prior, and the inference changes. The nocebo effect works the same way in reverse: warnings about side effects can produce them.</p>",
+  "tags": [
+    "medicine",
+    "neuroscience",
+    "psychology",
+    "mind-body",
+    "predictive-processing"
+  ],
+  "perspectives": [
+    {
+      "title": "Neurobiological",
+      "description": "Expectation recruits endogenous opioid, dopamine and endocannabinoid systems, producing measurable physiological change, particularly for pain and motor symptoms."
+    },
+    {
+      "title": "Statistical",
+      "description": "Much apparent placebo benefit is regression to the mean and natural history. Rigorous trials need no-treatment arms to separate these."
+    },
+    {
+      "title": "Predictive Processing",
+      "description": "Symptoms are inferences combining body signals with expectations; credible treatment shifts the prior and thereby the experience."
+    },
+    {
+      "title": "Ethical",
+      "description": "If rituals and care deliver benefit, clinicians face tension between honesty and effect, which open-label placebos try to resolve."
+    }
+  ],
+  "connections": [
+    "The Hard Problem of Consciousness",
+    "Predictive coding and the Bayesian brain",
+    "The nocebo effect and mass psychogenic illness",
+    "Randomized controlled trials and blinding",
+    "Why We Dream",
+    "Ritual and healing in anthropology",
+    "Stress, the immune system and psychoneuroimmunology"
+  ],
+  "openQuestions": [
+    "How large is the placebo effect once natural history and bias are fully controlled?",
+    "Can open-label placebos be made reliable enough for clinical use?",
+    "Why does the same expectation help some individuals and not others?",
+    "Where is the boundary between changing experience and changing physiology?"
+  ]
+}

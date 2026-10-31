@@ -1,0 +1,14 @@
+{
+  "id": "20261031-benford-s-law-why-does-the-dig-fbf8cb",
+  "date": "2026-10-31T10:10:37.145990",
+  "title": "Benford's Law: Why Does the Digit 1 Lead So Often?",
+  "question": "Why do the first digits of real-world numbers favor 1 over 9, and what does that reveal about how numbers arise in nature?",
+  "summary": "In populations, river lengths, stock prices and electricity bills, about 30% of numbers begin with 1 and under 5% with 9. The pattern is a signature of scale-free processes, and it has caught fraudsters.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "scale-invariance",
+    "forensics"
+  ]
+}
