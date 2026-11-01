@@ -1,0 +1,49 @@
+{
+  "id": "20261101-why-cities-obey-scaling-laws-112307",
+  "date": "2026-11-01T10:10:34.448758",
+  "title": "Why Cities Obey Scaling Laws",
+  "question": "Why does doubling a city's population change wages, patents and crime by predictable amounts?",
+  "summary": "Cities show remarkably regular mathematics: infrastructure grows sublinearly while innovation and crime grow superlinearly. What does that say about cities as networks of human interaction?",
+  "content": "<h2>The Puzzle</h2>\n<p>Double the size of a city and you do not get double of everything. You get about 15% more wages, patents and crime per person, and about 15% less road surface, gas stations and cable per person. Across countries and centuries, cities obey strikingly regular mathematical laws, as if they were organisms.</p>\n<h2>Sublinear and Superlinear</h2>\n<p>Geoffrey West, Luis Bettencourt and colleagues found that infrastructure scales <em>sublinearly</em> with population, with an exponent near 0.85: bigger cities need proportionally less pipe and wire. Socioeconomic outputs such as innovation, income and also disease and crime scale <em>superlinearly</em>, with an exponent near 1.15. Size buys both economies of scale and a concentration of interaction.</p>\n<h2>Why Interaction Scales Up</h2>\n<p>The leading explanation is that a city is a network of social contacts. The number of possible pairings grows faster than the number of people, and dense cities raise the rate at which people actually meet. Ideas, deals and also infections spread through those links. Output per person rises because each person is connected to more of the whole.</p>\n<h2>The Biological Analogy and Its Limits</h2>\n<p>Animals also scale sublinearly: metabolic rate goes as mass to the three-quarters (Kleiber's law). But organisms slow down as they grow, so growth saturates. Superlinear cities speed up, which implies growth that would blow up in finite time unless it is reset by innovation. Cities seem to need a new paradigm roughly every few decades just to avoid collapse.</p>\n<h2>What the Laws Hide</h2>\n<p>Averages mask enormous variation. Two cities of equal size can differ widely in wealth, depending on history, institutions and geography. Critics also note that scaling laws describe correlation, not mechanism, and that policy such as zoning shapes the same data.</p>\n<h2>Why It Matters</h2>\n<p>If the laws hold, urbanisation is both an efficiency strategy for sustainability and an engine of innovation, but it also concentrates pathologies. Understanding the mechanism could guide design rather than just describe outcomes.</p>",
+  "tags": [
+    "complexity",
+    "urbanism",
+    "mathematics",
+    "economics",
+    "systems-thinking"
+  ],
+  "perspectives": [
+    {
+      "title": "Physics of Complex Systems",
+      "description": "Power-law scaling arises from network structure; interaction pairs grow faster than population, producing superlinear outputs."
+    },
+    {
+      "title": "Economics",
+      "description": "Agglomeration economies, labour matching and knowledge spillovers explain why productivity rises with density."
+    },
+    {
+      "title": "Biology",
+      "description": "Kleiber's law offers a sublinear analogy, but organisms saturate while cities accelerate, so the analogy breaks."
+    },
+    {
+      "title": "Urban Planning",
+      "description": "Policy, zoning and history cause large deviations from the average, so scaling laws are baselines, not destinies."
+    }
+  ],
+  "connections": [
+    "Emergence and complexity",
+    "Kleiber's law and metabolic scaling",
+    "Network science and small worlds",
+    "Power laws and heavy tails",
+    "The paradox of cooperation",
+    "Innovation cycles and finite-time singularities",
+    "Epidemics in dense populations"
+  ],
+  "openQuestions": [
+    "Is the superlinear exponent truly universal, or an artifact of how cities are defined?",
+    "What mechanism, beyond correlation, produces the 1.15 exponent?",
+    "Can cities escape the need for repeated reinvention to avoid collapse?",
+    "Can planners deliberately push a city onto a better scaling curve?",
+    "Do digital networks change the scaling of interaction?"
+  ]
+}
