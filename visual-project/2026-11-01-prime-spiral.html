@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prime Spiral</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#d6dde6; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(120,170,255,0.35); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#4d5663; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; nudge the winding&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; change the rule&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Prime spiral. Every integer n is placed at radius sqrt(n) and an angle that grows with n; only
+// primes are lit. With angle = 2*pi*sqrt(n) (Sacks) the integers fall on parabolic arms and the
+// primes bunch along some arms and avoid others. A small winding offset slowly breathes, so the
+// arms swing open and shut; other rules (golden angle, a fixed turn) reveal other lattices.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const N=90000;
+const isP=new Uint8Array(N+1).fill(1); isP[0]=isP[1]=0;
+for (let i=2;i*i<=N;i++) if (isP[i]) for (let j=i*i;j<=N;j+=i) isP[j]=0;
+const primes=[]; for (let n=2;n<=N;n++) if (isP[n]) primes.push(n);
+const sq=primes.map(Math.sqrt);
+const RULES=[
+  {name:'Sacks spiral: angle = 2pi*sqrt(n)', ang:(n,s,d)=>6.283185307*s*(1+d)},
+  {name:'golden angle: angle = n*137.5deg', ang:(n,s,d)=>n*(2.399963229728653+d*0.5)},
+  {name:'slow turn: angle = n * 1.1deg', ang:(n,s,d)=>n*(0.0196+d*0.05)},
+];
+let rule=0, t=0, paused=false, mx=0.5, hue0=210;
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+}
+function frame(){
+  if (!paused) t+=0.0016;
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2;
+  const R=Math.min(W,H)*0.47;
+  const d=Math.sin(t)*0.012 + (mx-0.5)*0.02;
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='rgba(6,7,11,0.22)'; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  // reveal grows slowly then holds, so the picture builds from the centre
+  const reveal=Math.min(1,0.15+t*0.5);
+  const maxN=N*reveal, scale=R/Math.sqrt(maxN);
+  const f=RULES[rule].ang, size=Math.max(1,W/640);
+  let shown=0;
+  for (let i=0;i<primes.length;i++){
+    const n=primes[i]; if (n>maxN) break;
+    const s=sq[i], a=f(n,s,d), r=s*scale;
+    const x=cx+r*Math.cos(a), y=cy+r*Math.sin(a);
+    const h=(hue0+ (n%6===1?0:40) + s*0.25)%360;
+    ctx.fillStyle='hsla('+h+',80%,'+(55+20*(1-r/R))+'%,0.9)';
+    ctx.fillRect(x,y,size,size); shown++;
+  }
+  hud.innerHTML='PRIME SPIRAL<br>'+RULES[rule].name+'<br>primes lit: '+shown+' of the first '+Math.floor(maxN);
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{mx=e.clientX/innerWidth;});
+addEventListener('touchmove',e=>{mx=e.touches[0].clientX/innerWidth;},{passive:true});
+addEventListener('click',()=>{rule=(rule+1)%RULES.length; t=0; hue0=Math.random()*360;
+  ctx.globalCompositeOperation='source-over'; ctx.fillStyle='#06070b'; ctx.fillRect(0,0,canvas.width,canvas.height);});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

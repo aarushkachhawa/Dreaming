@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-01** — `2026-11-01-prime-spiral.html`: an eighty-eighth
+  technique, and the archive's first prime spiral. Every integer sits at radius
+  sqrt(n) and an angle that grows with n, and only the primes are lit. Wound
+  as a Sacks spiral they gather along parabolic arms, some crowded and some
+  bare; a slowly breathing offset swings the arms open and shut. Click cycles
+  to a golden-angle rule and a slow fixed turn, each showing a different
+  lattice. Move the cursor to nudge the winding, space to pause. Open the file
+  directly in a browser.
+
 - **2026-10-31** — `2026-10-31-quantum-carpet.html`: an eighty-seventh
   technique, and the archive's first quantum carpet. A particle in a box starts
   as a narrow packet; each energy level turns at its own rate, so the packet
