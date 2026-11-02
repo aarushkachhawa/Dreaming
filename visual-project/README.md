@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-02** — `2026-11-02-restless-fern.html`: an eighty-ninth
+  technique, and the archive's first iterated function system. Four affine
+  maps, chosen at random by the chaos game, draw a Barnsley fern; here every
+  coefficient drifts on its own slow phase, so the fern sways, curls and
+  unfurls, passing through stranger relatives of itself. Colour follows the
+  map that placed each point. Move the cursor to bend the fronds, click to
+  grow a new fern with new drift and hue, space to pause. Open the file
+  directly in a browser.
+
 - **2026-11-01** — `2026-11-01-prime-spiral.html`: an eighty-eighth
   technique, and the archive's first prime spiral. Every integer sits at radius
   sqrt(n) and an angle that grows with n, and only the primes are lit. Wound
