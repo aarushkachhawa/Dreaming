@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-03** — `2026-11-03-singing-plate.html`: a ninetieth
+  technique, and the archive's first Chladni figure. Sand on a vibrating square
+  plate is thrown about wherever the plate moves and rests where it does not;
+  every grain jitters in proportion to the local motion, so by chance alone the
+  sand drifts onto the nodal lines and draws them. The tone slowly glides from
+  one mode to the next, the lines dissolve and the sand gathers again. Move the
+  cursor down to shake harder, click to strike a new tone and scatter the sand,
+  space to pause. Open the file directly in a browser.
+
 - **2026-11-02** — `2026-11-02-restless-fern.html`: an eighty-ninth
   technique, and the archive's first iterated function system. Four affine
   maps, chosen at random by the chaos game, draw a Barnsley fern; here every
