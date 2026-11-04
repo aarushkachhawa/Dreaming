@@ -1,0 +1,47 @@
+{
+  "id": "20261030-prices-as-thought-can-a-market-008118",
+  "date": "2026-10-30T10:11:06.497559",
+  "title": "Prices as Thought: Can a Market Know More Than Anyone in It?",
+  "question": "How can a price system coordinate millions of people who each know only a sliver of what is needed?",
+  "summary": "Markets, at their best, compress dispersed, tacit knowledge into a single number. Understanding when this works, and when it fails, says something deep about collective intelligence.",
+  "content": "<h2>The knowledge problem</h2><p>No one knows how to make a pencil. The miner, the forester, the chemist, and the shipper each know a fragment. Friedrich Hayek argued in 1945 that the central economic problem is not allocating known resources but using knowledge scattered among millions of people, much of it local, tacit, and impossible to write down. A planner cannot collect it; a price can summarize it.</p>\n<h2>What a price does</h2><p>When a tin mine collapses, I need not know why tin is scarce. The price rises, and I economize. A single number carries the consequences of countless events to people who need only know what to do. In this view a market is a distributed computer, and prices are its messages, discarding irrelevant detail while preserving what matters for action.</p>\n<h2>Evidence of wisdom</h2><p>Prediction markets often beat polls and experts. Francis Galton found the crowd's median guess of an ox's weight within about one percent. The conditions matter: diversity of opinion, independence, decentralization, and a way to aggregate. When people copy one another, errors correlate rather than cancel.</p>\n<h2>When the machine breaks</h2><p>Markets fail when information is asymmetric, when externalities leave costs unpriced, and when herding or leverage turns prices into feedback loops. Bubbles and crashes show that prices can encode collective delusion as readily as knowledge. The efficient market hypothesis says prices reflect all available information; critics note that how information gets into prices requires someone to profit from correcting errors, which cannot happen if prices are already perfect (the Grossman-Stiglitz paradox).</p>\n<h2>A wider lens</h2><p>The same logic appears in ant colonies, immune systems, and neural networks: intelligence located in the interaction pattern, not in any agent. Modern machine learning invites the question whether centralized models can now absorb the knowledge that Hayek thought only markets could use.</p>",
+  "tags": [
+    "economics",
+    "collective-intelligence",
+    "complexity",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Prices aggregate dispersed information and align incentives, allowing coordination without central direction."
+    },
+    {
+      "title": "Computer science",
+      "description": "A market resembles a distributed algorithm; its efficiency and failure modes can be analyzed like a protocol with noisy, adversarial nodes."
+    },
+    {
+      "title": "Psychology",
+      "description": "Crowds are wise only when individuals are independent; herding, overconfidence, and narrative-driven belief produce correlated errors."
+    },
+    {
+      "title": "Political philosophy",
+      "description": "If knowledge is local, centralized planning is limited by epistemology, not just by incentives or ethics."
+    }
+  ],
+  "connections": [
+    "Emergence and swarm intelligence",
+    "Ant colony foraging",
+    "The paradox of cooperation",
+    "Information theory and signal compression",
+    "Bayesian updating",
+    "Central planning and the Soviet economy",
+    "Large language models as centralized knowledge stores"
+  ],
+  "openQuestions": [
+    "Could AI aggregate tacit local knowledge as well as prices do?",
+    "Which goods cannot be priced without destroying what makes them valuable?",
+    "How can we tell a wise crowd from a herd in real time?",
+    "Do prediction markets improve decisions, or merely forecasts?"
+  ]
+}
