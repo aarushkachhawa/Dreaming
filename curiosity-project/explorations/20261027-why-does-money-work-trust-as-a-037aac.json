@@ -1,0 +1,53 @@
+{
+  "id": "20261027-why-does-money-work-trust-as-a-037aac",
+  "date": "2026-10-27T10:14:20.418328",
+  "title": "Why Does Money Work? Trust as a Technology",
+  "question": "Why do we accept scraps of paper and numbers on screens as payment for real goods and labor?",
+  "summary": "Money is a shared fiction that solves a coordination problem. Its value rests on collective expectation, institutions and habit, which makes it both remarkably robust and capable of sudden collapse.",
+  "content": "<p>A banknote is nearly worthless as material. You accept it because you expect others will accept it later. Money is therefore a belief that everyone shares because everyone else shares it, which sounds fragile but has sustained economies for millennia.</p>\n<h2>The Problem Money Solves</h2>\n<p>Barter requires a <em>double coincidence of wants</em>: I must find someone who has what I need and wants what I have. Money breaks the chain by serving as a medium of exchange, a unit of account and a store of value. Each function lowers the cost of cooperating with strangers.</p>\n<h2>The Origin Story, Revised</h2>\n<p>The textbook tale says barter came first and money emerged to improve it. Anthropologists such as David Graeber argued that evidence for large barter economies is thin; instead, small societies ran on credit and obligation, and coinage arrived with states and armies that needed to pay and feed soldiers. Taxes demanded in a particular currency gave that currency a guaranteed use, a view central to chartalism.</p>\n<h2>Commodity, Fiat and Digital</h2>\n<p>Gold and silver gave money intrinsic uses, but not intrinsic stability: supply shocks, such as New World silver, caused inflation too. Modern fiat currencies are backed by the state's power to tax and legal tender law, plus central banks aiming to keep purchasing power predictable. Bitcoin tests an alternative anchor: scarcity enforced by cryptography and energy expenditure, with no issuer, and so far with extreme price volatility.</p>\n<h2>Fragility and Hyperinflation</h2>\n<p>Because value rests on expectation, it can unravel. In Weimar Germany and Zimbabwe, rapid money printing eroded confidence until prices doubled in days and people fled to goods or foreign currency. Collapse is a coordination failure: once enough people expect others to stop trusting money, they do the same.</p>\n<h2>A Technology for Memory</h2>\n<p>One powerful framing treats money as a distributed memory of who has contributed to society and is owed something in return. Seen this way, ledgers, tokens and bank balances are variations on a single idea: record obligations in a form strangers will honor.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "social-science",
+    "game-theory",
+    "technology"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money reduces transaction costs and enables specialization. Its value depends on expectations about future acceptance and on the credibility of whoever controls supply."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Debt and social obligation likely predate coins. Money formalizes relationships of credit that small communities already tracked informally."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Accepting money is a coordination equilibrium: good if others accept it, ruinous if they do not. Equilibria can flip suddenly."
+    },
+    {
+      "title": "Political Science",
+      "description": "States create demand for currency through taxation and enforce its status; monetary sovereignty is a form of power."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Digital money is a ledger problem: how to agree on who owns what without a trusted party, which blockchains attempt to solve."
+    }
+  ],
+  "connections": [
+    "The paradox of cooperation and how trust evolves among strangers",
+    "Emergence of institutions from individual incentives",
+    "Language as another shared convention with no intrinsic basis",
+    "Ship of Theseus and what keeps an institution the same over time",
+    "Schelling points and focal coordination",
+    "Information theory and ledgers as shared memory",
+    "Cantor-style abstraction: numbers detached from physical things"
+  ],
+  "openQuestions": [
+    "Can value that rests only on collective belief ever be made fully stable?",
+    "Would a society without money be able to coordinate millions of strangers?",
+    "Does decentralised digital money replace trust or simply relocate it?",
+    "What happens to monetary sovereignty if currencies become programmable?",
+    "Is money a neutral tool or does it reshape the relationships it mediates?"
+  ]
+}
