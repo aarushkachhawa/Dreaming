@@ -1,0 +1,49 @@
+{
+  "id": "20261101-creativity-and-novelty-can-min-93082c",
+  "date": "2026-11-01T10:10:07.232215",
+  "title": "Creativity and Novelty: Can Minds Make Something Truly New?",
+  "question": "What allows minds to generate genuinely new ideas rather than merely recombining old ones?",
+  "summary": "Creativity looks like recombination, yet the best ideas change the space of possibilities itself. A tour through search, constraint, incubation and what machines reveal about originality.",
+  "content": "<h2>The Puzzle</h2>\n<p>Every idea we have seems built from parts we already owned. A unicorn is a horse plus a horn. Yet we feel that Bach, Darwin or Picasso did more than shuffle old pieces. Is creativity genuinely generative, or just recombination at a scale and speed we can't introspect?</p>\n<h2>Combination Is Not Enough</h2>\n<p>The number of possible combinations of existing concepts is astronomical, and almost all of them are worthless. A random mashup of \"fish\" and \"bicycle\" is novel but dull. Creativity requires <em>novelty plus value</em>, so the real problem is search: how does a mind find the rare good combinations without enumerating the bad ones?</p>\n<h2>Three Kinds of Creativity</h2>\n<p>Margaret Boden distinguished <strong>combinational</strong> creativity (unexpected juxtapositions, as in metaphor), <strong>exploratory</strong> creativity (pushing to the edges of an established style, as in a fugue written within baroque rules) and <strong>transformational</strong> creativity (changing the rules of the space itself, as when Schoenberg abandoned tonality). The third kind is the strangest: the result was literally <em>impossible</em> within the old framework, so no amount of searching the old space could have found it.</p>\n<h2>Incubation and the Wandering Mind</h2>\n<p>Many creators report that solutions arrive in the shower or on a walk. Experiments suggest that stepping away from a problem lets weak, remote associations surface that focused attention suppresses. The default-mode network, active during mind-wandering, appears to cooperate with executive control regions in creative people: one network proposes, the other evaluates. Creativity may be a generate-and-test loop running between two brain systems.</p>\n<h2>Constraints as Fuel</h2>\n<p>Paradoxically, constraints often increase creativity. A sonnet's fourteen lines or a limited budget forces departures from the obvious path. Total freedom gives the search no gradient to follow.</p>\n<h2>What Machines Show</h2>\n<p>Generative models now produce fluent, surprising output, which sharpens the question. They clearly do exploratory creativity inside a learned space. Whether they can do transformational creativity, inventing a new style that is both unprecedented and later recognised as valuable, remains contested, partly because \"valuable\" is decided by a culture after the fact.</p>",
+  "tags": [
+    "creativity",
+    "psychology",
+    "cognition",
+    "ai",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Cognitive Science",
+      "description": "Creativity as generate-and-test between mind-wandering (default-mode) and evaluative control networks, with remote associations enabling novelty."
+    },
+    {
+      "title": "Computational View",
+      "description": "Creativity as search through a conceptual space; transformational creativity is a change in the space itself, which a fixed search procedure cannot perform."
+    },
+    {
+      "title": "Evolutionary Epistemology",
+      "description": "Ideas undergo blind variation and selective retention, as Campbell and Simonton argued; genius is high-volume variation plus good selection."
+    },
+    {
+      "title": "Sociocultural View",
+      "description": "Csikszentmihalyi holds that novelty is only creative when a field of experts recognises it, making creativity partly a social fact."
+    }
+  ],
+  "connections": [
+    "Emergence and complexity",
+    "Evolution by natural selection",
+    "G\u00f6del's incompleteness and escaping a formal system",
+    "Generative AI and language models",
+    "Metaphor and analogy in language",
+    "Dreams as spontaneous recombination",
+    "Scientific revolutions and paradigm shifts"
+  ],
+  "openQuestions": [
+    "Is there a principled difference between a very large recombination and true novelty?",
+    "Can transformational creativity be formalised, or is it inherently outside any fixed procedure?",
+    "Does creativity require consciousness or intention?",
+    "How much of creative value is intrinsic versus conferred by an audience?",
+    "Why do constraints help so reliably?"
+  ]
+}
