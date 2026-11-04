@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-04** — `2026-11-04-settling-glass.html`: a ninety-first
+  technique, and the archive's first Lloyd relaxation. A shattered mosaic of
+  stained-glass panes, each pulled steadily toward the centroid of its own
+  cell, anneals from lopsided shards into near-hexagonal, evenly sized tiles
+  with lead lines between them. Panes keep their colour as they migrate.
+  Move the cursor rightward to heat the glass until it cracks and churns
+  again, click to shatter it into a new count of pieces, space to pause. Open
+  the file directly in a browser.
+
 - **2026-11-03** — `2026-11-03-singing-plate.html`: a ninetieth
   technique, and the archive's first Chladni figure. Sand on a vibrating square
   plate is thrown about wherever the plate moves and rests where it does not;
