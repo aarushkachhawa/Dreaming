@@ -1,0 +1,48 @@
+{
+  "id": "20261031-endosymbiosis-are-we-descended-54d5c2",
+  "date": "2026-10-31T10:10:51.140970",
+  "title": "Endosymbiosis: Are We Descended from a Merger?",
+  "question": "Did complex life begin not with gradual mutation but with one microbe moving into another?",
+  "summary": "Mitochondria and chloroplasts were once free-living bacteria. The merger that created the first eukaryotic cell may have happened once in four billion years, and it may explain why complex life is so rare.",
+  "content": "<p>Every cell in your body carries hundreds of small power plants, mitochondria, with their own circular DNA, their own ribosomes and a membrane structure that looks distinctly bacterial. They divide on their own schedule. Lynn Margulis argued in 1967 that this is no coincidence: mitochondria are the descendants of bacteria that were engulfed by another cell and never digested. The idea was ridiculed for years. It is now textbook biology.</p>\n<h2>The Evidence</h2>\n<p>Mitochondrial genes are most closely related to those of alphaproteobacteria; chloroplast genes to cyanobacteria. Both organelles are enclosed by double membranes consistent with engulfment, and both have genomes stripped down to a few dozen or thousand genes, because most of their original genes migrated to the host nucleus over time. The partnership has become so tight that neither side can live alone.</p>\n<h2>A Rare Event</h2>\n<p>Bacteria and archaea dominated Earth for roughly two billion years before eukaryotes appeared, and all known eukaryotes descend from a single mitochondrial merger. Nick Lane argues this is not an accident. Bacteria are constrained by energy: their respiration happens across the cell membrane, so a bigger cell has relatively less surface to power it. Hosting internal power plants, each with its own tiny genome for local control, broke that constraint, giving eukaryotes perhaps thousands of times more energy per gene and room to grow in genome size and complexity.</p>\n<h2>Which Came First?</h2>\n<p>Recent discoveries of Asgard archaea, whose genomes contain genes once thought unique to eukaryotes, support the view that the host was an archaeon. Whether the host was already complex before acquiring mitochondria, or the merger itself triggered complexity, is still debated. Models like the \"hydrogen hypothesis\" propose a metabolic partnership first, with engulfment later.</p>\n<h2>Implications</h2>\n<p>If complexity depends on a freak symbiosis, then microbial life may be common in the universe while animals and plants are exceedingly rare, a biological version of a Fermi-paradox filter.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "origin-of-life",
+    "symbiosis",
+    "astrobiology"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Evolution is not only branching descent; lineages can fuse. Symbiogenesis shows that major transitions can occur through mergers rather than accumulations of small mutations."
+    },
+    {
+      "title": "Bioenergetics",
+      "description": "Lane's view: energy per gene was the bottleneck. Mitochondria removed it, which is why complex life needs this specific innovation."
+    },
+    {
+      "title": "Genomics",
+      "description": "Phylogenetic trees of genes reveal a mosaic: eukaryotic cells contain archaeal informational genes and bacterial metabolic ones, consistent with a chimeric origin."
+    },
+    {
+      "title": "Astrobiology",
+      "description": "If the merger was a low-probability event, the galaxy may be full of microbes but nearly empty of complex organisms."
+    }
+  ],
+  "connections": [
+    "The Chemistry Before Life",
+    "The Fermi Paradox",
+    "Emergence: how complexity arises",
+    "The Paradox of Cooperation",
+    "Horizontal gene transfer and the tree of life",
+    "The gut microbiome as an extended organism",
+    "Major evolutionary transitions (Maynard Smith and Szathm\u00e1ry)"
+  ],
+  "openQuestions": [
+    "Was the archaeal host already complex before acquiring mitochondria?",
+    "Why did the merger apparently happen only once?",
+    "Could a comparable energy-unlocking symbiosis occur on other worlds?",
+    "Are we better thought of as individuals or as ecosystems of cooperating lineages?"
+  ]
+}
