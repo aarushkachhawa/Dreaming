@@ -1,0 +1,48 @@
+{
+  "id": "20261104-why-does-music-move-us--2047d4",
+  "date": "2026-11-04T10:10:21.508309",
+  "title": "Why Does Music Move Us?",
+  "question": "Why do patterns of air pressure with no obvious survival value reliably produce chills, tears, and joy in nearly every human culture?",
+  "summary": "Music is universal, emotionally potent, and biologically puzzling. Explanations range from prediction and dopamine to social bonding and sexual selection, and none alone is enough.",
+  "content": "<h2>An Evolutionary Puzzle</h2>\n<p>Every known human society makes music. Flutes carved from bone are at least 40,000 years old. Yet music produces no food, shelter, or offspring. Steven Pinker famously called it \"auditory cheesecake\", a pleasure technology that exploits circuits built for other purposes. Others find that dismissal too quick: infants respond to rhythm and lullabies, and music appears in every culture, which suggests more than an accident.</p>\n<h2>The Prediction Machine</h2>\n<p>The most productive modern account comes from David Huron and Leonard Meyer: music works by manipulating expectation. The brain constantly predicts what comes next. A melody sets up a prediction, and the composer delays, confirms, or violates it. A resolved cadence feels satisfying; a deceptive cadence gives a small, safe surprise. Because nothing is actually at stake, we can enjoy the prediction error that in the wild would signal danger.</p>\n<p>Neuroimaging supports this. Valorie Salimpoor and colleagues found dopamine release in the caudate during the anticipation of a favorite musical passage, and in the nucleus accumbens at its peak. The brain rewards both the wanting and the getting, the same system involved in food and, more weakly, money.</p>\n<h2>Why Chills?</h2>\n<p>Skin-crawling \"frisson\" tends to arrive at sudden dynamic changes, new harmonies, or an entering voice. It resembles a startle response combined with reward. Some people never get chills, and a small group, those with specific musical anhedonia, enjoy everything else normally but find music flat, which shows the effect depends on dedicated wiring rather than general emotion.</p>\n<h2>Music as Social Glue</h2>\n<p>Another family of theories treats music as a tool for coordination. Moving in time with others raises pain thresholds and increases cooperation and trust, as Robin Dunbar's work on group singing and rowing suggests. Mothers' lullabies may be an honest signal of attention that lets infants be soothed at a distance while a caregiver works. Under this view, the pleasure is the bait and the group cohesion is the payoff.</p>\n<h2>What Remains Unexplained</h2>\n<p>Why do minor keys sound sad? Partly learned, partly tied to the acoustics of sad speech, where pitch drops and narrows. Why do specific scales recur? Simple frequency ratios fuse smoothly in the cochlea, but tuning systems around the world also differ a lot. The honest picture is a layered one: auditory processing, prediction, reward, memory, and social bonding all converge on the same sound, which may be why no single theory feels sufficient.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "psychology",
+    "evolution",
+    "cognition"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music engages the dopamine reward system. Anticipation and peak moments activate distinct regions, and listening to favorite pieces looks neurally similar to other primary rewards."
+    },
+    {
+      "title": "Evolutionary Biology",
+      "description": "Candidate adaptive roles include mate signaling, infant soothing, and group bonding. The rival view treats music as a by-product of language and auditory scene analysis."
+    },
+    {
+      "title": "Music Theory",
+      "description": "Tension and resolution, meter, and harmonic function are formal tools for building and violating expectations in a structured way."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Music is universal but varied. Cross-cultural studies find shared features like lullaby and dance forms, while scales and instruments differ widely."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the Bayesian brain",
+    "The origins of language and prosody",
+    "Synchrony and cooperation in groups",
+    "Dopamine and the reward system",
+    "Acoustics of consonance and the harmonic series",
+    "Ritual and religious experience",
+    "Aesthetic experience in other arts"
+  ],
+  "openQuestions": [
+    "Is music an adaptation, a by-product, or a cultural invention that rewired the brain afterward?",
+    "Why do some people feel no musical pleasure at all?",
+    "Would music from a truly alien species have any chance of moving us?",
+    "How much of emotional meaning in music is learned and how much is innate?"
+  ]
+}
