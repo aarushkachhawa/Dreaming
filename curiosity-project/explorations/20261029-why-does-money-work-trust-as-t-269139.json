@@ -1,0 +1,52 @@
+{
+  "id": "20261029-why-does-money-work-trust-as-t-269139",
+  "date": "2026-10-29T10:13:58.544203",
+  "title": "Why Does Money Work? Trust as Technology",
+  "question": "Why do we accept scraps of paper and digits on a screen as payment for real goods and labor?",
+  "summary": "Money is worth something because everyone expects everyone else to accept it. That shared expectation is a social technology, and its history is a story of solving problems of trust at ever-larger scales.",
+  "content": "<h2>The textbook story and its problem</h2><p>The classic tale says barter was awkward, so people adopted a commodity like gold as a medium of exchange. Anthropologists such as David Graeber found little evidence for it. Small communities mostly ran on gift exchange, reputation and credit: you owed a neighbor, and everyone remembered. Pure barter between strangers was rare and usually happened between groups with no ongoing relationship.</p><h2>Money as memory</h2><p>An alternative view holds that money is fundamentally a ledger. Mesopotamian temples recorded debts in clay long before coins existed. Money, in this reading, is a way for a society to remember who has contributed and who is owed. Coins and notes are tokens of those claims, portable proof that you gave something to the group and can claim something back.</p><h2>Three functions, one fragile belief</h2><p>Economists list money as a medium of exchange, a unit of account and a store of value. All three depend on a coordination equilibrium: I accept the token because I expect you will. That is why money can feel solid for decades and then vanish in a hyperinflation, when the expectation breaks and prices begin to chase themselves.</p><h2>Who guarantees the value?</h2><p>Commodity money borrows credibility from a scarce material. Fiat money borrows it from a state that demands taxes in its own currency, creating constant demand for it. Bank money borrows it from regulated institutions and deposit insurance. Cryptocurrencies attempt a third path: replacing institutional trust with a cryptographic protocol and a consensus mechanism, though price stability and real-world acceptance remain contested.</p><h2>Money shapes what we are</h2><p>Quantifying value in a single unit makes diverse goods comparable, which enables markets but also tempts us to price everything, including time, nature and attention. Sociologists argue that this erodes some relationships even while it frees us from dependence on local favors and personal obligations.</p><h2>The underlying lesson</h2><p>Money is a shared fiction that works because it is a good one. It resembles language: no individual invented it, its meaning rests on collective use, and it can drift or collapse when the community that sustains it loses faith.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "social-systems"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and serves as a unit of account and store of value, sustained by a self-fulfilling expectation of acceptance."
+    },
+    {
+      "title": "Anthropology and history",
+      "description": "Credit and obligation preceded coinage; ledgers and debt, not barter, appear to be the oldest economic institutions."
+    },
+    {
+      "title": "Game theory",
+      "description": "Accepting money is a coordination game with multiple equilibria. Once a currency is the focal point, individual deviation is costly, which produces stability and also sudden collapse."
+    },
+    {
+      "title": "Political theory",
+      "description": "The state creates demand for its currency through taxation and enforces contracts. Monetary sovereignty is deeply tied to power."
+    },
+    {
+      "title": "Technology and cryptography",
+      "description": "Distributed ledgers try to replace trusted intermediaries with computation, shifting where trust is placed rather than abolishing it."
+    }
+  ],
+  "connections": [
+    "Language as a coordination convention",
+    "Hyperinflation and the loss of confidence",
+    "Mesopotamian temple accounting and the origin of writing",
+    "Schelling points and focal equilibria",
+    "Blockchain consensus mechanisms",
+    "Gift economies and reciprocity",
+    "Shared fictions in Harari-style accounts of civilization"
+  ],
+  "openQuestions": [
+    "Can money exist without any institution or authority standing behind it?",
+    "Do digital payments change what money fundamentally is?",
+    "Is there a scale beyond which trust must be institutional rather than personal?",
+    "What kinds of value resist being expressed in money, and should they?",
+    "Could a system of pure reputation replace currency, and what would it cost in privacy?"
+  ]
+}
