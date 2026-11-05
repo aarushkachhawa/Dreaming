@@ -1,0 +1,14 @@
+{
+  "id": "20261028-benford-s-law-why-do-leading-d-9377d3",
+  "date": "2026-10-28T10:13:22.039776",
+  "title": "Benford's Law: Why Do Leading Digits Prefer Small Numbers?",
+  "question": "Why do the first digits of real-world numbers, from river lengths to tax returns, favor 1 over 9?",
+  "summary": "In many natural datasets about 30% of numbers begin with 1 and under 5% with 9. The pattern comes from scale invariance, and it is now used to catch fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "scale invariance",
+    "fraud detection"
+  ]
+}
