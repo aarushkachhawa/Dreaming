@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mutual Pulse</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05070b; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#d6e4ea; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.8); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#b9c8d0; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move right &mdash; stronger coupling&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; scramble every rhythm&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Mutual pulse. A Kuramoto lattice of fireflies: each has its own natural rate and a phase that
+// advances steadily; it flashes when the phase wraps. Every firefly nudges its phase toward those of
+// its neighbours with strength K. Below a critical K the field twinkles at random; above it,
+// clusters lock, then travelling waves, then the whole meadow blinks as one.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2;
+let W=0,H=0,N=420,px=[],py=[],ph=[],om=[],nb=[],glow=[];
+let K=0, target=0.2, paused=false, gen=0, order=0;
+function build(){
+  px=[];py=[];ph=[];om=[];glow=[];nb=[];
+  const ga=Math.PI*(3-Math.sqrt(5)), R=Math.min(W,H)*0.46, cx=W/2, cy=H/2;
+  for(let i=0;i<N;i++){
+    const r=R*Math.sqrt((i+0.5)/N)*1.0, a=i*ga;
+    px.push(cx+Math.cos(a)*r*(W/H>1.2?1.5:1)); py.push(cy+Math.sin(a)*r);
+    ph.push(Math.random()*TAU); om.push(1.0+(Math.random()-0.5)*0.5); glow.push(0);
+  }
+  const rad=R*0.17;
+  for(let i=0;i<N;i++){
+    const l=[];
+    for(let j=0;j<N;j++){
+      if(i===j)continue;
+      const dx=px[i]-px[j],dy=py[i]-py[j];
+      if(dx*dx+dy*dy<rad*rad*2.2)l.push(j);
+    }
+    nb.push(l);
+  }
+  gen++;
+}
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr;
+  W=canvas.width; H=canvas.height;
+  build();
+  ctx.fillStyle='#05070b'; ctx.fillRect(0,0,W,H);
+}
+function step(dt){
+  const np=new Float64Array(N);
+  for(let i=0;i<N;i++){
+    let s=0; const l=nb[i];
+    for(let k=0;k<l.length;k++)s+=Math.sin(ph[l[k]]-ph[i]);
+    np[i]=ph[i]+dt*(om[i]+(l.length?K*s/l.length:0))*TAU*0.5;
+  }
+  let cr=0,ci=0;
+  for(let i=0;i<N;i++){
+    const wrapped=Math.floor(np[i]/TAU)>Math.floor(ph[i]/TAU);
+    ph[i]=np[i]%TAU; if(ph[i]<0)ph[i]+=TAU;
+    if(wrapped)glow[i]=1;
+    cr+=Math.cos(ph[i]); ci+=Math.sin(ph[i]);
+  }
+  order=Math.hypot(cr,ci)/N;
+}
+function draw(){
+  // trails: translucent wash instead of clearing
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='rgba(5,7,11,0.22)'; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  const base=Math.min(W,H)*0.011;
+  for(let i=0;i<N;i++){
+    glow[i]*=0.9;
+    const g=glow[i];
+    // resting ember tinted by phase, flash goes warm white
+    const hue=170+ph[i]/TAU*70;
+    ctx.fillStyle='hsla('+hue+',70%,45%,0.35)';
+    ctx.beginPath(); ctx.arc(px[i],py[i],base*0.45,0,TAU); ctx.fill();
+    if(g>0.03){
+      const r=base*(1.2+g*5);
+      const grd=ctx.createRadialGradient(px[i],py[i],0,px[i],py[i],r);
+      grd.addColorStop(0,'rgba(255,245,190,'+(0.85*g)+')');
+      grd.addColorStop(0.35,'rgba(150,240,170,'+(0.35*g)+')');
+      grd.addColorStop(1,'rgba(60,180,200,0)');
+      ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(px[i],py[i],r,0,TAU); ctx.fill();
+    }
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function frame(){
+  if(!paused){
+    K+=(target-K)*0.04;
+    step(1/60*2); step(1/60*2); draw();
+  }
+  const bar=Math.round(order*20);
+  hud.innerHTML='MUTUAL PULSE<br>coupling K '+K.toFixed(2)+'<br>unison ['+'#'.repeat(bar)+'.'.repeat(20-bar)+'] '+order.toFixed(2)+'<br>scramble no. '+gen;
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{target=Math.max(0,(e.clientX/innerWidth-0.08)/0.92)*4;});
+addEventListener('touchmove',e=>{target=(e.touches[0].clientX/innerWidth)*4;},{passive:true});
+addEventListener('click',()=>{N=300+Math.floor(Math.random()*300);build();});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

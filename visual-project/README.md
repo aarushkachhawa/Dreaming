@@ -24,6 +24,17 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-05** — `2026-11-05-mutual-pulse.html`: a ninety-second
+  technique, and the archive's first Kuramoto oscillator lattice. Several
+  hundred fireflies sit in a sunflower spiral, each with its own natural
+  rhythm, each nudging its phase toward its neighbours' and flashing when it
+  wraps. With weak coupling the meadow twinkles at random; stronger coupling
+  locks clusters, then sets travelling waves running, then makes the whole
+  field blink as one. A small meter reports how unified the flashing is. Move
+  the cursor rightward to raise the coupling, click to scramble the rhythms
+  with a new number of fireflies, space to pause. Open the file directly in a
+  browser.
+
 - **2026-11-04** — `2026-11-04-settling-glass.html`: a ninety-first
   technique, and the archive's first Lloyd relaxation. A shattered mosaic of
   stained-glass panes, each pulled steadily toward the centroid of its own
