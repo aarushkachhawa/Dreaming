@@ -1,0 +1,47 @@
+{
+  "id": "20261105-why-does-music-move-us--301bf4",
+  "date": "2026-11-05T10:10:43.666526",
+  "title": "Why Does Music Move Us?",
+  "question": "Why should patterns of organised sound produce chills, tears, and joy when they have no obvious survival value?",
+  "summary": "Music engages prediction, reward, memory, and social bonding at once. Its power may come from the way it plays with expectation.",
+  "content": "<h2>An Evolutionary Puzzle</h2>\n<p>Steven Pinker called music 'auditory cheesecake', a pleasure technology that exploits circuits evolved for other purposes. Darwin suspected the opposite: that musical display was part of courtship, older than language. Every known culture has music, and bone flutes at least 40,000 years old have been found. Either way, it is not a recent invention.</p>\n<h2>Expectation and Reward</h2>\n<p>Leonard Meyer proposed that musical emotion arises from the tension between expectation and fulfilment. Neuroimaging supports this. Valorie Salimpoor's team found dopamine release in the caudate during anticipation of a favourite passage, and in the nucleus accumbens at the peak. Music that is too predictable bores us, and music that is too random confuses us. The most pleasurable zone sits between.</p>\n<h2>Why Minor Sounds Sad</h2>\n<p>Part of musical emotion seems to borrow from speech. Sad speech tends to be slower, quieter, and lower in pitch, and so is sad music. But convention matters too: the emotional meaning of intervals and scales varies across cultures, and listeners learn the grammar of their own tradition.</p>\n<h2>Together in Time</h2>\n<p>Synchronised music-making raises pain thresholds and trust among participants. Robin Dunbar argues that singing and dancing allowed groups to bond at scales that grooming could not. Rhythm lets many bodies act as one.</p>\n<h2>Mathematics You Can Feel</h2>\n<p>Octaves, fifths, and thirds correspond to simple frequency ratios. Yet cultures tune differently, and some listeners respond to harmony less than theory predicts. Music sits where physics, biology, and culture overlap, and no single account has captured all of it.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "evolution",
+    "psychology"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Anticipation and resolution drive dopamine release in reward circuits, the same system involved in food and social pleasure."
+    },
+    {
+      "title": "Evolutionary Psychology",
+      "description": "Competing theories: a by-product of language and auditory skills, a courtship signal, or a tool for group cohesion."
+    },
+    {
+      "title": "Music Theory and Mathematics",
+      "description": "Consonance reflects simple frequency ratios, though tuning systems and tonal grammars differ widely."
+    },
+    {
+      "title": "Cultural Anthropology",
+      "description": "Emotional meaning is partly learned. Music organises ritual, memory, and identity in every society studied."
+    }
+  ],
+  "connections": [
+    "The music hidden in prime numbers",
+    "How language learned to talk",
+    "Time's arrow",
+    "Emergence",
+    "The hard problem of consciousness",
+    "Pythagorean tuning",
+    "Entrainment and rhythm"
+  ],
+  "openQuestions": [
+    "Is any part of musical emotion truly universal?",
+    "Why do sad songs feel pleasurable rather than painful?",
+    "Did music precede language, follow it, or co-evolve with it?",
+    "Can other species perceive music as we do, or only rhythm?"
+  ]
+}
