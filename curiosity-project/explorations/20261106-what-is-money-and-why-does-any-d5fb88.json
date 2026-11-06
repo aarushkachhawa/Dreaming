@@ -1,0 +1,52 @@
+{
+  "id": "20261106-what-is-money-and-why-does-any-d5fb88",
+  "date": "2026-11-06T10:10:57.490205",
+  "title": "What Is Money, and Why Does Anyone Accept It?",
+  "question": "Why do we trade real goods and labor for pieces of paper, or numbers on a screen, that have no intrinsic use?",
+  "summary": "Money works because of shared belief, not material worth. We examine barter myths, state power, trust, and what digital currencies reveal about the nature of money.",
+  "content": "<h2>The Barter Story</h2><p>Textbooks usually tell this tale: people bartered, found it awkward because it requires a double coincidence of wants, and so adopted a common commodity as money. It is tidy, but anthropologists such as David Graeber found little evidence that barter economies ever preceded money. Small communities ran mostly on gift exchange and credit: you owed a neighbor, and everyone remembered.</p><h2>Money as a Ledger</h2><p>Early Mesopotamian temples recorded debts in grain and silver on clay tablets long before coins. On this view money is first an accounting tool, a way to keep score of obligations. The coin came later, around 600 BCE in Lydia, and spread partly because armies needed to pay soldiers who could then buy from local markets.</p><h2>The Three Functions</h2><p>Economists say money serves as a medium of exchange, a unit of account, and a store of value. Different things excel at different jobs. Gold stores value well but is clumsy to spend. A credit card transfers easily but isn't itself a store of anything. Money is whatever bundles these roles well enough that people converge on it.</p><h2>Convergence and Belief</h2><p>A dollar is accepted because you expect others will accept it. This is a coordination equilibrium: once everyone believes, belief is self-fulfilling; if it collapses, as in hyperinflation, even the best-printed note becomes worthless. The state reinforces belief by demanding taxes in its own currency, creating steady demand for it.</p><h2>Banks Create Money</h2><p>Most modern money is not printed but typed into existence. When a bank issues a loan, it creates a deposit. The money supply therefore expands and contracts with credit, which links money intimately to debt, trust, and the future.</p><h2>Cryptocurrency as an Experiment</h2><p>Bitcoin tried to replace trust in institutions with trust in mathematics and consensus. It reveals that the hard parts of money are social: who decides rules, who resolves disputes, what gives lasting value. Whether it is money or a speculative asset is partly a question about whether people will actually use it to price things.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "society"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and reduces transaction costs, and emerges as a focal point among competing options."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Credit and obligation, not barter, were the original economic glue; money formalizes social debts."
+    },
+    {
+      "title": "Political Science",
+      "description": "States create and sustain money through taxation, legal tender laws, and monopoly on violence backing contracts."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Money is a social fact, real because we collectively treat it as real, like borders or marriage."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Digital currency is a distributed consensus problem: how strangers agree on one shared ledger without a trusted party."
+    }
+  ],
+  "connections": [
+    "Social constructs and collective intentionality",
+    "Coordination games and focal points in game theory",
+    "The Paradox of Cooperation",
+    "Language as a shared convention",
+    "Emergence of markets from individual trades",
+    "Hyperinflation and the collapse of trust",
+    "Distributed consensus and the Byzantine generals problem"
+  ],
+  "openQuestions": [
+    "Could money exist without any state or institution at all?",
+    "Is the value of money ultimately grounded in anything beyond belief?",
+    "What happens to money when most transactions are fully automated?",
+    "Can trust be engineered, or only earned over time?",
+    "Would a moneyless society ever coordinate as well as a monetary one?"
+  ]
+}
