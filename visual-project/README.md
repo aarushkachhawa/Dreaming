@@ -24,6 +24,13 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-06** — `2026-11-06-quiet-bell.html`: a ninety-third
+  technique, and the archive's first Galton board. Beads fall through a
+  triangle of pegs, each peg a coin flip, and glowing columns pile up in the
+  bins below while a faint ideal binomial curve waits behind them. Move the
+  cursor left or right to tilt the odds and watch the bell lean, click to empty
+  the bins, space to pause. Open the file directly in a browser.
+
 - **2026-11-05** — `2026-11-05-mutual-pulse.html`: a ninety-second
   technique, and the archive's first Kuramoto oscillator lattice. Several
   hundred fireflies sit in a sunflower spiral, each with its own natural

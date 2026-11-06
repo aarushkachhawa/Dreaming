@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiet Bell</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#07080d; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#e6dccb; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.8); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#cbbfa8; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move left/right &mdash; tilt the board&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; empty the bins&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Quiet bell. A Galton board: every bead meets a row of pegs and goes left or right by a coin flip.
+// No bead knows anything, yet the bins fill into a bell. A faint curve of the ideal binomial is drawn
+// behind the pile; the cursor tilts the odds so the bell leans, and the heap follows.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2, ROWS=14, BINS=ROWS+1;
+let W=0,H=0,beads=[],bins=new Array(BINS).fill(0),total=0,p=0.5,tp=0.5,paused=false,spawn=0,emptied=0;
+let gx,gy,gap,pegR,binTop,binBot;
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; W=canvas.width; H=canvas.height;
+  gap=Math.min(W/(BINS+1.5),H*0.5/ROWS); pegR=gap*0.08;
+  gx=W/2; gy=H*0.08; binTop=gy+(ROWS+1)*gap*0.95; binBot=H*0.94;
+  beads=[];
+}
+function pegY(r){return gy+r*gap*0.95;}
+function pegX(r,k){return gx+(k-r/2)*gap;}
+function newBead(){
+  // a bead has a path decided by coin flips; it glides along it with a soft bounce at each peg
+  const path=[];let k=0;
+  for(let r=0;r<ROWS;r++){ if(Math.random()<p)k++; path.push(k); }
+  beads.push({t:0,path:path,k:k,hue:30+Math.random()*30});
+}
+function beadPos(b){
+  const r=Math.floor(b.t), f=b.t-r;
+  // position at peg row r (before choosing) -> after
+  function at(row,kk){return {x:pegX(row,kk)+0,y:pegY(row)};}
+  const prevK=r===0?0:b.path[r-1];
+  let x0,y0,x1,y1;
+  if(r<ROWS){
+    x0=pegX(r,prevK); y0=pegY(r)-gap*0.2;
+    const nk=b.path[r];
+    x1=pegX(r+1,nk); y1=pegY(r+1)-gap*0.2;
+    const e=f*f*(3-2*f);
+    const bounce=Math.sin(f*Math.PI)*gap*0.12;
+    return {x:x0+(x1-x0)*e, y:y0+(y1-y0)*f*f+(f<0.5?-bounce:0), done:false};
+  }
+  return null;
+}
+function binX(k){return gx+(k-ROWS/2)*gap;}
+function fact(n){let r=1;for(let i=2;i<=n;i++)r*=i;return r;}
+function binom(n,k){return fact(n)/(fact(k)*fact(n-k));}
+function draw(){
+  ctx.fillStyle='#07080d'; ctx.fillRect(0,0,W,H);
+  // ideal curve
+  const maxIdeal=Math.max.apply(null,Array.from({length:BINS},(_,k)=>binom(ROWS,k)*Math.pow(p,k)*Math.pow(1-p,ROWS-k)));
+  const usable=binBot-binTop-gap*0.3;
+  ctx.beginPath();
+  for(let x=0;x<=BINS-1;x+=0.1){
+    const lo=Math.floor(x),hi=Math.min(BINS-1,lo+1),f=x-lo;
+    const v=(a=>binom(ROWS,a)*Math.pow(p,a)*Math.pow(1-p,ROWS-a));
+    const y=v(lo)*(1-f)+v(hi)*f;
+    const sx=binX(x), sy=binBot-(y/maxIdeal)*usable*0.98;
+    if(x===0)ctx.moveTo(sx,sy);else ctx.lineTo(sx,sy);
+  }
+  ctx.strokeStyle='rgba(230,200,150,0.35)'; ctx.lineWidth=1.5; ctx.stroke();
+  // pegs
+  ctx.fillStyle='rgba(180,190,210,0.5)';
+  for(let r=0;r<ROWS;r++)for(let k=0;k<=r;k++){ctx.beginPath();ctx.arc(pegX(r,k),pegY(r),pegR,0,TAU);ctx.fill();}
+  // bin dividers
+  ctx.strokeStyle='rgba(180,190,210,0.15)'; ctx.lineWidth=1;
+  for(let k=0;k<=BINS;k++){const x=binX(k-0.5);ctx.beginPath();ctx.moveTo(x,binTop);ctx.lineTo(x,binBot);ctx.stroke();}
+  // piled beads
+  const bead=Math.min(gap*0.17,usable/Math.max(8,Math.max.apply(null,bins))*0.9);
+  const maxb=Math.max(1,Math.max.apply(null,bins));
+  const scale=Math.min(1,usable/(maxb*bead*1.8));
+  const br=bead*scale;
+  ctx.globalCompositeOperation='lighter';
+  for(let k=0;k<BINS;k++){
+    for(let i=0;i<bins[k];i++){
+      const y=binBot-(i+0.5)*br*1.8;
+      const g=ctx.createRadialGradient(binX(k),y,0,binX(k),y,br*1.6);
+      const hue=30+(k/BINS)*35;
+      g.addColorStop(0,'hsla('+hue+',80%,70%,0.9)'); g.addColorStop(1,'hsla('+hue+',80%,50%,0)');
+      ctx.fillStyle=g; ctx.beginPath(); ctx.arc(binX(k),y,br*1.6,0,TAU); ctx.fill();
+    }
+  }
+  // falling beads
+  for(const b of beads){
+    const q=beadPos(b); let x,y;
+    if(q){x=q.x;y=q.y;}else{
+      const f=b.t-ROWS; x=binX(b.k); y=pegY(ROWS-1)+(binBot-pegY(ROWS-1))*Math.min(1,f*f);
+    }
+    const g=ctx.createRadialGradient(x,y,0,x,y,gap*0.3);
+    g.addColorStop(0,'hsla('+b.hue+',90%,75%,0.95)'); g.addColorStop(1,'hsla('+b.hue+',90%,50%,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,gap*0.3,0,TAU); ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function update(dt){
+  p+=(tp-p)*0.05;
+  spawn+=dt*9;
+  while(spawn>1){spawn-=1; if(beads.length<150)newBead();}
+  for(let i=beads.length-1;i>=0;i--){
+    const b=beads[i];
+    b.t+=dt*(b.t<ROWS?4.5:2.2);
+    if(b.t>=ROWS+1){ bins[b.k]++; total++; beads.splice(i,1); }
+  }
+  // stop the pile overflowing
+  if(Math.max.apply(null,bins)>400){ for(let k=0;k<BINS;k++)bins[k]=Math.floor(bins[k]*0.5); }
+}
+function frame(){
+  if(!paused){ update(1/60); draw(); }
+  let mean=0;for(let k=0;k<BINS;k++)mean+=k*bins[k]; mean=total?mean/Math.max(1,bins.reduce((a,b)=>a+b,0)):0;
+  hud.innerHTML='QUIET BELL<br>tilt p '+p.toFixed(2)+'<br>beads dropped '+total+'<br>mean bin '+mean.toFixed(1)+' / '+ROWS+'<br>emptied '+emptied+'x';
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{tp=0.15+0.7*(e.clientX/innerWidth);});
+addEventListener('touchmove',e=>{tp=0.15+0.7*(e.touches[0].clientX/innerWidth);},{passive:true});
+addEventListener('click',()=>{bins.fill(0);emptied++;});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
