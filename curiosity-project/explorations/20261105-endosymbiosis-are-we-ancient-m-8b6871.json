@@ -1,0 +1,47 @@
+{
+  "id": "20261105-endosymbiosis-are-we-ancient-m-8b6871",
+  "date": "2026-11-05T10:10:43.347630",
+  "title": "Endosymbiosis: Are We Ancient Mergers?",
+  "question": "Did complex life begin not with a mutation, but with one cell swallowing another and refusing to digest it?",
+  "summary": "Every complex cell carries mitochondria, descendants of free-living bacteria. The merger that made them may be the rarest and most consequential event in the history of life.",
+  "content": "<h2>The Stranger Inside</h2>\n<p>Almost every cell in your body contains hundreds of mitochondria, small organelles that burn food into usable energy. They have their own DNA, divide on their own schedule, and are wrapped in a double membrane. These are not the traits of a part. They are the traits of a guest who stayed.</p>\n<h2>Lynn Margulis and a Rejected Idea</h2>\n<p>In 1967 Lynn Margulis argued that mitochondria and chloroplasts were once free-living bacteria engulfed by a host cell. The proposal was dismissed for years. Then sequencing showed that mitochondrial DNA resembles that of alpha-proteobacteria, and chloroplast DNA that of cyanobacteria. The idea went from heresy to textbook.</p>\n<h2>Why the Merger Mattered</h2>\n<p>Bacteria are limited by geometry. They make energy across their outer membrane, so a bigger cell has proportionally less surface to power its volume. Mitochondria solved this by moving the power plants inside. Nick Lane estimates that a typical eukaryotic cell has thousands of times more energy per gene than a bacterium. That surplus pays for large genomes, elaborate regulation, and eventually multicellular bodies.</p>\n<h2>A One-Time Event?</h2>\n<p>Bacteria and archaea have existed for about four billion years. The eukaryotic merger appears to have happened once, roughly two billion years ago. Everything from yeast to oak trees to humans descends from that single lineage. If the step is that improbable, complex life elsewhere may be far rarer than simple life, a possible answer to the Fermi question.</p>\n<h2>Treaty, Not Conquest</h2>\n<p>Mitochondria have given up most of their genes. Many moved to the host nucleus, so neither partner can now live alone. The relationship still shows traces of its conflicts: mitochondria can trigger cell death, and mismatches between mitochondrial and nuclear genes can cause disease. A cell is a negotiated peace that has lasted two billion years.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "origin of life",
+    "cells"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Major transitions in evolution often occur by merging lineages, not only by gradual mutation. Symbiosis produces new kinds of individuals in one step."
+    },
+    {
+      "title": "Bioenergetics",
+      "description": "Energy per gene is the key constraint. Internalised power generation allowed genome expansion, which made complexity affordable."
+    },
+    {
+      "title": "Astrobiology",
+      "description": "If the merger was a rare accident, microbial life may be common while animals and plants are exceedingly rare in the universe."
+    },
+    {
+      "title": "Philosophy of Biology",
+      "description": "What counts as an individual organism when each of us is built from once-separate lineages? Biological individuality looks like a matter of degree."
+    }
+  ],
+  "connections": [
+    "Emergence and the origin of complexity",
+    "The Fermi Paradox",
+    "The chemistry before life",
+    "The Ship of Theseus and identity",
+    "The paradox of cooperation",
+    "The gut microbiome",
+    "Horizontal gene transfer"
+  ],
+  "openQuestions": [
+    "Did the host cell come first, or did the merger happen before the host was truly eukaryotic?",
+    "Could the merger happen again under the right conditions, or was it a one-time opening?",
+    "How many other symbioses are quietly becoming organelles?",
+    "Is the merger really a rare accident, or did chemistry make it likely?"
+  ]
+}
