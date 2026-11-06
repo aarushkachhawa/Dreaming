@@ -1,0 +1,47 @@
+{
+  "id": "20261102-why-does-money-work--02a47c",
+  "date": "2026-11-02T10:17:55.035212",
+  "title": "Why Does Money Work?",
+  "question": "Why do we accept scraps of paper and digital entries in exchange for real goods and labor?",
+  "summary": "Money is a shared fiction sustained by trust, convention and institutions. Its value is a coordination equilibrium, not a property of any material.",
+  "content": "<h2>The Barter Myth</h2><p>The textbook story says people tired of barter, so they chose a common commodity such as gold. Anthropologists like David Graeber found little evidence of pure barter economies. More often, early societies ran on credit, gift obligations and tallies: money as a ledger of debts before it was a coin.</p>\n<h2>Three Functions</h2><p>Money is conventionally a medium of exchange, a unit of account and a store of value. These can come apart: cigarettes in prisoner-of-war camps served as currency; inflation-wracked economies use dollars as a store of value while pricing in local currency.</p>\n<h2>A Coordination Game</h2><p>I accept a note because I expect others will accept it. That is an equilibrium in a coordination game: the note is valuable because everyone believes it is. Such beliefs can be fragile. Hyperinflation shows what happens when the expectation collapses, and value can evaporate within weeks.</p>\n<h2>What Anchors Belief?</h2><p>Governments anchor money by demanding taxes in it (chartalism), enforcing contracts, and managing supply through central banks. Commodity money anchors it in scarcity, but gold standards proved rigid, transmitting shocks and deflation across economies. Modern fiat money trades rigidity for the need to trust institutions.</p>\n<h2>Cryptocurrencies as an Experiment</h2><p>Bitcoin tries to replace institutional trust with cryptographic consensus and a fixed supply. It raises a sharp test: does money need a state, or just a credible shared ledger? So far it behaves more like a volatile asset than a stable unit of account.</p>\n<h2>Money Shapes Us</h2><p>Money makes strangers cooperate at vast scale, but also reduces relationships to quantities. Whether it corrodes or enables human values is an old debate.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "social science",
+    "game theory"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and lowers transaction costs; its value depends on expected acceptance and credible supply."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Money emerged from debt, tribute and social obligation rather than from barter, embedding economics in relationships."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Currency is a self-fulfilling coordination equilibrium with multiple possible states, including collapse."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Blockchains replace a trusted central ledger with distributed consensus, trading efficiency for decentralization."
+    }
+  ],
+  "connections": [
+    "Coordination games and Schelling points",
+    "Hyperinflation in Weimar Germany and Zimbabwe",
+    "Chartalism and modern monetary theory",
+    "Gold standard and the Great Depression",
+    "Distributed consensus and Byzantine fault tolerance",
+    "Shared fictions in Harari's account of Homo sapiens",
+    "Debt and the origins of writing in Mesopotamia"
+  ],
+  "openQuestions": [
+    "Can money remain stable without any institution backing it?",
+    "Are there monetary forms that avoid reducing relationships to price?",
+    "Will digital central bank currencies change the role of banks?",
+    "How much of money's value is belief and how much is enforceable obligation?"
+  ]
+}
