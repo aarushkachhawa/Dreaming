@@ -1,0 +1,48 @@
+{
+  "id": "20261104-how-does-the-immune-system-kno-a4ec4b",
+  "date": "2026-11-04T10:10:38.157628",
+  "title": "How Does the Immune System Know What Is 'Self'?",
+  "question": "How can a defense system that must attack almost any invader reliably avoid attacking the body that built it?",
+  "summary": "The immune system generates trillions of random receptors, then edits them. Tolerance is a layered, imperfect solution to a problem of recognition with no built-in definition of 'self'.",
+  "content": "<h2>A Recognition Problem Without a Rulebook</h2>\n<p>Pathogens evolve faster than any genome can track, so the adaptive immune system does not carry a list of enemies. Instead, developing T and B cells shuffle gene segments (V(D)J recombination) to produce a vast, random repertoire of receptors, perhaps 10<sup>15</sup> possible variants. By chance, many of them bind the body's own proteins. The system therefore has to solve a puzzle: generate near-unlimited diversity, then remove the dangerous parts.</p>\n<h2>Central Tolerance: Education in the Thymus</h2>\n<p>T cells mature in the thymus, where epithelial cells display fragments of proteins from across the body, aided by the AIRE gene that switches on tissue-specific genes in the thymus. T cells that bind these self-peptides too strongly are told to die (negative selection). Those that bind too weakly to recognize anything are also discarded (positive selection). Only a small percent of thymocytes survive. \"Self\" is thus defined operationally: whatever was present during training.</p>\n<h2>Peripheral Tolerance: Backup Systems</h2>\n<p>Central tolerance leaks, as some self-reactive cells escape and many tissue antigens never reach the thymus. Backups include anergy, where a cell that meets antigen without a second \"danger\" signal becomes inactive; regulatory T cells that suppress neighbors (their discovery, via the FOXP3 gene, earned the 2025 Nobel Prize); and deletion of repeatedly stimulated cells. The key idea, associated with Polly Matzinger's \"danger model\", is that the system cares less about foreign versus self and more about whether recognition happens alongside signs of damage.</p>\n<h2>When It Fails</h2>\n<p>Failure produces autoimmunity: type 1 diabetes, multiple sclerosis, lupus, rheumatoid arthritis. Triggers likely include genetic variants in antigen-presenting molecules, infections that resemble self-proteins (molecular mimicry), and tissue injury. The opposite failure matters too: tumors exploit tolerance, and checkpoint-inhibitor cancer drugs work by releasing the brakes, at the price of autoimmune side effects.</p>\n<h2>Exceptions That Reveal the Rule</h2>\n<p>A fetus carries foreign paternal antigens yet is not rejected, thanks to specialized local tolerance. Gut bacteria, outnumbering our cells, are tolerated through active immune education. Tolerance is therefore not a wall between self and non-self but an ongoing negotiation, tuned by context.</p>",
+  "tags": [
+    "biology",
+    "immunology",
+    "medicine",
+    "identity",
+    "systems"
+  ],
+  "perspectives": [
+    {
+      "title": "Molecular Immunology",
+      "description": "Self-tolerance comes from selection at thymic checkpoints and from co-stimulation requirements that stop cells from acting on recognition alone."
+    },
+    {
+      "title": "Evolutionary Biology",
+      "description": "A diverse random repertoire beats any fixed list against fast-evolving pathogens, but diversity inevitably creates autoreactivity, so tolerance mechanisms co-evolved with it."
+    },
+    {
+      "title": "Philosophy of Biology",
+      "description": "'Self' is not a fixed essence but a dynamic, context-dependent criterion; the danger model replaces self/non-self with harmful/harmless."
+    },
+    {
+      "title": "Clinical Medicine",
+      "description": "Autoimmune disease and cancer immunotherapy are two sides of one tolerance dial, each treatment risking the opposite failure."
+    }
+  ],
+  "connections": [
+    "Natural selection operating within a single body",
+    "Machine learning and anomaly detection",
+    "Cancer immune evasion",
+    "The microbiome as extended self",
+    "Pregnancy and immune privilege",
+    "Identity and the Ship of Theseus",
+    "Vaccines and immunological memory"
+  ],
+  "openQuestions": [
+    "What actually triggers most autoimmune diseases in people with genetic risk?",
+    "Can tolerance be reprogrammed to cure autoimmunity without weakening defense?",
+    "Is there any stable biological definition of 'self', or only a working compromise?",
+    "Why do some people lose tolerance after infection and others do not?"
+  ]
+}
