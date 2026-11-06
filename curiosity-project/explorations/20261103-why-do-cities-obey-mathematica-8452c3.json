@@ -1,0 +1,52 @@
+{
+  "id": "20261103-why-do-cities-obey-mathematica-8452c3",
+  "date": "2026-11-03T10:10:54.548812",
+  "title": "Why Do Cities Obey Mathematical Laws?",
+  "question": "Cities differ in culture, geography and history, so why do their wages, patents and infrastructure scale with population in strikingly regular ways?",
+  "summary": "Across countries, urban metrics follow power laws: infrastructure grows sublinearly while innovation and income grow superlinearly. This hints that cities are shaped by the universal mathematics of social networks.",
+  "content": "<h2>A surprising regularity</h2>\n<p>Double a city's population and it does not double everything. Road length, gas stations and cables grow by about 85%, an economy of scale. But wages, patents, and also crime and disease grow by roughly 115%, a bonus that accrues to each additional resident. Physicist Geoffrey West, Luis Bettencourt and colleagues found these exponents hold across cities in many nations.</p>\n<h2>Biology's echo</h2>\n<p>Animals show similar sublinear scaling: metabolic rate grows as mass to the power of about 3/4 (Kleiber's law). West proposed that fractal, space-filling distribution networks, such as blood vessels, explain this. Cities have infrastructure networks of the same kind, which would explain their economies of scale.</p>\n<h2>Where the superlinear part comes from</h2>\n<p>Social output scales superlinearly because people interact, and the number of potential interactions rises faster than headcount. Dense cities increase the rate of meetings, exchanged ideas and collaborations, along with disease transmission and conflict. Creativity and crime share a root.</p>\n<h2>A crucial difference from organisms</h2>\n<p>Organisms slow down as they grow and eventually stop, bounded by sublinear scaling. Superlinear cities would grow explosively toward a finite-time singularity, so sustained growth requires repeated reinventions, from the steam engine to the internet, each resetting the clock. Cities, unlike animals, avoid death by innovating, but the required innovation cycles keep accelerating.</p>\n<h2>Limits of the picture</h2>\n<p>Critics note that the definition of a city boundary affects exponents, that statistical scaling does not prove a mechanism, and that policy and history clearly matter. A scaling law describes the average; deviations from it, which tell a city whether it's over- or underperforming, may be the most useful signal.</p>",
+  "tags": [
+    "complexity",
+    "cities",
+    "scaling",
+    "social-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Physics",
+      "description": "Scaling laws and network geometry suggest cities are governed by universal principles, much as thermodynamics governs engines regardless of design."
+    },
+    {
+      "title": "Urban economics",
+      "description": "Agglomeration economies explain why density raises productivity: thicker labour markets, knowledge spillovers and shared infrastructure."
+    },
+    {
+      "title": "Sociology",
+      "description": "Network structure shapes interaction, trust and inequality. Higher interaction rates produce both opportunity and social strain."
+    },
+    {
+      "title": "Urban planning",
+      "description": "Residual deviations from scaling predictions can identify where policy helps, but planners must resist treating averages as destiny."
+    },
+    {
+      "title": "Complexity science",
+      "description": "Cities are self-organising systems whose large-scale order emerges from local decisions, linking directly to emergence."
+    }
+  ],
+  "connections": [
+    "Kleiber's law and metabolic scaling",
+    "Power laws and Zipf's law of city sizes",
+    "Network effects and Metcalfe's law",
+    "Emergence from local rules",
+    "Finite-time singularities and the pace of innovation",
+    "Jane Jacobs and the vitality of mixed-use streets",
+    "Ant colonies and collective intelligence"
+  ],
+  "openQuestions": [
+    "Is there a true mechanism behind urban scaling, or only a statistical regularity?",
+    "Can cities keep growing without the innovation cycles shortening to unsustainable levels?",
+    "Does remote work weaken the interaction-based superlinear effect?",
+    "How should deviations from scaling inform policy without overfitting?",
+    "Do cities in different eras and cultures obey the same exponents?"
+  ]
+}
