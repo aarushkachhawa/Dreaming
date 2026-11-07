@@ -1,0 +1,47 @@
+{
+  "id": "20261107-maxwell-s-demon-and-the-cost-o-083c86",
+  "date": "2026-11-07T10:10:42.195389",
+  "title": "Maxwell's Demon and the Cost of Knowing",
+  "question": "Can a being that merely observes molecules defeat the second law of thermodynamics, and what does that say about the physical nature of information?",
+  "summary": "In 1867 Maxwell imagined a tiny sorter of molecules that seemed to violate thermodynamics. Resolving the puzzle took a century and revealed that information is a physical quantity with an energy price.",
+  "content": "<h2>The Thought Experiment</h2>\n<p>Picture a box of gas split by a wall with a tiny door. Beside the door sits a being, later nicknamed Maxwell's demon, who watches the molecules. When a fast molecule approaches from the left, it opens the door; when a slow one approaches from the right, it does the same. Without doing any work on the gas, the demon makes one side hot and the other cold. Heat flows from cold to hot with no cost, and the second law of thermodynamics appears to fail.</p>\n<h2>Why It Matters</h2>\n<p>The second law says entropy in an isolated system never decreases. It is perhaps the most trusted law in physics, yet it is statistical: it holds because disordered states vastly outnumber ordered ones. Maxwell wanted to show that the law is about our limited ability to manipulate molecules, not an absolute prohibition. A sufficiently clever, sufficiently small agent might sidestep it. For a hundred years the question was whether such an agent could exist in principle.</p>\n<h2>Early Attempts: Measuring Costs</h2>\n<p>Leo Szilard in 1929 simplified the setup to a single molecule and argued that the act of measuring which side it is on must generate at least k\u00b7ln2 of entropy. Later Leon Brillouin tried to ground this in the energy needed to illuminate molecules with light. These arguments suggested that observation is the toll. But they were incomplete, since in principle one can measure reversibly, at no minimum cost.</p>\n<h2>Landauer and Bennett: Forgetting Is the Price</h2>\n<p>In 1961 Rolf Landauer showed that erasing one bit of information must dissipate at least kT\u00b7ln2 of heat. In 1982 Charles Bennett applied this to the demon. The demon can measure for free, but its memory fills up with records of molecule positions. To run in a cycle, it must eventually erase that memory, and the erasure pays back exactly the entropy it removed from the gas. The books balance. The demon does not break the second law; it merely stores the debt in its notebook.</p>\n<h2>Information Is Physical</h2>\n<p>The deeper lesson is that information is not abstract. A bit must be written in some physical medium, and manipulating it obeys thermodynamics. This has been tested: experiments with colloidal particles, single electrons and superconducting circuits have built working demons that convert information into work, and measured the Landauer limit directly. Modern computers dissipate millions of times more than the limit, but the limit sets the ultimate floor on computation.</p>\n<h2>What Remains Unsettled</h2>\n<p>Some argue the resolution is circular, since it presumes the second law to prove the second law. Others note that Landauer's principle depends on how bits are defined and which states count as distinguishable, which hints that entropy itself may depend on what an observer knows.</p>",
+  "tags": [
+    "physics",
+    "thermodynamics",
+    "information",
+    "entropy",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Thermodynamics",
+      "description": "The demon shows the second law is a statement about what can be done by agents with limited, costly information, not a bare fact about particles."
+    },
+    {
+      "title": "Information theory",
+      "description": "Shannon entropy and thermodynamic entropy share a formula for a reason: information about a system is a resource that can be converted into work."
+    },
+    {
+      "title": "Computer science",
+      "description": "Landauer's principle gives the physical floor for irreversible computing and motivates reversible computation as a route to ultra-low-power machines."
+    },
+    {
+      "title": "Biology",
+      "description": "Cells behave like demons: molecular machines such as kinesin and ion pumps use information about their environment to extract work from noise."
+    }
+  ],
+  "connections": [
+    "Shannon entropy and communication theory",
+    "Black hole entropy and the Bekenstein bound",
+    "Reversible and quantum computing",
+    "Time's arrow and the low-entropy past",
+    "Molecular motors and Brownian ratchets",
+    "Jaynes' view of entropy as subjective knowledge"
+  ],
+  "openQuestions": [
+    "Is thermodynamic entropy objective, or does it depend on the observer's knowledge?",
+    "Does the Landauer limit hold in strongly quantum regimes where measurement itself is subtle?",
+    "Could the physical cost of information explain why the past differs from the future?",
+    "How close can engineered or biological systems come to the Landauer bound?"
+  ]
+}
