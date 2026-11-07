@@ -24,6 +24,14 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-07** — `2026-11-07-pollen-dance.html`: a ninety-fourth
+  technique, and the archive's first Brownian motion. A glowing grain sits in
+  a bath of seven hundred faint, truly simulated molecules; every flicker of
+  its path is only the lopsided sum of their collisions, and the trail it
+  leaves fades slowly into a luminous thread. Move the cursor up or down to
+  heat or cool the water, click to release another grain, space to pause.
+  Open the file directly in a browser.
+
 - **2026-11-06** — `2026-11-06-quiet-bell.html`: a ninety-third
   technique, and the archive's first Galton board. Beads fall through a
   triangle of pegs, each peg a coin flip, and glowing columns pile up in the

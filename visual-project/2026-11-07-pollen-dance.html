@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pollen Dance</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06080c; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#dfe6d6; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.8); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#c3cdb8; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move cursor up or down &mdash; warm the water&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; release a new grain&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Pollen dance. Einstein's 1905 picture of Brownian motion: a visible grain is struck from all sides by
+// invisible molecules. Here the molecules are really simulated (faint specks); the grain's wandering is
+// nothing but the lopsided sum of their hits. Heat (the cursor) makes the molecules faster, the dance wilder.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d'), hud=document.getElementById('hud');
+const TAU=Math.PI*2, NM=700;
+let W=0,H=0,paused=false,heat=1,theat=1,grains=[],mol=[],t=0,hits=0;
+function setup(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  canvas.width=innerWidth*dpr; canvas.height=innerHeight*dpr; W=canvas.width; H=canvas.height;
+  ctx.fillStyle='#06080c'; ctx.fillRect(0,0,W,H);
+  const s=Math.min(W,H);
+  mol=[];
+  for(let i=0;i<NM;i++){const a=Math.random()*TAU;mol.push({x:Math.random()*W,y:Math.random()*H,vx:Math.cos(a),vy:Math.sin(a),sp:0.6+Math.random()*0.8});}
+  grains=[]; addGrain(W/2,H/2);
+}
+function addGrain(x,y){
+  const s=Math.min(W,H);
+  if(grains.length>=4)grains.shift();
+  grains.push({x:x,y:y,vx:0,vy:0,r:s*(0.018+Math.random()*0.014),m:1,hue:Math.random()*360,px:x,py:y});
+}
+function update(dt){
+  heat+=(theat-heat)*0.04;
+  const s=Math.min(W,H), v0=s*0.55*heat;
+  for(const m of mol){
+    // molecules re-randomise slightly, giving a thermal bath
+    if(Math.random()<0.01){const a=Math.random()*TAU;m.vx=Math.cos(a);m.vy=Math.sin(a);}
+    m.x+=m.vx*m.sp*v0*dt; m.y+=m.vy*m.sp*v0*dt;
+    if(m.x<0){m.x=0;m.vx=Math.abs(m.vx);} if(m.x>W){m.x=W;m.vx=-Math.abs(m.vx);}
+    if(m.y<0){m.y=0;m.vy=Math.abs(m.vy);} if(m.y>H){m.y=H;m.vy=-Math.abs(m.vy);}
+    for(const g of grains){
+      const dx=m.x-g.x, dy=m.y-g.y, d2=dx*dx+dy*dy;
+      if(d2<g.r*g.r){
+        const d=Math.sqrt(d2)||1, nx=dx/d, ny=dy/d;
+        const vn=m.vx*m.sp*v0*nx+m.vy*m.sp*v0*ny;
+        if(vn<0){
+          // elastic hit: grain absorbs a small impulse, molecule bounces off
+          const j=-2*vn;
+          g.vx-=nx*j*0.012; g.vy-=ny*j*0.012; hits++;
+          const sp=Math.hypot(m.vx,m.vy);
+          m.vx=nx; m.vy=ny; m.sp=Math.max(0.4,Math.min(1.5,m.sp));
+          m.x=g.x+nx*(g.r+1);m.y=g.y+ny*(g.r+1);
+          g.flash=1;
+        }
+      }
+    }
+  }
+  for(const g of grains){
+    g.vx*=0.985; g.vy*=0.985; // viscous drag balances the kicks
+    g.px=g.x; g.py=g.y;
+    g.x+=g.vx*dt*60; g.y+=g.vy*dt*60;
+    if(g.x<g.r){g.x=g.r;g.vx=Math.abs(g.vx);} if(g.x>W-g.r){g.x=W-g.r;g.vx=-Math.abs(g.vx);}
+    if(g.y<g.r){g.y=g.r;g.vy=Math.abs(g.vy);} if(g.y>H-g.r){g.y=H-g.r;g.vy=-Math.abs(g.vy);}
+    g.hue=(g.hue+0.08)%360; g.flash=(g.flash||0)*0.9;
+  }
+}
+function draw(){
+  // slow fade keeps the long path visible as a luminous thread
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='rgba(6,8,12,0.025)'; ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation='lighter';
+  ctx.fillStyle='rgba(150,170,190,0.16)';
+  const ps=Math.max(1,Math.min(W,H)*0.0015);
+  for(const m of mol){ctx.fillRect(m.x,m.y,ps,ps);}
+  for(const g of grains){
+    ctx.strokeStyle='hsla('+g.hue+',85%,62%,0.55)'; ctx.lineWidth=Math.max(1,g.r*0.12); ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(g.px,g.py); ctx.lineTo(g.x,g.y); ctx.stroke();
+  }
+  // grain bodies must be redrawn on a clean layer so they do not smear: draw soft halos
+  for(const g of grains){
+    const gr=ctx.createRadialGradient(g.x,g.y,0,g.x,g.y,g.r*1.8);
+    const a=0.10+0.25*(g.flash||0);
+    gr.addColorStop(0,'hsla('+g.hue+',90%,70%,'+a+')'); gr.addColorStop(1,'hsla('+g.hue+',90%,50%,0)');
+    ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(g.x,g.y,g.r*1.8,0,TAU); ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+}
+function frame(){
+  if(!paused){ for(let i=0;i<2;i++)update(1/120); draw(); t+=1/60; }
+  const g=grains[grains.length-1];
+  hud.innerHTML='POLLEN DANCE<br>temperature '+heat.toFixed(2)+'<br>molecular hits '+hits+'<br>grains '+grains.length+(g?'<br>drift speed '+Math.hypot(g.vx,g.vy).toFixed(2):'');
+  requestAnimationFrame(frame);
+}
+addEventListener('mousemove',e=>{theat=0.4+2.2*(1-e.clientY/innerHeight);});
+addEventListener('touchmove',e=>{theat=0.4+2.2*(1-e.touches[0].clientY/innerHeight);},{passive:true});
+addEventListener('click',e=>{addGrain(e.clientX*Math.min(devicePixelRatio||1,2),e.clientY*Math.min(devicePixelRatio||1,2));});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
