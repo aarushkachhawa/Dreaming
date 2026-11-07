@@ -1,0 +1,46 @@
+{
+  "id": "20261107-what-is-a-species--59effd",
+  "date": "2026-11-07T10:10:42.433613",
+  "title": "What Is a Species?",
+  "question": "If life varies continuously and evolves gradually, what, if anything, makes a species a real natural kind rather than a convenient label?",
+  "summary": "Biologists use the word species every day, yet more than two dozen competing definitions exist. The difficulty reveals how nature's boundaries blur and what classification is for.",
+  "content": "<h2>The Problem Darwin Noticed</h2>\n<p>Darwin's book is titled <em>On the Origin of Species</em>, yet he admitted that he regarded the term as \"arbitrarily given for the sake of convenience to a set of individuals closely resembling each other\". If all life descends from common ancestors by gradual change, then boundaries must be fuzzy, because any two species trace back to a shared parent population.</p>\n<h2>The Biological Species Concept</h2>\n<p>Ernst Mayr's definition, dominant in the twentieth century, says a species is a group of populations that actually or potentially interbreed and are reproductively isolated from other such groups. It is elegant and explains why horses and donkeys remain distinct. But it fails for asexual organisms such as bacteria, cannot be applied to fossils, and struggles with hybrids. Wolves, coyotes and dogs exchange genes; so do many oaks, which stay recognisably different. Polar bears carry brown bear DNA from past interbreeding.</p>\n<h2>Alternatives</h2>\n<p>The morphological concept groups by appearance and is what taxonomists in practice often use. The phylogenetic concept defines species as the smallest branches that share a unique ancestry, which tends to count more species. The ecological concept stresses a shared niche. Each captures a real aspect of nature, and each gives different counts for the same animals, so the number of \"species\" on Earth is partly a decision.</p>\n<h2>Ring Species and Gradual Divergence</h2>\n<p>Ring species show speciation caught in motion. Around the Central Valley of California, salamander populations of <em>Ensatina</em> interbreed with their neighbours around a loop, but the two forms where the ring closes do not. Which neighbours are the same species? There is no non-arbitrary place to draw the line, because the process that makes species is itself continuous.</p>\n<h2>Species as Lineages</h2>\n<p>A modern view, associated with Kevin de Queiroz, treats species as separately evolving lineages, and the various concepts as different evidence that a lineage has become separate. On this view the reality is the lineage; the criteria are tests. Others hold that \"species\" is a family of overlapping categories, like \"planet\" or \"game\", useful but without sharp essence.</p>\n<h2>Why It Matters</h2>\n<p>Laws protect species, not populations. Whether a rare lizard is its own species can decide whether its habitat is preserved. The philosophy of classification has practical weight.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "taxonomy",
+    "philosophy-of-science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary biology",
+      "description": "Species are stages in a continuous process of divergence, so borderline cases are expected rather than anomalies."
+    },
+    {
+      "title": "Philosophy of science",
+      "description": "Species may be individuals (lineages) rather than classes, which changes what it means to say something is a member."
+    },
+    {
+      "title": "Microbiology",
+      "description": "In bacteria, which swap genes sideways across lineages, the concept strains badly, and gene-sharing networks replace trees."
+    },
+    {
+      "title": "Conservation policy",
+      "description": "Legal protection requires crisp categories, so definitions have real consequences for what gets saved."
+    }
+  ],
+  "connections": [
+    "Darwin's tree of life and its horizontal gene transfer critique",
+    "Essentialism versus population thinking",
+    "Hybridisation and introgression in humans (Neanderthal DNA)",
+    "The sorites paradox and vague boundaries",
+    "Ship of Theseus and identity over time",
+    "Convergent evolution and classification"
+  ],
+  "openQuestions": [
+    "Is there any definition of species that works for both bacteria and mammals?",
+    "Would discovering life on another world force us to rebuild the concept?",
+    "Do species exist in nature, or only in our classifications?",
+    "How should law treat populations in the middle of speciation?"
+  ]
+}
