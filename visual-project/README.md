@@ -24,6 +24,15 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-08** — `2026-11-08-living-coral.html`: a ninety-fifth
+  technique, and the archive's first Gray-Scott reaction-diffusion study. Two
+  chemicals diffuse across a toroidal sheet; one feeds the other, which devours
+  it to multiply. From a few seeded droplets grow spots, worms, mazes and
+  branching coral, shaded from deep sea through teal to coral and cream. Move
+  the cursor through the feed/kill plane to change the pattern's character,
+  click to seed new growth, space to pause. Open the file directly in a
+  browser.
+
 - **2026-11-07** — `2026-11-07-pollen-dance.html`: a ninety-fourth
   technique, and the archive's first Brownian motion. A glowing grain sits in
   a bath of seven hundred faint, truly simulated molecules; every flicker of

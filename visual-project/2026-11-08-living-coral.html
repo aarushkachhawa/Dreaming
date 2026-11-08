@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Living Coral</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05070a; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; image-rendering:auto; }
+  #hud { position:fixed; top:14px; left:16px; color:#f1e3d6; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.8); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#d8c5b4; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move cursor &mdash; steer feed &amp; kill rates (spots, worms, maze, coral)&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; seed new growth&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Living coral. Gray-Scott reaction-diffusion: chemical U feeds V, V consumes U to make more V.
+// Two diffusing substances and one nonlinear term grow spots, worms, mazes and coral. The cursor
+// moves through the (feed, kill) plane, so the pattern's character changes under your hand.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d'), hud=document.getElementById('hud');
+let N=0,M=0,U,V,U2,V2,img,off,octx,paused=false,f=0.0545,k=0.062,tf=f,tk=k,steps=0;
+const Du=1.0,Dv=0.5;
+function setup(){
+  M=Math.max(120,Math.min(260,Math.floor(innerHeight/3.2)));
+  N=Math.max(120,Math.floor(M*innerWidth/innerHeight));
+  canvas.width=innerWidth; canvas.height=innerHeight;
+  off=document.createElement('canvas'); off.width=N; off.height=M; octx=off.getContext('2d');
+  img=octx.createImageData(N,M);
+  U=new Float32Array(N*M).fill(1); V=new Float32Array(N*M); U2=new Float32Array(N*M); V2=new Float32Array(N*M);
+  for(let i=0;i<7;i++)seed(Math.random()*N,Math.random()*M);
+  seed(N/2,M/2);
+}
+function seed(cx,cy){
+  const r=4+Math.random()*4;
+  for(let y=-r|0;y<=r;y++)for(let x=-r|0;x<=r;x++){
+    if(x*x+y*y>r*r)continue;
+    const i=(((cy|0)+y+M)%M)*N+(((cx|0)+x+N)%N);
+    U[i]=0.5;V[i]=0.25+Math.random()*0.05;
+  }
+}
+function step(){
+  for(let y=0;y<M;y++){
+    const ym=((y+M-1)%M)*N, y0=y*N, yp=((y+1)%M)*N;
+    for(let x=0;x<N;x++){
+      const xm=(x+N-1)%N, xp=(x+1)%N, i=y0+x;
+      const u=U[i], v=V[i];
+      const lu=U[ym+x]+U[yp+x]+U[y0+xm]+U[y0+xp]-4*u;
+      const lv=V[ym+x]+V[yp+x]+V[y0+xm]+V[y0+xp]-4*v;
+      const uvv=u*v*v;
+      U2[i]=u+Du*lu*0.2-uvv+f*(1-u);
+      V2[i]=v+Dv*lv*0.2+uvv-(f+k)*v;
+    }
+  }
+  let t=U;U=U2;U2=t; t=V;V=V2;V2=t; steps++;
+}
+function pal(t,o){ // deep sea -> teal -> coral -> cream
+  const stops=[[5,7,12],[10,40,60],[20,120,130],[240,110,90],[255,235,205]];
+  t=Math.max(0,Math.min(0.999,t))*4; const a=t|0, b=t-a, p=stops[a], q=stops[a+1];
+  o[0]=p[0]+(q[0]-p[0])*b; o[1]=p[1]+(q[1]-p[1])*b; o[2]=p[2]+(q[2]-p[2])*b;
+}
+const col=[0,0,0];
+function draw(){
+  const d=img.data;
+  for(let i=0;i<N*M;i++){
+    pal(Math.min(1,V[i]*3.2),col);
+    d[i*4]=col[0];d[i*4+1]=col[1];d[i*4+2]=col[2];d[i*4+3]=255;
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0,canvas.width,canvas.height);
+}
+function regime(){
+  if(k<0.058)return 'spots'; if(k<0.0615)return 'worms'; if(k<0.064)return 'coral'; return 'mitosis / fade';
+}
+function frame(){
+  f+=(tf-f)*0.03; k+=(tk-k)*0.03;
+  if(!paused){ for(let i=0;i<8;i++)step(); draw(); }
+  hud.innerHTML='LIVING CORAL<br>feed '+f.toFixed(4)+'<br>kill '+k.toFixed(4)+'<br>regime '+regime()+'<br>steps '+steps;
+  requestAnimationFrame(frame);
+}
+function aim(x,y){
+  tf=0.03+0.04*(x/innerWidth);      // 0.030 .. 0.070
+  tk=0.056+0.012*(1-y/innerHeight); // 0.056 .. 0.068
+}
+addEventListener('mousemove',e=>aim(e.clientX,e.clientY));
+addEventListener('touchmove',e=>aim(e.touches[0].clientX,e.touches[0].clientY),{passive:true});
+addEventListener('click',e=>{seed(e.clientX/innerWidth*N,e.clientY/innerHeight*M);});
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup();requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
