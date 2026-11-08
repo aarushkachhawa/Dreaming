@@ -1,0 +1,14 @@
+{
+  "id": "20260725-p-versus-np-the-question-hidin-6df2bd",
+  "date": "2026-07-25T10:12:16.341880",
+  "title": "P versus NP: The Question Hiding Behind Every Hard Problem",
+  "question": "If a computer can quickly check a solution, can it always quickly find one?",
+  "summary": "One of the seven Millennium Prize Problems asks something deceptively simple: is verifying an answer fundamentally easier than discovering it? Nobody knows, and a huge share of modern cryptography quietly assumes the answer is yes.",
+  "tags": [
+    "computer-science",
+    "mathematics",
+    "cryptography",
+    "complexity-theory",
+    "logic"
+  ]
+}
