@@ -1,0 +1,48 @@
+{
+  "id": "20261106-why-do-we-age-the-strange-biol-522fa1",
+  "date": "2026-11-06T10:10:31.884396",
+  "title": "Why Do We Age? The Strange Biology of Growing Old",
+  "question": "Why does evolution, which perfected eyes and wings, leave every body to fall apart?",
+  "summary": "Aging looks like a design flaw, yet it is better explained as the shadow of natural selection weakening with age. We trace the major theories and what they imply for extending life.",
+  "content": "<h2>An Evolutionary Puzzle</h2><p>A planarian flatworm can regenerate from a fragment, and some jellyfish revert to a juvenile state. Yet most animals decline predictably. If natural selection is so powerful, why would it tolerate aging? The answer begins with a simple observation: selection is strongest early in life, because most organisms in the wild die of predation, hunger, or disease long before senescence shows up. A gene that harms you at 80 is almost invisible to selection if few ancestors lived that long.</p><h2>Medawar's Shadow</h2><p>In 1952 Peter Medawar argued that harmful mutations acting late in life accumulate because selection cannot see them. Huntington's disease, which strikes after reproductive age, is the textbook example. Aging, on this view, is not an adaptation but a neglected corner of the genome.</p><h2>Trading Youth for Old Age</h2><p>George Williams sharpened this in 1957 with antagonistic pleiotropy: genes that boost fitness early may cost us later. Calcium deposition builds strong bones in youth and calcifies arteries in age. Cellular growth programs fight infection and repair wounds, but the same machinery can drive cancer. Aging becomes the interest on a loan taken out for early vigor.</p><h2>Spend or Repair?</h2><p>The disposable soma theory, from Tom Kirkwood, frames it economically. An organism has finite energy to divide between reproduction and maintenance. Perfect repair is expensive, and if the world will probably kill you anyway, investing in reproduction pays better. This predicts that species facing low external mortality, such as bats, tortoises and naked mole-rats, should evolve slower aging, and broadly they do.</p><h2>Mechanisms Beneath the Theory</h2><p>Evolution explains why; biology must explain how. Candidate mechanisms include telomere shortening, accumulating DNA damage, mitochondrial dysfunction, epigenetic drift, senescent cells that stop dividing but secrete inflammatory signals, and loss of protein homeostasis. Researchers now call these the hallmarks of aging, and they interact rather than act alone.</p><h2>Can Aging Be Slowed?</h2><p>In worms, a single mutation in the insulin-signaling pathway doubles lifespan. Caloric restriction extends life in many species, and drugs like rapamycin do so in mice. Clearing senescent cells improved health in mouse studies. Whether these effects transfer to humans, and whether extending healthspan differs from extending lifespan, remains uncertain. A deeper question is whether aging is one process or hundreds, because the answer determines whether a single intervention could ever work.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is not selected for; it is the consequence of declining selection pressure with age, explained by mutation accumulation and antagonistic pleiotropy."
+    },
+    {
+      "title": "Cell Biology",
+      "description": "Aging emerges from damage at many levels: telomeres, mitochondria, senescent cells, and failing protein quality control, which reinforce each other."
+    },
+    {
+      "title": "Medicine",
+      "description": "If aging is the largest risk factor for most chronic disease, treating aging itself might beat treating diseases one at a time."
+    },
+    {
+      "title": "Ethics and Society",
+      "description": "Longer lives raise questions of inequality, resource use, retirement, and what a meaningful life span even is."
+    }
+  ],
+  "connections": [
+    "Entropy and the second law, as a physical backdrop to decay",
+    "The disposable soma and energy trade-offs in ecology",
+    "Cancer as the flip side of cell renewal",
+    "Convergent evolution of long-lived species",
+    "The Ship of Theseus: are we the same body as it replaces itself?",
+    "Game theory of reproduction versus maintenance",
+    "Time's arrow in biological systems"
+  ],
+  "openQuestions": [
+    "Is there a biological limit to human lifespan, or only a statistical one?",
+    "Are the hallmarks of aging causes or symptoms of a deeper process?",
+    "Why do some species show negligible senescence?",
+    "Would extending healthspan inevitably extend lifespan too?",
+    "Could aging be reversed rather than merely slowed?"
+  ]
+}
