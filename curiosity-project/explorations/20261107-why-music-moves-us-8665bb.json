@@ -1,0 +1,47 @@
+{
+  "id": "20261107-why-music-moves-us-8665bb",
+  "date": "2026-11-07T10:10:42.310921",
+  "title": "Why Music Moves Us",
+  "question": "Why do patterns of sound with no obvious survival value produce chills, tears and the urge to dance in every known human culture?",
+  "summary": "Music is universal, ancient and emotionally powerful, yet its evolutionary purpose is debated. The answer may lie in prediction, social bonding and the way brains reward anticipation.",
+  "content": "<h2>A Strange Universal</h2>\n<p>Every known culture makes music. Bone flutes more than 40,000 years old have been found in European caves. Yet music neither feeds nor shelters us. Steven Pinker famously called it \"auditory cheesecake\", a pleasure technology that tickles circuits evolved for other tasks. Others see it as an adaptation in its own right. The disagreement is a window into how minds work.</p>\n<h2>Prediction and Surprise</h2>\n<p>Brains constantly predict what comes next. Music exploits this. A melody sets up expectations through scale, rhythm and harmony; the composer then fulfils, delays or violates them. Leonard Meyer proposed in 1956 that musical emotion arises from this play of expectation, and David Huron later developed it as the ITPRA theory. Neuroimaging supports the picture: dopamine is released in the caudate nucleus during anticipation of a favourite musical peak, and in the nucleus accumbens at the peak itself, the same reward system tied to food and sex.</p>\n<h2>Rhythm and Togetherness</h2>\n<p>Moving in synchrony with others raises pain thresholds, increases cooperation and blurs the boundary between self and group. Humans are unusually good at entraining to a beat; few other animals are, though some parrots and a sea lion have shown it. One hypothesis is that music evolved as social glue, a way for groups larger than grooming allows to bond. Lullabies fit too: infant-directed song soothes babies across cultures and may have been an early channel of parent\u2013child communication before language.</p>\n<h2>What Is Universal?</h2>\n<p>Studies of remote communities find some shared features: simple rhythmic ratios, discrete pitches, and recognisable emotion in fast versus slow, loud versus soft music. But other things we think of as natural, like the preference for consonant intervals, appear to be partly learned. The Tsimane in Bolivia, with little exposure to Western music, do not rate consonance as more pleasant than dissonance.</p>\n<h2>The Mathematics Beneath</h2>\n<p>The octave is a 2:1 frequency ratio; the fifth is 3:2. Simple ratios mean overlapping harmonics, which the auditory system fuses smoothly. Yet tuning systems are compromises, because stacked pure fifths never quite return to the starting note. Every scale is a negotiation between arithmetic and the ear.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "psychology",
+    "evolution",
+    "art"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music engages auditory, motor, memory and reward circuits at once; the pleasure of a chill is measurable dopamine release tied to expectation."
+    },
+    {
+      "title": "Evolutionary psychology",
+      "description": "Competing accounts call music a byproduct of language and emotion circuits, a tool for social bonding, or a sexual display."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Musical practice varies widely, and what counts as music, who performs it and what it is for are shaped by culture."
+    },
+    {
+      "title": "Mathematics and physics",
+      "description": "Harmonic series and simple frequency ratios give structure to scales, but tuning always forces compromises."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the Bayesian brain",
+    "The origin of language and prosody",
+    "Synchrony and collective ritual",
+    "The uncanny valley and expectation violation",
+    "Fourier analysis and timbre",
+    "Pythagorean tuning and equal temperament"
+  ],
+  "openQuestions": [
+    "Did music come before language, after it, or from a shared ancestor?",
+    "Why can some people feel no pleasure from music while enjoying other rewards?",
+    "How much of musical taste is innate versus absorbed in childhood?",
+    "Could non-human minds, or AI, experience anything like musical emotion?"
+  ]
+}
