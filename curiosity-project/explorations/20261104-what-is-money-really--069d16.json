@@ -1,0 +1,48 @@
+{
+  "id": "20261104-what-is-money-really--069d16",
+  "date": "2026-11-04T10:10:53.671593",
+  "title": "What Is Money, Really?",
+  "question": "Why do we accept scraps of paper and numbers on screens in exchange for real goods and labor?",
+  "summary": "Money is a shared belief backed by institutions, habit, and coordination. Its history shows that trust, not substance, is what makes it work, and that it can fail when trust does.",
+  "content": "<h2>The Barter Myth</h2>\n<p>The textbook story says money arose to fix barter's \"double coincidence of wants\": I have fish, you want fish but have only shoes I don't need. Anthropologists such as David Graeber found little evidence of pure barter economies. Small communities ran on gift exchange, reputation, and informal credit. Mesopotamian temples kept ledgers of debts in clay long before coins existed. On this view, money began as accounting: a way of recording who owes whom.</p>\n<h2>Three Functions</h2>\n<p>Economists list money's roles as a medium of exchange, a unit of account, and a store of value. Gold performs all three poorly in modern life but kept the role for centuries because it is scarce, durable, and hard to fake. Cigarettes served as money in prisoner-of-war camps, which shows that almost anything can function if everyone expects everyone else to accept it.</p>\n<h2>Fiat: Money as a Shared Fiction</h2>\n<p>Modern currency has no intrinsic value. It works because governments demand taxes in it (the chartalist argument), because courts enforce contracts denominated in it, and because everyone else uses it. Its value is a coordination equilibrium: I accept it because I expect you will. Yuval Harari calls this an \"intersubjective reality\", real because it exists in many minds at once, like corporations or nations.</p>\n<h2>Most Money Is Debt</h2>\n<p>Banknotes and coins are a small fraction of the money supply. Most is created when banks make loans, entering as numbers in ledgers. Your deposit is the bank's liability. This is why central banks, which control interest rates and reserves, have such leverage, and why bank runs can occur when many people doubt the promise at once.</p>\n<h2>When Trust Breaks, and New Tries</h2>\n<p>Weimar Germany in 1923 and Zimbabwe in the 2000s show that money loses value fast when confidence collapses and printing replaces fiscal discipline. Bitcoin attempts a different foundation: trust in a distributed protocol and scarcity enforced by computation. Whether it functions as money, as opposed to a speculative asset, depends on whether anyone will price everyday goods in it, which so far they rarely do.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "philosophy",
+    "trust"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves coordination: it lowers transaction costs, lets prices be compared, and moves value through time. Its supply and demand determine the price level."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Credit, debt, and obligation came before coinage. Money may have started as a moral and social ledger rather than a convenience for trade."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Money is a social construct, a status function: it counts as money because a community collectively treats it as such."
+    },
+    {
+      "title": "Computer Science",
+      "description": "Cryptocurrencies reframe money as a consensus problem: how strangers keep one tamper-proof ledger without a trusted authority."
+    }
+  ],
+  "connections": [
+    "Game theory and coordination equilibria",
+    "The paradox of cooperation",
+    "Social constructs and collective belief",
+    "Central banking and inflation",
+    "Cryptographic hash functions and consensus",
+    "The history of writing as bookkeeping",
+    "Language as another shared convention"
+  ],
+  "openQuestions": [
+    "Could a society run well without money, using only reputation and credit?",
+    "What ultimately anchors the value of fiat currency in the long run?",
+    "Can a decentralized protocol replace institutional trust, or only move it elsewhere?",
+    "How will digital central bank currencies change the meaning of money?"
+  ]
+}
