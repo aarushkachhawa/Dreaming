@@ -1,0 +1,47 @@
+{
+  "id": "20261102-why-do-we-age--9e0549",
+  "date": "2026-11-02T10:17:54.651856",
+  "title": "Why Do We Age?",
+  "question": "If evolution perfects bodies for survival, why does it let them fall apart?",
+  "summary": "Aging looks like a design flaw, yet it is nearly universal. Evolutionary theory suggests it is not a program but a shadow: the place where natural selection's grip loosens.",
+  "content": "<h2>The Puzzle</h2><p>Natural selection sculpts eyes, wings and immune systems with startling precision. Yet the same process leaves us with failing joints, faltering memory and rising mortality. A lineage that could repair itself indefinitely would seem to have an advantage. Why hasn't evolution found it?</p>\n<h2>Selection Fades With Age</h2><p>Peter Medawar's insight in the 1950s was that selection is strongest early in life. In the wild, most animals die from predators, hunger or infection long before senescence shows. A gene that harms you at 90 is almost invisible to selection if few ancestors reached 90. Late-acting harmful mutations therefore accumulate, unchecked: the \"mutation accumulation\" theory.</p>\n<h2>Trade-offs With Youth</h2><p>George Williams added antagonistic pleiotropy: a gene that boosts early fertility or growth can be favored even if it causes damage later. Calcium deposition that builds strong bones in youth may harden arteries in old age. Selection takes the early benefit and ignores the late bill.</p>\n<h2>Spend on Reproduction or Repair?</h2><p>The disposable soma theory frames the body as a budget. Energy spent on flawless maintenance is energy not spent on reproduction. Where the world is dangerous, as for mice, the optimal investment is a fast life and a quick decline. Where it is safe, as for bats, tortoises and the Greenland shark, repair pays and lifespans stretch for decades or centuries.</p>\n<h2>Exceptions That Teach</h2><p>Some organisms barely seem to age. Hydra regenerate continuously from stem cells; the naked mole-rat shows little rise in mortality with age; certain jellyfish can revert to a juvenile stage. These cases show that aging is not physically inevitable, only evolutionarily unmanaged.</p>\n<h2>Is Aging a Disease?</h2><p>If aging is a by-product rather than a program, it may be modifiable. Caloric restriction, mTOR inhibition and clearing senescent cells extend life in animals. Whether these translate to humans, and whether extending lifespan means extending healthspan, remains unresolved.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "health"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is the consequence of weakening selection with age and trade-offs between early vigor and late decay, not a purposeful program."
+    },
+    {
+      "title": "Molecular Biology",
+      "description": "Damage accumulates through DNA mutations, telomere shortening, protein misfolding and mitochondrial decline; the hallmarks of aging describe the mechanisms."
+    },
+    {
+      "title": "Medicine",
+      "description": "Treating aging itself as the root risk factor for cancer, dementia and heart disease could be more effective than fighting each disease alone."
+    },
+    {
+      "title": "Philosophy",
+      "description": "Is a longer life inherently good? Mortality gives shape and urgency to human projects, and extended life raises questions of justice and meaning."
+    }
+  ],
+  "connections": [
+    "Entropy and the second law of thermodynamics",
+    "Natural selection and trade-offs",
+    "Cancer as the cost of cell renewal",
+    "Hydra and biological immortality",
+    "Caloric restriction and sirtuins",
+    "Death and meaning in existential philosophy",
+    "Population dynamics and demographic change"
+  ],
+  "openQuestions": [
+    "Is there a fundamental biological limit to human lifespan, or only an evolutionary default?",
+    "Can we extend healthspan without raising cancer risk?",
+    "Why do closely related species differ by orders of magnitude in longevity?",
+    "Would radically longer lives change how societies value time and risk?"
+  ]
+}
