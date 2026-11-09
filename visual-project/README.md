@@ -24,6 +24,14 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-09** — `2026-11-09-parted-fan.html`: a ninety-sixth
+  technique, and the archive's first fan of chaotic double pendulums. Three
+  hundred pendulums are released from almost the same pose, differing only by a
+  hair. At first they swing as one bright blade; then sensitive dependence
+  takes hold and the blade unravels into a spectrum of paths. Move the cursor
+  left or right to shrink or widen the initial difference, click to release a
+  new fan, space to pause. Open the file directly in a browser.
+
 - **2026-11-08** — `2026-11-08-living-coral.html`: a ninety-fifth
   technique, and the archive's first Gray-Scott reaction-diffusion study. Two
   chemicals diffuse across a toroidal sheet; one feeds the other, which devours
