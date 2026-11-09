@@ -1,0 +1,47 @@
+{
+  "id": "20261103-the-monty-hall-problem-and-the-3d88eb",
+  "date": "2026-11-03T10:10:38.318255",
+  "title": "The Monty Hall Problem and the Failure of Intuition",
+  "question": "Why does almost everyone, including many mathematicians, get a simple three-door puzzle wrong?",
+  "summary": "Switching doors wins two-thirds of the time, yet intuition insists on fifty-fifty. The puzzle reveals that probability is really about information, and that our minds reason poorly about what a revealed fact implies.",
+  "content": "<h2>The setup</h2>\n<p>You face three doors: one hides a car, two hide goats. You pick a door. The host, who knows where the car is, opens a different door to reveal a goat and offers you the chance to switch. Should you?</p>\n<h2>The answer that feels wrong</h2>\n<p>Switching wins with probability 2/3. Most people reason that two doors remain, so the odds are 50-50. When Marilyn vos Savant published the correct answer in 1990, thousands of readers, including professors, wrote in to say she was mistaken.</p>\n<h2>Why it works</h2>\n<p>Your first pick has a 1/3 chance of being right, and nothing the host does can change that, because the host never opens your door and never reveals the car. So the remaining 2/3 is concentrated on the one other closed door. Equivalently: switching wins exactly when your first pick was wrong, which happens 2/3 of the time. With 100 doors, where the host opens 98 goats, the intuition flips instantly.</p>\n<h2>The hidden assumption</h2>\n<p>The answer depends on the host's behaviour. If the host opens a random door and merely happens to reveal a goat, switching gives 1/2. The host's knowledge and constraint make the reveal informative. Probability is not about the objects on the table but about the process that generated what you observe.</p>\n<h2>Why minds resist</h2>\n<p>We tend to treat the remaining options as equally weighted symmetrical alternatives, ignoring the asymmetry that one door was chosen by us and the other was left by a process that avoids the car. Pigeons, notably, learn to switch faster than humans, apparently because they update on frequencies rather than story-like reasoning.</p>\n<h2>A broader lesson</h2>\n<p>The same structure appears in medical testing, courtroom evidence and selection effects. Bayes' theorem is the general rule: update beliefs by how likely the evidence would be under each hypothesis. Monty Hall is a clean laboratory for that principle.</p>",
+  "tags": [
+    "mathematics",
+    "probability",
+    "psychology",
+    "cognition"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematics",
+      "description": "Conditional probability and Bayes' theorem give a precise answer: posterior odds depend on the likelihood of the host's action under each scenario."
+    },
+    {
+      "title": "Cognitive psychology",
+      "description": "The 50-50 intuition reflects equiprobability bias and difficulty tracking information given by an agent's constrained actions."
+    },
+    {
+      "title": "Game theory",
+      "description": "The host is a player with rules, not nature. Changing the host's strategy changes the correct response, so the problem is really about modelling the other agent."
+    },
+    {
+      "title": "Education",
+      "description": "Simulation and frequency formats ('imagine 300 games') make the answer intuitive, suggesting how to teach probabilistic reasoning."
+    }
+  ],
+  "connections": [
+    "Bayes' theorem and updating beliefs",
+    "Selection bias and survivorship bias",
+    "The prosecutor's fallacy in courtroom statistics",
+    "Boy-or-girl paradox",
+    "Base-rate neglect in medical testing",
+    "Bounded rationality and heuristics",
+    "Information theory: what a reveal tells you"
+  ],
+  "openQuestions": [
+    "Is intuitive probability misleading by design or just poorly matched to modern problems?",
+    "How should we teach conditional reasoning so it sticks?",
+    "What other everyday decisions hide a Monty Hall structure?",
+    "Does the frequentist or Bayesian framing explain the puzzle better?"
+  ]
+}

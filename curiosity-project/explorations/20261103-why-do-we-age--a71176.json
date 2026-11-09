@@ -1,0 +1,52 @@
+{
+  "id": "20261103-why-do-we-age--a71176",
+  "date": "2026-11-03T10:10:13.685624",
+  "title": "Why Do We Age?",
+  "question": "Evolution polished eyes and immune systems to near-perfection, so why did it leave us to fall apart?",
+  "summary": "Aging is not a program but a shadow: natural selection's grip weakens with age, leaving bodies tuned for youth and neglected afterward. Whether that shadow can be lifted is now an open scientific question.",
+  "content": "<h2>The puzzle of a flaw that should not survive</h2>\n<p>A flatworm can regenerate its whole body, a Greenland shark may live four centuries, and a hydra shows almost no sign of senescence. Yet most animals decay on a schedule. If natural selection can build a vertebrate eye, why can't it maintain a body indefinitely?</p>\n<h2>Selection's fading shadow</h2>\n<p>Peter Medawar's insight, in the 1950s, was that selection acts on reproduction and survival, and the force of selection declines with age. A gene that kills you at 20 is purged brutally; one that kills you at 80 is nearly invisible, because in the wild most organisms were already dead from predators, infection or starvation by then. Mutations with late-life harms therefore accumulate unchecked.</p>\n<h2>Trade-offs: aging as a bargain</h2>\n<p>George Williams added antagonistic pleiotropy: genes that help early in life at the cost of late-life harm can be actively favoured. Calcium deposition builds bone in youth and clogs arteries in age. Strong inflammatory responses fend off infection and later drive chronic disease. Aging may be the interest on a loan that bought fitness.</p>\n<h2>Maintenance is expensive</h2>\n<p>The disposable soma theory frames it economically: an organism has finite energy to split between reproduction and repair. Where extrinsic mortality is high, investing in perfect repair is wasteful. This predicts, correctly, that animals with safer lifestyles (bats, birds, tortoises, naked mole-rats) tend to live longer than their size suggests.</p>\n<h2>Damage at the molecular level</h2>\n<p>Proximate causes are many: telomere shortening, accumulated DNA damage, misfolded proteins, mitochondrial dysfunction, senescent cells that secrete inflammatory signals, and epigenetic drift. The \"hallmarks of aging\" framework lists these, but whether they are separate causes or facets of one process is unresolved.</p>\n<h2>Interventions</h2>\n<p>Caloric restriction, rapamycin, and clearing senescent cells extend lifespan in mice. Humans are harder: lifespans are long, trials slow, and the trade-offs, such as immune suppression, real. The shift in thinking is from treating each age-related disease separately to treating the slowing of aging itself as the target.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary biology",
+      "description": "Aging is a by-product of weakening selection and of trade-offs. It is not adaptive and was never 'designed', which is why it is so variable across species."
+    },
+    {
+      "title": "Molecular biology",
+      "description": "Aging is the accumulation of damage and dysregulation: genomic instability, senescent cells, loss of proteostasis. Each hallmark offers a potential point of intervention."
+    },
+    {
+      "title": "Medicine",
+      "description": "Age is the largest risk factor for cancer, heart disease and dementia. Targeting its root may beat fighting each disease in isolation, a view called geroscience."
+    },
+    {
+      "title": "Philosophy and ethics",
+      "description": "Is aging a disease or a natural stage of life? Extending lifespan raises questions about inequality, meaning, and whether finitude gives life its shape."
+    },
+    {
+      "title": "Ecology",
+      "description": "Mortality rates in the wild, from predation to disease, set how much repair is worth buying, explaining long-lived species in sheltered niches."
+    }
+  ],
+  "connections": [
+    "Antagonistic pleiotropy and trade-offs in evolution",
+    "Entropy and why ordered systems decay (see Time's Arrow)",
+    "Cancer as the cost of cell renewal",
+    "Immortal jellyfish and negligible senescence",
+    "The ship of theseus applied to cell turnover",
+    "Epigenetic clocks as a measure of biological age",
+    "The paradox of cooperation between cells in a multicellular body"
+  ],
+  "openQuestions": [
+    "Is there a fundamental upper limit on human lifespan, or only engineering obstacles?",
+    "Are the hallmarks of aging independent causes or downstream of a single process?",
+    "Can we slow aging without increasing cancer risk?",
+    "Why do species with similar biology differ by orders of magnitude in lifespan?",
+    "Would a society with radically longer lives remain innovative?"
+  ]
+}
