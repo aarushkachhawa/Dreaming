@@ -1,0 +1,49 @@
+{
+  "id": "20261028-why-does-music-move-us--d58e9a",
+  "date": "2026-10-28T10:13:57.969885",
+  "title": "Why Does Music Move Us?",
+  "question": "Why do patterns of sound with no obvious survival value produce chills, tears and joy, and why does every known culture have music?",
+  "summary": "Music engages prediction, reward, movement and social bonding systems at once. Its universality is real, but whether it is an adaptation or a byproduct is unresolved.",
+  "content": "<h2>A Puzzle of Usefulness</h2>\n<p>Every known human society makes music. Flutes made from bird bone and mammoth ivory, found in German caves, are about 40,000 years old. Yet music does not obviously feed, shelter or protect anyone. Steven Pinker called it \"auditory cheesecake,\" a pleasure technology that exploits systems evolved for other things. Others argue it is an adaptation in its own right. The debate is unsettled, but the mechanisms of musical emotion are better understood than its origin.</p>\n<h2>Prediction and Reward</h2>\n<p>Leonard Meyer proposed in 1956 that musical emotion arises from expectation. Listeners continually predict what comes next, and music delays, satisfies or violates those predictions. Modern neuroscience supports this. Brain imaging by Valorie Salimpoor and colleagues showed dopamine release in the striatum during peak musical pleasure, first in anticipation of a favored passage and then at its arrival. A resolved dominant chord works much like a joke's punchline, because the tension was the setup.</p>\n<h2>Rhythm and the Body</h2>\n<p>Humans synchronize to a beat with ease, while most animals do not. A few parrots and a sea lion named Ronan are exceptions, which suggests that beat perception relies on vocal-learning circuitry. Moving together has measurable social effects: groups that sing or drum in time report more trust and cooperate more in experiments. This supports a bonding theory in which music helped larger groups cohere before language could do so alone.</p>\n<h2>What Is Universal?</h2>\n<p>Some features recur across cultures: discrete pitches, simple frequency ratios like the octave and fifth, and lullabies sounding calm and dance songs sounding energetic. A 2019 study by Samuel Mehr and colleagues covering 315 societies found that lullabies, dance songs, healing songs and love songs can be identified across cultures well above chance. Other features are learned. Western listeners find major keys happy, but this is partly cultural, and Tsimane listeners in the Amazon show little preference for consonance over dissonance.</p>\n<h2>An Open Mixture</h2>\n<p>Music probably draws on several ancient systems: auditory scene analysis, emotional prosody in voices, motor timing, memory and reward. Whether natural selection shaped it directly or culture assembled it from those parts, the result moves people in ways few other stimuli do.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "psychology",
+    "evolution",
+    "culture"
+  ],
+  "perspectives": [
+    {
+      "title": "The Neuroscientist",
+      "description": "Musical pleasure uses the same dopamine reward circuitry as food and sex, driven by anticipation and prediction error rather than by the sound itself."
+    },
+    {
+      "title": "The Evolutionary Psychologist",
+      "description": "Candidate functions include mother-infant bonding via lullabies, group cohesion through synchrony, and sexual display. Each has some evidence, and none is conclusive."
+    },
+    {
+      "title": "The Ethnomusicologist",
+      "description": "Cross-cultural diversity is vast. Claims of universals need caution, since scales, harmony and even the concept of 'music' vary between societies."
+    },
+    {
+      "title": "The Music Theorist",
+      "description": "Western tonal harmony builds a hierarchy of tension and release. Composers steer expectation deliberately, which is why a deceptive cadence feels like a small surprise."
+    }
+  ],
+  "connections": [
+    "Why we dream",
+    "How language learned to talk",
+    "The paradox of cooperation",
+    "Predictive processing in the brain",
+    "The music hidden in prime numbers",
+    "Pythagoras and the mathematics of harmony",
+    "Emotional prosody and speech"
+  ],
+  "openQuestions": [
+    "Is music an adaptation, a byproduct, or a cultural invention built from adaptations?",
+    "Why do sad songs feel pleasurable rather than painful?",
+    "How much of consonance preference is innate versus learned?",
+    "Why can some people experience music with no emotion at all (musical anhedonia)?",
+    "Could non-human minds find structure in sound that we call musical?"
+  ]
+}
