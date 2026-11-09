@@ -1,0 +1,48 @@
+{
+  "id": "20261030-what-is-information--098b7d",
+  "date": "2026-10-30T10:11:06.674582",
+  "title": "What Is Information?",
+  "question": "Is information a physical thing, a mathematical abstraction, or a feature of how minds interpret the world?",
+  "summary": "Shannon made information measurable by ignoring meaning. Physics then tied it to entropy and energy. The result is a concept that spans engineering, thermodynamics, and biology while resisting a single definition.",
+  "content": "<h2>Surprise, quantified</h2><p>In 1948 Claude Shannon defined information not by what a message means but by how much it reduces uncertainty. A fair coin flip carries one bit; a coin that always lands heads carries none. The measure depends only on probabilities: the rarer the event, the more informative its occurrence. This move deliberately set meaning aside, and it let engineers prove how much any channel can carry and how far messages can be compressed.</p>\n<h2>Information meets entropy</h2><p>Shannon's formula matches the form of Boltzmann's entropy in statistical mechanics, and the match is not an accident. Entropy measures how many microscopic arrangements fit what we know macroscopically; it is missing information. Maxwell's demon, who sorts molecules to defy the second law, was exorcised when Landauer and Bennett showed that erasing a bit of memory must dissipate at least kT ln 2 of heat. Information processing has a thermodynamic price.</p>\n<h2>Is it physical?</h2><p>John Wheeler's slogan, \"it from bit\", proposes that physical reality is grounded in yes-or-no answers. The black hole information paradox raises the stakes: if evaporating black holes destroy information, quantum mechanics is violated, and the holographic principle suggests the information in a volume is encoded on its boundary. Others hold information is always information about something, for someone, and cannot float free of an observer.</p>\n<h2>Syntax versus meaning</h2><p>Shannon's theory cannot distinguish a poem from noise of equal statistical structure. Kolmogorov complexity offers another measure: the shortest program that produces a string. Genes carry information, but what makes a DNA sequence meaningful is its effect in a cell, which brings back function, context, and interpretation. Attempts to define semantic information, via teleology or causal history, remain unsettled.</p>",
+  "tags": [
+    "information-theory",
+    "physics",
+    "mathematics",
+    "philosophy"
+  ],
+  "perspectives": [
+    {
+      "title": "Engineering",
+      "description": "Information is a measurable quantity governing compression and reliable communication, independent of content."
+    },
+    {
+      "title": "Thermodynamics",
+      "description": "Information is tied to entropy; erasing it costs energy, linking computation to physical law."
+    },
+    {
+      "title": "Fundamental physics",
+      "description": "Wheeler and holography proponents suggest reality may be built from information, with space itself emerging from entanglement patterns."
+    },
+    {
+      "title": "Biology and semantics",
+      "description": "Meaning arises when a signal makes a difference to a living system; information is relational, not intrinsic."
+    }
+  ],
+  "connections": [
+    "Entropy and time's arrow",
+    "Quantum entanglement",
+    "Maxwell's demon",
+    "Kolmogorov complexity",
+    "Godel's incompleteness",
+    "Genetic code and DNA",
+    "Language as compression",
+    "Black hole holography"
+  ],
+  "openQuestions": [
+    "Is information fundamental, or a useful description of physical states?",
+    "Can semantic meaning be defined without reference to a mind?",
+    "Is the black hole information paradox resolved by unitarity?",
+    "Does consciousness correspond to a particular kind of information structure?"
+  ]
+}
