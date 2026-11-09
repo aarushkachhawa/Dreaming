@@ -1,0 +1,52 @@
+{
+  "id": "20261029-the-sorites-paradox-when-does--9cb367",
+  "date": "2026-10-29T10:13:41.740181",
+  "title": "The Sorites Paradox: When Does a Heap Stop Being a Heap?",
+  "question": "If removing one grain never turns a heap into a non-heap, how can a single grain ever be a heap's opposite?",
+  "summary": "Vague words like heap, bald and tall seem to have no sharp edges, yet logic demands them. The paradox forces a choice among rejecting classical logic, positing hidden boundaries, or rethinking what meaning is.",
+  "content": "<h2>The paradox</h2><p>One million grains of sand make a heap. Remove one grain and you still have a heap. Remove another, still a heap. Each step seems innocent, yet repeated enough times we reach a single grain, which is plainly not a heap. Premises that each look true, and valid reasoning, lead to a false conclusion. Attributed to Eubulides of Miletus in the 4th century BCE, the puzzle has outlived every attempt to dissolve it.</p><h2>Why it matters</h2><p>Almost every useful concept is vague: adult, rich, red, alive, species, planet, consciousness. If vagueness breaks logic, then the language we reason in is built on a crack. Law and medicine pay the price daily, drawing arbitrary lines at 18 years, at a blood-alcohol limit, at a gestational week.</p><h2>Response one: a hidden cliff</h2><p>Epistemicism, defended by Timothy Williamson, accepts the shocking consequence: there is a precise number of grains at which a heap stops being a heap. We simply cannot know it, because our use of words is too coarse to fix it in ways we can access. Logic stays classical; ignorance carries the load.</p><h2>Response two: degrees of truth</h2><p>Fuzzy logic lets truth come in degrees. A thousand grains is a heap to degree 0.9, ten grains to degree 0.1. Each step loses a sliver of truth, and the accumulation explains the slide. Critics ask where the precise degree numbers come from, which smuggles in sharp boundaries one level up: higher-order vagueness.</p><h2>Response three: meaning is use</h2><p>Supervaluationism holds that a vague term has many admissible sharpenings. A statement is true if it holds on all of them. Thus 'heap or not heap' is true even though no single sharpening is privileged. Contextualists add that where the line falls shifts with the conversation, so the paradox exploits a shifting standard.</p><h2>A pragmatic view</h2><p>Perhaps the lesson is that concepts are tools for coarse-grained communication, not carvings of nature. Vagueness is a feature: a precise word for heap would be useless for everyday speech and brittle at the edges. The paradox then marks the limit of using such tools as if they were mathematical objects.</p><h2>Connections to the physical world</h2><p>The same structure appears in biology. No single mutation turns one species into another, and no single neuron turns a brain into a mind. Gradual continua pose the question of whether our categories reflect reality or only our need to sort it.</p>",
+  "tags": [
+    "philosophy",
+    "logic",
+    "language",
+    "paradox"
+  ],
+  "perspectives": [
+    {
+      "title": "Epistemicism",
+      "description": "Sharp boundaries exist but are unknowable. Classical logic is preserved at the price of unknowable facts about meaning."
+    },
+    {
+      "title": "Fuzzy logic and degree theories",
+      "description": "Truth admits degrees, so a gradual shift in heapness can match a gradual shift in truth. The challenge is the arbitrariness of assigned degrees."
+    },
+    {
+      "title": "Supervaluationism",
+      "description": "Vague terms permit many acceptable precisifications; truth is what holds across all of them, preserving logical laws while denying a single cutoff."
+    },
+    {
+      "title": "Law and policy",
+      "description": "Institutions resolve vagueness by stipulation: a legal age, a speed limit. The lines are arbitrary yet necessary for fair, predictable decisions."
+    },
+    {
+      "title": "Cognitive science",
+      "description": "Human categories are prototype-based with graded membership. The paradox may arise from forcing a graded cognitive system into binary logic."
+    }
+  ],
+  "connections": [
+    "Ship of Theseus and identity over time",
+    "Fuzzy sets and control engineering",
+    "Species boundaries and ring species",
+    "Wittgenstein on family resemblance and meaning as use",
+    "Gradualism in evolution",
+    "Prototype theory of categories",
+    "Higher-order vagueness"
+  ],
+  "openQuestions": [
+    "Is vagueness a property of language, of the world, or only of our knowledge?",
+    "Can any theory handle higher-order vagueness without regress?",
+    "Do we need new logics for reasoning, or only better habits for using words?",
+    "Are the boundaries of consciousness vague in the same sense that heaps are?",
+    "Could an artificial language be built that is useful and fully precise?"
+  ]
+}
