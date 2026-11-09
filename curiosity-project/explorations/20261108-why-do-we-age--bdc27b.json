@@ -1,0 +1,48 @@
+{
+  "id": "20261108-why-do-we-age--bdc27b",
+  "date": "2026-11-08T10:09:56.977855",
+  "title": "Why Do We Age?",
+  "question": "If evolution is so good at building intricate bodies, why can't it keep them running indefinitely?",
+  "summary": "Aging is not a program that evolution designed but a shadow cast by the weakening of natural selection with time. Understanding that shadow reshapes how we think about death, disease, and the possibility of slowing decay.",
+  "content": "<h2>The puzzle of decay</h2>\n<p>A newt can regrow a limb, a hydra seems not to age at all, and a Greenland shark may live four centuries. Yet most animals, humans included, deteriorate predictably. Since selection sculpts organisms so precisely, the existence of aging looks like a failure that needs explaining.</p>\n<h2>Selection's fading grip</h2>\n<p>Peter Medawar's insight in the 1950s was that natural selection cares less and less about what happens later in life. In the wild, animals die from predators, hunger, and accidents. Few survive to old age, so a gene whose harm appears only late is rarely tested by selection. Harmful late-acting mutations accumulate quietly, like unpatched bugs in rarely-run code.</p>\n<h2>Trade-offs with youth</h2>\n<p>George Williams added antagonistic pleiotropy: genes that boost early survival or reproduction can be favored even if they cause damage later. High calcium deposition strengthens bones in youth and may harden arteries in age. Disposable soma theory, from Tom Kirkwood, frames it economically: an organism has finite energy, and spending it on perfect repair is worse, evolutionarily, than spending it on reproduction.</p>\n<h2>The machinery of damage</h2>\n<p>Proximately, aging involves many intertwined processes: accumulated DNA damage, shortening telomeres, mitochondrial dysfunction, misfolded proteins, stem-cell exhaustion, and senescent cells that stop dividing but secrete inflammatory signals. Researchers now catalogue these as the 'hallmarks of aging', though whether they are root causes or symptoms remains contested.</p>\n<h2>Cancer as the counterweight</h2>\n<p>Some aging may be the price of cancer suppression. Cells that refuse to divide indefinitely protect against tumors but also deplete tissue renewal. Long-lived animals such as elephants and bowhead whales have evolved extra tumor-suppressor strategies, suggesting the trade-off can be renegotiated.</p>\n<h2>Can it be changed?</h2>\n<p>Caloric restriction, certain gene variants in worms and mice, and drugs like rapamycin extend lifespan in lab animals. Clearing senescent cells improves health in mice. Whether these translate to humans, and whether extending healthspan differs from extending lifespan, is the live frontier. If aging is the by-product of neglect by selection rather than a built-in clock, it may be more tractable than we assumed, or far more tangled.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "health"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary biology",
+      "description": "Aging is a side-effect of declining selection pressure with age, not an adaptation. Mutation accumulation and antagonistic pleiotropy explain why late-life flaws persist."
+    },
+    {
+      "title": "Molecular and cell biology",
+      "description": "Aging emerges from damage accumulating across DNA, proteins, mitochondria, and tissues, with senescent cells and stem-cell decline amplifying decline."
+    },
+    {
+      "title": "Medicine and public health",
+      "description": "Treating aging as the common root of chronic disease suggests intervening on it directly, shifting focus from lifespan to years of healthy life."
+    },
+    {
+      "title": "Philosophy and ethics",
+      "description": "Is death a harm worth eliminating? Radical life extension raises questions about inequality, meaning, generational turnover, and what a finite life gives value."
+    }
+  ],
+  "connections": [
+    "Entropy and the thermodynamics of living systems",
+    "Cancer and multicellularity",
+    "Time's arrow",
+    "The ship of Theseus and cellular turnover",
+    "Kin selection and the evolution of cooperation",
+    "Hormesis and stress resistance",
+    "Immortal organisms: hydra and Turritopsis"
+  ],
+  "openQuestions": [
+    "Is there a fundamental biological limit to human lifespan, or only an engineering one?",
+    "Are the hallmarks of aging causes or consequences of one another?",
+    "Can we separate the benefits of cancer suppression from the costs of tissue decline?",
+    "Would extending healthspan without lifespan be possible in practice?",
+    "Why do closely related species differ in lifespan by orders of magnitude?"
+  ]
+}
