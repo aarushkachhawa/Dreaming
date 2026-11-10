@@ -1,0 +1,47 @@
+{
+  "id": "20261110-the-origin-of-money-what-makes-0c5b1d",
+  "date": "2026-11-10T10:11:29.281985",
+  "title": "The Origin of Money: What Makes a Thing Valuable?",
+  "question": "Why do societies accept pieces of metal, paper or digital entries as payment for real goods, and how did that agreement first arise?",
+  "summary": "Money is a shared fiction that works because everyone expects everyone else to accept it. Its history shows that credit and trust, not barter, were probably the starting point.",
+  "content": "<p>A banknote is nearly worthless as paper, yet a stranger will hand you a loaf of bread for it. Money is among humanity's most successful collective fictions, and understanding where it came from clarifies what it is.</p>\n<h2>The Barter Myth</h2>\n<p>Adam Smith and later textbooks told a tidy story: people bartered, found it awkward because it requires a \"double coincidence of wants\", and so adopted a common commodity as money. Anthropologists such as David Graeber point out there is little evidence of such barter economies. Small communities typically ran on gift exchange, reputation and informal credit: \"I owe you a favor.\" Barter appears more often between strangers or after monetary systems collapse.</p>\n<h2>Credit Before Coin</h2>\n<p>Mesopotamian temples kept ledgers of debts in silver-denominated units thousands of years before coinage. Silver functioned as a unit of account, a measure, even when little changed hands. Coins appear around 600 BCE in Lydia, and spread quickly, partly because states needed to pay soldiers and then required taxes in that same coin, creating demand for it. This is the \"chartalist\" idea: a state can make a token valuable by insisting on taking it back.</p>\n<h2>Functions and Properties</h2>\n<p>Economists list three functions: medium of exchange, store of value, and unit of account. Good money is durable, portable, divisible, scarce and recognizable. Cigarettes in prisoner-of-war camps and stone discs on Yap island show money can emerge from many materials as long as shared belief and some scarcity are present.</p>\n<h2>Trust as Technology</h2>\n<p>Yuval Harari calls money the most universal system of mutual trust. Fiat currency rests on institutions: central banks, legal tender laws, and credible commitments to limit supply. Inflation episodes, such as Weimar Germany or Zimbabwe, show how fast that trust can unravel. Cryptocurrencies try to replace institutional trust with cryptographic and algorithmic rules, but their value still depends on social expectations.</p>\n<h2>A Coordination Equilibrium</h2>\n<p>In game-theoretic terms money is a convention with multiple equilibria: it is valuable if everyone expects it to be accepted. That explains both its stability and its fragility, and why the question \"what backs it?\" has no purely physical answer.</p>",
+  "tags": [
+    "economics",
+    "history",
+    "anthropology",
+    "trust"
+  ],
+  "perspectives": [
+    {
+      "title": "Economics",
+      "description": "Money solves the double coincidence of wants and serves as exchange medium, store of value and unit of account."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Early economies relied on credit, gifts and social obligation; barter-first narratives are largely unsupported by evidence."
+    },
+    {
+      "title": "Game Theory",
+      "description": "Money is a coordination equilibrium sustained by shared expectations, with multiple possible equilibria and risk of collapse."
+    },
+    {
+      "title": "Political Science",
+      "description": "States shape money through taxation and legal tender, using it as a tool of governance and, sometimes, abuse."
+    }
+  ],
+  "connections": [
+    "Gift economies and reciprocity",
+    "Chartalism and Modern Monetary Theory",
+    "Hyperinflation and the loss of trust",
+    "Cryptocurrency and decentralized consensus",
+    "Schelling points in coordination games",
+    "Debt in ancient Mesopotamia",
+    "Shared fictions and human cooperation"
+  ],
+  "openQuestions": [
+    "Can a currency be sustained purely by algorithmic rules, without any state or institution?",
+    "How would an economy function if digital credit fully replaced cash?",
+    "Is there anything that makes some media of exchange more naturally trusted than others?",
+    "Does the existence of money change how we value non-market things like time and care?"
+  ]
+}
