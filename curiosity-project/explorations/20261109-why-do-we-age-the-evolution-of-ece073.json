@@ -1,0 +1,48 @@
+{
+  "id": "20261109-why-do-we-age-the-evolution-of-ece073",
+  "date": "2026-11-09T10:11:27.089999",
+  "title": "Why Do We Age? The Evolution of Growing Old",
+  "question": "If natural selection perfects organisms, why does nearly every complex animal deteriorate and die on a schedule?",
+  "summary": "Aging looks like a flaw, but evolutionary theory suggests it is a side effect of selection fading with age and of trade-offs between youthful vigor and long-term repair.",
+  "content": "<h2>The puzzle</h2>\n<p>Natural selection is ruthless about efficiency, yet nearly every complex animal deteriorates and dies on a schedule. A lizard can regrow a tail, and a planarian flatworm can regenerate its whole body, so repair is clearly within biology's repertoire. Why, then, do we stop repairing ourselves?</p>\n<h2>Selection grows blind with age</h2>\n<p>Peter Medawar's insight in the 1950s was that the force of natural selection declines with age. In the wild, most animals die from predators, cold, hunger or infection long before old age. A gene that harms you at 80 is almost never exposed to selection, because few of your ancestors lived that long. Harmful late-acting mutations therefore accumulate, like debris in a corner nobody sweeps.</p>\n<h2>Trade-offs: antagonistic pleiotropy</h2>\n<p>George Williams sharpened the idea. If a gene boosts early reproduction but damages you later, selection will favor it, since the early benefit counts for more. Aging then isn't just neglect. It may be the price of youthful vigor. Genes that drive rapid growth and strong inflammatory defense in youth may drive cancer and tissue damage in age.</p>\n<h2>The disposable soma</h2>\n<p>Tom Kirkwood framed this as economics. An organism has a limited energy budget to split between reproduction and bodily maintenance. Perfect maintenance is expensive, and if the body is likely to die by accident anyway, the investment is wasted. Species facing high external mortality, like mice, evolve fast and die young. Species with protected lives, like bats, tortoises and bowhead whales, evolve slower and live far longer.</p>\n<h2>What this predicts, and where it strains</h2>\n<p>The theory predicts that lowering external danger should lengthen lifespan over evolutionary time, and it largely does: island opossums freed from predators evolved slower aging. But puzzles remain. The naked mole-rat lives about thirty years, roughly ten times a mouse of similar size, and seems to show almost no rise in mortality with age. Some hydra and certain jellyfish appear not to senesce at all. Aging, it seems, is not a universal physical law like entropy. It is an evolved outcome that can be tuned.</p>\n<p>That raises the possibility of intervention. If aging is a collection of regulated processes rather than inevitable wear, then pathways like mTOR, insulin signaling and cellular senescence become targets, and caloric restriction extending lifespan in many species hints at a deeply conserved dial.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine",
+    "science"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary biology",
+      "description": "Selection's strength falls with age because few individuals survive to old age in the wild, so late-acting harm goes unfiltered (Medawar) and early-benefit genes win out (Williams)."
+    },
+    {
+      "title": "Energy economics",
+      "description": "The disposable soma theory treats maintenance as a costly investment. Bodies are repaired only as well as the expected lifespan justifies."
+    },
+    {
+      "title": "Molecular biology",
+      "description": "Damage accumulates through DNA errors, protein misfolding, mitochondrial decline and senescent cells. Conserved nutrient-sensing pathways appear to set the pace."
+    },
+    {
+      "title": "Medicine and ethics",
+      "description": "If aging is modifiable, treating it as a disease could prevent many conditions at once, but it raises questions of inequality, population and what a good life span is."
+    }
+  ],
+  "connections": [
+    "Natural selection and fitness landscapes",
+    "Cancer as a failure of cooperation between cells",
+    "Thermodynamics and entropy",
+    "Naked mole-rats and bowhead whales as model organisms",
+    "Caloric restriction and fasting research",
+    "The ethics of life extension",
+    "Immortal jellyfish (Turritopsis dohrnii)"
+  ],
+  "openQuestions": [
+    "Is there a hard biological limit to human lifespan, or only a current one?",
+    "Why do some species show negligible senescence while close relatives age quickly?",
+    "Can treating aging itself be separated from treating individual diseases?",
+    "Would a society of radically longer-lived people become static or more creative?"
+  ]
+}

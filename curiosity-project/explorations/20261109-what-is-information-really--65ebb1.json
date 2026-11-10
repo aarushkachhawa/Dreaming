@@ -1,0 +1,48 @@
+{
+  "id": "20261109-what-is-information-really--65ebb1",
+  "date": "2026-11-09T10:11:42.198572",
+  "title": "What Is Information, Really?",
+  "question": "Is information a physical quantity, a mathematical abstraction, or something that only exists relative to a mind?",
+  "summary": "Shannon made information measurable by ignoring meaning. Physics, computation and biology each bend the concept further, hinting that information may be as fundamental as energy.",
+  "content": "<h2>A word everyone uses and nobody pinned down</h2>\n<p>We speak of information as if it were a substance: it flows, it is stored, it is lost. Yet until 1948 nobody had a precise definition. Then Claude Shannon, working on telephone communication, supplied one so useful that it underlies every digital device you own.</p>\n<h2>Shannon: information as surprise</h2>\n<p>Shannon defined information not by meaning but by uncertainty removed. A message that tells you something you already knew carries no information. A fair coin flip carries one bit, the answer to one yes/no question. The measure, entropy, is highest when outcomes are most unpredictable. Crucially, he proved that any noisy channel has a maximum rate at which data can be sent with arbitrarily few errors, which is why your phone can be accurate over a crackling radio link.</p>\n<h2>The deliberate omission of meaning</h2>\n<p>Shannon was explicit that semantic aspects of messages are irrelevant to the engineering problem. A random string and a Shakespeare sonnet of equal length can have similar Shannon entropy. This is a strength for engineering and a limitation for philosophy: his theory says how much is transmitted, not what it is about.</p>\n<h2>Kolmogorov: information as description length</h2>\n<p>Algorithmic information theory offers a different angle. The information in an object is the length of the shortest program that produces it. A million repetitions of \"01\" is simple, because a short program prints it. A truly random string cannot be compressed. This makes randomness and complexity precise, and it is uncomputable in general, a close cousin of the halting problem.</p>\n<h2>Information meets physics</h2>\n<p>Landauer showed that erasing a bit has a minimum thermodynamic cost, tying information to heat and entropy and resolving Maxwell's demon. Black hole thermodynamics suggests the maximum information in a region scales with its surface area, not its volume, which inspired the holographic principle. John Wheeler's \"it from bit\" proposes that physical things derive their existence from yes/no answers, a bold claim that remains speculative.</p>\n<h2>Where it leaves us</h2>\n<p>Information appears to be neither purely physical nor purely mental. It is a relation: a pattern that makes a difference to some receiver. Biology adds another layer, since DNA, hormones and neurons all act as channels, and what counts as signal depends on the organism interpreting it.</p>",
+  "tags": [
+    "information-theory",
+    "physics",
+    "computation",
+    "philosophy",
+    "mathematics"
+  ],
+  "perspectives": [
+    {
+      "title": "Communication engineering",
+      "description": "Shannon entropy quantifies uncertainty resolved, giving hard limits on compression and noisy-channel capacity without reference to meaning."
+    },
+    {
+      "title": "Computer science",
+      "description": "Kolmogorov complexity defines information as shortest description. It captures randomness precisely but cannot be computed in general."
+    },
+    {
+      "title": "Physics",
+      "description": "Landauer's principle ties erasure to heat, and black hole entropy suggests spacetime itself may encode information on boundaries."
+    },
+    {
+      "title": "Philosophy of mind and biology",
+      "description": "Meaning may require an interpreter. A pattern is information only for a system that can act on the difference it makes."
+    }
+  ],
+  "connections": [
+    "Maxwell's demon and the thermodynamics of computation",
+    "The holographic principle",
+    "Entropy and the arrow of time",
+    "The halting problem and uncomputability",
+    "DNA as a code",
+    "Compression and learning in AI",
+    "Wheeler's 'it from bit'"
+  ],
+  "openQuestions": [
+    "Is information fundamental to physics, or just a useful bookkeeping tool?",
+    "Can meaning ever be reduced to a quantity like entropy?",
+    "Does the black hole information paradox show information is conserved at the deepest level?",
+    "What would a theory unifying syntactic and semantic information look like?"
+  ]
+}

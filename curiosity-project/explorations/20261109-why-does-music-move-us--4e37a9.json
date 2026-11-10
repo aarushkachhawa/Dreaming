@@ -1,0 +1,48 @@
+{
+  "id": "20261109-why-does-music-move-us--4e37a9",
+  "date": "2026-11-09T10:11:59.886103",
+  "title": "Why Does Music Move Us?",
+  "question": "Why do organized patterns of sound with no obvious survival function produce such intense emotion in every human culture?",
+  "summary": "Music seems to work by manipulating prediction and reward, while its origins may lie in bonding, courtship or a by-product of other abilities. None of the explanations fully accounts for its emotional power.",
+  "content": "<h2>An odd thing to do with air</h2>\n<p>Arranging vibrations in time and pitch has no obvious survival value, yet every known human culture makes music. Bone flutes at least 40,000 years old have been found in German caves. Music can bring tears, chills and a sense of unity, which makes it a striking case of something powerful without a clear job.</p>\n<h2>Expectation and reward</h2>\n<p>One influential account, developed by Leonard Meyer and later David Huron, says musical feeling comes from prediction. Brains constantly forecast what comes next. When a melody confirms, delays or playfully violates expectations, we feel tension and release. Neuroimaging supports this: Valorie Salimpoor and colleagues found dopamine release in the striatum both in anticipation of a favorite musical peak and at the peak itself, the same reward system involved in food and other pleasures.</p>\n<h2>Why these particular sounds?</h2>\n<p>Pitch relationships are not arbitrary. Notes whose frequencies form simple ratios, like the octave (2:1) and the fifth (3:2), blend smoothly because their overtones align. Yet cultures differ widely in scales and rhythm, and studies of the Tsimane people of Bolivia suggest that preference for consonance is shaped by exposure rather than fixed by biology. Likely, universal physics of sound provides a space of possibilities and culture chooses within it.</p>\n<h2>Evolutionary hypotheses</h2>\n<p>Darwin guessed music arose in courtship, like bird song. Others propose it bonded groups: synchronized singing and drumming release endorphins and increase cooperation. Mother-infant lullabies and \"motherese\" may be an origin, soothing babies when parents needed their hands free. Steven Pinker famously called music \"auditory cheesecake,\" a by-product of faculties evolved for language, emotion and auditory scene analysis. The evidence for any single story is thin, and several may be partly true.</p>\n<h2>Meaning without words</h2>\n<p>Music does not refer to anything in the way language does, yet listeners agree remarkably well on whether a piece is joyful or sad. Part of this is borrowed from speech and movement: sad music tends to be slow, low and quiet, like sad voices and bodies. Part is learned convention. And part remains poorly explained, which is why a purely abstract pattern can feel like it says something true.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "psychology",
+    "evolution",
+    "culture"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music engages prediction and reward circuitry. Dopamine release during anticipated musical peaks links it to other primary pleasures."
+    },
+    {
+      "title": "Acoustics and mathematics",
+      "description": "Simple frequency ratios produce aligned overtones and perceived consonance, giving a physical scaffold for scales and harmony."
+    },
+    {
+      "title": "Evolutionary psychology",
+      "description": "Competing hypotheses include sexual selection, group bonding, infant soothing, and a by-product of language and emotion systems."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Scales, rhythms and preferences vary across cultures, indicating strong learned and cultural components on top of shared biology."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the Bayesian brain",
+    "The physics of harmonics and the overtone series",
+    "Language and prosody",
+    "Birdsong and vocal learning in animals",
+    "Ritual, dance and social synchrony",
+    "The uncanny valley and expectation violation",
+    "Mathematics and tuning systems"
+  ],
+  "openQuestions": [
+    "Is any aspect of musical preference truly universal, or is all of it learned?",
+    "Why does sad music often feel pleasurable rather than painful?",
+    "Did music precede language, follow it, or co-evolve with it?",
+    "Can an AI that composes convincingly be said to understand musical emotion?"
+  ]
+}
