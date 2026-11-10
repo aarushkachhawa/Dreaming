@@ -1,0 +1,47 @@
+{
+  "id": "20261110-why-we-age-the-evolution-of-se-e93240",
+  "date": "2026-11-10T10:11:29.001278",
+  "title": "Why We Age: The Evolution of Senescence",
+  "question": "If natural selection shapes organisms to survive and reproduce, why has it left every complex animal to decay and die?",
+  "summary": "Aging looks like a design flaw, yet it is nearly universal. Evolutionary theory suggests it exists not because it helps, but because selection grows weaker with age, leaving the old body unattended.",
+  "content": "<p>A mayfly lives a day, a Greenland shark perhaps four centuries, and a human about eight decades. Yet nearly all of them share one pattern: the body falls apart in ways that raise the chance of death with each passing year. Evolution polishes organisms to survive, so why does it tolerate this?</p>\n<h2>The Shadow of Selection</h2>\n<p>Peter Medawar's insight in the 1950s was that natural selection cares about an allele only in proportion to the offspring an individual has already produced when it acts. In the wild, nearly every animal eventually dies from predation, accident, cold or disease. So few individuals live to be old that a gene whose harm appears at, say, age 90 is almost invisible to selection. The force of selection declines with age, and past some point it approaches zero. Late-life damage is not selected against; it simply accumulates in the \"selection shadow\".</p>\n<h2>Mutation Accumulation and Antagonistic Pleiotropy</h2>\n<p>Two mechanisms follow. In <em>mutation accumulation</em>, harmful mutations that act late are never purged and spread by drift. Huntington's disease, which typically strikes after reproductive age, fits this picture. In <em>antagonistic pleiotropy</em>, proposed by George Williams, a gene with benefits early in life and costs later is actively favored. High testosterone might aid youthful reproduction but raise cancer risk decades later; p53 suppresses tumors but may also drive stem cells into exhaustion.</p>\n<h2>Disposable Soma</h2>\n<p>Tom Kirkwood added an energetic view: an organism has limited resources to split between reproduction and maintenance. Perfect repair is costly, and if the creature is likely to die of other causes, investing in endless repair is a bad bet. Species with high external mortality, like mice, age fast; those in safe niches, like bats, birds and tortoises, live far longer than their size predicts. Naked mole-rats, protected in underground colonies, barely show an increase in mortality with age at all.</p>\n<h2>What Aging Is Mechanistically</h2>\n<p>Researchers now list hallmarks: DNA damage, telomere attrition, epigenetic drift, loss of protein quality control, mitochondrial dysfunction, senescent cells that secrete inflammatory signals, and stem cell exhaustion. The evolutionary story explains <em>why</em> these are left unfixed; the biochemical story explains <em>how</em> they unfold. Caloric restriction, rapamycin and clearing senescent cells extend life in animal models, hinting that the trade-offs in our own regulation can be shifted.</p>\n<h2>Is Aging Inevitable?</h2>\n<p>Some organisms, like Hydra, show negligible senescence, and the jellyfish Turritopsis can revert to a juvenile form. Theory does not forbid long life; it says only that selection has little reason to build it. This reframes medicine's goal: not fighting a necessity but renegotiating a trade-off evolution never optimized for us.</p>",
+  "tags": [
+    "biology",
+    "evolution",
+    "aging",
+    "medicine"
+  ],
+  "perspectives": [
+    {
+      "title": "Evolutionary Biology",
+      "description": "Aging is a byproduct of declining selection strength; mutation accumulation and pleiotropy explain why damaging late-life effects persist."
+    },
+    {
+      "title": "Biochemistry and Cell Biology",
+      "description": "Aging is a set of interacting failure modes, from damaged DNA to senescent cells, which may be individually targetable."
+    },
+    {
+      "title": "Ecology",
+      "description": "Lifespan tracks extrinsic mortality: safe lifestyles like flight, burrowing or armor are repeatedly associated with slower aging."
+    },
+    {
+      "title": "Medicine and Ethics",
+      "description": "If aging is modifiable, treating it as a disease raises questions about inequality, overpopulation and the meaning of a finite life."
+    }
+  ],
+  "connections": [
+    "Medawar's selection shadow",
+    "Life-history trade-offs and r/K selection",
+    "Cancer as the cost of cell renewal",
+    "Entropy and the maintenance of order in living systems",
+    "Naked mole-rats and negligible senescence",
+    "Caloric restriction and nutrient-sensing pathways",
+    "Death and meaning in philosophy"
+  ],
+  "openQuestions": [
+    "Is there a fundamental limit to maximum human lifespan, or only a contingent one?",
+    "Can treating one hallmark of aging help without worsening others, such as cancer?",
+    "Why do closely related species differ in lifespan by orders of magnitude?",
+    "Would extending lifespan extend healthspan, or just the period of frailty?"
+  ]
+}
