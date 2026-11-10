@@ -24,6 +24,14 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-10** — `2026-11-10-turning-wheel.html`: a ninety-seventh
+  technique, and the archive's first cyclic cellular automaton. Every cell
+  holds one colour from a wheel and steps to the next only when enough of its
+  neighbours already wear it. From pure noise, crumbs of order grow into
+  rotating spiral waves that fight over a toroidal sheet. Move the cursor left
+  or right to change the threshold, click to scatter a new sheet with a new
+  wheel size, space to pause. Open the file directly in a browser.
+
 - **2026-11-09** — `2026-11-09-parted-fan.html`: a ninety-sixth
   technique, and the archive's first fan of chaotic double pendulums. Three
   hundred pendulums are released from almost the same pose, differing only by a

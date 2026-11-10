@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turning Wheel</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06050a; height:100%; width:100%; }
+  canvas { display:block; width:100%; height:100%; cursor:crosshair; image-rendering:auto; }
+  #hud { position:fixed; top:14px; left:16px; color:#e6dcec; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.8); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; color:#cdc0d6; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move cursor left or right &mdash; change the threshold&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; scatter a new random sheet&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Turning wheel. A cyclic cellular automaton: every cell holds one of S colours arranged on a wheel. A cell
+// advances to the next colour on the wheel only if enough of its neighbours already wear that next colour.
+// From pure noise, little crumbs of order appear, then grow into rotating spiral waves that fight over the sheet.
+const canvas=document.getElementById('c'), ctx=canvas.getContext('2d'), hud=document.getElementById('hud');
+let GW=0,GH=0,S=12,thr=3,range=1,paused=false,A,B,img,gen=0,sheets=0,tthr=3,lut=[];
+function setup(){
+  const sc=Math.max(2,Math.round(Math.min(innerWidth,innerHeight)/260));
+  GW=Math.ceil(innerWidth/sc); GH=Math.ceil(innerHeight/sc);
+  canvas.width=GW; canvas.height=GH;
+  img=ctx.createImageData(GW,GH);
+  for(let i=3;i<img.data.length;i+=4)img.data[i]=255;
+  scatter();
+}
+function palette(){
+  lut=[];
+  for(let s=0;s<S;s++){
+    const h=(s/S*320+210+sheets*37)%360, l=18+42*Math.pow(Math.sin(Math.PI*s/S),1.0)+8;
+    lut.push(hsl(h,0.85,l/100));
+  }
+}
+function hsl(h,s,l){
+  const a=s*Math.min(l,1-l), f=n=>{const k=(n+h/30)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1));};
+  return [f(0)*255|0,f(8)*255|0,f(4)*255|0];
+}
+function scatter(){
+  sheets++; gen=0; S=8+Math.floor(Math.random()*9); range=Math.random()<0.7?1:2;
+  A=new Uint8Array(GW*GH); B=new Uint8Array(GW*GH);
+  for(let i=0;i<A.length;i++)A[i]=Math.floor(Math.random()*S);
+  palette(); draw();
+}
+function step(){
+  const t=Math.round(thr);
+  for(let y=0;y<GH;y++){
+    for(let x=0;x<GW;x++){
+      const i=y*GW+x, v=A[i], nx=(v+1)%S;
+      let c=0;
+      for(let dy=-range;dy<=range;dy++){
+        const yy=(y+dy+GH)%GH;
+        for(let dx=-range;dx<=range;dx++){
+          if(!dx&&!dy)continue;
+          if(A[yy*GW+(x+dx+GW)%GW]===nx)c++;
+        }
+      }
+      B[i]=c>=t?nx:v;
+    }
+  }
+  const T=A;A=B;B=T; gen++;
+}
+function draw(){
+  const d=img.data;
+  for(let i=0,j=0;i<A.length;i++,j+=4){const c=lut[A[i]];d[j]=c[0];d[j+1]=c[1];d[j+2]=c[2];}
+  ctx.putImageData(img,0,0);
+}
+function frame(){
+  if(!paused){ step(); draw(); }
+  const mx=range===1?8:24;
+  hud.innerHTML='TURNING WHEEL<br>colours on the wheel '+S+'<br>neighbourhood '+(2*range+1)+'&times;'+(2*range+1)+
+    '<br>threshold '+Math.round(thr)+' of '+mx+'<br>generation '+gen+'<br>sheet #'+sheets;
+  requestAnimationFrame(frame);
+}
+function setThr(x){ const mx=range===1?8:24; thr=1+Math.floor(x/innerWidth*Math.min(mx,range===1?4:10)); }
+addEventListener('mousemove',e=>setThr(e.clientX));
+addEventListener('touchmove',e=>setThr(e.touches[0].clientX),{passive:true});
+addEventListener('click',scatter);
+addEventListener('keydown',e=>{if(e.code==='Space'){paused=!paused;e.preventDefault();}});
+addEventListener('resize',setup);
+setup(); requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
