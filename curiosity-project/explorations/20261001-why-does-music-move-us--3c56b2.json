@@ -1,0 +1,48 @@
+{
+  "id": "20261001-why-does-music-move-us--3c56b2",
+  "date": "2026-10-01T10:11:09.943489",
+  "title": "Why Does Music Move Us?",
+  "question": "Why does an arrangement of sounds give us chills, tears, and the urge to move?",
+  "summary": "Music has no clear survival function yet exists in every culture. Expectation, reward circuits, social bonding, and learned conventions each explain part of its power.",
+  "content": "<h2>A Strange Universal</h2><p>Every known culture makes music, yet it has no obvious survival value. It does not feed us or shelter us, but it can bring tears, chills, or the urge to dance. Darwin called it the most mysterious of human faculties.</p>\n<h2>Expectation and Reward</h2><p>Leonard Meyer argued in 1956 that musical emotion comes from the play of expectation: tension when predictions are delayed or violated, release when they resolve. Brain imaging supports this. Peak musical pleasure releases dopamine in the striatum, first in anticipation of a favourite passage and then at the moment itself. Music is a pattern-prediction game played for its own sake.</p>\n<h2>Evolutionary Stories</h2><p>Several hypotheses compete. Music may have bonded groups, since synchronised singing and drumming promote cooperation and trust. It may have evolved from mother-infant vocal exchanges, or as a courtship display. Steven Pinker famously called it \"auditory cheesecake\", a by-product of language and emotion circuits. Evidence of ancient bone flutes, around 40,000 years old, shows music is at least as old as our species' modern cultures.</p>\n<h2>What Is Universal?</h2><p>Cross-cultural studies find recurring features: lullabies sound alike worldwide, dance songs have steady beats, and discrete pitches built on simple frequency ratios are common. But scales, harmony, and what counts as consonance vary. In an Amazonian society with little exposure to Western music, listeners did not rate consonant chords as more pleasant, suggesting some preferences are learned.</p>\n<h2>The Deeper Question</h2><p>Why should sequences of vibrating air carry emotional meaning at all? Perhaps because music mimics the prosody of emotional speech, the motion of bodies, and the structure of expectation, all signals our brains are tuned to read.</p>",
+  "tags": [
+    "music",
+    "neuroscience",
+    "evolution",
+    "culture"
+  ],
+  "perspectives": [
+    {
+      "title": "Neuroscience",
+      "description": "Music engages auditory, motor, and reward circuits at once. Dopamine release tracks anticipation and surprise, linking musical pleasure to the brain's prediction machinery."
+    },
+    {
+      "title": "Evolutionary Psychology",
+      "description": "Competing theories cast music as social glue, a courtship signal, or a by-product. Each explains some features and none explains them all."
+    },
+    {
+      "title": "Mathematics and Physics",
+      "description": "Consonance relates to simple frequency ratios and how harmonics overlap, but tuning systems are cultural compromises, since no pure scale closes perfectly."
+    },
+    {
+      "title": "Anthropology",
+      "description": "Musical practices differ widely, yet functions such as lullabies and group dance recur. Meaning is shaped as much by culture and ritual as by acoustics."
+    }
+  ],
+  "connections": [
+    "Predictive processing and the brain",
+    "Dopamine and anticipation",
+    "Pythagorean tuning and the comma",
+    "The origins of language and prosody",
+    "Synchrony and group bonding",
+    "Ancient instruments and early human culture",
+    "Absolute pitch and critical periods"
+  ],
+  "openQuestions": [
+    "Is music an adaptation, a by-product, or something in between?",
+    "How much of consonance is innate and how much learned?",
+    "Why can familiar music evoke vivid autobiographical memories, even in dementia?",
+    "Could an alien species with a different auditory system find our music meaningful?",
+    "Can an AI composition move us if there is no emotional intent behind it?"
+  ]
+}
