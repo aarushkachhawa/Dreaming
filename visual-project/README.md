@@ -24,6 +24,18 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-11** — `2026-11-11-lines-of-force.html`: a ninety-eighth
+  technique, and the archive's first electric field-line portrait. A handful
+  of point charges drift slowly across a dark plane; from every positive
+  charge a fan of lines is launched and integrated along the field until a
+  negative charge swallows it or it wanders off to infinity, with the line
+  count exactly proportional to each charge. Behind them the potential glows
+  warm near positive charge and cool near negative, ringed by faint
+  equipotentials that cross every line at a right angle, and sparks run along
+  the lines in the direction of the field. Move the cursor to carry a charge
+  through the field, press F to flip its sign or switch it off, click to
+  scatter new charges, space to pause. Open the file directly in a browser.
+
 - **2026-11-10** — `2026-11-10-turning-wheel.html`: a ninety-seventh
   technique, and the archive's first cyclic cellular automaton. Every cell
   holds one colour from a wheel and steps to the next only when enough of its
