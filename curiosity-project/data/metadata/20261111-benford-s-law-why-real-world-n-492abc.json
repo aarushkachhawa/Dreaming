@@ -1,0 +1,14 @@
+{
+  "id": "20261111-benford-s-law-why-real-world-n-492abc",
+  "date": "2026-11-11T10:11:46.712978",
+  "title": "Benford's Law: Why Real-World Numbers Prefer the Digit 1",
+  "question": "Why do the leading digits of so many real-world datasets follow a lopsided logarithmic pattern instead of being evenly distributed?",
+  "summary": "About 30% of numbers in naturally occurring datasets begin with 1, a pattern explained by scale invariance and multiplicative growth, and now used \u2014 sometimes misused \u2014 to detect fabricated data.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "forensics",
+    "scale invariance"
+  ]
+}
