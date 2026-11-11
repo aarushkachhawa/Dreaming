@@ -1,0 +1,52 @@
+{
+  "id": "20261111-maxwell-s-demon-is-information-8d591c",
+  "date": "2026-11-11T10:11:01.076153",
+  "title": "Maxwell's Demon: Is Information Physical?",
+  "question": "Can a being that merely observes and sorts molecules beat the second law of thermodynamics, and what does the answer reveal about information?",
+  "summary": "A thought experiment about a molecule-sorting demon took over a century to resolve, and its resolution \u2014 that erasing information has an unavoidable energy cost \u2014 tied thermodynamics, computation, and knowledge together.",
+  "content": "\n<h2>A Demon at the Door</h2>\n<p>In 1867 James Clerk Maxwell imagined a tiny being guarding a trapdoor between two chambers of gas. Whenever a fast molecule approached from the left, the demon opened the door; whenever a slow one approached from the right, it did the same. Without doing any apparent work, the demon would sort hot from cold, making one side warmer and the other cooler. That is a flat violation of the second law of thermodynamics, which says the entropy of an isolated system never decreases. Either the second law has a loophole, or the demon is hiding a cost somewhere.</p>\n\n<h2>Looking Is Not Free... Or Is It?</h2>\n<p>The first serious answer, from Leo Szilard in 1929 and later L\u00e9on Brillouin, was that measurement must cost energy: to see a molecule, the demon must bounce light off it, and that dissipates at least as much entropy as the sorting saves. It was a satisfying story, and it was wrong in an instructive way. Charles Bennett showed in the 1980s that measurement can, in principle, be done reversibly, with arbitrarily little dissipation. The demon could look for free.</p>\n\n<h2>The Cost of Forgetting</h2>\n<p>The real accounting turned out to live in the demon's memory. Rolf Landauer had argued in 1961 that erasing one bit of information must release at least <em>kT</em> ln 2 of heat into the environment. A demon that sorts molecules forever must record each observation; with finite memory, it eventually has to wipe old records to make room. That erasure is logically irreversible \u2014 two different memory states are mapped to one \u2014 and it is exactly there that the entropy the demon removed from the gas reappears. The second law survives, but only once we count information as a physical quantity on equal footing with heat.</p>\n\n<h2>From Thought Experiment to Laboratory</h2>\n<p>For a century the demon was pure imagination. Now it is an experimental subject. In 2010 researchers in Japan used feedback control to push a microscopic bead up a \"spiral staircase\" of electric potential, converting information about its random thermal motion into free energy. In 2012 a team in Lyon measured the heat released when a single bit stored in a trapped colloidal particle was erased, and found it approaching Landauer's bound. Single-electron devices have since built working demons on chips. The ghost in the thought experiment has become hardware.</p>\n\n<h2>Why It Matters</h2>\n<p>Maxwell's demon reshaped how physicists think about the relationship between knowledge and the world. Entropy, once a purely thermodynamic quantity, is now understood to be deeply connected to Shannon's measure of uncertainty. Computation has a thermodynamic floor: every irreversible logic gate pays a tiny heat tax, and reversible computing is an attempt to dodge it. Living cells, which constantly use molecular \"measurements\" to drive motors and pumps, can be seen as networks of demons operating close to these limits. The lesson is quietly profound: you cannot get something for nothing, and that includes knowing.</p>\n",
+  "tags": [
+    "physics",
+    "thermodynamics",
+    "information theory",
+    "computation",
+    "entropy"
+  ],
+  "perspectives": [
+    {
+      "title": "Thermodynamic Perspective",
+      "description": "The demon is a test of the second law's universality; its resolution shows the law holds only when the demon's own internal state is included in the system's entropy budget."
+    },
+    {
+      "title": "Information Theory Perspective",
+      "description": "Shannon entropy and Boltzmann entropy are two faces of the same quantity, and a bit of information is worth exactly kT ln 2 of free energy at temperature T."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Landauer's principle sets a physical lower bound on the energy cost of irreversible computation, motivating reversible and adiabatic computing designs."
+    },
+    {
+      "title": "Biological Perspective",
+      "description": "Molecular machines such as kinesin, ion pumps, and the ribosome's proofreading behave like demons, using information and free energy to impose order on thermal noise."
+    },
+    {
+      "title": "Philosophy of Science Perspective",
+      "description": "The long debate shows how a thought experiment can survive multiple wrong resolutions, and raises the question of whether information is an objective physical quantity or observer-relative."
+    }
+  ],
+  "connections": [
+    "Landauer's principle and the thermodynamic cost of erasure",
+    "Szilard's single-molecule engine",
+    "Shannon entropy and the mathematics of uncertainty",
+    "Reversible computing and the limits of energy-efficient chips",
+    "Fluctuation theorems in non-equilibrium statistical mechanics",
+    "Time's arrow and the low-entropy past",
+    "Brownian ratchets and molecular motors"
+  ],
+  "openQuestions": [
+    "Is information fundamentally physical, or is entropy partly a measure of an observer's ignorance?",
+    "How close do biological systems actually operate to Landauer's limit, and did evolution push them there?",
+    "Does quantum measurement introduce thermodynamic costs that have no classical analogue?",
+    "Could practical reversible computers ever outcompete conventional chips on energy efficiency?"
+  ]
+}
