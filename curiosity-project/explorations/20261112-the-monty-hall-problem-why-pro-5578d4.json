@@ -1,0 +1,48 @@
+{
+  "id": "20261112-the-monty-hall-problem-why-pro-5578d4",
+  "date": "2026-11-12T10:11:41.689777",
+  "title": "The Monty Hall Problem: Why Probability Fools Us",
+  "question": "Why does a simple game-show puzzle defeat the intuition of even trained mathematicians, and what does it reveal about how we reason under uncertainty?",
+  "summary": "The Monty Hall problem as a gateway into conditional probability, Bayesian reasoning, and the systematic ways human intuition misjudges chance.",
+  "content": "\n<p>You are on a game show facing three doors. Behind one is a car; behind the others, goats. You pick door 1. The host, who knows where the car is, opens door 3 to reveal a goat and offers you a switch to door 2. Should you switch? Most people say it doesn't matter: two doors, fifty-fifty. They are wrong. Switching wins two-thirds of the time. When this puzzle was published in a popular magazine column in 1990, thousands of readers, including many with mathematics PhDs, wrote in to insist the answer was mistaken. Why does probability so reliably defeat human intuition?</p>\n\n<h2>Why Switching Wins</h2>\n<p>Your first pick is right one time in three. That doesn't change when the host opens a door, because the host's action was constrained: he must reveal a goat and must avoid your door. If you picked a goat (two-thirds of the time), the host is forced to reveal the other goat, and the remaining door holds the car. So switching wins exactly when your first guess was wrong, which is two-thirds of the time. Imagine a hundred doors: you pick one, the host opens 98 goat doors, leaving one. Switching suddenly feels obvious. The host's knowledge is information, and information changes probabilities.</p>\n\n<h2>Information Hides in the Process</h2>\n<p>The deep lesson is that probability depends not only on what you observe but on how the observation was generated. If the host had opened a door at random and happened to show a goat, the odds really would be fifty-fifty. Same visible outcome, different process, different answer. Intuition tends to look only at the final scene, two closed doors, and ignore the mechanism that produced it. This is the core of conditional probability and Bayes' theorem.</p>\n\n<h2>A Family of Failures</h2>\n<p>Monty Hall is not an isolated trap. In the base-rate fallacy, people judge a positive result on an accurate test for a rare disease as nearly certain, ignoring that false positives among the healthy majority can outnumber true positives. The birthday paradox surprises because we think about our own birthday matching, not about the hundreds of possible pairs in a room of 23. The gambler's fallacy treats independent coin flips as if they balance out. Each case involves neglecting the full space of possibilities or the way evidence was selected.</p>\n\n<h2>Why Our Minds Struggle</h2>\n<p>Psychologists offer several explanations. Our heuristics evolved for fast, roughly-right judgments, not for abstract single-case probabilities. Gerd Gigerenzer and others showed that people reason much better with natural frequencies (\"10 out of 1,000 people\") than with percentages, suggesting the format matters as much as the mind. We also have a strong equiprobability bias: when options look symmetric, we assume they are. And once committed to a choice, people resist switching, amplified by anticipated regret.</p>\n\n<h2>Beyond the Game Show</h2>\n<p>These errors are not trivia. They shape medical diagnoses, courtroom verdicts (the prosecutor's fallacy has contributed to wrongful convictions), and how we read scientific results. Learning to ask \"how was this evidence produced?\" is one of the most valuable habits of mind there is.</p>\n",
+  "tags": [
+    "mathematics",
+    "probability",
+    "psychology",
+    "cognitive-bias",
+    "bayes"
+  ],
+  "perspectives": [
+    {
+      "title": "Mathematics Perspective",
+      "description": "Conditional probability makes the answer exact: the host's constrained choice carries information, so the unchosen door inherits the two-thirds probability of your first pick being wrong."
+    },
+    {
+      "title": "Cognitive Psychology Perspective",
+      "description": "Equiprobability bias, neglect of base rates, and reluctance to switch all conspire against the correct answer. Frequency formats markedly improve performance."
+    },
+    {
+      "title": "Evolutionary Perspective",
+      "description": "Our heuristics were tuned for repeated, experienced frequencies in natural environments, not for one-shot abstract puzzles about hidden processes."
+    },
+    {
+      "title": "Law and Medicine Perspective",
+      "description": "The same errors appear as the prosecutor's fallacy and misread diagnostic tests, with real consequences for verdicts and treatment decisions."
+    }
+  ],
+  "connections": [
+    "Bayes' theorem and conditional probability",
+    "Base-rate fallacy and medical testing",
+    "The birthday paradox",
+    "Gambler's fallacy and independence",
+    "Heuristics and biases research",
+    "Selection effects and sampling bias",
+    "The prosecutor's fallacy"
+  ],
+  "openQuestions": [
+    "Can probabilistic intuition be trained, or only replaced by explicit calculation?",
+    "Why do frequency formats help so much more than percentages?",
+    "Is the equiprobability bias learned, innate, or a reasonable default in most environments?",
+    "How should experts communicate risk so that the public reasons correctly?"
+  ]
+}
