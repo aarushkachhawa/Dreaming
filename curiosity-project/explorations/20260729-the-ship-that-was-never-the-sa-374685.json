@@ -1,0 +1,48 @@
+{
+  "id": "20260729-the-ship-that-was-never-the-sa-374685",
+  "date": "2026-07-29T10:12:45.475275",
+  "title": "The Ship That Was Never the Same Twice",
+  "question": "If every plank of a ship is replaced one at a time, is it still the same ship, and if not, at what point did it stop being so?",
+  "summary": "The ancient puzzle of the Ship of Theseus is not really about ships; it's a stress test for what we mean when we say any changing thing, including a human body or a piece of software, remains 'the same' over time.",
+  "content": "\n<p>Plutarch records that the Athenians preserved the ship on which Theseus returned from Crete, replacing rotted planks with new timber as centuries passed, until eventually not a single original plank remained. Philosophers had already been arguing, Plutarch notes, about whether the ship that ended this process was the same ship that began it. The puzzle sharpens further in a version added later: suppose someone collected every discarded original plank and reassembled them into a second ship. Now there are two candidates for \"the real ship of Theseus,\" and they cannot both be right if identity is supposed to be a single, exclusive relationship.</p>\n\n<h2>Why This Isn't Just a Trick Question</h2>\n<p>It is tempting to dismiss the puzzle as wordplay, a dispute over how we choose to use the label \"same ship\" rather than a fact about the world. But the puzzle recurs, in different clothing, everywhere something persists through change. Almost every atom in your body will be replaced over years through ordinary metabolism, yet you consider yourself the same person who made promises a decade ago. A river's water is never the same water twice, yet we say it is the same river. A company replaces every employee, every building, and every product line over fifty years, yet it keeps the same name, ticker symbol, and legal obligations. If the ship puzzle is merely semantic, so is a huge portion of how we track responsibility, ownership, and selfhood.</p>\n\n<h2>Three Competing Answers</h2>\n<p>Philosophers have proposed several criteria for what makes X at time one the same thing as Y at time two. Spatiotemporal continuity says identity tracks an unbroken path through space and time, so the continuously repaired ship is the real one because it never stopped existing as a functioning object, while the reassembled ship is a new thing built from old materials. Formal or structural continuity says identity tracks the persistence of an organizing pattern or arrangement, which would favor whichever ship best preserves the plank layout, or perhaps neither claim is more valid than the other. Four-dimensionalism denies the puzzle has a single answer at all, holding that objects are actually four-dimensional entities extended through time, and \"the ship\" at any one moment is just a temporal slice; asking which later slice is \"the same ship\" already smuggles in an assumption that objects must have one continuous identity rather than a history of related but numerically distinct stages.</p>\n\n<h2>Where It Gets Personal</h2>\n<p>Derek Parfit pushed the puzzle into the domain of persons with thought experiments involving teleportation and gradual brain replacement, arguing that personal identity may not be what actually matters to us when we care about our own future. Parfit's provocative claim was that what we really care about is psychological continuity, meaning connected memories, intentions, and personality traits, and this can come in degrees and can even branch, unlike strict numerical identity, which is all-or-nothing. If he's right, the question \"will I survive this?\" might have a fuzzy, matter-of-degree answer rather than a clean yes or no, however uncomfortable that is to sit with.</p>\n\n<h2>A Modern Instance</h2>\n<p>Software offers a strange contemporary echo. A codebase that has had literally every line rewritten over ten years of commits is routinely still called \"the same project,\" tracked under one repository history, one name, one set of users who feel loyalty to it. Version control systems make the plank-by-plank replacement completely explicit and auditable, yet nobody seriously proposes that a project becomes a \"different project\" once the last original line is gone. This suggests that in practice, humans default to something like a continuity-of-function-and-narrative criterion rather than a strict material one, at least until a puzzle forces us to notice we've been assuming it.</p>\n",
+  "tags": [
+    "philosophy",
+    "identity",
+    "metaphysics",
+    "personal-identity",
+    "logic"
+  ],
+  "perspectives": [
+    {
+      "title": "Classical Metaphysics Perspective",
+      "description": "The original puzzle, recorded by Plutarch and analyzed by Hobbes, treats identity as a strict, single-valued relation and asks which continuity criterion, material or structural, should govern it."
+    },
+    {
+      "title": "Four-Dimensionalist Perspective",
+      "description": "Treating objects as extended through time as well as space dissolves the paradox by denying that 'the same object' needs to pick out one unbroken thread rather than a history of connected stages."
+    },
+    {
+      "title": "Personal Identity Perspective",
+      "description": "Derek Parfit's work reframes the ship puzzle around human survival, arguing that psychological continuity, which can come in degrees, may matter more than metaphysical identity, which cannot."
+    },
+    {
+      "title": "Computer Science Perspective",
+      "description": "Version-controlled software projects instantiate the plank-replacement scenario literally and continuously, offering a real-world case study in how institutions actually track identity through total material change."
+    }
+  ],
+  "connections": [
+    "Derek Parfit's teleporter and branching personal identity thought experiments",
+    "The persistence of the self despite cellular turnover in the human body",
+    "Four-dimensionalism and the metaphysics of temporal parts",
+    "Heraclitus and 'you cannot step into the same river twice'",
+    "Legal personhood and the continuity of corporations over time",
+    "Git and version control as a literal ship-of-Theseus mechanism",
+    "The Buddhist doctrine of anatta and the denial of a fixed, unchanging self"
+  ],
+  "openQuestions": [
+    "Is there a single correct criterion for identity through change, or does the right criterion depend on what practical purpose 'sameness' is serving?",
+    "If psychological continuity is what really matters for survival, should gradual, non-destructive brain modification be treated differently from sudden replacement, even if the end states are identical?",
+    "Does a four-dimensionalist view actually resolve the puzzle, or does it just relabel the discomfort by denying there was ever a single 'you' to begin with?",
+    "Could a rigorous theory of identity for physical objects help clarify identity questions for AI systems that are continuously retrained or fine-tuned?"
+  ]
+}
