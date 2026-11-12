@@ -24,6 +24,17 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-12** — `2026-11-12-which-stone.html`: a ninety-ninth
+  technique, and the archive's first magnetic-pendulum basin map. An iron bob
+  on a long pendulum swings over three to five magnets and, slowed by a little
+  drag, finally rests over exactly one of them. Every point of the table is
+  coloured by the stone a bob released from there ends on, computed coarse to
+  fine, a few thousand trajectories a frame: smooth petals round each magnet,
+  then fractal lace where the basins braid into one another, dimmer where the
+  bob took longest to decide. Live bobs are released from the cursor and trace
+  their indecisive paths in light. Click to lay out new stones, space to
+  pause. Open the file directly in a browser.
+
 - **2026-11-11** — `2026-11-11-lines-of-force.html`: a ninety-eighth
   technique, and the archive's first electric field-line portrait. A handful
   of point charges drift slowly across a dark plane; from every positive

@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Stone</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06050a; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; }
+  #fg { cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece4d4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.9); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#d8cfbf; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="fg"></canvas>
+<div id="hud"></div>
+<div id="hint">move the cursor &mdash; release bobs from where you point&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; lay out new stones&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Which stone. An iron bob hangs on a long pendulum above a table on which a few magnets lie. Let it go and it
+// swings, is tugged towards one stone, flung past it, captured by another, and finally — because the air is
+// a little thick — comes to rest over exactly one of them. Which one depends on where it was released, and
+// that dependence is wild: colour every point of the table by the stone a bob dropped from there ends on,
+// and the regions interleave into fractal lace near every boundary. Brightness says how quickly the bob made
+// up its mind; the dim, braided parts are the places where it hesitated longest.
+//   x'' = -k x - b x' + sum_i (m_i - x) / (|m_i - x|^2 + h^2)^(3/2)
+// The map is computed progressively, coarse to fine, a few thousand trajectories per frame. Meanwhile live
+// bobs are released from the cursor and trace their indecisive paths in light.
+const bg=document.getElementById('bg'), bctx=bg.getContext('2d');
+const fg=document.getElementById('fg'), ctx=fg.getContext('2d');
+const hud=document.getElementById('hud');
+const K=0.5, H2=0.2*0.2, DT=0.02, MAXN=3500, CAPR2=0.05*0.05, CAPV2=0.12*0.12;
+const PALETTES=[
+  [[236,170,74],[48,176,170],[214,84,112],[138,110,224],[132,190,92]],
+  [[242,196,120],[70,140,214],[220,98,70],[96,196,150],[200,120,200]],
+  [[220,120,80],[90,180,200],[230,200,110],[160,90,170],[110,170,110]],
+];
+let W=0,H=0,DPR=1,S=1,cx=0,cy=0,paused=false,layouts=0;
+let mags=[],cols=[],B=0.2;
+let pw=0,ph=0,pc=null,pctx=null,pimg=null,done=null,stride=8,qx=0,qy=0,computed=0,total=1;
+const CELL=2;
+let bobs=[], mouse={x:-1,y:-1,on:false}, lastRelease=0;
+
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  W=innerWidth; H=innerHeight;
+  for(const c of [bg,fg]){ c.width=Math.round(W*DPR); c.height=Math.round(H*DPR); }
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  S=Math.min(W,H)/3.3; cx=W/2; cy=H/2;
+  pw=Math.ceil(W/CELL); ph=Math.ceil(H/CELL);
+  pc=document.createElement('canvas'); pc.width=pw; pc.height=ph; pctx=pc.getContext('2d');
+  pimg=pctx.createImageData(pw,ph);
+  restartMap();
+}
+
+function layout(){
+  layouts++;
+  const n=3+Math.floor(Math.random()*3);
+  const rot=Math.random()*Math.PI*2;
+  const r=1+Math.random()*0.15;
+  mags=[];
+  for(let i=0;i<n;i++){
+    const a=rot+i*2*Math.PI/n+(Math.random()-0.5)*0.35;
+    const rr=r*(0.85+Math.random()*0.3);
+    mags.push([rr*Math.cos(a), rr*Math.sin(a)]);
+  }
+  const pal=PALETTES[layouts%PALETTES.length].slice();
+  for(let i=pal.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pal[i],pal[j]]=[pal[j],pal[i]]; }
+  cols=pal.slice(0,n);
+  B=0.17+Math.random()*0.1;
+  bobs=[];
+}
+
+function restartMap(){
+  stride=8; qx=0; qy=0; computed=0; total=pw*ph;
+  done=new Uint8Array(pw*ph);
+  const d=pimg.data;
+  for(let i=0;i<d.length;i+=4){ d[i]=6; d[i+1]=5; d[i+2]=10; d[i+3]=255; }
+}
+
+// integrate one bob from rest at (x,y); returns stone index*65536 + steps, or -1
+function settle(x,y){
+  let vx=0,vy=0; const n=mags.length;
+  for(let s=0;s<MAXN;s++){
+    let ax=-K*x-B*vx, ay=-K*y-B*vy;
+    for(let i=0;i<n;i++){
+      const dx=mags[i][0]-x, dy=mags[i][1]-y;
+      const r2=dx*dx+dy*dy+H2, inv=1/(r2*Math.sqrt(r2));
+      ax+=dx*inv; ay+=dy*inv;
+    }
+    vx+=ax*DT; vy+=ay*DT; x+=vx*DT; y+=vy*DT;
+    if((s&7)===0 && vx*vx+vy*vy<CAPV2){
+      for(let i=0;i<n;i++){
+        const dx=mags[i][0]-x, dy=mags[i][1]-y;
+        if(dx*dx+dy*dy<CAPR2) return i*65536+s;
+      }
+    }
+  }
+  return -1;
+}
+
+function shadeInto(px,py,res,size){
+  let r=10,g=8,b=14;
+  if(res>=0){
+    const k=res>>16, n=res&65535;
+    const c=cols[k];
+    const f=Math.pow(1/(1+n/700),0.85);        // quick decisions bright, slow ones dim
+    const glow=0.2+0.85*f;
+    r=c[0]*glow+8*(1-f); g=c[1]*glow+6*(1-f); b=c[2]*glow+16*(1-f);
+  }
+  const d=pimg.data;
+  const x1=Math.min(pw,px+size), y1=Math.min(ph,py+size);
+  for(let y=py;y<y1;y++) for(let x=px;x<x1;x++){
+    if(size>1 && done[y*pw+x]) continue;
+    const o=(y*pw+x)*4; d[o]=r; d[o+1]=g; d[o+2]=b;
+  }
+}
+
+function computeSome(budget){
+  if(stride===0) return;
+  const t0=performance.now();
+  while(performance.now()-t0<budget){
+    for(let k=0;k<64;k++){
+      const idx=qy*pw+qx;
+      if(!done[idx]){
+        const wx=((qx+0.5)*CELL-cx)/S, wy=((qy+0.5)*CELL-cy)/S;
+        const res=settle(wx,wy);
+        shadeInto(qx,qy,res,stride);
+        done[idx]=1; computed++;
+      }
+      qx+=stride;
+      if(qx>=pw){ qx=0; qy+=stride; if(qy>=ph){ qy=0; stride>>=1; if(stride===0) return; } }
+    }
+  }
+}
+
+function release(x,y){
+  const wx=(x-cx)/S, wy=(y-cy)/S;
+  bobs.push({x:wx,y:wy,vx:0,vy:0,trail:[[wx,wy]],age:0,stone:-1,fade:1});
+  if(bobs.length>14) bobs.shift();
+}
+
+function stepBob(b){
+  if(b.stone>=0){ b.fade-=0.006; return; }
+  for(let s=0;s<6;s++){
+    let ax=-K*b.x-B*b.vx, ay=-K*b.y-B*b.vy;
+    for(let i=0;i<mags.length;i++){
+      const dx=mags[i][0]-b.x, dy=mags[i][1]-b.y;
+      const r2=dx*dx+dy*dy+H2, inv=1/(r2*Math.sqrt(r2));
+      ax+=dx*inv; ay+=dy*inv;
+    }
+    b.vx+=ax*DT; b.vy+=ay*DT; b.x+=b.vx*DT; b.y+=b.vy*DT; b.age++;
+  }
+  b.trail.push([b.x,b.y]);
+  if(b.trail.length>900) b.trail.shift();
+  if(b.vx*b.vx+b.vy*b.vy<CAPV2){
+    for(let i=0;i<mags.length;i++){
+      const dx=mags[i][0]-b.x, dy=mags[i][1]-b.y;
+      if(dx*dx+dy*dy<CAPR2){ b.stone=i; break; }
+    }
+  }
+  if(b.age>MAXN*2) b.stone=0;
+}
+
+function draw(now){
+  pctx.putImageData(pimg,0,0);
+  bctx.setTransform(1,0,0,1,0,0);
+  bctx.imageSmoothingEnabled=stride>1;
+  bctx.drawImage(pc,0,0,pw*CELL*DPR,ph*CELL*DPR);
+
+  ctx.clearRect(0,0,W,H);
+  // pivot and faint string to the newest bob
+  ctx.globalCompositeOperation='lighter';
+  for(const b of bobs){
+    const tr=b.trail, L=tr.length;
+    if(L<2) continue;
+    const c=b.stone>=0?cols[b.stone]:[255,244,226];
+    ctx.lineWidth=1.3; ctx.lineCap='round'; ctx.lineJoin='round';
+    const seg=Math.max(1,Math.floor(L/40));
+    for(let s=0;s<L-1;s+=seg){
+      const e=Math.min(L-1,s+seg);
+      const a=(0.12+0.75*(e/L))*b.fade;
+      ctx.strokeStyle=`rgba(${c[0]+40|0},${c[1]+40|0},${c[2]+40|0},${a})`;
+      ctx.beginPath();
+      ctx.moveTo(cx+tr[s][0]*S, cy+tr[s][1]*S);
+      for(let j=s+1;j<=e;j++) ctx.lineTo(cx+tr[j][0]*S, cy+tr[j][1]*S);
+      ctx.stroke();
+    }
+    const hx=cx+b.x*S, hy=cy+b.y*S;
+    const g=ctx.createRadialGradient(hx,hy,0,hx,hy,9);
+    g.addColorStop(0,`rgba(255,250,240,${0.9*b.fade})`); g.addColorStop(1,'rgba(255,250,240,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(hx,hy,9,0,Math.PI*2); ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+  // the stones
+  for(let i=0;i<mags.length;i++){
+    const x=cx+mags[i][0]*S, y=cy+mags[i][1]*S, c=cols[i];
+    const pulse=1+0.12*Math.sin(now*0.002+i*1.7);
+    const g=ctx.createRadialGradient(x,y,0,x,y,22*pulse);
+    g.addColorStop(0,`rgba(${c[0]},${c[1]},${c[2]},0.55)`); g.addColorStop(1,`rgba(${c[0]},${c[1]},${c[2]},0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,22*pulse,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#120f16'; ctx.strokeStyle=`rgb(${Math.min(255,c[0]+60)},${Math.min(255,c[1]+60)},${Math.min(255,c[2]+60)})`;
+    ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(x,y,4.5,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
+  // pivot mark
+  ctx.strokeStyle='rgba(236,228,212,0.35)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.stroke();
+
+  const pct=Math.min(100,computed/total*100);
+  hud.innerHTML=`which stone<br>${mags.length} stones &middot; drag ${B.toFixed(3)}<br>`+
+    (pct<100?`mapping ${pct.toFixed(1)}%`:'map complete')+(paused?'<br>paused':'');
+}
+
+function frame(now){
+  if(!paused){
+    computeSome(stride>=4?16:12);
+    if(mouse.on && now-lastRelease>1400){ release(mouse.x,mouse.y); lastRelease=now; }
+    else if(!mouse.on && now-lastRelease>2600){
+      const a=Math.random()*Math.PI*2, r=(0.6+Math.random()*1.3)*S;
+      release(cx+r*Math.cos(a), cy+r*Math.sin(a)); lastRelease=now;
+    }
+    for(const b of bobs) stepBob(b);
+    bobs=bobs.filter(b=>b.fade>0);
+  }
+  draw(now);
+  requestAnimationFrame(frame);
+}
+
+fg.addEventListener('pointermove',e=>{ mouse.x=e.clientX; mouse.y=e.clientY; if(!mouse.on){ mouse.on=true; lastRelease=0; } });
+fg.addEventListener('pointerleave',()=>{ mouse.on=false; });
+fg.addEventListener('click',()=>{ layout(); restartMap(); });
+addEventListener('keydown',e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+addEventListener('resize',resize);
+
+layout();
+resize();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
