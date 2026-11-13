@@ -24,6 +24,19 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-13** — `2026-11-13-linked-rings.html`: a hundredth
+  technique, and the archive's first Hopf fibration. The three-sphere is a
+  bundle of great circles, one above every point of the ordinary sphere, and
+  any two of them are linked exactly once. Points are chosen on the sphere
+  (nested latitudes, an even scatter, a loxodrome, a breathing ring, three
+  tilted bands) and each one's whole fibre is drawn, carried into space by a
+  stereographic projection from a slowly wandering pole, so nested tori of
+  Villarceau circles swell, interlock and turn themselves inside out. Hue is
+  the base point's longitude, lightness its latitude; a small globe in the
+  corner shows where the points lie. Move the cursor to turn the view, click to
+  choose a new arrangement of points, space to pause. Open the file directly
+  in a browser.
+
 - **2026-11-12** — `2026-11-12-which-stone.html`: a ninety-ninth
   technique, and the archive's first magnetic-pendulum basin map. An iron bob
   on a long pendulum swings over three to five magnets and, slowed by a little

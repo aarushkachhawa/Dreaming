@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linked Rings</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05060b; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece4d4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.9); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#d8cfbf; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move the cursor &mdash; turn the view&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; choose new points on the sphere&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Linked rings. The Hopf fibration: the three-sphere S^3 (the unit vectors of C^2) is a bundle of great
+// circles, one above every point of the ordinary sphere S^2, and any two of those circles are linked exactly
+// once. The map is h(z1,z2) = (2 z1 conj(z2), |z1|^2 - |z2|^2). For each chosen point p on S^2 we draw its
+// whole fibre h^-1(p), a circle in S^3, carried into ordinary space by stereographic projection from a pole
+// of S^3 that slowly wanders, so the picture turns itself inside out as it breathes. Points that share a
+// latitude on S^2 have fibres that sweep out a torus; nested latitudes give nested tori whose rings are
+// Villarceau circles; a whole sphere of points fills space with interlocking hoops. Colour is the base point:
+// hue its longitude, lightness its latitude. The little globe in the corner shows where the points lie.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud');
+let W=0,H=0,DPR=1,S=1,paused=false,t=0,last=performance.now();
+let mouse={x:0.5,y:0.5,tx:0.5,ty:0.5};
+const NSEG=128, FAR=7;
+
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  W=innerWidth; H=innerHeight;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  S=Math.min(W,H)*0.23;
+}
+addEventListener('resize',resize); resize();
+
+// ---- base-point arrangements on S^2 --------------------------------------------------------------------
+function sph(lat,lon){ const c=Math.cos(lat); return [c*Math.cos(lon), c*Math.sin(lon), Math.sin(lat)]; }
+const MODES=[
+  { name:'nested tori', fn(t){ const out=[]; const lats=[-0.95,-0.45,0.05,0.55,1.0];
+      lats.forEach((L,k)=>{ const n=30+k*2; for(let i=0;i<n;i++) out.push(sph(L+0.08*Math.sin(t*0.3+k), i/n*Math.PI*2+t*0.12*(k%2?1:-1)+k)); }); return out; } },
+  { name:'a sphere of hoops', fn(t){ const out=[], n=170, ga=Math.PI*(3-Math.sqrt(5));
+      for(let i=0;i<n;i++){ const z=1-2*(i+0.5)/n, r=Math.sqrt(1-z*z), a=i*ga+t*0.1;
+        let x=r*Math.cos(a), y=r*Math.sin(a), zz=z; const b=t*0.17, cb=Math.cos(b), sb=Math.sin(b);
+        out.push([x, y*cb-zz*sb, y*sb+zz*cb]); } return out; } },
+  { name:'loxodrome', fn(t){ const out=[], n=140;
+      for(let i=0;i<n;i++){ const u=(i+0.5)/n, lat=-1.45+2.9*u; out.push(sph(lat, u*Math.PI*9+t*0.35)); } return out; } },
+  { name:'breathing torus', fn(t){ const out=[], n=72, L=1.25*Math.sin(t*0.25);
+      for(let i=0;i<n;i++) out.push(sph(L, i/n*Math.PI*2+t*0.1));
+      for(let i=0;i<n/2;i++) out.push(sph(-L*0.5-0.2, i/(n/2)*Math.PI*2-t*0.07)); return out; } },
+  { name:'three linked bands', fn(t){ const out=[], n=44;
+      for(let k=0;k<3;k++){ const tilt=0.9, ph=k*2*Math.PI/3+t*0.08;
+        for(let i=0;i<n;i++){ const a=i/n*Math.PI*2; let p=sph(0.35, a);
+          // tilt the small circle, then spin it about the pole
+          let [x,y,z]=p; const ct=Math.cos(tilt), st=Math.sin(tilt); [y,z]=[y*ct-z*st, y*st+z*ct];
+          const cp=Math.cos(ph), sp=Math.sin(ph); [x,y]=[x*cp-y*sp, x*sp+y*cp]; out.push([x,y,z]); } }
+      return out; } },
+];
+let mode=0;
+
+// ---- fibre of a base point, as points in S^3 --------------------------------------------------------------
+function fibre(p, out){
+  const [x,y,z]=p; let a1,a2,b1,b2; // reference point (z1,z2) = (a1+i a2, b1+i b2) with h(z1,z2)=p
+  if(z>=0){ const s=Math.sqrt((1+z)/2), d=Math.sqrt(2*(1+z)); a1=s; a2=0; b1=x/d; b2=y/d; }
+  else { const s=Math.sqrt((1-z)/2), d=Math.sqrt(2*(1-z)); b1=s; b2=0; a1=x/d; a2=-y/d; }
+  for(let i=0;i<=NSEG;i++){ const th=i/NSEG*Math.PI*2, c=Math.cos(th), s=Math.sin(th);
+    const o=i*4; out[o]=a1*c-a2*s; out[o+1]=a1*s+a2*c; out[o+2]=b1*c-b2*s; out[o+3]=b1*s+b2*c; }
+}
+const buf=new Float32Array((NSEG+1)*4);
+const proj=new Float32Array((NSEG+1)*4);
+
+function hsl(h,s,l,a){ return `hsla(${h.toFixed(1)},${s}%,${l.toFixed(1)}%,${a.toFixed(3)})`; }
+
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(!paused) t+=dt;
+  mouse.x+=(mouse.tx-mouse.x)*0.06; mouse.y+=(mouse.ty-mouse.y)*0.06;
+
+  // background
+  const g=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.7);
+  g.addColorStop(0,'#0c0d18'); g.addColorStop(1,'#030308');
+  ctx.globalCompositeOperation='source-over'; ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+
+  const pts=MODES[mode].fn(t);
+  // a slow rotation of S^3 moves the projection pole: the picture breathes and turns inside out
+  const r1=t*0.11, r2=t*0.07+0.6;
+  const c1=Math.cos(r1), s1=Math.sin(r1), c2=Math.cos(r2), s2=Math.sin(r2);
+  // camera
+  const yaw=t*0.09+(mouse.x-0.5)*3.2, pitch=0.35+(mouse.y-0.5)*2.2;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw), cp=Math.cos(pitch), sp=Math.sin(pitch);
+  const CAM=7.5, cx0=W/2, cy0=H/2;
+
+  ctx.globalCompositeOperation='lighter';
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  for(const p of pts){
+    fibre(p,buf);
+    for(let i=0;i<=NSEG;i++){
+      const o=i*4; let X1=buf[o],X2=buf[o+1],X3=buf[o+2],X4=buf[o+3];
+      // rotate in (x1,x4) and (x2,x3) planes
+      let a=X1*c1-X4*s1, d=X1*s1+X4*c1; X1=a; X4=d;
+      a=X2*c2-X3*s2; d=X2*s2+X3*c2; X2=a; X3=d;
+      const k=1/Math.max(1e-4,1-X4);
+      let x=X1*k, y=X2*k, z=X3*k;
+      // camera rotation
+      let xx=x*cy-y*sy, yy=x*sy+y*cy; x=xx; y=yy;
+      let zz=z*cp-y*sp; yy=z*sp+y*cp; z=zz; y=yy;
+      const rr=x*x+y*y+z*z, big=rr>FAR*FAR;
+      const q=i*4;
+      if(big || y<-CAM+0.4){ proj[q+2]=NaN; continue; }
+      const f=CAM/(CAM+y);
+      proj[q]=cx0+x*S*f; proj[q+1]=cy0-z*S*f; proj[q+2]=y; proj[q+3]=Math.sqrt(rr);
+    }
+    const lon=Math.atan2(p[1],p[0]), lat=Math.asin(Math.max(-1,Math.min(1,p[2])));
+    const hue=(lon/Math.PI*180+360+t*4)%360;
+    const light=46+lat/Math.PI*2*22;
+    // draw in chunks so nearer parts glow brighter
+    const CH=10;
+    for(let s0=0;s0<NSEG;s0+=CH){
+      let started=false, depth=0, rad=0, cnt=0;
+      ctx.beginPath();
+      for(let i=s0;i<=Math.min(NSEG,s0+CH);i++){
+        const q=i*4, dz=proj[q+2];
+        if(dz!==dz){ started=false; continue; }
+        if(!started){ ctx.moveTo(proj[q],proj[q+1]); started=true; } else ctx.lineTo(proj[q],proj[q+1]);
+        depth+=dz; rad+=proj[q+3]; cnt++;
+      }
+      if(cnt<2) continue;
+      depth/=cnt; rad/=cnt;
+      const fade=Math.exp(-Math.max(0,rad-1.2)*0.55);
+      const near=Math.max(0,Math.min(1,(3-depth)/6));
+      ctx.strokeStyle=hsl(hue,78,light+near*10,(0.14+near*0.5)*fade);
+      ctx.lineWidth=(0.6+near*1.4)*(0.5+0.5*fade);
+      ctx.stroke();
+    }
+  }
+
+  // inset globe: the base points
+  ctx.globalCompositeOperation='source-over';
+  const R=Math.min(W,H)*0.075, gx=W-R-24, gy=H-R-40;
+  ctx.fillStyle='rgba(10,11,20,0.75)'; ctx.beginPath(); ctx.arc(gx,gy,R+8,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(220,210,190,0.22)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(gx,gy,R,0,Math.PI*2); ctx.stroke();
+  const gyaw=t*0.2, gcy=Math.cos(gyaw), gsy=Math.sin(gyaw), gp=0.4, gcp=Math.cos(gp), gsp=Math.sin(gp);
+  const dots=[];
+  for(const p of pts){
+    let x=p[0]*gcy-p[1]*gsy, y=p[0]*gsy+p[1]*gcy, z=p[2];
+    const zz=z*gcp-y*gsp, yy=z*gsp+y*gcp;
+    const lon=Math.atan2(p[1],p[0]), lat=Math.asin(Math.max(-1,Math.min(1,p[2])));
+    dots.push([gx+x*R, gy-zz*R, yy, (lon/Math.PI*180+360+t*4)%360, 46+lat/Math.PI*2*22]);
+  }
+  dots.sort((a,b)=>b[2]-a[2]);
+  for(const d of dots){ const front=d[2]<0; ctx.fillStyle=hsl(d[3],80,d[4]+(front?8:-10),front?0.95:0.3);
+    ctx.beginPath(); ctx.arc(d[0],d[1],front?2.1:1.4,0,Math.PI*2); ctx.fill(); }
+
+  hud.innerHTML='Linked Rings<br><span style="opacity:.6">the Hopf fibration &middot; '+MODES[mode].name+' &middot; '+pts.length+' fibres'+(paused?' &middot; paused':'')+'</span>';
+  requestAnimationFrame(frame);
+}
+
+addEventListener('mousemove',e=>{ mouse.tx=e.clientX/W; mouse.ty=e.clientY/H; });
+addEventListener('touchmove',e=>{ const t0=e.touches[0]; if(t0){ mouse.tx=t0.clientX/W; mouse.ty=t0.clientY/H; } },{passive:true});
+cv.addEventListener('click',()=>{ mode=(mode+1)%MODES.length; });
+addEventListener('keydown',e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
