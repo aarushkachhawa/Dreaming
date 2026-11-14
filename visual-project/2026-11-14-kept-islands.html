@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kept Islands</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04050b; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece4d4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#d8cfbf; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move the cursor sideways &mdash; set the kick strength&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; release a lantern orbit there&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Kept islands. The Chirikov standard map: a rotor spins freely and, once per period, is kicked by a force
+// that depends on its angle.  p' = p + K sin(theta),  theta' = theta + p'.  Both live on circles, so the
+// whole phase space is a torus, drawn here with the angle across and the momentum up, the stable resting
+// point in the middle. For small K almost every orbit stays on a smooth closed curve (a KAM torus); as K
+// grows those curves crack into chains of islands, the islands sprout islands, and between them a chaotic
+// sea fills in. Near K = 0.9716 the last curve that runs all the way across - the one with the golden
+// rotation number - breaks, and the sea is free to wander from bottom to top.
+// Every orbit is first run in the dark with its tangent vector to estimate a finite-time Lyapunov exponent.
+// Orbits that keep to a curve are drawn in clear colour (hue from their rotation number and width); orbits
+// that diverge are drawn as faint ember dust. The picture fades slowly, so as K drifts it re-forms.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2;
+let W=0,H=0,BW=0,BH=0,R,G,B,img,off,octx;
+let paused=false,t=0,last=performance.now();
+let K=1.0, Kman=1.0, lastMove=-1e9, mouseX=0.5;
+
+function resize(){
+  W=innerWidth; H=innerHeight;
+  cv.width=W; cv.height=H;
+  const sc=Math.min(1, 1500/W, 1000/H);
+  BW=Math.max(200,Math.round(W*sc)); BH=Math.max(150,Math.round(H*sc));
+  R=new Float32Array(BW*BH); G=new Float32Array(BW*BH); B=new Float32Array(BW*BH);
+  off=document.createElement('canvas'); off.width=BW; off.height=BH; octx=off.getContext('2d');
+  img=octx.createImageData(BW,BH);
+  for(let i=3;i<img.data.length;i+=4) img.data[i]=255;
+}
+addEventListener('resize',resize); resize();
+
+function hsl2rgb(h,s,l){ // h in degrees, s,l in [0,1]
+  h=((h%360)+360)%360/360;
+  const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+  const f=x=>{ x=(x+1)%1; return x<1/6?p+(q-p)*6*x : x<0.5?q : x<2/3?p+(q-p)*(2/3-x)*6 : p; };
+  return [f(h+1/3),f(h),f(h-1/3)];
+}
+const wrapP=p=>p-TAU*Math.floor((p+Math.PI)/TAU);
+const wrapT=a=>a-TAU*Math.floor(a/TAU);
+
+// ---- orbits ---------------------------------------------------------------------------------------------
+const N=1000, WARM=260;
+const orbs=[];
+function birth(o, th, p, lantern){
+  // run in the dark with a tangent vector: finite-time Lyapunov exponent, rotation number, spread of p
+  let dx=1, dy=0, lsum=0, wsum=0, ps=0, ps2=0, ss=0, cs=0;
+  for(let i=0;i<WARM;i++){
+    const kc=K*Math.cos(th);
+    const ndy=dy+kc*dx, ndx=dx+ndy; dx=ndx; dy=ndy;
+    const n=Math.hypot(dx,dy); lsum+=Math.log(n); dx/=n; dy/=n;
+    p=wrapP(p+K*Math.sin(th)); th=wrapT(th+p);
+    wsum+=p; ps+=p; ps2+=p*p; ss+=Math.sin(th); cs+=Math.cos(th);
+  }
+  const lam=lsum/WARM, w=wsum/WARM/TAU, mp=ps/WARM, sd=Math.sqrt(Math.max(0,ps2/WARM-mp*mp));
+  const conc=Math.hypot(ss,cs)/WARM; // near 1: the orbit huddles at one angle (a small island)
+  const chaos=Math.max(0,Math.min(1,(lam-0.025)/0.06));
+  o.th=th; o.p=p; o.kb=K; o.chaos=chaos; o.lantern=!!lantern;
+  o.life=lantern? 9000 : 300+Math.random()*1400;
+  let col;
+  if(lantern){ col=[1.0,0.93,0.82]; o.wt=0.55; }
+  else {
+    const hue=205+w*820+sd*150+conc*60;
+    const reg=hsl2rgb(hue,0.82,0.58), dust=hsl2rgb(22+30*Math.random(),0.75,0.52);
+    col=[reg[0]*(1-chaos)+dust[0]*chaos, reg[1]*(1-chaos)+dust[1]*chaos, reg[2]*(1-chaos)+dust[2]*chaos];
+    o.wt=0.16*(1-chaos)+0.06*chaos;
+  }
+  o.r=col[0]; o.g=col[1]; o.b=col[2];
+  o.lam=lam;
+}
+for(let i=0;i<N;i++){ const o={}; birth(o, Math.random()*TAU, (Math.random()*2-1)*Math.PI); orbs.push(o); }
+const lanterns=[];
+
+function plot(o){
+  const x=(o.th/TAU*BW)|0, y=((0.5-o.p/TAU)*BH)|0;
+  if(x<0||x>=BW||y<0||y>=BH) return;
+  const i=y*BW+x;
+  R[i]+=o.r*o.wt; G[i]+=o.g*o.wt; B[i]+=o.b*o.wt;
+}
+
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  const Kold=K;
+  if(!paused){
+    t+=dt;
+    const auto=1.2+0.85*Math.sin(t*0.033-0.2)+0.12*Math.sin(t*0.097);
+    const since=(now-lastMove)/1000, mix=Math.max(0,Math.min(1,(since-6)/5));
+    const target=Kman*(1-mix)+auto*mix;
+    K+=(target-K)*Math.min(1,dt*2.2);
+
+    // fade: faster while K is moving so the old portrait gives way
+    const dK=Math.abs(K-Kold)/Math.max(dt,1e-3);
+    const decay=Math.max(0.95,0.996-dK*0.08);
+    for(let i=0;i<R.length;i++){ R[i]*=decay; G[i]*=decay; B[i]*=decay; }
+
+    let reborn=0;
+    for(const o of orbs){
+      if((o.life<=0 || Math.abs(o.kb-K)>0.035) && reborn<140){ birth(o, Math.random()*TAU, (Math.random()*2-1)*Math.PI); reborn++; }
+      for(let s=0;s<26;s++){
+        o.p=wrapP(o.p+K*Math.sin(o.th)); o.th=wrapT(o.th+o.p); plot(o);
+      }
+      o.life-=26;
+    }
+    for(let j=lanterns.length-1;j>=0;j--){
+      const o=lanterns[j];
+      for(let s=0;s<40;s++){ o.p=wrapP(o.p+K*Math.sin(o.th)); o.th=wrapT(o.th+o.p); plot(o); }
+      o.life-=40; if(o.life<=0) lanterns.splice(j,1);
+    }
+  }
+
+  // tone map into the image
+  const d=img.data, ex=1.15;
+  for(let i=0,q=0;i<R.length;i++,q+=4){
+    const r=1-Math.exp(-R[i]*ex), g=1-Math.exp(-G[i]*ex), b=1-Math.exp(-B[i]*ex);
+    d[q]=4+r*251; d[q+1]=5+g*250; d[q+2]=11+b*244;
+  }
+  octx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(off,0,0,W,H);
+
+  // lantern heads
+  ctx.globalCompositeOperation='lighter';
+  for(const o of lanterns){
+    const x=o.th/TAU*W, y=(0.5-o.p/TAU)*H;
+    const gr=ctx.createRadialGradient(x,y,0,x,y,9);
+    gr.addColorStop(0,'rgba(255,240,215,0.9)'); gr.addColorStop(1,'rgba(255,200,140,0)');
+    ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,9,0,TAU); ctx.fill();
+  }
+  ctx.globalCompositeOperation='source-over';
+
+  let chaotic=0; for(const o of orbs) if(o.chaos>0.5) chaotic++;
+  const sea=Math.round(chaotic/N*100);
+  let note;
+  if(K<0.25) note='nearly every orbit keeps to a smooth curve';
+  else if(K<0.9716) note='a golden curve still runs all the way across';
+  else if(K<1.3) note='the last golden curve has broken: the sea can cross';
+  else if(K<2.2) note='islands are drowning, a few chains hold out';
+  else note='mostly sea; small islands kept at the centre';
+  hud.innerHTML='Kept Islands<br><span style="opacity:.62">the standard map &middot; K = '+K.toFixed(3)+
+    ' &middot; '+sea+'% of orbits chaotic'+(paused?' &middot; paused':'')+'<br>'+note+'</span>';
+  requestAnimationFrame(frame);
+}
+
+function setFromX(x){ mouseX=x/W; Kman=0.05+mouseX*2.95; lastMove=performance.now(); }
+addEventListener('mousemove',e=>setFromX(e.clientX));
+addEventListener('touchmove',e=>{ const t0=e.touches[0]; if(t0) setFromX(t0.clientX); },{passive:true});
+cv.addEventListener('click',e=>{
+  const th=e.clientX/W*TAU, p=(0.5-e.clientY/H)*TAU;
+  for(let k=0;k<3;k++){ const o={}; birth(o, wrapT(th+(k-1)*0.004), wrapP(p+(k-1)*0.004), true); o.th=wrapT(th+(k-1)*0.004); o.p=wrapP(p+(k-1)*0.004); lanterns.push(o); }
+  while(lanterns.length>12) lanterns.shift();
+});
+addEventListener('keydown',e=>{ if(e.code==='Space'){ paused=!paused; e.preventDefault(); } });
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

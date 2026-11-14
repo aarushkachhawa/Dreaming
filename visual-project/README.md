@@ -24,6 +24,20 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-14** — `2026-11-14-kept-islands.html`: a hundred-and-first
+  technique, and the archive's first standard map. A rotor spins freely and
+  once a period is kicked by a force that depends on its angle; angle and
+  momentum both wrap, so its whole phase space is a torus, drawn with the
+  resting point in the middle. Hundreds of orbits are first run in the dark
+  with a tangent vector to measure how fast neighbours part: the ones that keep
+  to a curve are drawn in clear colour, hue from their rotation number, and the
+  ones that diverge settle as faint ember dust. The kick strength K drifts, so
+  smooth curves crack into chains of islands, islands sprout islands, and near
+  K = 0.9716 the last golden curve breaks and the chaotic sea floods across,
+  leaving only the islands it cannot reach. Move the cursor sideways to set K,
+  click to release a lantern orbit that traces its own path in white, space to
+  pause. Open the file directly in a browser.
+
 - **2026-11-13** — `2026-11-13-linked-rings.html`: a hundredth
   technique, and the archive's first Hopf fibration. The three-sphere is a
   bundle of great circles, one above every point of the ordinary sphere, and
