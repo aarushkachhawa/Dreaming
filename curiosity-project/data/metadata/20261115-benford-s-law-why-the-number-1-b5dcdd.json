@@ -1,0 +1,14 @@
+{
+  "id": "20261115-benford-s-law-why-the-number-1-b5dcdd",
+  "date": "2026-11-15T10:10:15.860517",
+  "title": "Benford's Law: Why the Number 1 Comes First",
+  "question": "Why do real-world numbers start with the digit 1 nearly a third of the time?",
+  "summary": "An exploration of the surprising logarithmic pattern in leading digits, why scale invariance and growth produce it, and how it is used to detect fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "forensics",
+    "scale invariance"
+  ]
+}
