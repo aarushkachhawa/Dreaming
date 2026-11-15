@@ -24,6 +24,21 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-15** — `2026-11-15-spent-tracks.html`: a hundred-and-second
+  technique, and the archive's first bubble chamber. Every few seconds a burst
+  of beam pions crosses superheated hydrogen in a magnetic field, and each
+  charged particle boils a line of bubbles that bends with radius p/qB:
+  positive one way, negative the other, slow ones tight. Particles lose energy
+  as they ionise, so tracks thicken where they stop and electrons wind down into
+  spirals. Where a pion strikes a proton a star of new tracks opens with its
+  charge balanced; neutrals leave nothing until they decay, so a Lambda or a
+  K-short appears as a V out of nowhere and a photon as an electron-positron
+  pair curling apart. A stopped pi+ becomes a short mu+ and then an e+, and
+  small knocked-on electrons curl off every track. Each expansion goes on its
+  own film and fades slowly under the next. Click to aim a beam particle at a
+  point and collide it there, wheel or arrow keys to set the field strength, F
+  to reverse the field, space to pause. Open the file directly in a browser.
+
 - **2026-11-14** — `2026-11-14-kept-islands.html`: a hundred-and-first
   technique, and the archive's first standard map. A rotor spins freely and
   once a period is kicked by a force that depends on its angle; angle and

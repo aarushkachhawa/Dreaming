@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spent Tracks</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04060b; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece4d4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#d8cfbf; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; aim a beam particle to collide there&nbsp;&nbsp;|&nbsp;&nbsp;wheel or &uarr;&darr; &mdash; field strength&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; reverse the field&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Spent tracks. A liquid-hydrogen bubble chamber in a magnetic field. Every few seconds the piston drops,
+// the liquid is superheated, and a burst of beam pions is fired through it. A charged particle leaves a
+// line of tiny boiling bubbles behind it; the field bends it into an arc of radius p / qB, so slow
+// particles curl tight and fast ones barely bend, positive one way and negative the other. Particles
+// lose energy as they ionise (more the slower they go, so the ends of tracks are dense), so electrons
+// wind down into spirals. Where a pion hits a proton, a star of new tracks opens. Neutral particles leave
+// nothing: a Lambda or a K-short is only seen when it decays into a V of two opposite tracks; a photon
+// only when it turns into an electron-positron pair curling apart. A stopped pi+ becomes a short mu+,
+// which becomes an e+: the pi-mu-e chain. Knocked-on electrons (delta rays) curl off every track.
+// Each expansion is drawn on its own film and fades slowly as the next is exposed over it.
+// Units: momentum in GeV/c, lengths in px; S = the shorter side of the window is "about two metres".
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2, DPR=Math.min(window.devicePixelRatio||1,1.5);
+let W=0,H=0,S=0,bg=null,glow=null,gctx=null;
+let layers=[], tracks=[], paused=false, t=0, last=performance.now();
+let Bmag=0.85, Bsign=1, pulse=0, nextPulse=0, eventText='', bubbleCount=0, stars=0;
+const PERIOD=6.5;
+
+const KIND={
+  pi:{m:0.13957, sym:'π'}, mu:{m:0.10566, sym:'μ'}, e:{m:0.000511, sym:'e'},
+  K:{m:0.49368, sym:'K'}, p:{m:0.93827, sym:'p'},
+  Lam:{m:1.11568, sym:'Λ⁰', neutral:true}, K0:{m:0.49761, sym:'K⁰', neutral:true},
+  g:{m:0, sym:'γ', neutral:true}, n:{m:0.93957, sym:'n', neutral:true}
+};
+function colourOf(kind,q,beam){
+  if(beam) return [176,192,232];
+  if(kind==='e') return q>0?[255,226,186]:[204,236,255];
+  if(kind==='mu') return q>0?[255,212,128]:[132,236,214];
+  if(kind==='K') return q>0?[255,138,196]:[176,150,255];
+  if(kind==='p') return [255,122,82];
+  return q>0?[255,172,92]:[104,196,255];
+}
+const sprites={};
+function spriteFor(c){
+  const key=c.join(',');
+  if(sprites[key]) return sprites[key];
+  const s=document.createElement('canvas'); s.width=s.height=40;
+  const g=s.getContext('2d'), gr=g.createRadialGradient(20,20,0,20,20,20);
+  gr.addColorStop(0,'rgba(255,255,255,0.95)');
+  gr.addColorStop(0.18,'rgba('+c[0]+','+c[1]+','+c[2]+',0.7)');
+  gr.addColorStop(1,'rgba('+c[0]+','+c[1]+','+c[2]+',0)');
+  g.fillStyle=gr; g.fillRect(0,0,40,40);
+  return sprites[key]=s;
+}
+
+function gauss(){ let u=0,v=0; while(!u) u=Math.random(); v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v); }
+function expo(mean){ return -mean*Math.log(1-Math.random()); }
+
+function resize(){
+  W=innerWidth; H=innerHeight; S=Math.min(W,H);
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  // background: dark glass, a faint vignette, film grain and the fiducial crosses etched in the windows
+  bg=document.createElement('canvas'); bg.width=cv.width; bg.height=cv.height;
+  const b=bg.getContext('2d'); b.setTransform(DPR,0,0,DPR,0,0);
+  const vg=b.createRadialGradient(W/2,H/2,S*0.1,W/2,H/2,Math.hypot(W,H)*0.62);
+  vg.addColorStop(0,'#0b1018'); vg.addColorStop(0.6,'#070a11'); vg.addColorStop(1,'#020306');
+  b.fillStyle=vg; b.fillRect(0,0,W,H);
+  for(let i=0;i<W*H/260;i++){
+    const a=Math.random()*0.05; b.fillStyle='rgba(200,210,230,'+a+')';
+    b.fillRect(Math.random()*W,Math.random()*H,1,1);
+  }
+  b.strokeStyle='rgba(190,200,220,0.16)'; b.lineWidth=1;
+  const nx=Math.max(3,Math.round(W/(S*0.33))), ny=Math.max(3,Math.round(H/(S*0.33)));
+  for(let i=0;i<=nx;i++) for(let j=0;j<=ny;j++){
+    const x=W*(0.06+0.88*i/nx), y=H*(0.07+0.86*j/ny), r=S*0.009;
+    b.beginPath(); b.moveTo(x-r,y); b.lineTo(x+r,y); b.moveTo(x,y-r); b.lineTo(x,y+r); b.stroke();
+  }
+  b.strokeStyle='rgba(190,200,220,0.07)';
+  b.beginPath(); b.ellipse(W/2,H/2,W*0.49,H*0.49,0,0,TAU); b.stroke();
+  glow=document.createElement('canvas'); glow.width=Math.max(2,Math.round(W/4)); glow.height=Math.max(2,Math.round(H/4));
+  gctx=glow.getContext('2d');
+  layers=[]; tracks=[]; nextPulse=t;
+}
+addEventListener('resize',resize);
+
+function newLayer(){
+  let L;
+  if(layers.length>=4){ L=layers.shift(); L.ctx.setTransform(1,0,0,1,0,0); L.ctx.clearRect(0,0,L.cv.width,L.cv.height); L.id++; }
+  else { const c=document.createElement('canvas'); c.width=cv.width; c.height=cv.height; L={cv:c, ctx:c.getContext('2d'), id:0}; }
+  L.ctx.setTransform(DPR,0,0,DPR,0,0);
+  L.born=t; layers.push(L); return L;
+}
+function currentLayer(){ return layers.length?layers[layers.length-1]:newLayer(); }
+
+// --- particles ---------------------------------------------------------------------------------------
+const RS=()=>0.55*S;            // radius in px of a 1 GeV/c unit charge at unit field
+const LOSS=()=>0.15/S;          // GeV lost per px by a minimum-ionising particle
+const X0E=()=>1.3*S;            // radiation length felt by electrons (exaggerated)
+
+function makeTrack(L,kind,q,x,y,th,p,opt){
+  const tr={L, lid:L.id, kind, q, x, y, th, p, m:KIND[kind].m, len:0, alive:true,
+    neutral:!!KIND[kind].neutral, col:colourOf(kind,q,opt&&opt.beam), delay:(opt&&opt.delay)||0,
+    interactAt:(opt&&opt.interactAt)||-1, travel:(opt&&opt.travel)||0, beam:!!(opt&&opt.beam),
+    deltas:0, depth:(opt&&opt.depth)||0};
+  tr.css='rgb('+tr.col[0]+','+tr.col[1]+','+tr.col[2]+')';
+  if(tr.neutral && !tr.travel) tr.travel=expo(0.3*S);
+  if(!tr.neutral && (kind==='pi'||kind==='K')) tr.decayAt=expo((kind==='pi'?1.1:0.6)*S*p/tr.m);
+  else tr.decayAt=Infinity;
+  if(tracks.length<1400 && tr.depth<6) tracks.push(tr);
+  return tr;
+}
+
+function knockOn(tr){
+  // a delta ray: an atomic electron kicked out; low energy ones leave almost sideways
+  const T=0.007+0.035*Math.pow(Math.random(),2.5);
+  const pe=Math.sqrt(T*T+2*T*0.000511);
+  const cosA=Math.min(0.999,Math.sqrt(T/(T+2*0.000511)));
+  const side=Math.random()<0.5?-1:1;
+  makeTrack(tr.L,'e',-1,tr.x,tr.y,tr.th+side*Math.acos(cosA),pe,{depth:tr.depth+1});
+}
+
+function interaction(L,x,y,th,pb){
+  // pi- p collision: conserve charge, scatter the products about the beam direction with a few hundred MeV of pT
+  const out=[]; stars++;
+  const emit=(kind,q,p,spread)=>{
+    const pT=expo(0.33)*(spread||1);
+    const ang=Math.atan2(pT,p)*(Math.random()<0.5?-1:1);
+    out.push(KIND[kind].sym+(q>0?'⁺':q<0?'⁻':''));
+    makeTrack(L,kind,q,x,y,th+ang+gauss()*0.04,Math.max(0.06,p),{depth:1});
+  };
+  const share=()=>Math.min(pb*0.55,0.12+expo(0.75));
+  if(Math.random()<0.62){ emit('p',1,0.25+Math.random()*0.6,2.2); emit('pi',-1,share()); }
+  else out.push('n');
+  const pairs=Math.floor(Math.random()*3.2)+(Math.random()<0.5?1:0);
+  for(let i=0;i<pairs;i++){
+    if(Math.random()<0.12){ emit('K',1,share()); emit('K',-1,share()); }
+    else { emit('pi',1,share()); emit('pi',-1,share()); }
+  }
+  if(Math.random()<0.4){ // associated production of strangeness: a Lambda and a K-short, both invisible until they decay
+    for(const kind of ['Lam','K0']){
+      const p=0.4+expo(0.9), ang=Math.atan2(expo(0.3),p)*(Math.random()<0.5?-1:1);
+      out.push(KIND[kind].sym);
+      makeTrack(L,kind,0,x,y,th+ang,p,{travel:S*(0.06+expo(0.18)),depth:1});
+    }
+  }
+  const npi0=Math.random()<0.65?1+(Math.random()<0.4?1:0):0;
+  for(let i=0;i<npi0;i++){
+    out.push('π⁰');
+    const p=0.2+expo(0.8), a=Math.atan2(expo(0.3),p)*(Math.random()<0.5?-1:1);
+    for(let k=0;k<2;k++){
+      const f=k?1-0.5:0.5;
+      makeTrack(L,'g',0,x,y,th+a+(k?1:-1)*(0.05+Math.random()*0.25),p*(f+gauss()*0.15),{travel:S*(0.08+expo(0.45)),depth:1});
+    }
+  }
+  if(!eventText || L===currentLayer()) eventText='π⁻ p → '+out.join(' ');
+}
+
+function neutralEnd(tr){
+  const L=tr.L, d=tr.depth+1;
+  if(tr.kind==='Lam'){
+    const a=0.08+Math.random()*0.25, s=Math.random()<0.5?-1:1;
+    makeTrack(L,'p',1,tr.x,tr.y,tr.th+s*a*0.35,tr.p*0.86,{depth:d});
+    makeTrack(L,'pi',-1,tr.x,tr.y,tr.th-s*a,Math.max(0.08,tr.p*0.18),{depth:d});
+  } else if(tr.kind==='K0'){
+    const a=0.15+Math.random()*0.5, f=0.3+Math.random()*0.4;
+    makeTrack(L,'pi',1,tr.x,tr.y,tr.th+a*(1-f),tr.p*f+0.1,{depth:d});
+    makeTrack(L,'pi',-1,tr.x,tr.y,tr.th-a*f,tr.p*(1-f)+0.1,{depth:d});
+  } else if(tr.kind==='g'){
+    // pair production: e+ and e- leave nearly together and curl away from each other
+    const f=0.15+Math.random()*0.7, p=Math.max(0.01,tr.p);
+    makeTrack(L,'e',1,tr.x,tr.y,tr.th+0.01,p*f,{depth:d});
+    makeTrack(L,'e',-1,tr.x,tr.y,tr.th-0.01,p*(1-f),{depth:d});
+  }
+}
+
+function decay(tr,atRest){
+  const L=tr.L, d=tr.depth+1;
+  if(tr.kind==='pi'){
+    if(atRest){ if(tr.q>0) makeTrack(L,'mu',1,tr.x,tr.y,Math.random()*TAU,0.075,{depth:d}); }
+    else makeTrack(L,'mu',tr.q,tr.x,tr.y,tr.th+gauss()*0.12,tr.p*(0.62+0.37*Math.random()),{depth:d});
+  } else if(tr.kind==='mu'){
+    if(atRest && tr.q>0) makeTrack(L,'e',1,tr.x,tr.y,Math.random()*TAU,0.012+Math.random()*0.04,{depth:d});
+  } else if(tr.kind==='K'){
+    if(atRest && tr.q<0) return;
+    const th=atRest?Math.random()*TAU:tr.th;
+    if(Math.random()<0.64) makeTrack(L,'mu',tr.q,tr.x,tr.y,th+gauss()*(atRest?0:0.15),atRest?0.236:tr.p*0.8,{depth:d});
+    else { // tau decay: three charged pions
+      for(const q of [tr.q,tr.q,-tr.q]) makeTrack(L,'pi',q,tr.x,tr.y,th+gauss()*(atRest?2:0.3),atRest?0.08+Math.random()*0.06:tr.p*(0.2+Math.random()*0.2),{depth:d});
+    }
+  }
+}
+
+function advance(tr,dt){
+  if(tr.lid!==tr.L.id){ tr.alive=false; return; }
+  if(tr.delay>0){ tr.delay-=dt; return; }
+  const L=tr.L, c=L.ctx;
+  if(tr.neutral){
+    const ds=1.6*S*dt;
+    const go=Math.min(ds,tr.travel-tr.len);
+    tr.x+=Math.cos(tr.th)*go; tr.y+=Math.sin(tr.th)*go; tr.len+=go;
+    if(tr.x<-20||tr.x>W+20||tr.y<-20||tr.y>H+20){ tr.alive=false; return; }
+    if(tr.len>=tr.travel){ tr.alive=false; neutralEnd(tr); }
+    return;
+  }
+  let E=Math.sqrt(tr.p*tr.p+tr.m*tr.m), beta=tr.p/E;
+  let budget=0.85*S*Math.max(0.28,beta)*dt;
+  const step=0.8, rs=RS(), loss=LOSS(), x0=X0E();
+  c.fillStyle=tr.css; c.beginPath();
+  let drew=false;
+  while(budget>0){
+    budget-=step;
+    E=Math.sqrt(tr.p*tr.p+tr.m*tr.m); beta=tr.p/E;
+    const ion=Math.min(7,1/(beta*beta));
+    tr.th+=tr.q*Bsign*Bmag*step/(tr.p*rs);
+    tr.x+=Math.cos(tr.th)*step; tr.y+=Math.sin(tr.th)*step; tr.len+=step;
+    if(!tr.beam){
+      E-=loss*ion*step;
+      if(tr.kind==='e') E-=E*step/x0;
+      if(E<=tr.m+0.0012){ tr.alive=false; break; }
+      tr.p=Math.sqrt(E*E-tr.m*tr.m);
+      if(tr.kind==='e' && tr.p*rs/Bmag<2.2){ tr.alive=false; break; }
+    }
+    // bubbles: denser where the particle ionises more
+    if(Math.random()<0.3*ion){
+      const r=(0.55+0.16*Math.min(ion,5))*(0.75+Math.random()*0.5), j=(Math.random()-0.5)*0.7;
+      const bx=tr.x-Math.sin(tr.th)*j, by=tr.y+Math.cos(tr.th)*j;
+      c.moveTo(bx+r,by); c.arc(bx,by,r,0,TAU); drew=true; bubbleCount++;
+    }
+    if(tr.kind!=='e' || tr.p>0.02){
+      if(tr.deltas<8 && Math.random()<(tr.kind==='e'?0.0008:0.0022)*Math.min(3,ion)*900/S*step){ tr.deltas++; knockOn(tr); }
+    }
+    if(tr.interactAt>0 && tr.len>=tr.interactAt){ tr.alive=false; interaction(L,tr.x,tr.y,tr.th,tr.p); break; }
+    if(tr.len>=tr.decayAt){ tr.alive=false; decay(tr,false); break; }
+    if(tr.x<-30||tr.x>W+30||tr.y<-30||tr.y>H+30||tr.len>6*S){ tr.alive=false; return void(drew&&c.fill()); }
+  }
+  if(drew) c.fill();
+  if(!tr.alive && !tr.beam && tr.len<6*S && tr.x>-30 && tr.x<W+30 && tr.y>-30 && tr.y<H+30 && tr.interactAt<=0 && tr.len<tr.decayAt){
+    // came to rest inside the chamber
+    if(tr.kind==='p'||ionAtEnd(tr)){ c.fillStyle=tr.css; c.beginPath(); c.arc(tr.x,tr.y,1.6,0,TAU); c.fill(); }
+    decay(tr,true);
+  }
+}
+function ionAtEnd(tr){ return tr.m>0.1; }
+
+function beamTo(L,tx,ty,delay){
+  // trace backwards from the target to the left edge, then fire a beam pion forwards along the same arc
+  const pb=10, rs=RS(); let x=tx,y=ty,th=gauss()*0.03,len=0;
+  const k=-1*Bsign*Bmag/(pb*rs);
+  while(x>-10 && len<4*S){ x-=Math.cos(th)*2; y-=Math.sin(th)*2; th-=k*2; len+=2; }
+  makeTrack(L,'pi',-1,x,y,th,pb,{beam:true,interactAt:len,delay:delay||0});
+}
+
+function firePulse(){
+  pulse++;
+  const L=newLayer();
+  const n=7+Math.floor(Math.random()*6);
+  const hits=1+(Math.random()<0.45?1:0);
+  for(let i=0;i<n;i++){
+    const y=H/2+gauss()*H*0.17, delay=Math.random()*0.35;
+    if(i<hits){ beamTo(L,W*(0.16+Math.random()*0.42),y,delay); }
+    else makeTrack(L,'pi',-1,-10,y,gauss()*0.025,10,{beam:true,delay});
+  }
+}
+
+// --- loop ---------------------------------------------------------------------------------------------
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(!paused){
+    t+=dt;
+    if(t>=nextPulse){ firePulse(); nextPulse=t+PERIOD; }
+    for(const tr of tracks) if(tr.alive) advance(tr,dt);
+    tracks=tracks.filter(tr=>tr.alive);
+  }
+  ctx.globalCompositeOperation='source-over'; ctx.globalAlpha=1;
+  ctx.drawImage(bg,0,0,W,H);
+  gctx.clearRect(0,0,glow.width,glow.height);
+  ctx.globalCompositeOperation='lighter';
+  for(const L of layers){
+    const age=t-L.born, hold=PERIOD*0.85;
+    let a=age<hold?1:Math.max(0,1-(age-hold)/(PERIOD*2.3)); a=a*a*(3-2*a);
+    if(a<=0) continue;
+    ctx.globalAlpha=a*0.92; ctx.drawImage(L.cv,0,0,W,H);
+    gctx.globalAlpha=a; gctx.drawImage(L.cv,0,0,glow.width,glow.height);
+  }
+  ctx.globalAlpha=0.75; ctx.drawImage(glow,0,0,W,H);
+  ctx.globalAlpha=1;
+  for(const tr of tracks){
+    if(tr.neutral||tr.delay>0) continue;
+    const s=spriteFor(tr.col), r=tr.kind==='e'?5:8;
+    ctx.drawImage(s,tr.x-r,tr.y-r,2*r,2*r);
+  }
+  ctx.globalCompositeOperation='source-over';
+  const field=(Bmag*1.5).toFixed(2)+' T '+(Bsign>0?'into':'out of')+' the page';
+  hud.innerHTML='Spent Tracks<br><span style="opacity:.62">bubble chamber &middot; expansion '+pulse+' &middot; '+field+
+    (paused?' &middot; paused':'')+'<br>'+eventText+'<br>'+stars+' collisions &middot; '+(bubbleCount/1000).toFixed(0)+'k bubbles</span>';
+  requestAnimationFrame(frame);
+}
+
+cv.addEventListener('pointerdown',e=>{
+  const L=currentLayer(); beamTo(L,e.clientX,e.clientY,0);
+});
+addEventListener('wheel',e=>{ Bmag=Math.max(0.3,Math.min(3,Bmag*Math.exp(-e.deltaY*0.0012))); },{passive:true});
+addEventListener('keydown',e=>{
+  if(e.code==='Space'){ paused=!paused; e.preventDefault(); }
+  else if(e.code==='KeyF') Bsign=-Bsign;
+  else if(e.code==='ArrowUp'){ Bmag=Math.min(3,Bmag*1.12); e.preventDefault(); }
+  else if(e.code==='ArrowDown'){ Bmag=Math.max(0.3,Bmag/1.12); e.preventDefault(); }
+});
+resize();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
