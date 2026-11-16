@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pressed Light</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#040507; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:pointer; }
+  #hud { position:fixed; top:14px; left:16px; color:#ece4d4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#d8cfbf; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; press the disk a new way&nbsp;&nbsp;|&nbsp;&nbsp;wheel or &uarr;&darr; &mdash; squeeze harder or softer&nbsp;&nbsp;|&nbsp;&nbsp;P &mdash; change the polarisers&nbsp;&nbsp;|&nbsp;&nbsp;&larr;&rarr; &mdash; turn them&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Pressed light. A disk of clear plastic sits between two polarising filters and is squeezed at its rim.
+// Stress makes the plastic birefringent: light polarised along the two principal stress directions travels
+// at slightly different speeds, and the lag between them (the retardation) is proportional to the
+// difference of the principal stresses. Between crossed polarisers each wavelength is dimmed by
+// sin^2(pi * retardation / lambda), so white light comes out in the interference colours of Newton's
+// scale: black, grey, straw, orange, magenta, blue, green, and so on into the pale high-order whites.
+// Lines of equal colour (isochromatics) are lines of equal shear. With plain polarisers a second family of
+// dark bands appears wherever a principal stress lines up with the polariser (isoclinics), and these sweep
+// as the filters turn; quarter-wave plates (the circular polariscope) remove them.
+// The stress field is exact: each point load on the rim of a disk is a Flamant radial field
+// sigma_r = -2P cos(theta) / (pi r), and for loads that balance one another the sum of those fields plus a
+// uniform pressure (which no polariscope can see) satisfies every boundary condition of the disk.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2;
+
+// ---------- the colour of retardation ----------
+// CIE 1931 matching functions, multi-lobe gaussian fit (Wyman, Sloan & Shirley 2013).
+function g(x,m,s1,s2){ const t=(x-m)/(x<m?s1:s2); return Math.exp(-0.5*t*t); }
+const xb=l=>1.056*g(l,599.8,37.9,31.0)+0.362*g(l,442.0,16.0,26.7)-0.065*g(l,501.1,20.4,26.2);
+const yb=l=>0.821*g(l,568.8,46.9,40.5)+0.286*g(l,530.9,16.3,31.1);
+const zb=l=>1.217*g(l,437.0,11.8,36.0)+0.681*g(l,459.0,26.0,13.8);
+function xyz2rgb(X,Y,Z){ return [3.2406*X-1.5372*Y-0.4986*Z, -0.9689*X+1.8758*Y+0.0415*Z, 0.0557*X-0.2040*Y+1.0570*Z]; }
+const WL=[]; for(let l=380;l<=730;l+=4) WL.push(l);
+let wx=0,wy=0,wz=0; for(const l of WL){ wx+=xb(l); wy+=yb(l); wz+=zb(l); }
+const WHITE=xyz2rgb(wx/wy,1,wz/wy);
+const GMAX=6000, NL=3072, STEP=GMAX/NL, LEVELS=9;
+const lut0=new Float32Array(NL*3);
+for(let i=0;i<NL;i++){
+  const G=i*STEP; let X=0,Y=0,Z=0;
+  for(const l of WL){ const s=Math.sin(Math.PI*G/l), I=s*s; X+=I*xb(l); Y+=I*yb(l); Z+=I*zb(l); }
+  const c=xyz2rgb(X/wy,Y/wy,Z/wy);
+  for(let k=0;k<3;k++) lut0[i*3+k]=Math.max(0,c[k]/WHITE[k]);
+}
+// box-filtered copies so that fringes too fine for a pixel blend into their true average colour
+const LUT=[lut0];
+for(let L=1;L<LEVELS;L++){
+  const w=1<<(L+1), out=new Float32Array(NL*3), pre=new Float64Array((NL+1)*3);
+  for(let i=0;i<NL;i++) for(let k=0;k<3;k++) pre[(i+1)*3+k]=pre[i*3+k]+lut0[i*3+k];
+  for(let i=0;i<NL;i++){
+    const a=Math.max(0,i-w), b=Math.min(NL,i+w+1);
+    for(let k=0;k<3;k++) out[i*3+k]=(pre[b*3+k]-pre[a*3+k])/(b-a);
+  }
+  LUT.push(out);
+}
+const GAM=new Uint8ClampedArray(4096);
+for(let i=0;i<4096;i++){ const v=i/4095; GAM[i]=255*(v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055); }
+const LAMP=[1.0,0.965,0.9];  // a warm lamp behind the plastic
+
+// ---------- ways to press a disk ----------
+function rnd(a,b){ return a+Math.random()*(b-a); }
+const ARR=[
+  ()=>({name:'two jaws, across a diameter', loads:[{a:0,P:1},{a:Math.PI,P:1}]}),
+  ()=>({name:'three fingers, evenly', loads:[0,1,2].map(i=>({a:i*TAU/3,P:1.15}))}),
+  ()=>{ // three unequal fingers, magnitudes from the sine rule so they balance
+    const a1=0, a2=rnd(1.9,2.9), a3=a2+rnd(Math.max(1.9,TAU-a2-2.9),Math.min(2.9,TAU-a2-1.9));
+    const F=[Math.sin(a3-a2),Math.sin(a1-a3+TAU),Math.sin(a2-a1)].map(Math.abs), m=Math.max(...F);
+    return {name:'three fingers, unequal', loads:[a1,a2,a3].map((a,i)=>({a,P:1.25*F[i]/m}))};
+  },
+  ()=>{ const b=rnd(0.6,1.57), m=rnd(0.45,1);
+    return {name:'two clamps, crossed', loads:[{a:0,P:1},{a:Math.PI,P:1},{a:b,P:m},{a:b+Math.PI,P:m}]}; },
+  ()=>({name:'four fingers, square', loads:[0,1,2,3].map(i=>({a:i*TAU/4,P:1.2}))}),
+  ()=>({name:'five fingers, evenly', loads:[0,1,2,3,4].map(i=>({a:i*TAU/5,P:1.2}))}),
+  ()=>{ const out=[]; let a=rnd(0,1);
+    for(let k=0;k<3;k++){ const P=rnd(0.4,1.1); out.push({a,P},{a:a+Math.PI,P}); a+=rnd(0.6,1.3); }
+    return {name:'three clamps, uneven', loads:out}; },
+  ()=>({name:'six fingers, evenly', loads:[0,1,2,3,4,5].map(i=>({a:i*TAU/6,P:1.25}))}),
+];
+let arrIdx=0, cur=ARR[0](), next=null;
+let env=0, envDir=1, holdT=0;   // load envelope: presses in, holds, releases, changes
+
+// ---------- canvas ----------
+let W=0,H=0,DPR=1,N=0,img,off,octx,GA,CA,S2A,disk={cx:0,cy:0,r:0};
+function resize(){
+  DPR=Math.min(2,devicePixelRatio||1);
+  W=innerWidth; H=innerHeight; cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  disk.r=Math.min(W,H)*0.40; disk.cx=W/2; disk.cy=H/2+Math.min(W,H)*0.01;
+  N=Math.max(160,Math.min(720,Math.round(2*disk.r*1.06*Math.min(DPR,1.4))));
+  off=document.createElement('canvas'); off.width=N; off.height=N; octx=off.getContext('2d');
+  img=octx.createImageData(N,N);
+  GA=new Float32Array(N*N); CA=new Float32Array(N*N); S2A=new Float32Array(N*N);
+}
+addEventListener('resize',resize); resize();
+
+// ---------- state ----------
+let paused=false, t=0, last=performance.now(), squeeze=1, mode=0, alpha=0.35, alphaMan=-1e9, rot=0;
+const MODES=['circular polariscope, dark field','plane polariscope, crossed','circular polariscope, light field'];
+const KG=1250; // nm of retardation per unit stress difference (disk radius 1, unit load)
+
+function bgColor(){ // linear
+  if(mode===2) return [0.82*LAMP[0],0.82*LAMP[1],0.82*LAMP[2]];
+  return [0.0016,0.0018,0.0024];
+}
+
+function render(loads){
+  const half=N/2, sc=1.06; // offscreen spans [-1.06,1.06]
+  const n=loads.length, ax=new Float64Array(n), ay=new Float64Array(n), pc=new Float64Array(n);
+  for(let i=0;i<n;i++){ ax[i]=Math.cos(loads[i].a); ay[i]=Math.sin(loads[i].a); pc[i]=-2*loads[i].P/Math.PI; }
+  // pass 1: stress
+  for(let j=0;j<N;j++){
+    const y=((j+0.5)/half-1)*sc;
+    for(let i=0;i<N;i++){
+      const x=((i+0.5)/half-1)*sc, k=j*N+i;
+      if(x*x+y*y>1.0006){ GA[k]=-1; continue; }
+      let sxx=0,syy=0,sxy=0;
+      for(let q=0;q<n;q++){
+        const dx=x-ax[q], dy=y-ay[q], r2=dx*dx+dy*dy+1e-7;
+        const dn=-(dx*ax[q]+dy*ay[q]);            // component along the inward normal
+        const c=pc[q]*dn/(r2*r2);
+        sxx+=c*dx*dx; syy+=c*dy*dy; sxy+=c*dx*dy;
+      }
+      const d=sxx-syy, D=Math.sqrt(d*d+4*sxy*sxy)+1e-12;
+      GA[k]=KG*D; const c2=d/D, s2=2*sxy/D;
+      CA[k]=c2*c2-s2*s2; S2A[k]=2*c2*s2;          // cos 4phi, sin 4phi
+    }
+  }
+  // pass 2: colour
+  const data=img.data;
+  const ca=Math.cos(4*alpha), sa=Math.sin(4*alpha);
+  const ex=mode===2?0.95:1.35;
+  for(let j=0;j<N;j++){
+    const y=((j+0.5)/half-1)*sc;
+    for(let i=0;i<N;i++){
+      const k=j*N+i, p=k*4, G=GA[k];
+      if(G<0){ data[p+3]=0; continue; }
+      const gr=Math.max(i+1<N&&GA[k+1]>=0?Math.abs(GA[k+1]-G):0, i>0&&GA[k-1]>=0?Math.abs(GA[k-1]-G):0,
+                        j+1<N&&GA[k+N]>=0?Math.abs(GA[k+N]-G):0, j>0&&GA[k-N]>=0?Math.abs(GA[k-N]-G):0);
+      let L=0, w=gr/STEP*0.7; while(w>2&&L<LEVELS-1){ w*=0.5; L++; }
+      let r,gg,b;
+      if(G>=GMAX-STEP*2){ r=gg=b=0.5; }
+      else {
+        const fi=G/STEP, i0=fi|0, f=fi-i0, T=LUT[L], o=i0*3;
+        r=T[o]+(T[o+3]-T[o])*f; gg=T[o+1]+(T[o+4]-T[o+1])*f; b=T[o+2]+(T[o+5]-T[o+2])*f;
+        if(G>GMAX*0.8){ const m=(G-GMAX*0.8)/(GMAX*0.2); r+=(0.5-r)*m; gg+=(0.5-gg)*m; b+=(0.5-b)*m; }
+      }
+      if(mode===1){ const iso=0.5*(1-(CA[k]*ca+S2A[k]*sa)); r*=iso; gg*=iso; b*=iso; }
+      else if(mode===2){ r=1-r; gg=1-gg; b=1-b; }
+      r*=ex*LAMP[0]; gg*=ex*LAMP[1]; b*=ex*LAMP[2];
+      // soft shoulder so bright orders keep their hue
+      r=r/(1+0.18*r); gg=gg/(1+0.18*gg); b=b/(1+0.18*b);
+      // anti-aliased rim
+      const x=((i+0.5)/half-1)*sc, rr=Math.sqrt(x*x+y*y), edge=Math.min(1,Math.max(0,(1-rr)*half/sc+0.5));
+      data[p]=GAM[Math.min(4095,(r*4095)|0)]; data[p+1]=GAM[Math.min(4095,(gg*4095)|0)];
+      data[p+2]=GAM[Math.min(4095,(b*4095)|0)]; data[p+3]=255*edge;
+    }
+  }
+  octx.putImageData(img,0,0);
+}
+
+function drawPads(loads){
+  for(const L of loads){
+    if(L.P<0.01) continue;
+    const ux=Math.cos(L.a), uy=Math.sin(L.a), R=disk.r;
+    const press=Math.min(1,L.P/1.4);
+    const wPad=R*(0.035+0.03*press), len=R*0.16, gap=R*(0.004-0.004*press);
+    ctx.save();
+    ctx.translate(disk.cx+ux*(R+gap), disk.cy+uy*(R+gap));
+    ctx.rotate(L.a);
+    // a steel jaw: rounded nose against the rim, body outward
+    const grd=ctx.createLinearGradient(0,-wPad,0,wPad);
+    if(mode===2){ grd.addColorStop(0,'#3a3836'); grd.addColorStop(0.5,'#5d5a55'); grd.addColorStop(1,'#2a2826'); }
+    else { grd.addColorStop(0,'#15171b'); grd.addColorStop(0.45,'#4a4e57'); grd.addColorStop(1,'#0c0d10'); }
+    ctx.fillStyle=grd;
+    ctx.beginPath();
+    ctx.moveTo(len,-wPad*1.6); ctx.lineTo(wPad*1.2,-wPad*1.6);
+    ctx.quadraticCurveTo(0,-wPad*0.9,0,0); ctx.quadraticCurveTo(0,wPad*0.9,wPad*1.2,wPad*1.6);
+    ctx.lineTo(len,wPad*1.6); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle=mode===2?'rgba(255,255,255,0.25)':'rgba(220,225,235,0.18)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(!paused){
+    t+=dt; rot+=dt*0.035;
+    if(now-alphaMan>6000) alpha+=dt*0.09;
+    if(envDir>0){ env=Math.min(1,env+dt/2.2); if(env>=1){ holdT+=dt; if(holdT>20){ envDir=-1; } } }
+    else { env=Math.max(0,env-dt/1.6); if(env<=0){ if(!next){ arrIdx=(arrIdx+1)%ARR.length; next=ARR[arrIdx](); } cur=next; next=null; envDir=1; holdT=0; rot=Math.random()*TAU; } }
+  }
+  const e=env*env*(3-2*env);
+  const breathe=0.78+0.22*Math.sin(t*0.42)+0.06*Math.sin(t*1.13);
+  const loads=cur.loads.map(L=>({a:L.a+rot, P:L.P*e*breathe*squeeze}));
+  render(loads);
+  const bg=bgColor(), bgc=bg.map(v=>GAM[Math.min(4095,(v*4095)|0)]);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle=`rgb(${bgc[0]},${bgc[1]},${bgc[2]})`; ctx.fillRect(0,0,W,H);
+  if(mode!==2){ // faint glow of the lamp leaking round the filters
+    const gl=ctx.createRadialGradient(disk.cx,disk.cy,disk.r*0.9,disk.cx,disk.cy,disk.r*1.9);
+    gl.addColorStop(0,'rgba(40,44,60,0.22)'); gl.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=gl; ctx.fillRect(0,0,W,H);
+  }
+  const span=disk.r*1.06;
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,disk.cx-span,disk.cy-span,span*2,span*2);
+  // rim sheen
+  ctx.beginPath(); ctx.arc(disk.cx,disk.cy,disk.r,0,TAU);
+  ctx.strokeStyle=mode===2?'rgba(60,55,50,0.35)':'rgba(190,200,230,0.16)'; ctx.lineWidth=1.2; ctx.stroke();
+  drawPads(loads);
+  if(mode===1){ // polariser axes
+    ctx.save(); ctx.translate(disk.cx,disk.cy);
+    const R=disk.r*1.12;
+    for(const [ang,col] of [[alpha,'rgba(240,220,180,0.35)'],[alpha+Math.PI/2,'rgba(170,200,240,0.35)']]){
+      ctx.strokeStyle=col; ctx.lineWidth=1;
+      for(const s of [1,-1]){ ctx.beginPath(); ctx.moveTo(s*Math.cos(ang)*R,s*Math.sin(ang)*R);
+        ctx.lineTo(s*Math.cos(ang)*(R+disk.r*0.07),s*Math.sin(ang)*(R+disk.r*0.07)); ctx.stroke(); }
+    }
+    ctx.restore();
+  }
+  const maxP=loads.reduce((m,L)=>Math.max(m,L.P),0);
+  hud.innerHTML=`pressed light<br>${cur.name}<br>${MODES[mode]}`+
+    (mode===1?`<br>polariser at ${(((alpha*180/Math.PI)%180)+180)%180|0}&deg;`:'')+
+    `<br>load ${maxP.toFixed(2)}${paused?'<br>paused':''}`;
+  hud.style.color=mode===2?'#2a2620':'#ece4d4'; hud.style.textShadow=mode===2?'none':'0 0 6px rgba(0,0,0,0.95)';
+  document.getElementById('hint').style.color=mode===2?'#2a2620':'#d8cfbf';
+  document.getElementById('hint').style.textShadow=mode===2?'none':'0 0 6px #000';
+  requestAnimationFrame(frame);
+}
+
+function newPress(){ arrIdx=(arrIdx+1)%ARR.length; next=ARR[arrIdx](); envDir=-1; }
+cv.addEventListener('click',newPress);
+addEventListener('wheel',e=>{ squeeze=Math.max(0.25,Math.min(3,squeeze*Math.exp(-e.deltaY*0.0012))); e.preventDefault(); },{passive:false});
+addEventListener('keydown',e=>{
+  if(e.key===' '){ paused=!paused; e.preventDefault(); }
+  else if(e.key==='p'||e.key==='P') mode=(mode+1)%3;
+  else if(e.key==='ArrowUp'){ squeeze=Math.min(3,squeeze*1.12); e.preventDefault(); }
+  else if(e.key==='ArrowDown'){ squeeze=Math.max(0.25,squeeze/1.12); e.preventDefault(); }
+  else if(e.key==='ArrowLeft'){ alpha-=0.06; alphaMan=performance.now(); }
+  else if(e.key==='ArrowRight'){ alpha+=0.06; alphaMan=performance.now(); }
+});
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,22 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-16** — `2026-11-16-pressed-light.html`: a hundred-and-third
+  technique, and the archive's first photoelastic study. A disk of clear
+  plastic sits between polarising filters and is squeezed at its rim by steel
+  jaws: two across a diameter, three or five evenly, unequal fingers balanced
+  by the sine rule, crossed clamps. Stress makes the plastic birefringent, and
+  each wavelength of a warm lamp is dimmed by sin² of the lag, so the disk fills
+  with Newton's interference colours (black, grey, straw, magenta, blue, green
+  into pale high-order white), every fringe a line of equal shear, crowding
+  into the load points. The stress field is exact: a Flamant radial field for
+  each load, summed. Fringes too fine for a pixel blend into their true average
+  colour. The loads breathe, release and press anew. Plane polarisers add dark
+  isoclinic bands that sweep as the filters turn; light field inverts it all
+  onto a bright ground. Click for a new way to press, wheel or arrow keys to
+  squeeze, P to change the polarisers, left and right to turn them, space to
+  pause. Open the file directly in a browser.
+
 - **2026-11-15** — `2026-11-15-spent-tracks.html`: a hundred-and-second
   technique, and the archive's first bubble chamber. Every few seconds a burst
   of beam pions crosses superheated hydrogen in a magnetic field, and each
