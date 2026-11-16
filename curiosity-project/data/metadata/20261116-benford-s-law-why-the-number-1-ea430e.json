@@ -1,0 +1,14 @@
+{
+  "id": "20261116-benford-s-law-why-the-number-1-ea430e",
+  "date": "2026-11-16T10:10:57.484401",
+  "title": "Benford's Law: Why the Number 1 Leads the World",
+  "question": "Why do so many real-world numbers start with the digit 1, and what does that reveal about how quantities grow?",
+  "summary": "Across populations, river lengths and financial data, about 30% of numbers start with 1. This exploration traces Benford's law to logarithms, scale invariance and multiplicative growth, and looks at how it catches fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "logarithms",
+    "forensics"
+  ]
+}
