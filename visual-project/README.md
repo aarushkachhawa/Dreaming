@@ -24,6 +24,22 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-17** — `2026-11-17-back-to-the-sun.html`: a hundred-and-fourth
+  technique, and the archive's first rainbow. A shower drifts across a dark
+  cloud bank while the low sun, behind you, lights the hills; the bow rings the
+  antisolar point, the shadow of your own head. Each drop turns light back at
+  an extreme angle and, because light is a wave, the brightness near that
+  caustic is Airy's function squared: a main band, fainter supernumerary bands
+  on its lit side, then darkness. Every wavelength gets its own pattern from
+  the refractive index of water, weighted by a sun reddened by the air it has
+  crossed, mixed into colour through the CIE observer and smeared by the
+  sun's half-degree disk and a spread of drop sizes. One internal reflection
+  gives the primary at 42 degrees, two give the fainter, reversed secondary at
+  51, and Alexander's dark band lies between them. Big drops make a narrow vivid
+  bow; drizzle widens the bands until the bow fades to a pale fogbow. Click for
+  a new shower, wheel or up and down to change the drop size, left and right to
+  lower or raise the sun, space to pause. Open the file directly in a browser.
+
 - **2026-11-16** — `2026-11-16-pressed-light.html`: a hundred-and-third
   technique, and the archive's first photoelastic study. A disk of clear
   plastic sits between polarising filters and is squeezed at its rim by steel

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Back to the Sun</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#0b0d11; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:pointer; }
+  #hud { position:fixed; top:14px; left:16px; color:#efe8da; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#f2ecdf; opacity:.6; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000, 0 0 2px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; a new shower&nbsp;&nbsp;|&nbsp;&nbsp;wheel or &uarr;&darr; &mdash; bigger or smaller drops&nbsp;&nbsp;|&nbsp;&nbsp;&larr;&rarr; &mdash; lower or raise the sun&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Back to the sun. A rainbow is only ever seen with the sun behind you: it is a ring of light centred on
+// the antisolar point, the shadow of your own head. Sunlight enters each falling drop, reflects once
+// inside (the primary bow, ~42 degrees from the antisolar point) or twice (the secondary, ~51 degrees),
+// and comes back out. Ray optics says the turning angle has an extremum there, so light piles up into a
+// caustic; but light is a wave, and near a caustic the wavefront leaving the drop is cubic. Airy (1838)
+// showed that the brightness is then the square of the function that now bears his name: a bright main
+// band, then fainter supernumerary bands on the lit side, then darkness. The angle of the caustic
+// depends on the refractive index of water, which depends on wavelength, so each colour has its own
+// bow; the width of the bands scales as (drop radius / wavelength)^(-2/3), so big drops give a narrow
+// vivid bow with tight supernumeraries and fine drizzle gives a broad pale fogbow. Between the two bows
+// neither sends light back: Alexander's dark band. Here each wavelength's Airy pattern is computed for
+// the current drop size, weighted by a sun whose light has crossed the air (warmer when low), turned
+// into colour through the CIE observer, and smeared by the half-degree disk of the sun.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2, DEG=Math.PI/180;
+
+// ---------- Airy function, squared ----------
+const AH=0.0025, AZN=40, AZP=6, A0=Math.round(AZN/AH), ANUM=Math.round((AZN+AZP)/AH)+1;
+const AI2=new Float32Array(ANUM);
+(function(){
+  const step=(h,y,dy,z)=>{ // y''=z y, RK4
+    const k1y=dy, k1v=z*y;
+    const k2y=dy+0.5*h*k1v, k2v=(z+0.5*h)*(y+0.5*h*k1y);
+    const k3y=dy+0.5*h*k2v, k3v=(z+0.5*h)*(y+0.5*h*k2y);
+    const k4y=dy+h*k3v, k4v=(z+h)*(y+h*k3y);
+    return [y+h*(k1y+2*k2y+2*k3y+k4y)/6, dy+h*(k1v+2*k2v+2*k3v+k4v)/6];
+  };
+  for(const dir of [1,-1]){
+    let y=0.355028053887817, dy=-0.258819403792807, z=0, i=A0;
+    AI2[i]=y*y;
+    while(true){
+      [y,dy]=step(dir*AH,y,dy,z); z+=dir*AH; i+=dir;
+      if(i<0||i>=ANUM) break; AI2[i]=y*y;
+    }
+  }
+})();
+// Ai(z)^2, with the fast oscillations averaged out when they are finer than the sampling (pS = samples per period scale)
+function ai2(z,cs){
+  if(z>=AZP) return 0;
+  if(z>-2){ const f=(z+AZN)/AH, i=f|0, r=f-i; return AI2[i]+(AI2[i+1]-AI2[i])*r; }
+  const x=-z, sx=Math.sqrt(x), per=Math.PI/(sx*cs);       // period, in samples
+  const m=Math.min(1,Math.max(0,(5-per)/3));
+  if(m<=0&&x<AZN){ const f=(z+AZN)/AH, i=f|0, r=f-i; return AI2[i]+(AI2[i+1]-AI2[i])*r; }
+  const base=1/(Math.PI*sx);
+  if(m>=1) return 0.5*base;
+  const s=Math.sin((2/3)*x*sx+Math.PI/4);
+  return base*((1-m)*s*s+m*0.5);
+}
+
+// ---------- colour ----------
+function g(x,m,s1,s2){ const t=(x-m)/(x<m?s1:s2); return Math.exp(-0.5*t*t); }
+const xb=l=>1.056*g(l,599.8,37.9,31.0)+0.362*g(l,442.0,16.0,26.7)-0.065*g(l,501.1,20.4,26.2);
+const yb=l=>0.821*g(l,568.8,46.9,40.5)+0.286*g(l,530.9,16.3,31.1);
+const zb=l=>1.217*g(l,437.0,11.8,36.0)+0.681*g(l,459.0,26.0,13.8);
+const xyz2rgb=(X,Y,Z)=>[3.2406*X-1.5372*Y-0.4986*Z, -0.9689*X+1.8758*Y+0.0415*Z, 0.0557*X-0.2040*Y+1.0570*Z];
+const WL=[]; for(let l=382;l<=718;l+=6) WL.push(l);
+const NW=WL.length, CX=WL.map(xb), CY=WL.map(yb), CZ=WL.map(zb);
+function planck(l,T){ const lm=l*1e-9; return 1/(Math.pow(lm,5)*(Math.exp(1.4388e-2/(lm*T))-1)); }
+function sunSpectrum(elev){
+  const e=Math.max(0.3,elev/DEG);
+  const m=1/(Math.sin(e*DEG)+0.50572*Math.pow(e+6.07995,-1.6364));   // Kasten & Young air mass
+  return WL.map(l=>{ const um=l/1000; const tau=0.0088*Math.pow(um,-4.05)+0.07*Math.pow(l/550,-1.3);
+    return planck(l,5778)*Math.exp(-tau*m); });
+}
+const REF=(function(){ const S=sunSpectrum(90*DEG); let X=0,Y=0,Z=0;
+  for(let k=0;k<NW;k++){ X+=S[k]*CX[k]; Y+=S[k]*CY[k]; Z+=S[k]*CZ[k]; }
+  return {Y, rgb:xyz2rgb(X/Y,1,Z/Y)}; })();
+function spectrumRGB(S){ let X=0,Y=0,Z=0; for(let k=0;k<NW;k++){ X+=S[k]*CX[k]; Y+=S[k]*CY[k]; Z+=S[k]*CZ[k]; }
+  const c=xyz2rgb(X/REF.Y,Y/REF.Y,Z/REF.Y); return c.map((v,i)=>Math.max(0,v/REF.rgb[i])); }
+const GAM=new Uint8ClampedArray(4096);
+for(let i=0;i<4096;i++){ const v=i/4095; GAM[i]=255*(v<=0.0031308?12.92*v:1.055*Math.pow(v,1/2.4)-0.055); }
+const toByte=v=>GAM[Math.min(4095,Math.max(0,v*4095)|0)];
+
+// ---------- geometry of a drop ----------
+const nWater=l=>1.3238+3046/(l*l);
+function psiOf(u,n,p){ const i=Math.asin(u), r=Math.asin(u/n); const D=2*(i-r)+p*(Math.PI-2*r); return p===1?Math.PI-D:D-Math.PI; }
+const ORD=[1,2].map(p=>{
+  const R=new Float64Array(NW), K=new Float64Array(NW), S=new Float64Array(NW);
+  for(let k=0;k<NW;k++){
+    const n=nWater(WL[k]), s=p===1?1:-1;
+    let a=0.3, b=0.9995; const gr=0.6180339887;
+    for(let it=0;it<80;it++){ const c=b-gr*(b-a), d=a+gr*(b-a); if(s*psiOf(c,n,p)>s*psiOf(d,n,p)) b=d; else a=c; }
+    const u=0.5*(a+b), h=1e-3;
+    const d2=(psiOf(u+h,n,p)-2*psiOf(u,n,p)+psiOf(u-h,n,p))/(h*h);
+    R[k]=psiOf(u,n,p); K[k]=Math.cbrt(2/Math.abs(d2)); S[k]=-Math.sign(d2);
+  }
+  return {p,R,K,S,F:p===1?1:0.2};
+});
+
+// ---------- the bow as a function of angle from the antisolar point ----------
+const PMAX=66, DP=0.02, NP=Math.round(PMAX/DP)+1;
+const BOW=new Float32Array(NP*3), TMP=new Float32Array(NP*3), SPEC=new Float32Array(NW);
+const CREF=Math.pow(TAU*0.3e-3/550e-9,2/3)*ORD[0].K[Math.round((550-382)/6)];
+function buildBow(aMM,elev){
+  const S=sunSpectrum(elev), a=aMM*1e-3, dpr=DP*DEG;
+  TMP.fill(0);
+  // real rain is a spread of sizes, which washes out the outer supernumeraries
+  for(const [fa,wa] of [[0.78,0.2],[0.9,0.25],[1,0.3],[1.12,0.25],[1.28,0.2]]){
+  const Cs=WL.map(l=>Math.pow(TAU*a*fa/(l*1e-9),2/3));
+  for(const O of ORD){
+    for(let k=0;k<NW;k++){
+      const C=Cs[k]*O.K[k], R=O.R[k], sg=O.S[k], cs=C*dpr;
+      const amp=wa/1.2*O.F*S[k]*Math.pow(C/CREF,0.65)/REF.Y;
+      const ax=amp*CX[k], ay=amp*CY[k], az=amp*CZ[k];
+      for(let j=0;j<NP;j++){
+        const z=sg*(j*dpr-R)*C, A=ai2(z,cs);
+        if(A===0) continue;
+        TMP[j*3]+=A*ax; TMP[j*3+1]+=A*ay; TMP[j*3+2]+=A*az;
+      }
+    }
+  }
+  }
+  // XYZ -> rgb, then the sun's half-degree disk
+  for(let j=0;j<NP;j++){ const c=xyz2rgb(TMP[j*3],TMP[j*3+1],TMP[j*3+2]);
+    TMP[j*3]=c[0]/REF.rgb[0]; TMP[j*3+1]=c[1]/REF.rgb[1]; TMP[j*3+2]=c[2]/REF.rgb[2]; }
+  const KR=Math.round(0.266/DP), ker=[]; let ks=0;
+  for(let d=-KR;d<=KR;d++){ const q=d/(KR+0.5), w=Math.sqrt(Math.max(0,1-q*q))*(0.4+0.6*Math.sqrt(Math.max(0,1-q*q))); ker.push(w); ks+=w; }
+  for(let j=0;j<NP;j++){
+    let r=0,gg=0,b=0;
+    for(let d=-KR;d<=KR;d++){ const jj=Math.min(NP-1,Math.max(0,j+d)), w=ker[d+KR]; r+=w*TMP[jj*3]; gg+=w*TMP[jj*3+1]; b+=w*TMP[jj*3+2]; }
+    r/=ks; gg/=ks; b/=ks;
+    const Y=0.2126*r+0.7152*gg+0.0722*b, mn=Math.min(r,gg,b);
+    if(mn<0&&Y>0){ const t=Y/(Y-mn); r=Y+(r-Y)*t; gg=Y+(gg-Y)*t; b=Y+(b-Y)*t; }
+    const ang=j*DP, fe=ang>56?Math.max(0,1-(ang-56)/(PMAX-1-56)):1, fade=fe*fe*(3-2*fe);
+    BOW[j*3]=Math.max(0,r)*fade; BOW[j*3+1]=Math.max(0,gg)*fade; BOW[j*3+2]=Math.max(0,b)*fade;
+  }
+  return spectrumRGB(S);
+}
+
+// ---------- noise ----------
+let seed=1;
+function rng(){ seed=(seed*1664525+1013904223)>>>0; return seed/4294967296; }
+const NT=256, NOISE=new Float32Array(NT*NT);
+(function(){
+  const oct=[[8,0.5],[16,0.25],[32,0.14],[64,0.07],[128,0.04]];
+  for(const [f,amp] of oct){
+    const gv=new Float32Array((f+1)*(f+1)); for(let i=0;i<gv.length;i++) gv[i]=Math.random();
+    for(let x=0;x<=f;x++) gv[f*(f+1)+x]=gv[x]; for(let y=0;y<=f;y++) gv[y*(f+1)+f]=gv[y*(f+1)];
+    for(let y=0;y<NT;y++) for(let x=0;x<NT;x++){
+      const fx=x*f/NT, fy=y*f/NT, ix=fx|0, iy=fy|0; let tx=fx-ix, ty=fy-iy;
+      tx=tx*tx*(3-2*tx); ty=ty*ty*(3-2*ty);
+      const v00=gv[iy*(f+1)+ix], v10=gv[iy*(f+1)+ix+1], v01=gv[(iy+1)*(f+1)+ix], v11=gv[(iy+1)*(f+1)+ix+1];
+      NOISE[y*NT+x]+=amp*((v00*(1-tx)+v10*tx)*(1-ty)+(v01*(1-tx)+v11*tx)*ty);
+    }
+  }
+})();
+function noise(x,y){ x=((x%NT)+NT)%NT; y=((y%NT)+NT)%NT; const ix=x|0, iy=y|0, tx=x-ix, ty=y-iy, jx=(ix+1)%NT, jy=(iy+1)%NT;
+  return (NOISE[iy*NT+ix]*(1-tx)+NOISE[iy*NT+jx]*tx)*(1-ty)+(NOISE[jy*NT+ix]*(1-tx)+NOISE[jy*NT+jx]*tx)*ty; }
+
+// ---------- canvas and camera ----------
+let W=0,H=0,DPR=1,SC=1,RW=0,RH=0,off,octx,img,f=1,yh=0,hills=[];
+let COLX,COLAZ,ROWEL,ELM,CPA,CPB,PSI,psiFor=-1; // per-column tan(az), per-row; per-pixel elevation, cos(psi) parts
+function resize(){
+  DPR=Math.min(2,devicePixelRatio||1);
+  W=innerWidth; H=innerHeight; cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  yh=H*0.72; f=Math.min(yh/Math.tan(57*DEG), W/(2*Math.tan(64*DEG)));
+  SC=Math.min(1,Math.sqrt(420000/(W*H)));
+  RW=Math.max(64,Math.round(W*SC)); RH=Math.max(48,Math.round(H*SC));
+  off=document.createElement('canvas'); off.width=RW; off.height=RH; octx=off.getContext('2d');
+  img=octx.createImageData(RW,RH);
+  COLX=new Float32Array(RW); COLAZ=new Float32Array(RW);
+  for(let i=0;i<RW;i++){ COLX[i]=((i+0.5)/SC-W/2)/f; COLAZ[i]=Math.atan(COLX[i]); }
+  ROWEL=new Float32Array(RH); for(let j=0;j<RH;j++) ROWEL[j]=(yh-(j+0.5)/SC)/f;
+  ELM=new Float32Array(RW*RH); CPA=new Float32Array(RW*RH); CPB=new Float32Array(RW*RH); PSI=new Float32Array(RW*RH); psiFor=-1;
+  for(let j=0;j<RH;j++) for(let i=0;i<RW;i++){ const X=COLX[i], Y=ROWEL[j], inv=1/Math.sqrt(X*X+Y*Y+1), k=j*RW+i;
+    ELM[k]=Math.asin(Y*inv); CPA[k]=-Y*inv; CPB[k]=inv; }
+  makeHills();
+}
+function ridge(n,rough,amp,base,s){
+  const pts=[]; const ph=[rng()*TAU,rng()*TAU,rng()*TAU,rng()*TAU];
+  for(let i=0;i<=n;i++){
+    const x=i/n; let y=0;
+    y+=Math.sin(x*TAU*0.7*s+ph[0])*0.5+Math.sin(x*TAU*1.9*s+ph[1])*0.27*rough+Math.sin(x*TAU*4.3*s+ph[2])*0.12*rough+Math.sin(x*TAU*9.7*s+ph[3])*0.05*rough;
+    pts.push([x*W, base-amp*(0.5+0.5*y)]);
+  }
+  return pts;
+}
+function makeHills(){
+  seed=7919;
+  hills=[
+    {pts:ridge(160,1.0,H*0.06,yh+H*0.004,1.3), col:[0.16,0.22,0.26], alpha:0.8, haze:0.55},
+    {pts:ridge(160,0.8,H*0.05,yh+H*0.05,1.0), col:[0.10,0.20,0.05], alpha:1, haze:0.18},
+    {pts:ridge(160,0.5,H*0.07,yh+H*0.17,0.6), col:[0.26,0.46,0.05], alpha:1, haze:0.0},
+  ];
+  const mid=hills[1].pts; hills[1].trees=[];
+  for(let k=0;k<26;k++){ const i=(rng()*mid.length)|0; hills[1].trees.push({x:mid[i][0], y:mid[i][1], s:H*(0.012+0.02*rng()), c:rng()<0.6}); }
+  const near=hills[2].pts; hills[2].trees=[];
+  for(let k=0;k<5;k++){ const i=(rng()*near.length)|0; hills[2].trees.push({x:near[i][0], y:near[i][1], s:H*(0.03+0.04*rng()), c:rng()<0.4}); }
+}
+addEventListener('resize',resize); resize();
+
+// ---------- the weather ----------
+let showers=[];
+function newShowers(){
+  showers=[]; const n=2+(Math.random()*3|0);
+  for(let k=0;k<n;k++) showers.push({c:(Math.random()*2-1)*1.1, w:0.25+Math.random()*0.55, A:0.55+Math.random()*0.6, v:(Math.random()<0.5?-1:1)*(0.004+Math.random()*0.01)});
+}
+newShowers();
+const DROPS=[0.5,0.22,1.0,0.07,0.028,0.35,1.6,0.12];
+let dropI=0, aLog=Math.log(0.5), aTarget=Math.log(0.5), aManual=-1e9;
+let elev=16*DEG, elevManual=-1e9, t=0, last=performance.now(), paused=false, rebuildT=0, sunRGB=[1,1,1];
+let rainCol=new Float32Array(1), streaks=[];
+for(let k=0;k<340;k++) streaks.push({x:Math.random(), y:Math.random(), v:0.6+Math.random()*0.8, l:0.02+Math.random()*0.05});
+
+function render(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  if(!paused){
+    t+=dt;
+    for(const s of showers){ s.c+=s.v*dt; if(s.c>1.6) s.c=-1.6; if(s.c<-1.6) s.c=1.6; }
+    if(now-aManual>9000){
+      if(Math.abs(aLog-aTarget)<0.01 && (t%26)<dt){ dropI=(dropI+1)%DROPS.length; aTarget=Math.log(DROPS[dropI]); }
+      aLog+=(aTarget-aLog)*Math.min(1,dt*0.35);
+    }
+    if(now-elevManual>9000){ const target=(15+11*Math.sin(t*0.017))*DEG; elev+=(target-elev)*Math.min(1,dt*0.2); }
+  }
+  rebuildT-=dt;
+  if(rebuildT<=0){ sunRGB=buildBow(Math.exp(aLog),elev); rebuildT=paused?1e9:0.15; }
+
+  // shower strength by column
+  if(rainCol.length!==RW) rainCol=new Float32Array(RW);
+  for(let i=0;i<RW;i++){
+    const az=COLAZ[i]; let s=0.12+0.25*noise(az*40+t*0.6,7.3);
+    for(const sh of showers){ const d=(az-sh.c)/sh.w; s+=sh.A*Math.exp(-d*d); }
+    rainCol[i]=Math.min(1.15,s);
+  }
+  // sky
+  const data=img.data, se=Math.sin(elev), ce=Math.cos(elev);
+  const sunI=Math.max(0.15,(sunRGB[0]+sunRGB[1]+sunRGB[2])/3);
+  const lit=Math.min(1,Math.max(0,elev/DEG/6));        // how strongly the sun reaches the scene
+  const bowGain=2.1;
+  if(psiFor!==elev){ psiFor=elev; for(let k=0;k<PSI.length;k++){ const c=CPA[k]*se+CPB[k]*ce; PSI[k]=Math.acos(c>1?1:c<-1?-1:c)/DEG; } }
+  for(let j=0;j<RH;j++){
+    if(ROWEL[j]< -0.22){ // under the land, which is drawn on top
+      for(let i=0;i<RW;i++){ const p=(j*RW+i)*4; data[p]=data[p+1]=data[p+2]=20; data[p+3]=255; } continue; }
+    for(let i=0;i<RW;i++){
+      const kk=j*RW+i, elev2=ELM[kk];
+      // clouds: a dark shower bank, lighter and sunlit higher up
+      const az=COLAZ[i];
+      const n1=noise(az*90+t*0.9, elev2*130+t*0.25), n2=noise(az*160-t*1.6, elev2*30+40);
+      const hb=elev2-0.66-0.55*(n1-0.5)-0.25*(noise(az*260+t*1.2,elev2*260)-0.5);
+      const hi=Math.min(1,Math.max(0,hb/0.07));
+      const rain=rainCol[i]*Math.min(1,Math.max(0,1-(elev2-0.85)/0.4))*(0.75+0.5*n2);
+      let r=0.034+0.03*n1, gg=0.042+0.032*n1, b=0.060+0.04*n1;
+      const dk=1-0.4*Math.min(1,rain);
+      r*=dk; gg*=dk; b*=dk;
+      // distant brightness at the horizon under the cloud base
+      const hz=Math.exp(-Math.max(0,elev2)/0.06)*0.6;
+      r+=hz*0.11*sunRGB[0]*lit; gg+=hz*0.11*sunRGB[1]*lit; b+=hz*0.12*sunRGB[2]*lit;
+      // sunlit cloud tops
+      const ct=hi*(0.18+0.9*Math.max(0,n1-0.25))*(0.25+0.75*lit)*Math.min(1,(elev2-0.5)/0.4);
+      r+=ct*0.75*sunRGB[0]; gg+=ct*0.72*sunRGB[1]; b+=ct*0.70*sunRGB[2];
+      // the light the rain sends back
+      const pd=PSI[kk];
+      if(pd<PMAX-0.05){
+        const fj=pd*(1/DP), jj=fj|0, fr=fj-jj, o=jj*3;
+        const k=bowGain*rain*lit;
+        r+=k*(BOW[o]+(BOW[o+3]-BOW[o])*fr); gg+=k*(BOW[o+1]+(BOW[o+4]-BOW[o+1])*fr); b+=k*(BOW[o+2]+(BOW[o+5]-BOW[o+2])*fr);
+      }
+      r+=0.012*rain*sunRGB[0]*lit; gg+=0.012*rain*sunRGB[1]*lit; b+=0.012*rain*sunRGB[2]*lit;
+      // gentle shoulder
+      r=r/(1+0.35*r); gg=gg/(1+0.35*gg); b=b/(1+0.35*b);
+      const p=(j*RW+i)*4;
+      data[p]=toByte(r); data[p+1]=toByte(gg); data[p+2]=toByte(b); data[p+3]=255;
+    }
+  }
+  octx.putImageData(img,0,0);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0,W,H);
+
+  // falling rain, faintly lit
+  ctx.lineCap='round';
+  for(const s of streaks){
+    if(!paused){ s.y+=s.v*dt*0.9; if(s.y>1){ s.y=-s.l; s.x=Math.random(); } }
+    const ci=Math.min(RW-1,Math.max(0,(s.x*RW)|0)), rr=rainCol[ci];
+    const y0=s.y*yh, x0=s.x*W;
+    if(rr<0.3) continue;
+    ctx.strokeStyle=`rgba(${215*sunRGB[0]|0},${222*sunRGB[1]|0},${232*sunRGB[2]|0},${0.05*rr*(0.3+0.7*lit)})`;
+    ctx.lineWidth=0.8; ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0-s.l*H*0.12,y0+s.l*H); ctx.stroke();
+  }
+  // land, lit from behind the viewer
+  for(let h=0;h<hills.length;h++){
+    const Hh=hills[h], c=Hh.col, L=0.25+0.95*lit, hz=Hh.haze;
+    const cr=[c[0]*sunRGB[0]*L*(1-hz)+hz*0.05, c[1]*sunRGB[1]*L*(1-hz)+hz*0.065, c[2]*sunRGB[2]*L*(1-hz)+hz*0.085];
+    const top=Math.min(...Hh.pts.map(q=>q[1]));
+    const grd=ctx.createLinearGradient(0,top,0,H);
+    grd.addColorStop(0,`rgb(${toByte(cr[0])},${toByte(cr[1])},${toByte(cr[2])})`);
+    grd.addColorStop(1,`rgb(${toByte(cr[0]*0.45)},${toByte(cr[1]*0.45)},${toByte(cr[2]*0.45)})`);
+    ctx.globalAlpha=Hh.alpha; ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.moveTo(0,H); for(const q of Hh.pts) ctx.lineTo(q[0],q[1]); ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha=1;
+    if(Hh.trees){
+      for(const tr of Hh.trees){
+        const k=h===2?0.55:0.75, tc=`rgb(${toByte(cr[0]*k)},${toByte(cr[1]*k)},${toByte(cr[2]*k*0.9)})`;
+        ctx.fillStyle=tc;
+        if(tr.c){ ctx.beginPath(); ctx.moveTo(tr.x-tr.s*0.32,tr.y+2); ctx.lineTo(tr.x,tr.y-tr.s*1.9); ctx.lineTo(tr.x+tr.s*0.32,tr.y+2); ctx.fill(); }
+        else { ctx.fillRect(tr.x-tr.s*0.05,tr.y-tr.s*0.8,tr.s*0.1,tr.s*0.9);
+          ctx.beginPath(); ctx.ellipse(tr.x,tr.y-tr.s*1.05,tr.s*0.55,tr.s*0.5,0,0,TAU); ctx.fill();
+          const hl=`rgba(${toByte(cr[0]*1.25)},${toByte(cr[1]*1.25)},${toByte(cr[2]*1.1)},0.5)`;
+          ctx.fillStyle=hl; ctx.beginPath(); ctx.ellipse(tr.x-tr.s*0.1,tr.y-tr.s*1.15,tr.s*0.35,tr.s*0.3,0,0,TAU); ctx.fill(); }
+      }
+    }
+  }
+  const aMM=Math.exp(aLog);
+  const p1=ORD[0].R[Math.round((600-382)/6)]/DEG, p2=ORD[1].R[Math.round((600-382)/6)]/DEG;
+  const kind=aMM<0.05?'fogbow':aMM<0.15?'pale bow, wide bands':aMM>0.9?'vivid bow, tight supernumeraries':'rainbow';
+  hud.innerHTML=`back to the sun<br>drops ${aMM<0.1?(aMM*1000).toFixed(0)+' &micro;m':aMM.toFixed(2)+' mm'} &mdash; ${kind}<br>`+
+    `sun ${(elev/DEG).toFixed(1)}&deg; high, bow top ${Math.max(0,p1-elev/DEG).toFixed(1)}&deg;<br>`+
+    `primary ${p1.toFixed(1)}&deg;, secondary ${p2.toFixed(1)}&deg;${paused?'<br>paused':''}`;
+  requestAnimationFrame(render);
+}
+
+cv.addEventListener('click',()=>{ newShowers(); dropI=(dropI+1+(Math.random()*3|0))%DROPS.length; aTarget=Math.log(DROPS[dropI]); aManual=-1e9; });
+addEventListener('wheel',e=>{ aLog=Math.max(Math.log(0.015),Math.min(Math.log(2.5),aLog-e.deltaY*0.0012)); aTarget=aLog; aManual=performance.now(); rebuildT=0; e.preventDefault(); },{passive:false});
+addEventListener('keydown',e=>{
+  if(e.key===' '){ paused=!paused; rebuildT=0; e.preventDefault(); }
+  else if(e.key==='ArrowUp'){ aLog=Math.min(Math.log(2.5),aLog+0.12); aTarget=aLog; aManual=performance.now(); rebuildT=0; e.preventDefault(); }
+  else if(e.key==='ArrowDown'){ aLog=Math.max(Math.log(0.015),aLog-0.12); aTarget=aLog; aManual=performance.now(); rebuildT=0; e.preventDefault(); }
+  else if(e.key==='ArrowLeft'){ elev=Math.max(0.5*DEG,elev-1*DEG); elevManual=performance.now(); rebuildT=0; }
+  else if(e.key==='ArrowRight'){ elev=Math.min(41*DEG,elev+1*DEG); elevManual=performance.now(); rebuildT=0; }
+});
+requestAnimationFrame(render);
+})();
+</script>
+</body>
+</html>
