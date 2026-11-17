@@ -1,0 +1,47 @@
+{
+  "id": "20261011-why-is-the-night-sky-dark-olbe-2d3d22",
+  "date": "2026-10-11T10:10:03.910513",
+  "title": "Why Is the Night Sky Dark? Olbers' Paradox",
+  "question": "If the universe is full of stars in every direction, why isn't the night sky blindingly bright?",
+  "summary": "A child's question turns out to be a proof that the universe is not static, infinite, and eternal: the dark of night is evidence of a cosmic beginning.",
+  "content": "<h2>A Simple Question with a Strange History</h2>\n<p>Why is the night sky dark? It sounds like a child's question, and it is. But in 1823 the astronomer Heinrich Olbers gave it a sharp edge. If the universe is infinite, static, and uniformly filled with stars, then every line of sight from Earth must eventually end on a stellar surface. The whole sky should blaze as bright as the surface of the Sun. It doesn't. Something in that tidy picture is false.</p>\n<h2>The Geometry of the Paradox</h2>\n<p>The argument is pleasingly arithmetic. Imagine a thin spherical shell of stars at distance r. A star's apparent brightness falls as 1/r\u00b2, but the number of stars in the shell grows as r\u00b2. The two cancel, so every shell contributes the same light. Add infinitely many shells and the total diverges. Dimming with distance cannot save you, because distance also brings more stars.</p>\n<h2>Failed Rescues</h2>\n<p>Dust between the stars was an early suggestion, but dust absorbs light, heats up, and re-radiates it, so the energy is not lost. A fractal arrangement of stars, thinning out at larger scales, can in principle avoid the divergence, but observations show the universe is homogeneous on large scales. What remains is the assumption of an eternal, infinite cosmos.</p>\n<h2>The Real Answer: A Universe with a Beginning</h2>\n<p>Light travels at a finite speed, and the universe has a finite age of about 13.8 billion years. We can only see stars whose light has had time to reach us, so the sum of shells is cut off at a horizon rather than running to infinity. Cosmic expansion adds a second effect: light from distant sources is redshifted, losing energy on its way. Careful calculations by Edward Harrison show the finite age dominates, with redshift as a smaller correction.</p>\n<p>The sky is not entirely dark, either. In every direction there is the cosmic microwave background, the redshifted glow of the early hot universe, now at 2.7 kelvin. Olbers' paradox does resolve into a sky of uniform light; we just can't see it with our eyes. Its brightness has been stretched out of the visible range.</p>\n<h2>Why This Matters Beyond Astronomy</h2>\n<p>Edgar Allan Poe guessed at a version of the resolution in 1848, long before observational cosmology. The paradox is a model case of how a single everyday observation can falsify a whole cosmology. It shows that the darkness of night is evidence that the universe had a beginning, and it reminds us that background assumptions, here a static infinite universe, can feel like common sense until a simple calculation exposes them.</p>",
+  "tags": [
+    "cosmology",
+    "astronomy",
+    "physics",
+    "history-of-science"
+  ],
+  "perspectives": [
+    {
+      "title": "The Geometer",
+      "description": "Shells of stars contribute equal light because brightness falls as 1/r\u00b2 while star count rises as r\u00b2. The divergence is purely geometric, so only a change in the assumptions can fix it."
+    },
+    {
+      "title": "The Cosmologist",
+      "description": "A finite age means a finite observable horizon. Expansion redshifts what does arrive. Together they cap the total light, and the leftover is the cosmic microwave background."
+    },
+    {
+      "title": "The Historian of Science",
+      "description": "Kepler, Halley, Olbers and Poe all circled the problem. Each partial answer exposed which hidden assumptions the era took for granted, such as an eternal universe."
+    },
+    {
+      "title": "The Thermodynamicist",
+      "description": "Stars are out of equilibrium sources. If the universe were eternal, radiation and matter would reach equal temperature, so a dark sky signals a cosmos still far from equilibrium."
+    }
+  ],
+  "connections": [
+    "Cosmic microwave background",
+    "Hubble's law and the expanding universe",
+    "The Big Bang and cosmic horizons",
+    "Redshift and the Doppler effect",
+    "Entropy and the arrow of time",
+    "Fractal cosmologies",
+    "Kepler's finite-universe argument"
+  ],
+  "openQuestions": [
+    "Is the observable universe a faithful sample of the whole, or only a small patch of something much larger?",
+    "Will the sky of the far future, with accelerating expansion, grow darker still?",
+    "Did the universe have a beginning, or only the part we can see?",
+    "What other everyday observations might quietly falsify assumptions we hold now?"
+  ]
+}
