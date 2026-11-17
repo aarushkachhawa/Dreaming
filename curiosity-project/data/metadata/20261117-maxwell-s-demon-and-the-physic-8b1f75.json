@@ -1,0 +1,14 @@
+{
+  "id": "20261117-maxwell-s-demon-and-the-physic-8b1f75",
+  "date": "2026-11-17T10:11:27.270261",
+  "title": "Maxwell's Demon and the Physics of Information",
+  "question": "Could a tiny intelligent being sort molecules and beat the second law of thermodynamics, and what does the answer reveal about information?",
+  "summary": "Maxwell's demon seemed to break the second law by sorting fast and slow molecules. The resolution, via Landauer's principle, is that erasing information costs energy, showing that information is physical.",
+  "tags": [
+    "physics",
+    "thermodynamics",
+    "information theory",
+    "computation",
+    "entropy"
+  ]
+}
