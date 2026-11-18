@@ -1,0 +1,14 @@
+{
+  "id": "20261118-benford-s-law-why-does-nature--c6dd42",
+  "date": "2026-11-18T10:11:16.398831",
+  "title": "Benford's Law: Why Does Nature Prefer the Digit 1?",
+  "question": "Why do about 30% of real-world numbers start with the digit 1, and only 5% with 9?",
+  "summary": "A look at Benford's Law, the surprising first-digit pattern in real-world data, why scale invariance and multiplicative growth produce it, and how it is used to detect fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "forensics",
+    "patterns"
+  ]
+}
