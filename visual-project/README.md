@@ -24,6 +24,25 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-18** — `2026-11-18-mock-suns.html`: a hundred-and-fifth
+  technique, and the archive's first ice-halo display. Last night's rainbow
+  needed water and the sun at your back; tonight the sun is ahead, behind a
+  veil of cirrus made of hexagonal ice. Nothing in the display is drawn by
+  hand. Every frame, tens of thousands of rays from the sun's half-degree disk
+  enter ice prisms (plates and columns) through a face picked by its projected
+  area. They are refracted and reflected from face to face with Fresnel's odds,
+  using the refractive index of ice at their own wavelength, and gathered on a
+  fisheye sky where they leave. Crystals that tumble at random give the
+  22-degree halo, red on its inner edge, and the faint 46. Plates falling flat
+  gather that light into sun dogs level with the sun, the rainbow smile of the
+  circumzenithal arc overhead, the white parhelic circle and the 120-degree
+  parhelia. Level columns add the tangent arcs that hug the halo, and Parry
+  columns add Parry arcs. The mix of crystals drifts from sky to sky, and old
+  light fades so the display follows it. Click for a new sky, up and down to
+  raise or lower the sun (the circumzenithal arc leaves above 32 degrees), left
+  and right to look around the horizon, wheel to widen to an all-sky view, L to
+  name what you see, space to pause. Open the file directly in a browser.
+
 - **2026-11-17** — `2026-11-17-back-to-the-sun.html`: a hundred-and-fourth
   technique, and the archive's first rainbow. A shower drifts across a dark
   cloud bank while the low sun, behind you, lights the hills; the bow rings the

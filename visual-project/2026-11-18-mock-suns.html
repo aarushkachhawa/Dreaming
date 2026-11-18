@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock Suns</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05070c; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:pointer; }
+  #hud { position:fixed; top:14px; left:16px; color:#e9eef6; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#eef2f8; opacity:.6; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000, 0 0 2px #000; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; a new sky&nbsp;&nbsp;|&nbsp;&nbsp;&uarr;&darr; &mdash; raise or lower the sun&nbsp;&nbsp;|&nbsp;&nbsp;&larr;&rarr; &mdash; look around&nbsp;&nbsp;|&nbsp;&nbsp;wheel &mdash; widen or narrow&nbsp;&nbsp;|&nbsp;&nbsp;L &mdash; names&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Mock suns. High thin cloud is made of ice, and ice grows as hexagonal prisms: flat plates, long
+// columns. Sunlight that passes through two faces of a prism meeting at 60 degrees is bent by at least
+// 22 degrees, so light piles up at that minimum deviation: crystals tumbling at random paint a ring of
+// radius 22 around the sun, red on its inner edge because red bends least. A 90-degree wedge (a side
+// face and an end) gives the fainter 46-degree ring. But crystals do not always tumble. Plates fall
+// flat like leaves, and then the 22-degree light gathers into two bright spots level with the sun: the
+// sun dogs, parhelia, the "mock suns". Light entering a plate's top face and leaving a side face draws
+// the circumzenithal arc, a rainbow-coloured smile high overhead. Reflections off vertical faces draw a
+// white parhelic circle right round the sky at the sun's height. Columns falling with their long axis
+// level make tangent arcs that hug the 22-degree halo, and columns that also keep two faces level make
+// Parry arcs. None of that is hand-drawn here. Every frame, many thousands of rays from the sun's disk
+// are sent into ice prisms with the shapes and orientations of the current sky, refracted and
+// reflected face to face with Fresnel's odds and the refractive index of ice for their wavelength, and
+// gathered where they leave. The sky's whole display is what is left when enough rays are counted.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud');
+const TAU=Math.PI*2, DEG=Math.PI/180;
+const rnd=Math.random;
+function gauss(){ let u=0,v=0; while(u===0) u=rnd(); v=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v); }
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const smooth=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+// ---------- colour and the ice ----------
+function g(x,m,s1,s2){ const t=(x-m)/(x<m?s1:s2); return Math.exp(-0.5*t*t); }
+const xb=l=>1.056*g(l,599.8,37.9,31.0)+0.362*g(l,442.0,16.0,26.7)-0.065*g(l,501.1,20.4,26.2);
+const yb=l=>0.821*g(l,568.8,46.9,40.5)+0.286*g(l,530.9,16.3,31.1);
+const zb=l=>1.217*g(l,437.0,11.8,36.0)+0.681*g(l,459.0,26.0,13.8);
+const WL=[]; for(let l=386;l<=716;l+=6) WL.push(l);
+const NW=WL.length;
+const NICE=WL.map(l=>1.3015+2950/(l*l));               // refractive index of ice: 1.320 at 400 nm, 1.307 at 700
+const WX=new Float32Array(NW), WY=new Float32Array(NW), WZ=new Float32Array(NW);
+let sunRGB=[1,1,1];
+function sunSpectrum(elev){
+  const ed=elev/DEG, m=1/(Math.sin(Math.max(elev,0))+0.50572*Math.pow(ed+6.07995,-1.6364)); // air mass
+  let X=0,Y=0,Z=0;
+  for(let i=0;i<NW;i++){
+    const l=WL[i], lu=l/1000;
+    const planck=1/(Math.pow(lu,5)*(Math.exp(14388/(lu*5778))-1));
+    const tau=0.0088*Math.pow(lu,-4.05)+0.07*Math.pow(l/550,-1.3);
+    const s=planck*Math.exp(-tau*m);
+    WX[i]=s*xb(l); WY[i]=s*yb(l); WZ[i]=s*zb(l); X+=WX[i]; Y+=WY[i]; Z+=WZ[i];
+  }
+  const k=NW/Y; for(let i=0;i<NW;i++){ WX[i]*=k; WY[i]*=k; WZ[i]*=k; }
+  X*=k/NW; Y=1; Z*=k/NW;
+  let r=3.2406*X-1.5372*Y-0.4986*Z, gg=-0.9689*X+1.8758*Y+0.0415*Z, b=0.0557*X-0.2040*Y+1.0570*Z;
+  const mx=Math.max(r,gg,b); sunRGB=[Math.max(r,0)/mx, Math.max(gg,0)/mx, Math.max(b,0)/mx];
+}
+
+// ---------- a hexagonal prism, apothem 1, half-length h ----------
+const PN=[]; for(let k=0;k<6;k++) PN.push([Math.cos(k*Math.PI/3),Math.sin(k*Math.PI/3),0]);
+PN.push([0,0,1]); PN.push([0,0,-1]);
+const SIDE=2/Math.sqrt(3), HEXA=2*Math.sqrt(3);
+let ox=0,oy=0,oz=0;   // result of a trace, crystal frame
+function fres(n1,n2,ci,ct){
+  const rs=(n1*ci-n2*ct)/(n1*ci+n2*ct), rp=(n2*ci-n1*ct)/(n2*ci+n1*ct);
+  return 0.5*(rs*rs+rp*rp);
+}
+const FW=new Float64Array(8);
+function trace(dx,dy,dz,h,n){
+  // entry face, chosen by its projected area
+  let tot=0;
+  for(let i=0;i<8;i++){ const c=-(PN[i][0]*dx+PN[i][1]*dy+PN[i][2]*dz); FW[i]=c>0?c*(i<6?SIDE*2*h:HEXA):0; tot+=FW[i]; }
+  let r=rnd()*tot, f=0; for(;f<7;f++){ r-=FW[f]; if(r<=0) break; }
+  const N=PN[f];
+  let px,py,pz;
+  if(f<6){ const u=(rnd()-0.5)*SIDE, v=(rnd()-0.5)*2*h; px=N[0]-N[1]*u; py=N[1]+N[0]*u; pz=v; }
+  else { while(true){ px=(rnd()*2-1); py=(rnd()*2-1)*SIDE; let ok=true;
+      for(let k=0;k<6;k++) if(px*PN[k][0]+py*PN[k][1]>1){ ok=false; break; } if(ok) break; }
+    pz=N[2]*h; }
+  // air to ice
+  let ci=-(N[0]*dx+N[1]*dy+N[2]*dz);
+  const eta=1/n; let st2=eta*eta*(1-ci*ci), ct=Math.sqrt(1-st2);
+  if(rnd()<fres(1,n,ci,ct)){ ox=dx+2*ci*N[0]; oy=dy+2*ci*N[1]; oz=dz+2*ci*N[2]; return true; }  // glint off the outside
+  let k=eta*ci-ct; dx=eta*dx+k*N[0]; dy=eta*dy+k*N[1]; dz=eta*dz+k*N[2];
+  for(let b=0;b<12;b++){
+    let tm=1e9, j=-1;
+    for(let i=0;i<8;i++){
+      const P=PN[i], dn=P[0]*dx+P[1]*dy+P[2]*dz;
+      if(dn>1e-9){ const t=((i<6?1:h)-(P[0]*px+P[1]*py+P[2]*pz))/dn; if(t<tm){ tm=t; j=i; } }
+    }
+    if(j<0) return false;
+    px+=tm*dx; py+=tm*dy; pz+=tm*dz;
+    const P=PN[j]; ci=P[0]*dx+P[1]*dy+P[2]*dz;
+    st2=n*n*(1-ci*ci);
+    if(st2>=1||rnd()<fres(n,1,ci,Math.sqrt(1-st2))){ dx-=2*ci*P[0]; dy-=2*ci*P[1]; dz-=2*ci*P[2]; continue; }
+    ct=Math.sqrt(1-st2); k=n*ci-ct;
+    ox=n*dx-k*P[0]; oy=n*dy-k*P[1]; oz=n*dz-k*P[2]; return true;
+  }
+  return false;
+}
+
+// ---------- how the crystals hang ----------
+let ex0,ex1,ex2,ey0,ey1,ey2,ez0,ez1,ez2;
+function frameFromAxis(a0,a1,a2,psi){ // crystal z along a, rotated psi about it
+  let b0,b1,b2; if(Math.abs(a2)<0.9){ b0=-a1; b1=a0; b2=0; } else { b0=0; b1=-a2; b2=a1; }
+  let l=Math.hypot(b0,b1,b2); b0/=l; b1/=l; b2/=l;
+  const c0=a1*b2-a2*b1, c1=a2*b0-a0*b2, c2=a0*b1-a1*b0, cs=Math.cos(psi), sn=Math.sin(psi);
+  ez0=a0; ez1=a1; ez2=a2;
+  ex0=b0*cs+c0*sn; ex1=b1*cs+c1*sn; ex2=b2*cs+c2*sn;
+  ey0=a1*ex2-a2*ex1; ey1=a2*ex0-a0*ex2; ey2=a0*ex1-a1*ex0;
+}
+function orientRandom(){
+  const u1=rnd(), u2=rnd()*TAU, u3=rnd()*TAU, s1=Math.sqrt(1-u1), s2=Math.sqrt(u1);
+  const w=s1*Math.sin(u2), x=s1*Math.cos(u2), y=s2*Math.sin(u3), z=s2*Math.cos(u3);
+  ex0=1-2*(y*y+z*z); ex1=2*(x*y+w*z); ex2=2*(x*z-w*y);
+  ey0=2*(x*y-w*z); ey1=1-2*(x*x+z*z); ey2=2*(y*z+w*x);
+  ez0=2*(x*z+w*y); ez1=2*(y*z-w*x); ez2=1-2*(x*x+y*y);
+}
+function orientPlate(sig){
+  const th=gauss()*sig, ph=rnd()*TAU, s=Math.sin(th);
+  frameFromAxis(s*Math.cos(ph), s*Math.sin(ph), Math.cos(th), rnd()*TAU);
+}
+function orientColumn(parry){
+  const ph=rnd()*TAU, ta=gauss()*0.8*DEG, c=Math.cos(ta);
+  const a0=c*Math.cos(ph), a1=c*Math.sin(ph), a2=Math.sin(ta);
+  if(!parry){ frameFromAxis(a0,a1,a2,rnd()*TAU); return; }
+  // one pair of prism faces kept level: crystal x as near to straight up as the axis allows
+  let u0=-a2*a0, u1=-a2*a1, u2=1-a2*a2; const l=Math.hypot(u0,u1,u2); u0/=l; u1/=l; u2/=l;
+  const v0=a1*u2-a2*u1, v1=a2*u0-a0*u2, v2=a0*u1-a1*u0, psi=gauss()*1.2*DEG, cs=Math.cos(psi), sn=Math.sin(psi);
+  ez0=a0; ez1=a1; ez2=a2;
+  ex0=u0*cs+v0*sn; ex1=u1*cs+v1*sn; ex2=u2*cs+v2*sn;
+  ey0=a1*ex2-a2*ex1; ey1=a2*ex0-a0*ex2; ey2=a0*ex1-a1*ex0;
+}
+
+// ---------- skies ----------
+// r random tumbling, p plates lying flat (with a tilt spread t, degrees), c level columns, y Parry columns
+const SKIES=[
+  {name:'a cirrostratus veil',            r:0.62,p:0.22,t:1.6,c:0.12,y:0.04, veil:0.80,patch:0.30},
+  {name:'a fall of flat plates',          r:0.22,p:0.74,t:0.7,c:0.04,y:0.00, veil:0.45,patch:0.85},
+  {name:'pencil columns',                 r:0.30,p:0.06,t:1.0,c:0.56,y:0.08, veil:0.55,patch:0.70},
+  {name:'a full display',                 r:0.34,p:0.36,t:0.5,c:0.20,y:0.10, veil:0.88,patch:0.25},
+  {name:'thin tumbling ice',              r:1.00,p:0.00,t:1.0,c:0.00,y:0.00, veil:0.40,patch:0.95},
+  {name:'Parry\'s sky',                   r:0.14,p:0.30,t:0.6,c:0.16,y:0.40, veil:0.70,patch:0.50},
+  {name:'wobbling plates',                r:0.25,p:0.65,t:5.0,c:0.10,y:0.00, veil:0.65,patch:0.60},
+];
+let skyIdx=3, mix={...SKIES[skyIdx]}, target=SKIES[skyIdx], skyT0=performance.now();
+let windA=rnd()*TAU, windA2=windA+0.4, cloudSeedX=rnd()*256, cloudSeedY=rnd()*256;
+function newSky(){
+  let i; do { i=(rnd()*SKIES.length)|0; } while(i===skyIdx); skyIdx=i; target=SKIES[i]; skyT0=performance.now();
+  windA=rnd()*TAU; windA2=windA+(rnd()-0.5)*0.8;
+}
+
+// ---------- cloud texture: tileable value-noise fbm ----------
+const TS=256, TEX=new Float32Array(TS*TS);
+(function(){
+  for(let o=0;o<5;o++){
+    const per=4<<o, L=new Float32Array(per*per); for(let i=0;i<L.length;i++) L[i]=rnd();
+    const amp=Math.pow(0.55,o);
+    for(let y=0;y<TS;y++) for(let x=0;x<TS;x++){
+      const fx=x*per/TS, fy=y*per/TS, ix=fx|0, iy=fy|0; let tx=fx-ix, ty=fy-iy;
+      tx=tx*tx*(3-2*tx); ty=ty*ty*(3-2*ty);
+      const a=L[iy*per+ix], b=L[iy*per+(ix+1)%per], c=L[((iy+1)%per)*per+ix], d=L[((iy+1)%per)*per+(ix+1)%per];
+      TEX[y*TS+x]+=amp*((a+(b-a)*tx)+((c+(d-c)*tx)-(a+(b-a)*tx))*ty);
+    }
+  }
+  let mn=1e9,mx=-1e9; for(const v of TEX){ if(v<mn) mn=v; if(v>mx) mx=v; }
+  for(let i=0;i<TEX.length;i++) TEX[i]=(TEX[i]-mn)/(mx-mn);
+})();
+function tex(x,y){
+  x=((x%TS)+TS)%TS; y=((y%TS)+TS)%TS;
+  const ix=x|0, iy=y|0, tx=x-ix, ty=y-iy, jx=(ix+1)&(TS-1), jy=(iy+1)&(TS-1);
+  const a=TEX[iy*TS+ix], b=TEX[iy*TS+jx], c=TEX[jy*TS+ix], d=TEX[jy*TS+jx];
+  return a+(b-a)*tx+((c+(d-c)*tx)-(a+(b-a)*tx))*ty;
+}
+
+// ---------- the land ----------
+function hsh(i){ const s=Math.sin(i*127.1+311.7)*43758.5453; return s-Math.floor(s); }
+function n1(x){ const i=Math.floor(x), f=x-i, t=f*f*(3-2*f); return hsh(i)+(hsh(i+1)-hsh(i))*t; }
+function terrain(azd){ // degrees above the horizon of the skyline at azimuth azd (degrees)
+  const a=((azd%360)+360)%360;
+  let h=-0.6+1.6*n1(a/23)+0.9*n1(a/7.3+40)+0.25*n1(a/1.9+90);
+  const forest=n1(a/17+300);
+  if(forest>0.45){
+    const sp=0.55, i0=Math.floor(a/sp); let top=-9;
+    for(let i=i0-3;i<=i0+3;i++){
+      const ii=((i%655)+655)%655; if(hsh(ii*3.1+7)>0.82) continue;
+      const c=(i+0.5+(hsh(ii)-0.5)*0.7)*sp, H=(0.9+1.5*hsh(ii*1.7+3))*smooth(0.45,0.6,forest);
+      const v=H-Math.abs(a-c)*3.6; if(v>top) top=v;
+    }
+    h+=Math.max(0,top);
+  }
+  return h;
+}
+
+// ---------- view ----------
+let W=0,H=0,bw=0,bh=0,K=0,kb=0;
+const VC=0.58;  // the view centre sits a little below the middle of the screen, to give the sky more room
+let sunE=13*DEG, viewAz=0, fovR=55*DEG, ce=0;
+let C0,C1,C2,R0,R1,R2,U0,U1,U2;
+let S0,S1,S2;                         // toward the sun
+let AX,AY,AZ,BX,BY,BZ,TX,TY,TZ,QX,QY,HF,SKR,SKG,SKB,CLR,CLG,CLB,ISN,GRD,img,buf,bctx,ground;
+let S=0, totalRays=0, expo=0, raysPerFrame=30000;
+function basis(){
+  ce=Math.max(24*DEG, sunE+6*DEG);
+  const cc=Math.cos(ce), sc=Math.sin(ce), ca=Math.cos(viewAz), sa=Math.sin(viewAz);
+  C0=cc*ca; C1=cc*sa; C2=sc; R0=sa; R1=-ca; R2=0; U0=-sc*ca; U1=-sc*sa; U2=cc;
+  S0=Math.cos(sunE); S1=0; S2=Math.sin(sunE);
+}
+function unproject(X,Y,k,cx,cy,out){ // screen -> world direction; false if beyond the fisheye
+  const dx=(X-cx)/k, dy=-(Y-cy)/k, a=Math.hypot(dx,dy);
+  if(a>Math.PI*0.999) return false;
+  const ca=Math.cos(a), s=a>1e-9?Math.sin(a)/a:1;
+  out[0]=ca*C0+s*(dx*R0+dy*U0); out[1]=ca*C1+s*(dx*R1+dy*U1); out[2]=ca*C2+s*(dx*R2+dy*U2);
+  return true;
+}
+function project(v0,v1,v2){
+  const a=Math.acos(clamp(v0*C0+v1*C1+v2*C2,-1,1)), pr=v0*R0+v1*R1+v2*R2, pu=v0*U0+v1*U1+v2*U2, rho=Math.hypot(pr,pu)||1e-9;
+  return [W/2+K*a*pr/rho, H*VC-K*a*pu/rho];
+}
+function resize(){
+  W=innerWidth; H=innerHeight; cv.width=W; cv.height=H;
+  bw=Math.min(Math.round(W/1.5),720); bh=Math.max(1,Math.round(H*bw/W));
+  const n=bw*bh;
+  AX=new Float32Array(n); AY=new Float32Array(n); AZ=new Float32Array(n);
+  BX=new Float32Array(n); BY=new Float32Array(n); BZ=new Float32Array(n); TX=new Float32Array(n); TY=new Float32Array(n); TZ=new Float32Array(n);
+  QX=new Float32Array(n); QY=new Float32Array(n); HF=new Float32Array(n); ISN=new Float32Array(n); GRD=new Uint8Array(n);
+  SKR=new Float32Array(n); SKG=new Float32Array(n); SKB=new Float32Array(n);
+  CLR=new Float32Array(n); CLG=new Float32Array(n); CLB=new Float32Array(n);
+  buf=document.createElement('canvas'); buf.width=bw; buf.height=bh; bctx=buf.getContext('2d');
+  img=bctx.createImageData(bw,bh);
+  rebuildView();
+}
+function rebuildView(){
+  basis();
+  K=(Math.min(W,H)/2)/fovR; kb=K*bw/W;
+  const v=[0,0,0];
+  for(let y=0;y<bh;y++) for(let x=0;x<bw;x++){
+    const i=y*bw+x;
+    if(!unproject(x+0.5,y+0.5,kb,bw/2,bh*VC,v)){ GRD[i]=2; continue; }
+    const el=Math.asin(clamp(v[2],-1,1)), az=Math.atan2(v[1],v[0]);
+    const a=Math.acos(clamp(v[0]*C0+v[1]*C1+v[2]*C2,-1,1));
+    ISN[i]=a>1e-6?a/Math.sin(a):1; if(a>3.1) ISN[i]=0;
+    GRD[i]=el/DEG<terrain(az/DEG)?1:0;
+    const z=Math.max(v[2],0)+0.045; QX[i]=v[0]/z; QY[i]=v[1]/z; HF[i]=smooth(0.0,0.16,v[2]);
+  }
+  rebuildGround(); rebuildSky(); resetAcc();
+}
+function rebuildGround(){
+  ground=document.createElement('canvas'); ground.width=W; ground.height=H;
+  const gx=ground.getContext('2d'), id=gx.createImageData(W,H), d=id.data, v=[0,0,0], px=1/K/DEG;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){
+    if(!unproject(x+0.5,y+0.5,K,W/2,H*VC,v)) { const j=(y*W+x)*4; d[j]=4; d[j+1]=6; d[j+2]=10; d[j+3]=255; continue; }
+    const el=Math.asin(clamp(v[2],-1,1))/DEG, az=Math.atan2(v[1],v[0])/DEG;
+    if(el>4.5) continue;
+    const t=terrain(az), al=clamp((t-el)/px+0.5,0,1);
+    if(al<=0) continue;
+    const j=(y*W+x)*4, deep=clamp(-el/25,0,1), tree=0;
+    const lit=clamp(1-Math.abs(az-0)/120,0,1)*(1-deep);
+    d[j]  =(10+16*(1-deep)+10*lit*sunRGB[0])*(tree?0.45:1);
+    d[j+1]=(13+18*(1-deep)+6*lit*sunRGB[1])*(tree?0.45:1);
+    d[j+2]=(21+24*(1-deep)+4*lit*sunRGB[2])*(tree?0.5:1);
+    d[j+3]=al*255;
+  }
+  gx.putImageData(id,0,0);
+}
+function rebuildSky(){
+  sunSpectrum(sunE);
+  const low=clamp(1-sunE/(40*DEG),0,1), v=[0,0,0];
+  for(let y=0;y<bh;y++) for(let x=0;x<bw;x++){
+    const i=y*bw+x; if(GRD[i]===2) continue;
+    unproject(x+0.5,y+0.5,kb,bw/2,bh*VC,v);
+    const el=Math.max(Math.asin(clamp(v[2],-1,1)),0), gam=Math.acos(clamp(v[0]*S0+v[1]*S1+v[2]*S2,-1,1));
+    const hz=Math.exp(-el/0.24), glow=(0.45*Math.exp(-gam/0.10)+0.16*Math.exp(-gam/0.5))*(0.55+0.7*low);
+    const warm=hz*low*0.25*Math.exp(-gam/0.9);
+    SKR[i]=0.008+0.13*hz*(0.6+0.4*low)+sunRGB[0]*(glow+warm);
+    SKG[i]=0.026+0.16*hz+sunRGB[1]*(glow+warm*0.7);
+    SKB[i]=0.105+0.17*hz+sunRGB[2]*(glow+warm*0.4)*0.9;
+    const aur=1.5*Math.exp(-gam/0.09)+0.45*Math.exp(-gam/0.38)+0.06;
+    CLR[i]=0.07+0.08*hz+sunRGB[0]*aur; CLG[i]=0.085+0.08*hz+sunRGB[1]*aur; CLB[i]=0.12+0.07*hz+sunRGB[2]*aur;
+  }
+}
+function resetAcc(){ AX.fill(0); AY.fill(0); AZ.fill(0); S=0; }
+
+// ---------- tracing ----------
+const COSAT=Math.cos(1.1*DEG), SUNR=0.27*DEG;
+function traceBatch(N){
+  const m=mix, tw=m.r+m.p+m.c+m.y, pr=m.r/tw, pp=pr+m.p/tw, pc=pp+m.c/tw, sig=m.t*DEG;
+  // two unit vectors across the sun's disk
+  const a0=0,a1=1,a2=0, b0=-S2, b1=0, b2=S0;
+  const half=bw/2, hb=bh*VC;
+  for(let q=0;q<N;q++){
+    // a point on the sun's disk
+    const rr=SUNR*Math.sqrt(rnd()), ph=rnd()*TAU, u=rr*Math.cos(ph), w=rr*Math.sin(ph);
+    let s0=S0+u*a0+w*b0, s1=S1+u*a1+w*b1, s2=S2+u*a2+w*b2; const sl=Math.hypot(s0,s1,s2); s0/=sl; s1/=sl; s2/=sl;
+    const x=rnd(); let h;
+    if(x<pr){ orientRandom(); h=Math.exp(Math.log(0.25)+rnd()*Math.log(10)); }
+    else if(x<pp){ orientPlate(sig); h=0.1+0.18*rnd(); }
+    else if(x<pc){ orientColumn(false); h=1.3+1.7*rnd(); }
+    else { orientColumn(true); h=1.3+1.7*rnd(); }
+    const wi=(rnd()*NW)|0;
+    const d0=-s0, d1=-s1, d2=-s2;
+    if(!trace(d0*ex0+d1*ex1+d2*ex2, d0*ey0+d1*ey1+d2*ey2, d0*ez0+d1*ez1+d2*ez2, h, NICE[wi])) continue;
+    // the eye sees this light coming from the opposite of where it goes
+    const v0=-(ox*ex0+oy*ey0+oz*ez0), v1=-(ox*ex1+oy*ey1+oz*ez1), v2=-(ox*ex2+oy*ey2+oz*ez2);
+    if(v0*S0+v1*S1+v2*S2>COSAT) continue;            // straight through: lost in the sun's glare
+    const cd=v0*C0+v1*C1+v2*C2, an=Math.acos(cd<-1?-1:cd>1?1:cd), rp=v0*R0+v1*R1+v2*R2, up=v0*U0+v1*U1+v2*U2;
+    const rho=Math.sqrt(rp*rp+up*up)+1e-12, f=kb*an/rho;
+    const px=(half+f*rp)|0, py=(hb-f*up)|0;
+    if(px<0||py<0||px>=bw||py>=bh) continue;
+    const i=py*bw+px; if(GRD[i]) continue;
+    AX[i]+=WX[wi]; AY[i]+=WY[wi]; AZ[i]+=WZ[wi];
+  }
+  S+=N; totalRays+=N;
+}
+
+// ---------- labels ----------
+let labels=false, labelT=0;
+function featureList(){
+  const n=1.312, e=sunE, out=[];
+  const sv=(el,az)=>[Math.cos(el)*Math.cos(az),Math.cos(el)*Math.sin(az),Math.sin(el)];
+  const along=(dist)=>sv(e+dist,0);
+  const m=mix, tw=m.r+m.p+m.c+m.y;
+  const ring=(r,b)=>{ // the point r from the sun, at angle b from straight up (positive to the left)
+    const el=Math.asin(clamp(Math.sin(e)*Math.cos(r)+Math.cos(e)*Math.sin(r)*Math.cos(b),-1,1));
+    const caz=(Math.cos(r)-Math.sin(e)*Math.sin(el))/(Math.cos(e)*Math.cos(el));
+    return sv(el,Math.sign(b)*Math.acos(clamp(caz,-1,1))); };
+  out.push({t:'22\u00b0 halo', v:ring(22*DEG,-128*DEG), dy:14});
+  out.push({t:'46\u00b0 halo', v:ring(46*DEG,40*DEG), dy:-10});
+  if(m.p/tw>0.12){
+    const np=Math.sqrt(n*n-Math.sin(e)**2)/Math.cos(e);
+    if(np*0.5<1){ const D=2*Math.asin(np*0.5)-Math.PI/3;
+      out.push({t:'sun dog', v:sv(e,D), dy:-16}); out.push({t:'sun dog', v:sv(e,-D), dy:-16});
+      out.push({t:'parhelic circle', v:sv(e,-95*DEG), dy:-10}); out.push({t:'120° parhelion', v:sv(e,120*DEG), dy:-14}); }
+    const q=n*n-Math.cos(e)**2;
+    if(q<1){ out.push({t:'circumzenithal arc', v:sv(Math.asin(Math.sqrt(q)),0), dy:-10}); }
+  }
+  if((m.c+m.y)/tw>0.12) out.push({t:'upper tangent arc', v:along(22*DEG), dy:-10});
+  if(m.y/tw>0.15) out.push({t:'Parry arc', v:along(29*DEG), dy:-10});
+  return out.filter(Boolean);
+}
+function drawLabels(alpha){
+  ctx.save(); ctx.globalAlpha=alpha; ctx.font='11px "Courier New", monospace'; ctx.textAlign='center';
+  for(const f of featureList()){
+    const [x,y]=project(f.v[0],f.v[1],f.v[2]);
+    if(x<20||x>W-20||y<20||y>H-20) continue;
+    ctx.strokeStyle='rgba(230,236,246,0.55)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,y+(f.dy<0?-4:4)); ctx.lineTo(x,y+f.dy*0.6); ctx.stroke();
+    ctx.fillStyle='rgba(236,241,250,0.92)'; ctx.shadowColor='#000'; ctx.shadowBlur=5;
+    ctx.fillText(f.t,x,y+f.dy+(f.dy<0?-2:9));
+    ctx.shadowBlur=0;
+  }
+  ctx.restore();
+}
+
+// ---------- drawing ----------
+const GAM=new Uint8ClampedArray(2048); for(let i=0;i<2048;i++){ const x=i/2047; GAM[i]=Math.round(255*(x<=0.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-0.055)); }
+const tone=x=>{ x=x<0?0:x; const y=1-Math.exp(-1.25*x); return GAM[(y*2047)|0]; };
+const SAMP=new Float32Array(4000);
+function updateExposure(){
+  let n=0; const N=bw*bh;
+  for(let k=0;k<4000;k++){ const i=(rnd()*N)|0; if(GRD[i]) continue; SAMP[n++]=AY[i]*ISN[i]; }
+  if(n<50||S<=0) return;
+  const s=SAMP.subarray(0,n).sort(), p=s[Math.floor(n*0.993)]/S;
+  if(p>0) expo=expo>0?Math.exp(Math.log(expo)*0.85+Math.log(p)*0.15):p;
+}
+function soften(){ // a 1-2-1 binomial blur of the gathered light, to quiet the Monte Carlo grain
+  for(let y=0;y<bh;y++){ const o=y*bw;
+    for(let x=0;x<bw;x++){ const i=o+x, l=x>0?i-1:i, r=x<bw-1?i+1:i;
+      TX[i]=0.25*(AX[l]+AX[r])+0.5*AX[i]; TY[i]=0.25*(AY[l]+AY[r])+0.5*AY[i]; TZ[i]=0.25*(AZ[l]+AZ[r])+0.5*AZ[i]; } }
+  for(let y=0;y<bh;y++){ const u=y>0?-bw:0, dn=y<bh-1?bw:0;
+    for(let x=0,i=y*bw;x<bw;x++,i++){
+      BX[i]=0.25*(TX[i+u]+TX[i+dn])+0.5*TX[i]; BY[i]=0.25*(TY[i+u]+TY[i+dn])+0.5*TY[i]; BZ[i]=0.25*(TZ[i+u]+TZ[i+dn])+0.5*TZ[i]; } }
+}
+function composite(t){
+  soften();
+  const d=img.data, N=bw*bh;
+  const cw=Math.cos(windA), sw=Math.sin(windA), cw2=Math.cos(windA2), sw2=Math.sin(windA2);
+  const drift=t*0.0011, veil=mix.veil, patch=mix.patch;
+  const g=expo>0&&S>0?0.75/(expo*S):0;
+  for(let i=0;i<N;i++){
+    const j=i*4;
+    if(GRD[i]){ d[j]=3; d[j+1]=5; d[j+2]=9; d[j+3]=255; continue; }
+    // cirrus on a sheet high above, streaked along the wind
+    const qx=QX[i]*14, qy=QY[i]*14;
+    const a=tex((qx*cw+qy*sw)*0.55+drift*14+cloudSeedX, (-qx*sw+qy*cw)*2.4+cloudSeedY);
+    const b=tex((qx*cw2+qy*sw2)*1.6+drift*22+cloudSeedY, (-qx*sw2+qy*cw2)*3.4+cloudSeedX+90);
+    let c=clamp(veil+patch*((0.65*a+0.35*b)-0.5)*2.3,0,1), hf=HF[i];
+    c=c*hf+(1-hf)*clamp(veil+0.15,0,1);
+    const k=g*ISN[i], hx=BX[i]*k, hy=BY[i]*k, hz=BZ[i]*k;
+    let hr=3.2406*hx-1.5372*hy-0.4986*hz, hg=-0.9689*hx+1.8758*hy+0.0415*hz, hb=0.0557*hx-0.2040*hy+1.0570*hz;
+    const lm=Math.min(hr,hg,hb); if(lm<0){ hr-=lm; hg-=lm; hb-=lm; }   // out-of-gamut hues pulled toward white
+    const sky=1-0.45*c, cl=0.42*c;
+    d[j]  =tone(SKR[i]*sky+cl*CLR[i]+c*hr);
+    d[j+1]=tone(SKG[i]*sky+cl*CLG[i]+c*hg);
+    d[j+2]=tone(SKB[i]*sky+cl*CLB[i]+c*hb);
+    d[j+3]=255;
+  }
+  bctx.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(buf,0,0,W,H);
+}
+function drawSun(){
+  const [x,y]=project(S0,S1,S2); if(x<-200||y<-200||x>W+200||y>H+200) return;
+  const r=Math.max(2.2,K*0.27*DEG), c=sunRGB.map(v=>Math.round(140+115*v));
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  let gr=ctx.createRadialGradient(x,y,0,x,y,K*7*DEG);
+  gr.addColorStop(0,`rgba(${c[0]},${c[1]},${c[2]},0.55)`); gr.addColorStop(0.08,`rgba(${c[0]},${c[1]},${c[2]},0.22)`);
+  gr.addColorStop(0.35,`rgba(${c[0]},${c[1]},${c[2]},0.05)`); gr.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,K*7*DEG,0,TAU); ctx.fill();
+  gr=ctx.createRadialGradient(x,y,0,x,y,r*3.5);
+  gr.addColorStop(0,'rgba(255,255,250,1)'); gr.addColorStop(0.3,'rgba(255,252,240,1)'); gr.addColorStop(1,'rgba(255,240,210,0)');
+  ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(x,y,r*3.5,0,TAU); ctx.fill();
+  ctx.restore();
+}
+
+let paused=false, last=performance.now(), expoT=0;
+function frame(now){
+  const dt=Math.min(0.1,(now-last)/1000); last=now;
+  if(!paused){
+    if(now-skyT0>55000) newSky();
+    const lr=1-Math.exp(-dt/3.5);
+    for(const key of ['r','p','t','c','y','veil','patch']) mix[key]+=(target[key]-mix[key])*lr;
+    // let old light fade so the display follows the sky as it changes
+    const decay=Math.exp(-dt/10);
+    for(let i=0;i<AX.length;i++){ AX[i]*=decay; AY[i]*=decay; AZ[i]*=decay; } S*=decay;
+    const t0=performance.now(); traceBatch(raysPerFrame); const el=performance.now()-t0;
+    raysPerFrame=clamp(Math.round(raysPerFrame*clamp(11/Math.max(el,0.5),0.7,1.3)),8000,300000);
+    expoT+=dt; if(expoT>0.25||expo===0){ expoT=0; updateExposure(); }
+  }
+  composite(paused?0:now);
+  drawSun();
+  ctx.drawImage(ground,0,0);
+  labelT+=((labels?1:0)-labelT)*Math.min(1,dt*4);
+  if(labelT>0.01) drawLabels(labelT);
+  const m=mix, tw=m.r+m.p+m.c+m.y, pc=v=>Math.round(100*v/tw);
+  hud.innerHTML=`mock suns<br>${target.name}<br>sun ${(sunE/DEG).toFixed(0)}&deg; above the horizon`+
+    `<br>tumbling ${pc(m.r)}% &middot; flat plates ${pc(m.p)}% &middot; level columns ${pc(m.c)}% &middot; Parry ${pc(m.y)}%`+
+    `<br>${(totalRays/1e6).toFixed(1)} million rays through ice${paused?' &mdash; paused':''}`;
+  requestAnimationFrame(frame);
+}
+
+// ---------- input ----------
+let rebuildPending=0;
+function later(){ clearTimeout(rebuildPending); rebuildPending=setTimeout(rebuildView,60); resetAcc(); basis(); }
+addEventListener('resize',()=>{ clearTimeout(rebuildPending); rebuildPending=setTimeout(resize,120); });
+cv.addEventListener('click',()=>{ newSky(); cloudSeedX=rnd()*256; cloudSeedY=rnd()*256; });
+addEventListener('wheel',e=>{ fovR=clamp(fovR*Math.exp(e.deltaY*0.001),30*DEG,100*DEG); later(); e.preventDefault(); },{passive:false});
+addEventListener('keydown',e=>{
+  if(e.key===' '){ paused=!paused; e.preventDefault(); }
+  else if(e.key==='ArrowUp'){ sunE=Math.min(50*DEG,sunE+1*DEG); later(); e.preventDefault(); }
+  else if(e.key==='ArrowDown'){ sunE=Math.max(1*DEG,sunE-1*DEG); later(); e.preventDefault(); }
+  else if(e.key==='ArrowLeft'){ viewAz+=6*DEG; later(); e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ viewAz-=6*DEG; later(); e.preventDefault(); }
+  else if(e.key==='l'||e.key==='L'){ labels=!labels; }
+});
+resize();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
