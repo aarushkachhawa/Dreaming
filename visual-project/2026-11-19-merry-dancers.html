@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Merry Dancers</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#020308; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:pointer; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#e9eef6; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#eef2f8; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000, 0 0 2px #000; }
+  #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#cfd6e2;
+    font-family:'Courier New', monospace; font-size:14px; text-align:center; padding:24px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; another night&nbsp;&nbsp;|&nbsp;&nbsp;drag or arrows &mdash; look around&nbsp;&nbsp;|&nbsp;&nbsp;wheel &mdash; widen or narrow&nbsp;&nbsp;|&nbsp;&nbsp;B &mdash; substorm now&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="err">This piece needs WebGL2.</div>
+<script>
+(function(){
+"use strict";
+// Merry dancers. Electrons from the magnetosphere, a few hundred to a few thousand electron-volts,
+// slide down the Earth's magnetic field lines and stop in the upper atmosphere. Where they stop they
+// excite oxygen and nitrogen, and the atoms let the energy go as light in a handful of sharp lines:
+// oxygen's green 557.7 nm from about 100 to 200 km, oxygen's deep red 630.0 nm only above about 200 km
+// (that state lives almost two minutes and is knocked out by collisions lower down), and nitrogen's
+// blue 427.8 nm and pinkish red bands, which show at the bottom edge when the electrons are energetic
+// enough to reach below the green. Harder electrons stop lower, so the lower border of a curtain is a
+// thermometer of the electrons' energy. The precipitation falls in thin sheets, a few kilometres thick
+// and a thousand long, laid along the field, so every ray in a curtain points at one spot in the sky,
+// the magnetic zenith; seen edge-on, a sheet is bright because you look through so much of it.
+//
+// Nothing here is a painted curtain. Each pixel's line of sight is followed out through the
+// atmosphere over a curved Earth, from 85 to 430 km. At every step its point is traced down the tilted
+// field to a footprint, the footprint is swirled by the shear vortices that curl real arcs, and the
+// light of each sheet is integrated exactly for a sheet with a gaussian cross-section, so the
+// thinnest curtain is never missed between steps. The emission at that height comes from the energy
+// of the electrons, line by line, dimmed and reddened by the air on the way down to you. Substorms
+// come and go: a slow quiet arc, a growth phase that brightens and drifts toward you, the breakup,
+// when the arc explodes into rays, curls and pink-hemmed folds and surges overhead, and a recovery of
+// dim, blinking patches. A still lake catches all of it, broken up by whatever wind there is.
+const cv=document.getElementById('c');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false,premultipliedAlpha:false,preserveDrawingBuffer:false});
+if(!gl){ document.getElementById('err').style.display='flex'; hint.style.display='none'; return; }
+const TAU=Math.PI*2, DEG=Math.PI/180;
+let rnd=Math.random;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const smooth=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+// ---------- colours of the emission lines ----------
+// A single wavelength lies outside what a screen can show, so each line gets the hue the eye gives it,
+// at roughly the saturation a long exposure gives it. Their strengths are relative to the green line.
+const C_G=[0.30,1.00,0.38];                     // atomic oxygen 557.7 nm, the green
+const C_R=[1.00,0.05,0.12].map(v=>v*0.85);      // atomic oxygen 630.0/636.4 nm, the deep red
+const C_B=[0.38,0.16,1.00].map(v=>v*0.75);      // ionised nitrogen 427.8 nm, the violet-blue
+const C_P=[1.00,0.20,0.38].map(v=>v*0.9);       // molecular nitrogen first positive bands, the pink hem
+
+// ---------- value noise ----------
+let seed=1;
+function h1(i){ i=Math.imul(i^(i>>>16),0x7feb352d); i=Math.imul(i^(i>>>15),0x846ca68b); i^=i>>>16; return (i>>>0)/4294967296; }
+function h2(i,j){ return h1((Math.imul(i,374761393)+Math.imul(j,668265263)+seed)|0); }
+function vn(x,y){
+  const xi=Math.floor(x), yi=Math.floor(y); let fx=x-xi, fy=y-yi;
+  fx=fx*fx*(3-2*fx); fy=fy*fy*(3-2*fy);
+  const a=h2(xi,yi), b=h2(xi+1,yi), c=h2(xi,yi+1), d=h2(xi+1,yi+1);
+  return a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy;
+}
+
+// ---------- the night ----------
+const NT=2048, XS=1400;                         // arc texture: 2048 samples over -1400..1400 km east-west
+const WW=512, WH=192, WX0=-1400, WX1=1400, WY0=-260, WY1=760; // vortex warp field over the footprints
+const arcBuf=new Float32Array(NT*4*4), warpBuf=new Float32Array(WW*WH*2);
+let night, nightNo=0, T=0;
+let phase='quiet', phT=0, phDur=20, act=0.12, actR=0.12, surge=0;
+function newNight(){
+  nightNo++; seed=(rnd()*1e9)|0;
+  const storm=Math.pow(rnd(),0.8);
+  const nArc=rnd()<0.3?2:3;
+  const arcs=[]; let y=230+rnd()*230;
+  for(let i=0;i<nArc;i++){
+    const waves=[];
+    for(let j=0;j<6;j++){
+      const lam=90+Math.pow(rnd(),1.3)*900;
+      waves.push({k:TAU/lam, A:(4+lam*0.035)*(0.4+rnd()*0.9), om:(rnd()-0.5)*2*(1+rnd()*5)*TAU/lam, ph:rnd()*TAU});
+    }
+    const xa=-1300+rnd()*500*(rnd()<0.6?1:0.2), xb=1300-rnd()*500*(rnd()<0.6?1:0.2);
+    const vort=[]; for(let j=0;j<9;j++) vort.push(spawnVortex({xa,xb},true));
+    arcs.push({base0:y, base:y, w:2.2+rnd()*2.6+i*0.6, E0:i===0?1.6+rnd()*2.6:0.5+rnd()*1.3,
+      redGain:0.006+storm*storm*storm*(0.02+rnd()*0.12)+(i>0?0.008:0), dGain:(i===0?0.006:0.003)*(0.5+rnd()),
+      g:(i===0?1:0.45+rnd()*0.4), xa, xb, waves, vort, drift:(rnd()-0.5)*6, off:rnd()*1000});
+    y+=60+rnd()*150;
+  }
+  const sunDep=13+rnd()*16;                     // degrees the sun is below the horizon
+  const shadow=rnd()<0.45 ? 6371/Math.cos(sunDep*DEG)-6371+40 : 5000; // height of Earth's shadow overhead
+  night={arcs, storm, tilt:1/Math.tan((76+rnd()*5)*DEG), sunDep, shadow, wind:Math.pow(rnd(),2.0)*0.55+0.04,
+         quiet:0.05+0.15*storm};
+  phase='quiet'; phT=0; phDur=10+rnd()*22; act=actR=0.1+night.quiet; surge=0;
+}
+function spawnVortex(a,young){
+  const life=10+rnd()*28;
+  return {s:a.xa+rnd()*(a.xb-a.xa), vs:(rnd()-0.5)*14, rho:16+rnd()*34, th:(1.2+rnd()*4.8)*(rnd()<0.5?-1:1),
+          life, age:young?rnd()*life:0};
+}
+function waveY(arc,x,m,sm){ let s=0; for(const w of arc.waves) s+=w.A*Math.sin(w.k*x-w.om*sm*T+w.ph); return s*m; }
+
+// ---------- substorm clock ----------
+function onset(){ phase='expansion'; phT=0; phDur=26+rnd()*20; }
+function stepClock(dt){
+  phT+=dt; let target, rate=0.5;
+  if(phase==='quiet'){ target=0.08+night.quiet; if(phT>phDur){ phase='growth'; phT=0; phDur=10+rnd()*14; } }
+  else if(phase==='growth'){ target=0.12+night.quiet+0.22*phT/phDur; if(phT>phDur) onset(); }
+  else if(phase==='expansion'){ target=0.32+(0.75+0.5*night.storm)*Math.exp(-phT/13); rate=phT<3?3.5:0.8;
+    if(phT>phDur){ phase='recovery'; phT=0; phDur=22+rnd()*22; } }
+  else { target=0.16+0.5*night.quiet; if(phT>phDur){ phase='quiet'; phT=0; phDur=18+rnd()*30; } }
+  act+=(target-act)*(1-Math.exp(-dt*rate));
+  actR+=(act-actR)*(1-Math.exp(-dt/35));        // the red line answers slowly: its oxygen state lives ~110 s
+  const sTarget = phase==='growth' ? -35*phT/phDur : phase==='expansion' ? -35-(80+60*night.storm)*(1-Math.exp(-phT/5)) :
+                  phase==='recovery' ? -30*(1-phT/phDur) : 0;
+  surge+=(sTarget-surge)*(1-Math.exp(-dt*(phase==='expansion'?0.9:0.15)));
+}
+
+// ---------- fill the arc and vortex textures ----------
+let lowBorder=110, meanE=2;
+function simulate(dt){
+  stepClock(dt);
+  const pulsing=phase==='recovery';
+  const wm=0.7+1.1*act, sm=1+2.2*act, vm=0.25+2.2*act;
+  warpBuf.fill(0);
+  let eSum=0, eW=0;
+  for(let i=0;i<4;i++){
+    const arc=night.arcs[i], row=i*NT*4;
+    if(!arc){ arcBuf.fill(0,row,row+NT*4); continue; }
+    arc.base=arc.base0+surge*(i===0?1:0.55);
+    const gain=arc.g*(0.12+1.25*act+0.6*act*act)*(i===0?1:0.7+0.3*Math.min(act*2,1));
+    const gainR=arc.g*(0.12+1.25*actR+0.6*actR*actR);
+    const contrast=0.35+0.6*Math.min(act,1), vr=arc.drift*(1+3*act), rf=0.25+2.2*act, o=arc.off;
+    for(let k=0;k<NT;k++){
+      const x=-XS+(k+0.5)*(2*XS/NT);
+      const env=smooth(arc.xa,arc.xa+260,x)*(1-smooth(arc.xb-260,arc.xb,x))*(0.45+0.55*vn(x/300+o,T*0.012+o));
+      const r1=vn((x-T*vr)/7+o*3,T*rf), r2=vn((x+T*vr*0.6)/2.6+o*5,T*rf*1.7+9);
+      let ray=0.25+1.7*r1*r1*r1+0.7*r2*r2*r2*r2; ray=1+(ray-1)*contrast;
+      const P=0.3+0.7*vn(x/95+T*0.04+o*7,T*0.05+3);
+      let puls=1; if(pulsing){ puls=0.2+0.8*smooth(0.42,0.58,vn(x/55+o,T*0.32+5)); }
+      const j=row+k*4;
+      arcBuf[j]=waveY(arc,x,wm,sm);
+      arcBuf[j+1]=gain*env*P*ray*puls;
+      arcBuf[j+2]=gainR*env*(0.55+0.45*P)*(0.4+0.6*puls);
+      const E=arc.E0*(1+1.1*act)*(0.7+0.6*vn(x/320+o*2,T*0.02+1))*(1+0.25*r1);
+      arcBuf[j+3]=E;
+      if(Math.abs(x)<500){ const wgt=env*P; eSum+=E*wgt*(i===0?1:0.3); eW+=wgt*(i===0?1:0.3); }
+    }
+    // shear vortices ride the arc and curl it
+    for(let vi=0;vi<arc.vort.length;vi++){
+      let v=arc.vort[vi]; v.age+=dt; v.s+=v.vs*dt*sm;
+      if(v.age>v.life||v.s<arc.xa-100||v.s>arc.xb+100){ v=arc.vort[vi]=spawnVortex(arc,false); }
+      const th=v.th*Math.pow(Math.sin(Math.PI*v.age/v.life),2)*vm;
+      if(Math.abs(th)<0.02) continue;
+      const cx=v.s, cy=arc.base+waveY(arc,cx,wm,sm), R=2.6*v.rho, ir2=1/(v.rho*v.rho);
+      const sx=WW/(WX1-WX0), sy=WH/(WY1-WY0);
+      const i0=Math.max(0,Math.floor((cx-R-WX0)*sx)), i1=Math.min(WW-1,Math.ceil((cx+R-WX0)*sx));
+      const j0=Math.max(0,Math.floor((cy-R-WY0)*sy)), j1=Math.min(WH-1,Math.ceil((cy+R-WY0)*sy));
+      for(let jj=j0;jj<=j1;jj++){
+        const dy=WY0+(jj+0.5)/sy-cy;
+        for(let ii=i0;ii<=i1;ii++){
+          const dx=WX0+(ii+0.5)/sx-cx, r2=dx*dx+dy*dy;
+          const a=th*Math.exp(-r2*ir2); if(Math.abs(a)<1e-3) continue;
+          const c=Math.cos(a), s=Math.sin(a), q=(jj*WW+ii)*2;
+          warpBuf[q]+=c*dx-s*dy-dx; warpBuf[q+1]+=s*dx+c*dy-dy;
+        }
+      }
+    }
+  }
+  meanE=eW>0?eSum/eW:night.arcs[0].E0;
+  lowBorder=130-13*Math.log(meanE)-14;
+}
+
+// ---------- GL ----------
+const VS=`#version 300 es
+void main(){ vec2 p=vec2(float((gl_VertexID&1)<<2)-1.0, float((gl_VertexID&2)<<1)-1.0); gl_Position=vec4(p,0.0,1.0); }`;
+
+const AURORA=`#version 300 es
+precision highp float;
+uniform vec2 uRes; uniform vec3 uF,uR,uU; uniform float uTan,uAsp;
+uniform sampler2D uArc, uWarp;
+uniform vec4 uArcP[3];            // base (km north), sheet width (km), red gain, diffuse gain
+uniform int uN; uniform float uTilt, uShadow, uGain, uFrame;
+uniform vec3 uCG,uCR,uCB,uCP;
+uniform vec4 uWB;                 // warp box: x0, x1, y0, y1
+out vec4 o;
+const float RE=6371.0, XS=1400.0, HTOP=430.0;
+float erfa(float x){ float x2=x*x; return sign(x)*sqrt(1.0-exp(-x2*(1.2732395+0.147*x2)/(1.0+0.147*x2))); }
+float tH(float H,float dz,float k){ return 2.0*H/(dz+sqrt(dz*dz+4.0*k*H)); }
+// light of a gaussian sheet along one straight segment, where the distance to it goes linearly Fa -> Fb
+float segI(float Fa,float Fb,float L,float w,float ea,float eb){
+  float dF=Fb-Fa;
+  if(abs(dF)<0.03*w){ float m=0.5*(Fa+Fb)/w; return L*exp(-m*m); }
+  return L*w*0.8862269*(eb-ea)/dF;
+}
+vec2 foot(float t,vec3 d,float k,out float h){
+  h=t*d.z+t*t*k;                                  // height above a curved Earth
+  vec2 p=t*d.xy;
+  p.y+=(h-110.0)*uTilt;                           // down the tilted field line to 110 km
+  p+=texture(uWarp,(p-uWB.xz)/(uWB.yw-uWB.xz)).rg; // shear vortices
+  return p;
+}
+vec4 arcAt(int j,float x){ return texture(uArc,vec2((x+XS)/(2.0*XS),(float(j)+0.5)*0.25)); }
+void main(){
+  vec2 ndc=gl_FragCoord.xy/uRes*2.0-1.0;
+  vec3 d=normalize(uF+ndc.x*uTan*uAsp*uR+ndc.y*uTan*uU);
+  if(d.z<=0.0){ o=vec4(0.0); return; }
+  float k=(1.0-d.z*d.z)/(2.0*RE);
+  float t0=tH(85.0,d.z,k), t1=tH(HTOP,d.z,k);
+  t1=min(t1,1450.0/sqrt(max(1.0-d.z*d.z,1e-6)));
+  if(t1<=t0){ o=vec4(0.0); return; }
+  float eld=degrees(asin(d.z));
+  float X=1.0/(d.z+0.50572*pow(eld+6.07995,-1.6364));       // air mass on the way down
+  vec3 cG=uCG*exp(-0.13*X), cR=uCR*exp(-0.085*X), cB=uCB*exp(-0.32*X), cP=uCP*exp(-0.09*X);
+  const int N=96;
+  float dt=(t1-t0)/float(N);
+  t0+=dt*(fract(sin(dot(gl_FragCoord.xy+uFrame*vec2(7.13,3.71),vec2(12.9898,78.233)))*43758.5453)-0.5); // dither the steps, new each frame
+  float Fp[3], enP[3], ebP[3]; vec4 Ap[3];
+  float hp; vec2 p0=foot(t0,d,k,hp);
+  for(int j=0;j<3;j++){
+    if(j>=uN) break;
+    vec4 A=arcAt(j,p0.x); float F=p0.y-uArcP[j].x-A.r; float w=uArcP[j].y;
+    Fp[j]=F; Ap[j]=A; enP[j]=erfa(F/w); ebP[j]=erfa(F/(2.5*w+5.0));
+  }
+  vec3 col=vec3(0.0);
+  for(int i=1;i<=N;i++){
+    float t=t0+dt*float(i), h; vec2 p=foot(t,d,k,h);
+    for(int j=0;j<3;j++){
+      if(j>=uN) break;
+      vec4 P=uArcP[j]; float w=P.y, wb=2.5*w+5.0;
+      vec4 A=arcAt(j,p.x); float F=p.y-P.x-A.r;
+      float en=erfa(F/w), eb=erfa(F/wb), Fa=Fp[j];
+      float Fm=0.5*(Fa+F), Id=dt*exp(-Fm*Fm/3600.0)*P.w;
+      if(Fa*F<0.0 || min(abs(Fa),abs(F))<4.0*wb || Id>1e-4){
+        float In=segI(Fa,F,dt,w,enP[j],en), Ib=segI(Fa,F,dt,wb,ebP[j],eb);
+        float den=Fa-F; float tau=clamp(abs(den)<1e-5?0.5:Fa/den,0.0,1.0);
+        float hm=mix(hp,h,tau); vec4 a=mix(Ap[j],A,tau);
+        float E=clamp(a.a,0.2,30.0);
+        float hpk=130.0-13.0*log(E), z=hm-hpk, Hu=14.0+22.0/sqrt(E);
+        float q=z<0.0?exp(-z*z/49.0):exp(-z/Hu);   // where the electrons give up their energy
+        float green=q*smoothstep(86.0,104.0,hm)*(1.0-0.6*smoothstep(180.0,300.0,hm));
+        float pink=q*(0.2+0.75*(1.0-smoothstep(92.0,106.0,hm)));
+        float sun=smoothstep(uShadow,uShadow+40.0,hm);
+        float blue=q*0.25+sun*0.5*exp(-max(z,0.0)/220.0);
+        float redS=exp(-pow((hm-245.0)/75.0,2.0))*smoothstep(160.0,228.0,hm);
+        float redQ=q*smoothstep(175.0,240.0,hm);
+        col+=In*a.g*(green*cG+pink*cP+blue*cB)+Ib*a.b*(P.z*redS+0.25*redQ)*cR+Id*a.b*(green+0.3*q)*cG;
+      }
+      Fp[j]=F; enP[j]=en; ebP[j]=eb; Ap[j]=A;
+    }
+    hp=h;
+  }
+  col*=uGain;
+  o=vec4(sqrt(col/(col+0.5)),1.0);           // square root keeps the faint light from banding
+}`;
+
+const COMPOSITE=`#version 300 es
+precision highp float;
+uniform vec2 uRes; uniform vec3 uF,uR,uU; uniform float uTan,uAsp;
+uniform sampler2D uAur; uniform float uAurPx;
+uniform float uT, uExp, uWind, uSeed; uniform vec3 uCG, uCR;
+out vec4 o;
+vec3 h33(vec3 p){ p=fract(p*vec3(0.1031,0.1030,0.0973)); p+=dot(p,p.yxz+33.33); return fract((p.xxy+p.yxx)*p.zyx); }
+vec3 dec(vec3 v){ v*=v; return 0.5*v/max(1.0-v,vec3(2e-3)); }
+vec3 aur(vec3 d,float lod){
+  float cf=dot(d,uF); if(cf<1e-3) return vec3(0.0);
+  vec2 uv=vec2(dot(d,uR)/(cf*uTan*uAsp),dot(d,uU)/(cf*uTan))*0.5+0.5;
+  vec2 out2=max(max(-uv,uv-1.0),0.0); float fade=1.0-smoothstep(0.0,0.06,max(out2.x,out2.y));
+  uv=clamp(uv,0.0,1.0);
+  vec3 L=dec(textureLod(uAur,uv,lod).rgb);
+  vec3 g1=dec(textureLod(uAur,uv,lod+3.0).rgb), g2=dec(textureLod(uAur,uv,lod+5.5).rgb);
+  return (L+0.09*g1+0.12*g2)*fade;
+}
+vec3 starLayer(vec3 d,float G,float dens,float ex,float pxA,float spread,float salt){
+  vec3 c=floor(d*G); vec3 h=h33(c+salt);
+  if(h.x>dens) return vec3(0.0);
+  vec3 h2=h33(c+salt+17.31);
+  vec3 sp=normalize((c+0.2+0.6*h2)/G);
+  float a=length(d-sp), sig=max(pxA*0.65,spread);
+  float flux=pow(h.y,ex)*1.3+0.0015*h.z*h.z;
+  flux*=1.0+0.55*sin(uT*(13.0+h.z*21.0)+h.y*60.0)*(1.0-smoothstep(0.0,0.4,d.z));
+  vec3 tint=mix(vec3(0.72,0.84,1.18),vec3(1.18,0.92,0.68),h2.x*h2.x);
+  return tint*flux*exp(-0.5*a*a/(sig*sig))*(pxA*pxA*0.4225/(sig*sig));
+}
+vec3 sky(vec3 d,float lod,float pxA,float spread){
+  float s=max(d.z,0.0), eld=degrees(asin(s));
+  float X=1.0/(s+0.50572*pow(eld+6.07995,-1.6364));
+  vec3 col=vec3(0.00022,0.00034,0.00080)+vec3(0.00045,0.00055,0.00072)*exp(-s*8.0);
+  float c=sqrt(1.0-s*s)*6371.0/6466.0; float vr=1.0/sqrt(1.0-c*c);          // airglow layer, 95 km up
+  col+=(0.00016*uCG/max(uCG.g,1e-3)*exp(-0.13*X)+0.00005*uCR/max(uCR.r,1e-3))*vr;
+  vec3 st=starLayer(d,190.0,0.10,22.0,pxA,spread,0.0)+starLayer(d,58.0,0.05,10.0,pxA,spread,91.0);
+  col+=st*exp(-0.22*X);
+  return col+aur(d,lod);
+}
+float hill(float az){ return radians(max(0.08,0.32+0.42*sin(az*3.0+uSeed)+0.28*sin(az*7.3+2.0*uSeed)+0.12*sin(az*19.0+3.0*uSeed))); }
+float treeCov(float az,float el,float pxA){
+  float y=el-hill(az);
+  float cov=smoothstep(pxA,-pxA,y);
+  if(y>radians(3.2)) return cov;
+  const float CW=0.0066;          // about 0.38 degrees of azimuth per tree slot
+  float ic=floor(az/CW);
+  for(int j=-3;j<=3;j++){
+    float n=ic+float(j);
+    vec3 h=h33(vec3(n,7.0+uSeed,3.0));
+    if(h.x<0.14) continue;
+    float cx=(n+0.5+(h.y-0.5)*0.8)*CW;
+    float H=radians(0.45+2.1*pow(h.z,1.5));
+    float yr=y/H; if(yr>1.03||yr<-0.1) continue;
+    float tier=fract((1.0-yr)*(5.0+4.0*h.y)+h.x*3.0);
+    float hw=H*0.23*max(1.0-yr,0.0)*(0.6+0.4*tier)+H*0.01;
+    float dx=abs(az-cx);
+    cov=max(cov,smoothstep(-pxA,pxA,min(hw-dx,H-y)));
+  }
+  return cov;
+}
+void main(){
+  vec2 ndc=gl_FragCoord.xy/uRes*2.0-1.0;
+  vec3 d=normalize(uF+ndc.x*uTan*uAsp*uR+ndc.y*uTan*uU);
+  float pxA=2.0*uTan/uRes.y;
+  vec3 amb=dec(textureLod(uAur,vec2(0.5,0.7),9.0).rgb);
+  vec3 treeCol=vec3(0.00010,0.00013,0.00020)+0.01*amb;
+  vec3 col;
+  float az=atan(d.x,d.y);
+  if(d.z>=0.0){
+    col=sky(d,0.0,pxA,0.0);
+    float el=asin(d.z);
+    if(el<radians(4.0)) col=mix(col,treeCol,treeCov(az,el,pxA));
+  }else{
+    float se=-d.z;
+    float D=1.8/max(se,1e-5);                        // metres to the water from eyes 1.8 m up
+    vec2 P=normalize(d.xy+1e-6)*D;
+    float fp=D*pxA/se;
+    vec2 sl=vec2(0.0); float var=0.0;
+    float wa=uSeed*2.3;
+    for(int j=0;j<11;j++){
+      float fj=float(j);
+      float lam=0.25*pow(1.37,fj), a=wa+sin(fj*3.7+uSeed)*1.2;
+      vec2 kd=vec2(cos(a),sin(a)); float kk=6.2831853/lam, om=sqrt(9.81*kk);
+      float s=uWind*(0.06-0.0035*fj);
+      float att=smoothstep(1.5,4.0,lam/fp);
+      sl+=kd*s*att*cos(kk*dot(kd,P)-om*uT+fj*1.7);
+      var+=(1.0-att)*s*s*0.5;
+    }
+    vec3 n=normalize(vec3(-sl,1.0));
+    vec3 r=reflect(d,n); r.z=abs(r.z); r=normalize(r);
+    float cosi=max(dot(-d,n),0.0);
+    float Fr=0.02+0.98*pow(1.0-cosi,5.0);
+    float spread=2.0*sqrt(var);
+    float lod=log2(max(1.0,spread/uAurPx));
+    vec3 s=sky(r,lod,pxA,spread);
+    float tc=treeCov(atan(r.x,r.y),asin(r.z),pxA+spread);
+    col=Fr*mix(s,treeCol,tc)+vec3(0.00006,0.00008,0.00012);
+  }
+  col*=uExp;
+  col=1.0-exp(-col);
+  vec2 q=gl_FragCoord.xy/uRes-0.5; col*=1.0-0.35*dot(q,q);
+  col=pow(col,vec3(1.0/2.2));
+  col+=(h33(vec3(gl_FragCoord.xy,uT*60.0)).x-0.5)/255.0;
+  o=vec4(col,1.0);
+}`;
+
+function compile(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+function program(fs){ const p=gl.createProgram(); gl.attachShader(p,compile(gl.VERTEX_SHADER,VS)); gl.attachShader(p,compile(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u={}, n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){ const name=gl.getActiveUniform(p,i).name.replace(/\[0\]$/,''); u[name]=gl.getUniformLocation(p,name); }
+  return {p,u}; }
+let PA, PC;
+try{ PA=program(AURORA); PC=program(COMPOSITE); }
+catch(e){ const el=document.getElementById('err'); el.textContent='WebGL error: '+e.message; el.style.display='flex'; console.error(e); return; }
+const vao=gl.createVertexArray();
+
+function tex(w,h,ifmt,fmt,filter){
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,ifmt,w,h,0,fmt,gl.FLOAT,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,filter); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,filter);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  return t; }
+const arcTex=tex(NT,4,gl.RGBA16F,gl.RGBA,gl.LINEAR);
+const warpTex=tex(WW,WH,gl.RG16F,gl.RG,gl.LINEAR);
+let AGAIN=+(new URLSearchParams(location.search).get('gain')||0.03);
+let frameNo=0, lastYaw=0, lastPitch=0, lastFov=0, fresh=true;
+let aurTex=null, fbo=gl.createFramebuffer(), aw=0, ah=0, aScale=0.5;
+function makeAurora(){
+  const W=Math.max(64,Math.round(cv.width*aScale)), H=Math.max(48,Math.round(cv.height*aScale));
+  if(W===aw&&H===ah) return; aw=W; ah=H; fresh=true;
+  if(aurTex) gl.deleteTexture(aurTex);
+  aurTex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,aurTex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,aw,ah,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fbo); gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,aurTex,0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+}
+function resize(){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  cv.width=Math.round(innerWidth*dpr); cv.height=Math.round(innerHeight*dpr);
+  makeAurora();
+}
+resize();
+
+// ---------- camera ----------
+let yaw=0, pitch=14*DEG, fov=64*DEG;
+let F=[0,1,0], R=[1,0,0], U=[0,0,1];
+function basis(){
+  const cp=Math.cos(pitch), sp=Math.sin(pitch);
+  F=[Math.sin(yaw)*cp, Math.cos(yaw)*cp, sp];
+  R=[Math.cos(yaw), -Math.sin(yaw), 0];
+  U=[R[1]*F[2]-R[2]*F[1], R[2]*F[0]-R[0]*F[2], R[0]*F[1]-R[1]*F[0]];
+}
+
+// ---------- frame ----------
+let last=performance.now(), paused=false, hudOn=true, hudT=0, ft=16, tuneT=0, keys={};
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now;
+  ft+=((dt*1000)-ft)*0.05;
+  const kr=1.1*dt*fov/(64*DEG);
+  if(keys.ArrowLeft) yaw-=kr; if(keys.ArrowRight) yaw+=kr;
+  if(keys.ArrowUp) pitch=clamp(pitch+kr,-6*DEG,86*DEG); if(keys.ArrowDown) pitch=clamp(pitch-kr,-6*DEG,86*DEG);
+  basis();
+  if(!paused){ T+=dt; simulate(dt); }
+  // keep the frame rate: the aurora pass is the expensive one
+  tuneT+=dt;
+  if(tuneT>1.5){ tuneT=0;
+    const before=aScale;
+    if(ft>24) aScale=Math.max(0.22,aScale*0.85); else if(ft<15&&aScale<0.62) aScale=Math.min(0.62,aScale*1.1);
+    if(Math.abs(before-aScale)>1e-3) makeAurora(); }
+
+  gl.bindTexture(gl.TEXTURE_2D,arcTex); gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,NT,4,gl.RGBA,gl.FLOAT,arcBuf);
+  gl.bindTexture(gl.TEXTURE_2D,warpTex); gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,WW,WH,gl.RG,gl.FLOAT,warpBuf);
+  gl.bindVertexArray(vao);
+  const tanH=Math.tan(fov/2), asp=cv.width/cv.height;
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fbo); gl.viewport(0,0,aw,ah);
+  gl.useProgram(PA.p); const ua=PA.u;
+  gl.uniform2f(ua.uRes,aw,ah); gl.uniform3fv(ua.uF,F); gl.uniform3fv(ua.uR,R); gl.uniform3fv(ua.uU,U);
+  gl.uniform1f(ua.uTan,tanH); gl.uniform1f(ua.uAsp,asp);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,arcTex); gl.uniform1i(ua.uArc,0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,warpTex); gl.uniform1i(ua.uWarp,1);
+  const ap=new Float32Array(12);
+  night.arcs.forEach((a,i)=>{ ap[i*4]=a.base; ap[i*4+1]=a.w*(1+0.25*act); ap[i*4+2]=a.redGain; ap[i*4+3]=a.dGain; });
+  gl.uniform4fv(ua.uArcP,ap); gl.uniform1i(ua.uN,night.arcs.length);
+  gl.uniform1f(ua.uTilt,night.tilt); gl.uniform1f(ua.uShadow,night.shadow);
+  gl.uniform3fv(ua.uCG,C_G); gl.uniform3fv(ua.uCR,C_R); gl.uniform3fv(ua.uCB,C_B); gl.uniform3fv(ua.uCP,C_P);
+  gl.uniform4f(ua.uWB,WX0,WX1,WY0,WY1); gl.uniform1f(ua.uGain,AGAIN); gl.uniform1f(ua.uFrame,(frameNo++)%977);
+  // blend with the last frame so the dithered steps average out; start fresh when the view moves
+  const still=Math.abs(yaw-lastYaw)+Math.abs(pitch-lastPitch)+Math.abs(fov-lastFov)<1e-5 && !fresh;
+  lastYaw=yaw; lastPitch=pitch; lastFov=fov; fresh=false;
+  if(still){ gl.enable(gl.BLEND); gl.blendFunc(gl.CONSTANT_ALPHA,gl.ONE_MINUS_CONSTANT_ALPHA); gl.blendColor(0,0,0,0.4); }
+  gl.drawArrays(gl.TRIANGLES,0,3);
+  gl.disable(gl.BLEND);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,aurTex); gl.generateMipmap(gl.TEXTURE_2D);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,cv.width,cv.height);
+  gl.useProgram(PC.p); const uc=PC.u;
+  gl.uniform2f(uc.uRes,cv.width,cv.height); gl.uniform3fv(uc.uF,F); gl.uniform3fv(uc.uR,R); gl.uniform3fv(uc.uU,U);
+  gl.uniform1f(uc.uTan,tanH); gl.uniform1f(uc.uAsp,asp);
+  gl.uniform1i(uc.uAur,0); gl.uniform1f(uc.uAurPx,2*tanH/ah);
+  gl.uniform1f(uc.uT,T); gl.uniform1f(uc.uExp,9.0/(0.75+0.5*Math.sqrt(act)));
+  gl.uniform1f(uc.uWind,night.wind); gl.uniform1f(uc.uSeed,(seed%1000)/100);
+  gl.uniform3fv(uc.uCG,C_G); gl.uniform3fv(uc.uCR,C_R);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+
+  hudT-=dt;
+  if(hudT<=0){ hudT=0.25;
+    const bars=Math.round(clamp(act,0,1.2)/1.2*12);
+    const names={quiet:'a quiet arc',growth:'growth &mdash; brightening, drifting closer',expansion:'breakup &mdash; substorm expansion',recovery:'recovery &mdash; pulsating patches'};
+    hud.innerHTML=`merry dancers<br>night ${nightNo} &middot; ${names[phase]}${paused?' &mdash; paused':''}`+
+      `<br>activity ${'&#9646;'.repeat(bars)}${'&#9647;'.repeat(12-bars)}`+
+      `<br>electrons ~${meanE.toFixed(1)} keV &middot; lower border ~${Math.round(lowBorder)} km`+
+      `<br>${night.arcs.length} arcs &middot; field dips ${(90-Math.atan(night.tilt)/DEG).toFixed(0)}&deg; &middot; sun ${night.sunDep.toFixed(0)}&deg; below`+
+      (night.shadow<1000?` &middot; sunlit above ${Math.round(night.shadow)} km`:'')+
+      `<br>O 557.7 green &middot; O 630.0 red &middot; N&#8322;&#8314; 427.8 blue &middot; N&#8322; pink hem`;
+  }
+  requestAnimationFrame(frame);
+}
+
+// ---------- input ----------
+let down=null, moved=false;
+cv.addEventListener('pointerdown',e=>{ down={x:e.clientX,y:e.clientY,yaw,pitch}; moved=false; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove',e=>{ if(!down) return;
+  const dx=e.clientX-down.x, dy=e.clientY-down.y; if(Math.abs(dx)+Math.abs(dy)>4) moved=true;
+  const s=fov/innerHeight; yaw=down.yaw-dx*s; pitch=clamp(down.pitch+dy*s,-6*DEG,86*DEG); });
+cv.addEventListener('pointerup',()=>{ if(down&&!moved) newNight(); down=null; });
+addEventListener('wheel',e=>{ fov=clamp(fov*Math.exp(e.deltaY*0.001),30*DEG,115*DEG); e.preventDefault(); },{passive:false});
+addEventListener('keydown',e=>{
+  keys[e.key]=true;
+  if(e.key===' '){ paused=!paused; e.preventDefault(); }
+  else if(e.key==='b'||e.key==='B'){ if(phase!=='expansion') onset(); }
+  else if(e.key==='h'||e.key==='H'){ hudOn=!hudOn; hud.style.display=hint.style.display=hudOn?'':'none'; }
+  if(e.key.startsWith('Arrow')) e.preventDefault();
+});
+addEventListener('keyup',e=>{ keys[e.key]=false; });
+addEventListener('resize',resize);
+
+newNight();
+basis();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,31 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-19** — `2026-11-19-merry-dancers.html`: a hundred-and-sixth
+  technique, and the archive's first aurora. It finishes a run of three sky
+  pieces: the rainbow needed the sun behind you, the halos needed it in front,
+  and the aurora needs it far below the horizon. Electrons sliding down the
+  magnetic field stop in the upper air and make oxygen and nitrogen glow in a
+  few sharp lines: green oxygen from about 100 to 200 km, deep-red oxygen
+  above 200 (it is slow, so it lags the rest), and nitrogen's blue and the pink
+  hem along the lower border when the electrons are hard enough to get below
+  the green. Nothing is a painted curtain. Each pixel's line of sight is
+  followed out over a curved Earth. Every point on it is traced down the tilted
+  field to a footprint, and the footprint is swirled by the shear vortices that
+  curl real arcs. Each sheet's light is integrated exactly for a sheet with a
+  gaussian cross-section, so even the thinnest curtain is never missed between
+  steps, and it is brightest where you see it edge-on. The emission at each
+  height comes from the electrons' energy, line by line, then dimmed and
+  reddened by the air on its way down. Rays all point to the magnetic zenith.
+  Substorms come and go: a quiet arc; a growth phase that brightens and drifts
+  closer; the breakup, when the arc bursts into rays and curls and surges
+  overhead; and a recovery of dim, blinking patches. Some nights the tops of
+  the rays reach sunlight and turn violet. A lake under a spruce shore mirrors
+  all of it, broken up by whatever wind there is. Click for another night, drag
+  or use the arrows to look around (look up during a breakup), wheel to widen,
+  B to start a substorm now, H to hide the text, space to pause. Needs WebGL2;
+  open the file directly in a browser.
+
 - **2026-11-18** — `2026-11-18-mock-suns.html`: a hundred-and-fifth
   technique, and the archive's first ice-halo display. Last night's rainbow
   needed water and the sun at your back; tonight the sun is ahead, behind a
