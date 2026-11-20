@@ -24,6 +24,32 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-20** — `2026-11-20-nineteen-degrees.html`: a hundred-and-seventh
+  technique, and the archive's first ship wakes. After three nights of sky,
+  the eye comes down to the water under a low sun. Anything crossing deep
+  water, a canoe or a ferry, leaves a V whose half-angle is always arcsin(1/3),
+  19.47 degrees, as Kelvin showed in 1887. Long waves outrun short ones, only
+  the waves that keep pace with the boat stand still behind it, and their
+  energy travels at half their speed; that half closes the wake into the same
+  wedge at every speed. Nothing here is drawn as a wake. The lake is a real
+  height field and velocity potential on a 256-square grid, 96 metres across,
+  run with linear deep-water theory in Fourier space, where each wave component
+  just turns at its own frequency, sqrt(g k), so every step is exact. A boat is
+  only a hull-shaped patch of pressure moving over the water. The wedge, the
+  curved transverse waves inside it, the feathered diverging waves along its
+  edges and the bent wakes of turning boats all come out of the dispersion. A
+  speedboat at a Froude number above one half makes a narrower V, as real fast
+  hulls do. A stone makes Cauchy-Poisson rings, long waves running out ahead of
+  the short. The surface is lit by a dusk sky with a thin cloud deck. Ripples
+  too fine to resolve become a roughness that stretches the sun into a long
+  glitter column, and lamps on short masts break up in the wakes. The fine wind
+  ripples are texture, not simulation, and the grid's edges are a soft beach.
+  Click the water to drop a stone, drag to look around, wheel to climb, N for
+  other boats, S for one boat on a straight course (the textbook wedge), F for
+  full throttle, W to overlay Kelvin's lines and each boat's Froude number, H
+  to hide the text, space to pause. Needs WebGL2; open the file directly in a
+  browser.
+
 - **2026-11-19** — `2026-11-19-merry-dancers.html`: a hundred-and-sixth
   technique, and the archive's first aurora. It finishes a run of three sky
   pieces: the rainbow needed the sun behind you, the halos needed it in front,

@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nineteen Degrees</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#06070d; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:pointer; touch-action:none; }
+  #ov { pointer-events:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#f3ece4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95); pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#f6efe8; opacity:.55; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px #000, 0 0 2px #000; }
+  #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#cfd6e2;
+    font-family:'Courier New', monospace; font-size:14px; text-align:center; padding:24px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="hud"></div>
+<div id="hint">click the water &mdash; drop a stone&nbsp;&nbsp;|&nbsp;&nbsp;drag &mdash; look around&nbsp;&nbsp;|&nbsp;&nbsp;wheel &mdash; climb or descend&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; other boats&nbsp;&nbsp;|&nbsp;&nbsp;S &mdash; one boat, straight&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; faster&nbsp;&nbsp;|&nbsp;&nbsp;W &mdash; show the wedge&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="err">This piece needs WebGL2.</div>
+<script>
+(function(){
+"use strict";
+// Nineteen degrees. Anything that moves across deep water, a duck or a liner, leaves a V behind it
+// whose half-angle is the same: arcsin(1/3), 19.47 degrees. Lord Kelvin worked it out in 1887. Water
+// waves are dispersive -- long ones run faster than short ones, with speed sqrt(g/k) -- and only the
+// waves that keep pace with the boat along their own direction stand still behind it; their energy
+// travels at half their speed, and that factor of a half, run through the geometry, closes the wake
+// into a wedge of 19.47 degrees whatever the speed. Inside it lie the transverse waves, curved crests
+// across the track, and along its edges the short diverging waves, feathered like a chevron.
+//
+// Nothing here is drawn as a wake. The lake is a real field: a surface height and a velocity
+// potential on a 256 x 256 grid, 96 metres on a side, evolved with linear deep-water wave theory. In
+// Fourier space every wave component simply turns at its own frequency, omega = sqrt(g k), so each
+// step is exact, not an approximation of a derivative. A boat is only a patch of pressure pressing on
+// the water and moving; the Bernoulli condition turns that pressure into waves, the dispersion sorts
+// them, and the wedge, the transverse arcs, the cusps along the edge and the curving wakes of a turning
+// boat all come out on their own. Fast boats (Froude number above about one half) give a narrower V,
+// as real fast hulls do, because their hull is short compared with the wavelength they make. A stone
+// gives the Cauchy-Poisson rings: the long waves run out ahead and the short ones dawdle inside.
+// The edges of the grid are a soft beach that swallows the waves, and the fine wind ripples on the
+// far water are a texture, not part of the simulation.
+const cv=document.getElementById('c'), ov=document.getElementById('ov');
+const octx=ov.getContext('2d');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false});
+if(!gl){ document.getElementById('err').style.display='flex'; hint.style.display='none'; return; }
+const TAU=Math.PI*2, DEG=Math.PI/180;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const rnd=Math.random;
+const G=9.81;
+
+// ---------- the lake ----------
+const N=256, L=96, DX=L/N;
+let DT=1/60;
+const X0=-L/2, Z0=4;                 // world x in [X0, X0+L], z in [Z0, Z0+L]; the camera stands at z = 0
+const CX=X0+L/2, CZ=Z0+L/2;
+const NN=N*N;
+const Eta=new Float64Array(NN), Phi=new Float64Array(NN);
+const Re=new Float64Array(NN), Im=new Float64Array(NN);
+const tex=new Float32Array(NN);
+
+// FFT tables
+const LOG=Math.log2(N)|0;
+const REV=new Uint16Array(N);
+for(let i=0;i<N;i++){ let r=0; for(let b=0;b<LOG;b++) if(i&(1<<b)) r|=1<<(LOG-1-b); REV[i]=r; }
+const COS=new Float64Array(N/2), SIN=new Float64Array(N/2);
+for(let i=0;i<N/2;i++){ COS[i]=Math.cos(TAU*i/N); SIN[i]=Math.sin(TAU*i/N); }
+function fft1(xr,xi,inv){
+  for(let i=0;i<N;i++){ const j=REV[i]; if(j>i){ let t=xr[i]; xr[i]=xr[j]; xr[j]=t; t=xi[i]; xi[i]=xi[j]; xi[j]=t; } }
+  const sg=inv?1:-1;
+  for(let size=2; size<=N; size<<=1){
+    const half=size>>1, step=N/size;
+    for(let i=0;i<N;i+=size){
+      for(let k=0;k<half;k++){
+        const wr=COS[k*step], wi=sg*SIN[k*step];
+        const a=i+k, b=a+half;
+        const tr=xr[b]*wr-xi[b]*wi, ti=xr[b]*wi+xi[b]*wr;
+        xr[b]=xr[a]-tr; xi[b]=xi[a]-ti; xr[a]+=tr; xi[a]+=ti;
+      }
+    }
+  }
+}
+const colR=new Float64Array(N), colI=new Float64Array(N);
+function fft2(re,im,inv){
+  for(let r=0;r<N;r++) fft1(re.subarray(r*N,r*N+N), im.subarray(r*N,r*N+N), inv);
+  for(let c=0;c<N;c++){
+    for(let r=0;r<N;r++){ colR[r]=re[r*N+c]; colI[r]=im[r*N+c]; }
+    fft1(colR,colI,inv);
+    if(inv){ const s=1/NN; for(let r=0;r<N;r++){ re[r*N+c]=colR[r]*s; im[r*N+c]=colI[r]*s; } }
+    else for(let r=0;r<N;r++){ re[r*N+c]=colR[r]; im[r*N+c]=colI[r]; }
+  }
+}
+
+// per-mode constants for one exact step of dt: rotation at omega = sqrt(g k), and a light damping
+const KX=new Float64Array(N);
+for(let i=0;i<N;i++){ const m=i<N/2?i:i-N; KX[i]=(i===N/2)?0:TAU*m/L; }
+const MC=new Float64Array(NN), MS=new Float64Array(NN), KW=new Float64Array(NN), GW=new Float64Array(NN), DMP=new Float64Array(NN);
+const MIR=new Uint32Array(NN);
+// the soft beach: waves die smoothly within twelve metres of the grid's edge
+const SPONGE=new Float64Array(NN);
+function setDT(dt){
+DT=dt;
+for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+  const id=j*N+i;
+  const mx=i<N/2?i:i-N, mz=j<N/2?j:j-N;
+  const kx=TAU*mx/L, kz=TAU*mz/L, k=Math.hypot(kx,kz);
+  MIR[id]=((N-j)%N)*N+((N-i)%N);
+  if(k===0){ MC[id]=0; MS[id]=0; KW[id]=0; GW[id]=0; DMP[id]=0; continue; }
+  const w=Math.sqrt(G*k);
+  MC[id]=Math.cos(w*DT); MS[id]=Math.sin(w*DT);
+  KW[id]=k/w; GW[id]=G/w;
+  // a gentle loss, stronger for short waves: the grid's shortest waves are the least trustworthy
+  const kn=k/(Math.PI/DX);
+  DMP[id]=Math.exp(-(0.012+0.9*kn*kn*kn*kn)*DT);
+}
+for(let j=0;j<N;j++) for(let i=0;i<N;i++){
+  const d=Math.min(i+0.5, N-i-0.5, j+0.5, N-j-0.5)*DX, Wb=12;
+  const u=d<Wb?1-d/Wb:0;
+  SPONGE[j*N+i]=Math.exp(-4.0*u*u*DT);
+}
+}
+setDT(1/60);
+
+// ---------- boats ----------
+const HULLS=[
+  {name:'rowing skiff', len:4.2, wid:0.75, U:[1.3,1.9], col:[0.62,0.50,0.38], A:1.6, lamp:false},
+  {name:'fishing launch', len:7.0, wid:1.25, U:[2.6,3.6], col:[0.80,0.78,0.74], A:2.6, lamp:true},
+  {name:'sailing dinghy', len:4.6, wid:0.85, U:[1.8,2.6], col:[0.90,0.88,0.84], A:1.8, lamp:false},
+  {name:'ferry', len:12.0, wid:2.3, U:[3.0,4.2], col:[0.18,0.17,0.19], A:3.4, lamp:true},
+  {name:'speedboat', len:5.5, wid:1.1, U:[7.5,10.0], col:[0.70,0.20,0.14], A:2.4, lamp:true},
+  {name:'canoe', len:4.8, wid:0.6, U:[1.1,1.6], col:[0.55,0.30,0.16], A:1.2, lamp:false},
+];
+let boats=[];
+const MAXB=6;
+function makeBoats(solo){
+  boats=[];
+  if(solo){
+    // one launch on a dead straight course across the lake: the textbook wedge
+    const H=HULLS[1], U=H.U[0]+rnd()*(H.U[1]-H.U[0]);
+    boats.push({H, x:X0+15, z:CZ+(rnd()-0.5)*16, h:0, U, Ut:U, amp:0, solo:1, f1:0, f2:0, p1:0, p2:0, wig:0, retarget:1e9});
+    return;
+  }
+  const n=3+((rnd()*2)|0);
+  const kinds=[];
+  // always one boat in the kelvin regime that is big enough to make a clear wedge
+  kinds.push(rnd()<0.5?1:3);
+  while(kinds.length<n){ const k=(rnd()*HULLS.length)|0; if(kinds.filter(x=>x===k).length<1 || k===0||k===2||k===5) kinds.push(k); }
+  for(let b=0;b<kinds.length;b++){
+    const H=HULLS[kinds[b]];
+    let x,z,ok=false,tries=0;
+    while(!ok && tries<50){
+      x=CX+(rnd()-0.5)*44; z=CZ+(rnd()-0.5)*44; ok=true; tries++;
+      for(const o of boats) if(Math.hypot(o.x-x,o.z-z)<14) ok=false;
+    }
+    const U=H.U[0]+rnd()*(H.U[1]-H.U[0]);
+    boats.push({H, x, z, h:rnd()*TAU, U:U*0.3, Ut:U, amp:0, f1:0.05+rnd()*0.08, f2:0.13+rnd()*0.1, p1:rnd()*TAU, p2:rnd()*TAU,
+      wig:0.10+rnd()*0.12, retarget:6+rnd()*12});
+  }
+}
+
+let simT=0, speedBoost=false;
+function stepBoats(dt){
+  for(const b of boats){
+    if(b.solo && b.x>X0+L-24){ b.solo=0; b.wig=0.12; b.f1=0.07; b.f2=0.17; }
+    b.retarget-=dt;
+    if(b.retarget<0){ b.Ut=b.H.U[0]+rnd()*(b.H.U[1]-b.H.U[0]); b.retarget=8+rnd()*14; }
+    const Ut=b.Ut*(speedBoost?1.5:1);
+    b.U+=(Ut-b.U)*Math.min(1,dt*0.35);
+    b.amp=Math.min(1,b.amp+dt*0.4);
+    // wander, and come home when far out
+    let w=b.wig*Math.sin(simT*b.f1*TAU+b.p1)+0.6*b.wig*Math.sin(simT*b.f2*TAU+b.p2);
+    const dxh=CX-b.x, dzh=CZ-b.z, dh=Math.hypot(dxh,dzh);
+    if(dh>20 && !b.solo){
+      const want=Math.atan2(dzh,dxh);
+      let e=want-b.h; e=Math.atan2(Math.sin(e),Math.cos(e));
+      w+=clamp(e,-1,1)*0.35*Math.min(1,(dh-20)/8);
+    }
+    // keep clear of each other
+    for(const o of boats){ if(o===b) continue;
+      const rx=o.x-b.x, rz=o.z-b.z, d=Math.hypot(rx,rz);
+      if(d<16 && d>0){
+        const fx=Math.cos(b.h), fz=Math.sin(b.h);
+        const ahead=(rx*fx+rz*fz)/d, side=(fx*rz-fz*rx);
+        if(ahead>0.2) w-=Math.sign(side||1)*0.3*(1-d/16)*ahead;
+      }
+    }
+    // a fast boat turns in a wider circle
+    const wmax=Math.min(0.32, 1.6/Math.max(b.U,1));
+    w=clamp(w,-wmax,wmax);
+    b.h+=w*dt;
+    b.x+=Math.cos(b.h)*b.U*dt; b.z+=Math.sin(b.h)*b.U*dt;
+    b.x=clamp(b.x,X0+14,X0+L-14); b.z=clamp(b.z,Z0+14,Z0+L-14);
+  }
+}
+
+// a boat is a patch of pressure moving over the water. Bernoulli: phi_t + g eta + p/rho = 0
+function pressBoats(dt){
+  for(const b of boats){
+    // a hull-shaped footprint: flat along the middle, falling off within half a metre at bow and
+    // stern, so the sharp ends throw the short diverging waves that real hulls do
+    const hl=b.H.len*0.5, sw=b.H.wid*0.5, edge=0.45;
+    const A=1.7*b.H.A*b.amp;
+    const fx=Math.cos(b.h), fz=Math.sin(b.h);
+    const R=hl+3*edge+DX;
+    const i0=Math.max(0,Math.floor((b.x-R-X0)/DX)), i1=Math.min(N-1,Math.ceil((b.x+R-X0)/DX));
+    const j0=Math.max(0,Math.floor((b.z-R-Z0)/DX)), j1=Math.min(N-1,Math.ceil((b.z+R-Z0)/DX));
+    for(let j=j0;j<=j1;j++){
+      const z=Z0+(j+0.5)*DX-b.z;
+      for(let i=i0;i<=i1;i++){
+        const x=X0+(i+0.5)*DX-b.x;
+        const s=x*fx+z*fz, n=-x*fz+z*fx;
+        const qn=(n*n)/(2*sw*sw);
+        if(qn>9) continue;
+        // narrowing toward the bow and stern
+        const taper=1-0.55*(s/hl)*(s/hl);
+        const fs=0.5*(Math.tanh((s+hl)/edge)-Math.tanh((s-hl)/edge));
+        if(fs<1e-4 || taper<=0) continue;
+        Phi[j*N+i]-=A*fs*Math.exp(-qn/(taper*taper))*dt;
+      }
+    }
+  }
+}
+const stones=[];
+function pressStones(){
+  while(stones.length){
+    const s=stones.pop();
+    const sg=0.5, R=4*sg;
+    const i0=Math.max(0,Math.floor((s.x-R-X0)/DX)), i1=Math.min(N-1,Math.ceil((s.x+R-X0)/DX));
+    const j0=Math.max(0,Math.floor((s.z-R-Z0)/DX)), j1=Math.min(N-1,Math.ceil((s.z+R-Z0)/DX));
+    for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){
+      const x=X0+(i+0.5)*DX-s.x, z=Z0+(j+0.5)*DX-s.z;
+      Phi[j*N+i]-=1.4*Math.exp(-(x*x+z*z)/(2*sg*sg));
+    }
+  }
+}
+
+function stepWater(){
+  pressBoats(DT); pressStones();
+  for(let i=0;i<NN;i++){ const s=SPONGE[i]; Re[i]=Eta[i]*s; Im[i]=Phi[i]*s; }
+  fft2(Re,Im,false);
+  // unpack the two real fields, turn every component by its own frequency, pack them again
+  for(let id=0;id<NN;id++){
+    const m=MIR[id];
+    if(m<id) continue;
+    const Zr=Re[id], Zi=Im[id], Mr=Re[m], Mi=Im[m];
+    // eta_hat(k) and phi_hat(k), and their mirrors at -k (complex conjugates)
+    let er=(Zr+Mr)*0.5, ei=(Zi-Mi)*0.5;
+    let pr=(Zi+Mi)*0.5, pi=-(Zr-Mr)*0.5;
+    const c=MC[id], s=MS[id], kw=KW[id], gw=GW[id], d=DMP[id];
+    const ner=(er*c+kw*pr*s)*d, nei=(ei*c+kw*pi*s)*d;
+    const npr=(pr*c-gw*er*s)*d, npi=(pi*c-gw*ei*s)*d;
+    // Z = eta + i phi at k, and at -k with conjugated parts
+    Re[id]=ner-npi; Im[id]=nei+npr;
+    if(m!==id){ Re[m]=ner+npi; Im[m]=-nei+npr; }
+    else { Re[id]=ner; Im[id]=npr; }
+  }
+  fft2(Re,Im,true);
+  for(let i=0;i<NN;i++){ Eta[i]=Re[i]; Phi[i]=Im[i]; }
+  simT+=DT;
+}
+function packTex(){
+  for(let i=0;i<NN;i++) tex[i]=Eta[i];
+}
+
+// ---------- GL ----------
+const VS=`#version 300 es
+in vec2 p; out vec2 uv; void main(){ uv=p; gl_Position=vec4(p,0.,1.); }`;
+const FS=`#version 300 es
+precision highp float;
+in vec2 uv; out vec4 o;
+uniform sampler2D uW;
+uniform vec2 uRes;
+uniform vec3 uCam, uF, uR, uU;
+uniform float uTan, uTime;
+uniform vec3 uSun;
+uniform vec4 uDom;            // x0, z0, L, 0
+uniform vec4 uB[6];           // x, z, heading, length
+uniform vec4 uBW[6];          // width, active, lamp, 0
+uniform vec3 uBC[6];
+uniform int uNB;
+
+float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }
+float fbm(vec2 p){ float a=.5, s=0.; for(int i=0;i<5;i++){ s+=a*vnoise(p); p=p*2.03+vec2(17.1,3.7); a*=.5; } return s; }
+
+// smooth cubic B-spline lookup of the height grid (four bilinear taps), so slopes have no facets
+float hgt(vec2 uv){
+  vec2 st=uv*256.-.5, i=floor(st), f=st-i;
+  vec2 w0=(1.-f)*(1.-f)*(1.-f)/6., w1=(4.-6.*f*f+3.*f*f*f)/6., w2=(1.+3.*f+3.*f*f-3.*f*f*f)/6., w3=f*f*f/6.;
+  vec2 g0=w0+w1, g1=w2+w3;
+  vec2 h0=(i-1.+w1/g0+.5)/256., h1=(i+1.+w3/g1+.5)/256.;
+  return g0.y*(g0.x*texture(uW,vec2(h0.x,h0.y)).r+g1.x*texture(uW,vec2(h1.x,h0.y)).r)
+        +g1.y*(g0.x*texture(uW,vec2(h0.x,h1.y)).r+g1.x*texture(uW,vec2(h1.x,h1.y)).r);
+}
+vec3 sky(vec3 d, float disk){
+  float h=max(d.y,0.);
+  vec2 dz=normalize(d.xz+1e-5), sz=normalize(uSun.xz);
+  float sa=dot(dz,sz)*.5+.5;
+  vec3 hor=mix(vec3(.22,.18,.30), vec3(1.0,.45,.18), pow(sa,4.));
+  hor=mix(hor, vec3(1.15,.78,.42), pow(sa,30.)*.8);
+  vec3 mid=mix(vec3(.12,.12,.26), vec3(.42,.22,.26), pow(sa,3.));
+  vec3 zen=vec3(.02,.035,.10);
+  vec3 c=mix(hor, mid, smoothstep(0.,.07,h));
+  c=mix(c, zen, smoothstep(.04,.5,h));
+  // a deck of thin cloud, lit pink from below near the sun
+  if(d.y>0.003){
+    vec2 cp=d.xz/(d.y+.04)*1.6+vec2(uTime*.004,0.);
+    float cl=fbm(cp*vec2(.55,1.6));
+    cl=smoothstep(.52,.8,cl)*smoothstep(.0,.05,d.y)*(1.-smoothstep(.35,.7,d.y));
+    vec3 cc=mix(vec3(.16,.12,.20), vec3(1.0,.45,.30), pow(sa,2.5));
+    cc=mix(cc, vec3(1.2,.75,.45), pow(sa,24.));
+    c=mix(c, cc, cl*.85);
+  }
+  float cs=dot(d,uSun);
+  c+=vec3(1.,.62,.32)*pow(max(cs,0.),12.)*.35;
+  c+=disk*vec3(1.,.55,.25)*pow(max(cs,0.),400.)*1.4;
+  c+=disk*vec3(1.4,.95,.6)*smoothstep(.99990,.99996,cs)*6.;
+  // first stars
+  vec2 st=vec2(atan(d.z,d.x)*120., d.y*240.);
+  float sr=hash(floor(st));
+  c+=vec3(.9,.95,1.)*step(.9975,sr)*smoothstep(.25,.6,d.y)*.6;
+  return c;
+}
+
+// boat: a half ellipsoid hull and, on some, a lamp on a short mast
+float hitBoat(vec3 ro, vec3 rd, int k, out vec3 nrm){
+  vec4 b=uB[k]; vec4 w=uBW[k];
+  float ch=cos(b.z), sh=sin(b.z);
+  vec3 p=ro-vec3(b.x,0.,b.y);
+  // local axes: s along heading, n across
+  vec3 lp=vec3(p.x*ch+p.z*sh, p.y, -p.x*sh+p.z*ch);
+  vec3 ld=vec3(rd.x*ch+rd.z*sh, rd.y, -rd.x*sh+rd.z*ch);
+  vec3 rad=vec3(b.w*.5, .55+.06*b.w, w.x*.5);
+  float best=1e9; vec3 ln=vec3(0,1,0);
+  vec3 q=lp/rad, qd=ld/rad;
+  float A=dot(qd,qd), B=dot(q,qd), C=dot(q,q)-1.;
+  float D=B*B-A*C;
+  if(D>0.){
+    float sq=sqrt(D);
+    float t=(-B-sq)/A;
+    vec3 hp=lp+ld*t;
+    float top=rad.y*.6;
+    if(t>0. && hp.y>=0. && hp.y<=top){ best=t; ln=normalize(hp/(rad*rad)); }
+    else if(hp.y>top && ld.y<0.){
+      // flat deck where the hull is cut off
+      float td=(top-lp.y)/ld.y; vec3 dp=(lp+ld*td)/rad;
+      if(td>0. && dot(dp.xz,dp.xz)<.64){ best=td; ln=vec3(0,1,0); }
+    }
+  }
+  // the mast that carries the lamp
+  if(w.z>.5){
+    vec2 oc=lp.xz-vec2(-b.w*.18,0.), dd=ld.xz;
+    float a2=dot(dd,dd), b2=dot(oc,dd), c2=dot(oc,oc)-.0036;
+    float D2=b2*b2-a2*c2;
+    if(D2>0. && a2>1e-8){
+      float tm=(-b2-sqrt(D2))/a2;
+      float ym=lp.y+ld.y*tm;
+      if(tm>0. && tm<best && ym>0. && ym<1.1+.05*b.w){ best=tm; vec2 m=oc+dd*tm; ln=normalize(vec3(m.x,0.,m.y)); }
+    }
+  }
+  if(best>=1e9) return -1.;
+  nrm=normalize(vec3(ln.x*ch-ln.z*sh, ln.y, ln.x*sh+ln.z*ch));
+  return best;
+}
+vec3 lampPos(int k){ vec4 b=uB[k]; return vec3(b.x-cos(b.z)*b.w*.18, 1.1+.05*b.w, b.y-sin(b.z)*b.w*.18); }
+
+vec3 shadeBoat(vec3 n, int k, vec3 rd){
+  vec3 base=uBC[k];
+  float dl=max(dot(n,uSun),0.);
+  vec3 c=base*(vec3(1.0,.55,.30)*dl*1.1 + vec3(.10,.10,.18)*(.5+.5*n.y));
+  float rim=pow(1.-max(dot(n,-rd),0.),3.);
+  c+=vec3(1.,.5,.25)*rim*.25*max(dot(normalize(n.xz+1e-4),normalize(uSun.xz)),0.);
+  return c;
+}
+
+float lampGlow(vec3 ro, vec3 rd, float tmax, float sharp){
+  float g=0.;
+  for(int k=0;k<6;k++){
+    if(k>=uNB) break;
+    if(uBW[k].z<.5) continue;
+    vec3 lp=lampPos(k)-ro;
+    float t=dot(lp,rd); if(t<0. || t>tmax) continue;
+    float d=length(lp-rd*t);
+    float ang=d/t;
+    g+=uBW[k].y*(exp(-ang*ang*sharp)*1.0 + .004/(ang*ang*800.+.02));
+  }
+  return g;
+}
+
+void main(){
+  vec2 sc=uv*vec2(uRes.x/uRes.y,1.)*uTan;
+  vec3 rd=normalize(uF+sc.x*uR+sc.y*uU);
+  vec3 ro=uCam;
+  vec3 col;
+  // the boats in direct view
+  float tb=1e9; vec3 bn=vec3(0); int bk=-1;
+  for(int k=0;k<6;k++){ if(k>=uNB) break; vec3 n; float t=hitBoat(ro,rd,k,n); if(t>0. && t<tb){ tb=t; bn=n; bk=k; } }
+  float tw=rd.y<0.? -ro.y/rd.y : 1e9;
+  if(bk>=0 && tb<tw){
+    col=shadeBoat(bn,bk,rd);
+    col=mix(col, sky(normalize(vec3(rd.x,.0,rd.z)),0.), 1.-exp(-tb*.004));
+  } else if(rd.y<0.){
+    vec3 p=ro+rd*tw;
+    vec2 uvw=(p.xz-uDom.xy)/uDom.z;
+    vec3 gs=vec3(0);
+    if(all(greaterThan(uvw,vec2(0.))) && all(lessThan(uvw,vec2(1.)))){
+      float e=.5/256., hx=uDom.z*e*2.;
+      gs.x=hgt(uvw);
+      gs.y=(hgt(uvw+vec2(e,0))-hgt(uvw-vec2(e,0)))/hx;
+      gs.z=(hgt(uvw+vec2(0,e))-hgt(uvw-vec2(0,e)))/hx;
+    }
+    // fine wind ripples: texture only, fading with distance so they don't shimmer
+    float fade=exp(-tw*.035);
+    vec2 q=p.xz*1.7;
+    float gust=smoothstep(.35,.75,fbm(p.xz*.03+vec2(uTime*.02,uTime*.01)));
+    float e=.05;
+    float r0=fbm(q+vec2(uTime*.35,uTime*.12)), rx=fbm(q+vec2(e,0)+vec2(uTime*.35,uTime*.12)), rz=fbm(q+vec2(0,e)+vec2(uTime*.35,uTime*.12));
+    vec2 rg=vec2(rx-r0,rz-r0)/e*.045*(.3+gust)*fade;
+    vec2 grad=gs.yz+rg;
+    vec3 n=normalize(vec3(-grad.x,1.,-grad.y));
+    vec3 rf=reflect(rd,n);
+    if(rf.y<0.){ rf.y=-rf.y*.3; rf=normalize(rf); }
+    vec3 rc=sky(rf,0.);
+    // boats reflected
+    float trb=1e9; vec3 rbn; int rbk=-1;
+    for(int k=0;k<6;k++){ if(k>=uNB) break; vec3 nn; float t=hitBoat(p+vec3(0,.01,0),rf,k,nn); if(t>0. && t<trb){ trb=t; rbn=nn; rbk=k; } }
+    if(rbk>=0) rc=shadeBoat(rbn,rbk,rf);
+    rc+=vec3(1.,.72,.38)*lampGlow(p,rf,trb,9000.)*2.5;
+    float cosi=max(dot(n,-rd),0.);
+    float F=.02+.98*pow(1.-cosi,5.);
+    // the sun's glitter: where ripples are too fine to resolve, their slopes become a roughness
+    // that spreads the sun's image into the long column real water makes
+    vec3 hv=normalize(-rd+uSun);
+    float ndh=max(dot(n,hv),1e-3);
+    float m2=.0012+.02*(1.-fade)*(.4+gust);
+    float D=exp(-(1.-ndh*ndh)/(ndh*ndh*m2))/m2;
+    rc+=vec3(1.4,.82,.42)*D*.011*(rf.y>0.?1.:0.);
+    vec3 body=vec3(.012,.03,.045)+vec3(.02,.05,.045)*clamp(gs.x*3.,0.,1.);
+    // light scattered up out of the water where crests thin toward the sun
+    body+=vec3(.15,.12,.06)*max(dot(normalize(vec3(grad.x,0.,grad.y)+1e-5),-uSun),0.)*length(gs.yz)*.6;
+    col=mix(body,rc,F);
+    // white water where the surface is steepest, at bows and in the cusps
+    float sl=length(gs.yz);
+    float foam=smoothstep(.22,.5,sl)*(.5+.5*vnoise(p.xz*4.+uTime));
+    col=mix(col, vec3(.95,.82,.70)*(.35+.6*max(uSun.y+.15,0.)), foam*.55);
+    col=mix(col, sky(normalize(vec3(rd.x,.0,rd.z)),0.)*.8, 1.-exp(-tw*.003));
+  } else {
+    col=sky(rd,1.);
+  }
+  col+=vec3(1.,.72,.38)*lampGlow(ro,rd,min(tb,tw),40000.)*1.5;
+  // gentle tone curve
+  col=1.-exp(-col*1.05);
+  col=pow(col,vec3(.92));
+  vec2 vq=uv*.5+.5;
+  col*=.75+.25*pow(16.*vq.x*vq.y*(1.-vq.x)*(1.-vq.y),.2);
+  col+=(hash(gl_FragCoord.xy+fract(uTime))-.5)/255.;
+  o=vec4(col,1.);
+}`;
+function sh(t,s){ const x=gl.createShader(t); gl.shaderSource(x,s); gl.compileShader(x);
+  if(!gl.getShaderParameter(x,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(x)); return x; }
+const pg=gl.createProgram();
+gl.attachShader(pg,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(pg,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(pg);
+if(!gl.getProgramParameter(pg,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pg));
+gl.useProgram(pg);
+const vb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vb);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+const pl=gl.getAttribLocation(pg,'p'); gl.enableVertexAttribArray(pl); gl.vertexAttribPointer(pl,2,gl.FLOAT,false,0,0);
+const U={}; for(const n of ['uW','uRes','uCam','uF','uR','uU','uTan','uTime','uSun','uDom','uB','uBW','uBC','uNB']) U[n]=gl.getUniformLocation(pg,n);
+const wt=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,wt);
+gl.texImage2D(gl.TEXTURE_2D,0,gl.R16F,N,N,0,gl.RED,gl.FLOAT,null);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+gl.uniform1i(U.uW,0);
+gl.uniform4f(U.uDom,X0,Z0,L,0);
+const sunAlt=2.6*DEG, sunAz=8*DEG;   // low, just right of straight ahead
+const SUN=[Math.sin(sunAz)*Math.cos(sunAlt), Math.sin(sunAlt), Math.cos(sunAz)*Math.cos(sunAlt)];
+gl.uniform3f(U.uSun,...SUN);
+
+// ---------- camera ----------
+const cam={yaw:0, pitch:-19*DEG, h:15, x:0, z:0};
+{ const q=new URLSearchParams(location.search);
+  if(q.get('h')) cam.h=+q.get('h'); if(q.get('pitch')) cam.pitch=+q.get('pitch')*DEG; if(q.get('cz')) cam.z=+q.get('cz'); }
+const TANF=Math.tan(26*DEG);
+function basis(){
+  const cy=Math.cos(cam.yaw), sy=Math.sin(cam.yaw), cp=Math.cos(cam.pitch), sp=Math.sin(cam.pitch);
+  const F=[sy*cp, sp, cy*cp];
+  const R=[cy,0,-sy];
+  const Uu=[F[1]*R[2]-F[2]*R[1], F[2]*R[0]-F[0]*R[2], F[0]*R[1]-F[1]*R[0]];
+  return {F,R,U:Uu};
+}
+let W=1,H=1,DPR=1;
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,1.5);
+  const scale=Math.min(1, 1500/Math.max(innerWidth,innerHeight));
+  W=Math.max(2,Math.floor(innerWidth*DPR*scale)); H=Math.max(2,Math.floor(innerHeight*DPR*scale));
+  cv.width=W; cv.height=H; gl.viewport(0,0,W,H);
+  ov.width=Math.floor(innerWidth*DPR); ov.height=Math.floor(innerHeight*DPR);
+  ov.style.width=innerWidth+'px'; ov.style.height=innerHeight+'px';
+}
+addEventListener('resize',resize); resize();
+
+function project(x,y,z){
+  const B=basis();
+  const p=[x-cam.x,y-cam.h,z-cam.z];
+  const f=p[0]*B.F[0]+p[1]*B.F[1]+p[2]*B.F[2]; if(f<0.5) return null;
+  const r=p[0]*B.R[0]+p[1]*B.R[1]+p[2]*B.R[2], u=p[0]*B.U[0]+p[1]*B.U[1]+p[2]*B.U[2];
+  const a=innerWidth/innerHeight;
+  const sx=r/f/TANF/a, sy=u/f/TANF;
+  return [(sx*.5+.5)*innerWidth, (.5-sy*.5)*innerHeight];
+}
+function pick(cx,cy){
+  const B=basis(), a=innerWidth/innerHeight;
+  const sx=(cx/innerWidth*2-1)*a*TANF, sy=(1-cy/innerHeight*2)*TANF;
+  const d=[B.F[0]+sx*B.R[0]+sy*B.U[0], B.F[1]+sx*B.R[1]+sy*B.U[1], B.F[2]+sx*B.R[2]+sy*B.U[2]];
+  if(d[1]>=-1e-4) return null;
+  const t=-cam.h/d[1];
+  return {x:cam.x+d[0]*t, z:cam.z+d[2]*t};
+}
+
+// ---------- input ----------
+let paused=false, showText=true, showWedge=false;
+let drag=null;
+cv.addEventListener('pointerdown',e=>{ drag={x:e.clientX,y:e.clientY,yaw:cam.yaw,pitch:cam.pitch,moved:false}; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove',e=>{ if(!drag) return;
+  const dx=e.clientX-drag.x, dy=e.clientY-drag.y;
+  if(Math.abs(dx)+Math.abs(dy)>5) drag.moved=true;
+  if(drag.moved){ cam.yaw=clamp(drag.yaw-dx*0.004,-1.1,1.1); cam.pitch=clamp(drag.pitch+dy*0.003,-62*DEG,4*DEG); } });
+cv.addEventListener('pointerup',e=>{ if(drag && !drag.moved){ const p=pick(e.clientX,e.clientY);
+    if(p && p.x>X0+2 && p.x<X0+L-2 && p.z>Z0+2 && p.z<Z0+L-2) stones.push(p); }
+  drag=null; });
+cv.addEventListener('wheel',e=>{ e.preventDefault(); cam.h=clamp(cam.h*Math.exp(e.deltaY*0.0012),2.2,60);
+  // looking down more as you climb keeps the lake in frame
+  cam.pitch=clamp(cam.pitch-e.deltaY*0.0006,-62*DEG,4*DEG); },{passive:false});
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k===' '){ paused=!paused; e.preventDefault(); }
+  else if(k==='h'){ showText=!showText; hud.style.display=showText?'':'none'; hint.style.display=showText?'':'none'; }
+  else if(k==='w') showWedge=!showWedge;
+  else if(k==='n') makeBoats();
+  else if(k==='s') makeBoats(true);
+  else if(k==='f') speedBoost=!speedBoost;
+});
+
+// ---------- overlay: Kelvin's lines ----------
+function drawOverlay(){
+  octx.setTransform(DPR,0,0,DPR,0,0);
+  octx.clearRect(0,0,innerWidth,innerHeight);
+  if(!showWedge) return;
+  const half=Math.asin(1/3);
+  octx.lineWidth=1;
+  octx.font='11px "Courier New", monospace';
+  for(const b of boats){
+    const Fr=b.U/Math.sqrt(G*b.H.len);
+    const bx=b.x+Math.cos(b.h)*b.H.len*0.35, bz=b.z+Math.sin(b.h)*b.H.len*0.35;
+    for(const sgn of [-1,1]){
+      const a=b.h+Math.PI+sgn*half;
+      octx.strokeStyle='rgba(255,230,190,0.55)';
+      octx.setLineDash([5,5]);
+      octx.beginPath();
+      let started=false;
+      for(let s=0;s<=60;s+=2){
+        const p=project(bx+Math.cos(a)*s,0.02,bz+Math.sin(a)*s);
+        if(!p){ started=false; continue; }
+        if(!started){ octx.moveTo(p[0],p[1]); started=true; } else octx.lineTo(p[0],p[1]);
+      }
+      octx.stroke();
+    }
+    octx.setLineDash([]);
+    const p=project(b.x,2.4,b.z);
+    if(p){
+      octx.fillStyle='rgba(255,240,220,0.85)';
+      octx.shadowColor='#000'; octx.shadowBlur=4;
+      octx.fillText(`${b.H.name}  ${b.U.toFixed(1)} m/s  Fr ${Fr.toFixed(2)}`, p[0]+8, p[1]);
+      octx.shadowBlur=0;
+    }
+  }
+}
+
+function hudText(){
+  if(!showText) return;
+  let s='<b>NINETEEN DEGREES</b><br>';
+  s+='the wake of anything crossing deep water opens at arcsin(1/3) = 19.47&deg;<br>';
+  s+='linear deep-water waves, &omega; = &radic;(g k), evolved exactly in Fourier space<br>';
+  s+='each boat is only a moving patch of pressure &mdash; the wedge is not drawn<br><br>';
+  for(const b of boats){
+    const Fr=b.U/Math.sqrt(G*b.H.len);
+    const lam=TAU*b.U*b.U/G;
+    s+=`${b.H.name.padEnd(15,' ').replace(/ /g,'&nbsp;')} ${b.U.toFixed(1)} m/s &nbsp;&lambda; ${lam.toFixed(1)} m &nbsp;Fr ${Fr.toFixed(2)}${Fr>0.5?' &nbsp;(narrower V)':''}<br>`;
+  }
+  if(speedBoost) s+='<br>everyone at full throttle';
+  hud.innerHTML=s;
+}
+
+// ---------- run ----------
+makeBoats(!!new URLSearchParams(location.search).get('solo'));
+window.__eta=Eta;
+const WARM=+(new URLSearchParams(location.search).get('warm')||90);
+{ const t0=performance.now(); for(let i=0;i<WARM;i++){ stepBoats(DT); stepWater(); } window.__stepMs=(performance.now()-t0)/WARM;
+  // a slow machine takes half as many, twice as long steps; the integration is exact either way
+  if(window.__stepMs>7) setDT(1/30); }
+let last=performance.now(), acc=0, hudT=0, wallT=0;
+function frame(now){
+  const dtw=Math.min(0.1,(now-last)/1000); last=now;
+  if(!paused){
+    acc+=dtw; wallT+=dtw;
+    let n=0;
+    while(acc>=DT && n<3){ stepBoats(DT); stepWater(); acc-=DT; n++; }
+    if(n===3) acc=0;
+    if(n>0){ packTex(); gl.bindTexture(gl.TEXTURE_2D,wt); gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,N,N,gl.RED,gl.FLOAT,tex); }
+  }
+  const B=basis();
+  gl.uniform2f(U.uRes,W,H);
+  gl.uniform3f(U.uCam,cam.x,cam.h,cam.z);
+  gl.uniform3f(U.uF,...B.F); gl.uniform3f(U.uR,...B.R); gl.uniform3f(U.uU,...B.U);
+  gl.uniform1f(U.uTan,TANF); gl.uniform1f(U.uTime,wallT);
+  const bb=new Float32Array(24), bw=new Float32Array(24), bc=new Float32Array(18);
+  boats.forEach((b,k)=>{ bb.set([b.x,b.z,b.h,b.H.len],k*4); bw.set([b.H.wid,b.amp,b.H.lamp?1:0,0],k*4); bc.set(b.H.col,k*3); });
+  gl.uniform4fv(U.uB,bb); gl.uniform4fv(U.uBW,bw); gl.uniform3fv(U.uBC,bc); gl.uniform1i(U.uNB,boats.length);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+  drawOverlay();
+  hudT-=dtw; if(hudT<=0){ hudText(); hudT=0.25; }
+  requestAnimationFrame(frame);
+}
+packTex(); gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,N,N,gl.RED,gl.FLOAT,tex);
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
