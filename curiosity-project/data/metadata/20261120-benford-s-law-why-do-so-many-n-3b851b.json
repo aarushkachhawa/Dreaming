@@ -1,0 +1,14 @@
+{
+  "id": "20261120-benford-s-law-why-do-so-many-n-3b851b",
+  "date": "2026-11-20T10:10:34.221116",
+  "title": "Benford's Law: Why Do So Many Numbers Start With 1?",
+  "question": "Why do the first digits of real-world numbers favor 1 over 9 \u2014 and why can that pattern catch fraud?",
+  "summary": "In many natural datasets, about 30% of numbers begin with 1 and fewer than 5% with 9. This exploration explains how scale invariance and multiplicative growth produce Benford's logarithmic law, where it fails, and how it became a tool for detecting fabricated data.",
+  "tags": [
+    "mathematics",
+    "probability",
+    "statistics",
+    "logarithms",
+    "forensics"
+  ]
+}
