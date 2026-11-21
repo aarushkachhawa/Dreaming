@@ -24,6 +24,31 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-21** — `2026-11-21-easier-way.html`: a hundred-and-eighth
+  technique, and the archive's first viscous fingering. After a night on open
+  water, the eye goes down to the thinnest water there is, a film squeezed
+  between two sheets of glass. Push a thin liquid into a thick one there and
+  the front will not stay round. Wherever it bulges a little ahead, there is
+  less honey in front of the bulge, so it resists a little less, so more ink
+  goes that way, and the bulge runs. Saffman and Taylor described it in 1958
+  for water pushing oil out of rock. The fingers split at their tips, shade
+  their neighbours and leave the slow ones behind. Nothing is drawn as a
+  finger. Every step the pressure is solved from Darcy's law (u = -(k/mu)
+  grad p, with div u equal to the inflow at the inlets) by over-relaxation on
+  a nine-point stencil, so the grid has no favourite directions. The viscosity
+  falls exponentially with the ink fraction. The ink is carried by MacCormack
+  advection, so it stays sharp, and spreads by a little diffusion. The only
+  seed is a few percent of unevenness in the glass. The radial cell's rim is a
+  circle beyond the window's corners, so the edges don't steer the fingers.
+  The ink's colour drifts as it flows in and is pulsed every few seconds, so
+  the bands are isochrones. The plate is backlit on a light table, and the
+  interfaces bend the light into faint schlieren lines. Click to open another
+  inlet, shift-click for a drain, V to step the viscosity ratio from 1:4 (the
+  thick liquid pushing: a calm, round stain) up to 90:1, C for a long channel
+  pushed from one end, N for a new plate and inks, H to hide the text, space
+  to pause. A plate renews itself when it is full. Needs WebGL2 with float
+  render targets; open the file directly in a browser.
+
 - **2026-11-20** — `2026-11-20-nineteen-degrees.html`: a hundred-and-seventh
   technique, and the archive's first ship wakes. After three nights of sky,
   the eye comes down to the water under a low sun. Anything crossing deep

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Easier Way</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#120d08; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #ov { pointer-events:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#2a1d12; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 5px rgba(255,246,228,0.95), 0 0 2px rgba(255,246,228,0.9);
+    pointer-events:none; user-select:none; }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#2a1d12; opacity:.6; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 5px rgba(255,246,228,0.95); }
+  #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#e8dccb;
+    font-family:'Courier New', monospace; font-size:14px; text-align:center; padding:24px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<canvas id="ov"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; open another inlet&nbsp;&nbsp;|&nbsp;&nbsp;shift-click &mdash; a drain&nbsp;&nbsp;|&nbsp;&nbsp;V &mdash; viscosity ratio&nbsp;&nbsp;|&nbsp;&nbsp;C &mdash; radial cell / long channel&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; new plate&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="err">This piece needs WebGL2 with float render targets.</div>
+<script>
+(function(){
+"use strict";
+// Easier way. Push a thin liquid into a thick one between two sheets of glass and the front will not
+// stay round. Wherever it bulges a little ahead, the thick liquid in front of the bulge is a little
+// shorter, so it resists a little less, so more of the thin liquid goes that way, and the bulge runs.
+// Saffman and Taylor wrote it down in 1958 for oil being pushed out of rock by water; the fingers
+// split at their tips, shield their neighbours, and leave the slow ones behind.
+//
+// Nothing here is drawn as a finger. The plate is a grid of a few hundred thousand cells. Each step
+// the pressure is solved from Darcy's law -- the flow through the narrow gap is u = -(k / mu) grad p,
+// and what goes in must come out, div u = q at the inlets -- with red-black over-relaxation, warm
+// started from the last step. The viscosity is mu = exp(-R c), where c is how much of the thin,
+// inked liquid is in a cell, so the honey is e^R times stiffer. The ink is carried by that flow
+// (MacCormack advection, so it stays sharp) and spreads by a little diffusion. The glass is very
+// slightly uneven, a few percent of noise in the permeability k; that is the only seed. At a ratio of
+// one, or with the thicker liquid pushing, the same code grows a calm round stain. The ink's colour
+// changes slowly while it flows in and is pulsed every few seconds, so every band is an isochrone:
+// where the ink was at that moment, and how far the winners have run since.
+const cv=document.getElementById('c'), ov=document.getElementById('ov');
+const octx=ov.getContext('2d');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const fail=()=>{ document.getElementById('err').style.display='flex'; hint.style.display='none'; };
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false,preserveDrawingBuffer:false});
+if(!gl || !gl.getExtension('EXT_color_buffer_float')){ fail(); return; }
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const rnd=Math.random;
+const QS=new URLSearchParams(location.search);
+
+// ---------- shaders ----------
+const VS=`#version 300 es
+in vec2 a; out vec2 vUv;
+void main(){ vUv=a*0.5+0.5; gl_Position=vec4(a,0.,1.); }`;
+
+const COMMON=`#version 300 es
+precision highp float; precision highp int; precision highp sampler2D;
+uniform ivec2 uN;          // grid size
+uniform int uMode;         // 0 radial cell (open rim), 1 channel (inflow left, outflow right, walls)
+uniform int uNW;           // wells
+uniform vec4 uW[8];        // x, y, rate (area per step, negative drains), radius
+uniform float uChanQ;      // channel inflow per cell of the left column
+// a nine-point stencil (axis faces 2/3, diagonal faces 1/6) so the grid has no favourite directions;
+// with only the four axis neighbours the fingers line up into a cross along the grid
+const ivec2 NB[8]=ivec2[8](ivec2(1,0),ivec2(-1,0),ivec2(0,1),ivec2(0,-1),ivec2(1,1),ivec2(-1,1),ivec2(1,-1),ivec2(-1,-1));
+const float WA=2./3., WD=1./6.;
+ivec2 clampI(ivec2 p){ return clamp(p, ivec2(0), uN-1); }
+bool inside(ivec2 p){ return p.x>=0 && p.y>=0 && p.x<uN.x && p.y<uN.y; }
+// is the boundary on this side an open (p = 0) one?
+// a neighbour off the grid: is it beyond an open edge (else a wall)?
+bool openEdge(ivec2 ij, ivec2 d){
+  ivec2 n=ij+d;
+  if(uMode==0) return true;
+  return n.x>=uN.x && n.y>=0 && n.y<uN.y;
+}
+// pressure just beyond an open edge. In the channel the outlet is at p = 0. The radial cell is round
+// and far larger than the window: its rim is a circle through the window's corners, so the edge
+// sees the pressure the wells would make in plain honey out to that rim, not a square box.
+float farP(vec2 x){
+  if(uMode==1) return 0.;
+  float rc=0.5*length(vec2(uN))+2., p=0.;
+  for(int i=0;i<8;i++){
+    if(i>=uNW) break;
+    p+=uW[i].z/6.2831853*log(rc/max(length(x-uW[i].xy),1.));
+  }
+  return p;
+}
+float wellQ(vec2 x, out int which){
+  float q=0.; which=-1; float best=0.;
+  for(int i=0;i<8;i++){
+    if(i>=uNW) break;
+    vec4 w=uW[i];
+    float r=length(x-w.xy)/w.w;
+    if(r<1.){ float s=(1.-r*r); s*=s; float qi=w.z*s/(3.14159265*w.w*w.w/3.); q+=qi; if(qi>best){ best=qi; which=i; } }
+  }
+  return q;
+}
+float cellQ(ivec2 ij, out int which){
+  float q=wellQ(vec2(ij)+0.5, which);
+  if(uMode==1 && ij.x==0){ q+=uChanQ; which=8; }
+  return q;
+}
+`;
+
+// mobility k / mu, once per step
+const FS_MOB=COMMON+`
+uniform sampler2D uC, uK; uniform float uR;
+out float o;
+void main(){ ivec2 ij=ivec2(gl_FragCoord.xy); o=texelFetch(uK,ij,0).r*exp(uR*texelFetch(uC,ij,0).a); }`;
+
+const FS_SOR=COMMON+`
+uniform sampler2D uP, uM; uniform int uPar; uniform float uOm;
+out float o;
+float mob(ivec2 p){ return texelFetch(uM,p,0).r; }
+void main(){
+  ivec2 ij=ivec2(gl_FragCoord.xy);
+  float p=texelFetch(uP,ij,0).r;
+  // four colours: no cell touches another of its own colour, even across a corner
+  if(((ij.x&1)+2*(ij.y&1))!=uPar){ o=p; return; }
+  float mc=mob(ij), s=0., ms=0.;
+  for(int k=0;k<8;k++){
+    ivec2 d=NB[k]; float w=k<4?WA:WD;
+    ivec2 n=ij+d;
+    if(inside(n)){ float m=w*0.5*(mc+mob(n)); s+=m*texelFetch(uP,n,0).r; ms+=m; }
+    else if(openEdge(ij,d)){ s+=w*mc*farP(vec2(ij)+0.5+0.5*vec2(d)); ms+=w*mc; }
+  }
+  int wi; float q=cellQ(ij,wi);
+  float pn=(s+q)/ms;
+  o=p+uOm*(pn-p);
+}`;
+
+const FS_VEL=COMMON+`
+uniform sampler2D uP, uM;
+out vec4 o;
+float mob(ivec2 p){ return texelFetch(uM,p,0).r; }
+float flux(ivec2 ij, ivec2 d, float p, float mc){
+  // flux leaving ij toward neighbour d
+  ivec2 n=ij+d;
+  if(inside(n)) return -0.5*(mc+mob(n))*(texelFetch(uP,n,0).r-p);
+  if(openEdge(ij,d)) return mc*(p-farP(vec2(ij)+0.5+0.5*vec2(d)));
+  return 0.;
+}
+void main(){
+  ivec2 ij=ivec2(gl_FragCoord.xy);
+  float p=texelFetch(uP,ij,0).r, mc=mob(ij);
+  vec2 u=vec2(0.);
+  for(int k=0;k<8;k++) u+=0.5*(k<4?WA:WD)*flux(ij,NB[k],p,mc)*vec2(NB[k]);
+  o=vec4(u,0.,1.);
+}`;
+
+const SAMPLE=`
+vec4 samp(sampler2D t, vec2 x){
+  x=clamp(x-0.5, vec2(0.), vec2(uN)-1.001);
+  ivec2 i=ivec2(floor(x)); vec2 f=x-vec2(i);
+  vec4 a=texelFetch(t,i,0), b=texelFetch(t,clampI(i+ivec2(1,0)),0),
+       c=texelFetch(t,clampI(i+ivec2(0,1)),0), d=texelFetch(t,clampI(i+ivec2(1,1)),0);
+  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+}
+vec2 trace(sampler2D V, vec2 x, float dt){
+  vec2 v1=samp(V,x).xy;
+  vec2 v2=samp(V,x-0.5*dt*v1).xy;
+  return x-dt*v2;
+}`;
+
+const FS_ADV1=COMMON+SAMPLE+`
+uniform sampler2D uC, uV; uniform float uDt;
+out vec4 o;
+void main(){
+  vec2 x=gl_FragCoord.xy;
+  o=samp(uC, trace(uV,x,uDt));
+}`;
+
+const FS_ADV2=COMMON+SAMPLE+`
+uniform sampler2D uC, uH, uV; uniform float uDt, uD;
+uniform vec3 uInk[9];
+out vec4 o;
+void main(){
+  ivec2 ij=ivec2(gl_FragCoord.xy);
+  vec2 x=gl_FragCoord.xy;
+  vec4 c0=texelFetch(uC,ij,0);
+  vec4 h=texelFetch(uH,ij,0);
+  vec4 back=samp(uH, trace(uV,x,-uDt));
+  vec4 r=h+0.5*(c0-back);
+  // limiter: stay within the values the plain trace could have seen
+  vec2 xb=trace(uV,x,uDt);
+  vec2 y=clamp(xb-0.5, vec2(0.), vec2(uN)-1.001);
+  ivec2 i=ivec2(floor(y));
+  vec4 a=texelFetch(uC,i,0), b=texelFetch(uC,clampI(i+ivec2(1,0)),0),
+       c=texelFetch(uC,clampI(i+ivec2(0,1)),0), d=texelFetch(uC,clampI(i+ivec2(1,1)),0);
+  r=clamp(r, min(min(a,b),min(c,d)), max(max(a,b),max(c,d)));
+  // diffusion
+  vec4 lap=texelFetch(uC,clampI(ij+ivec2(1,0)),0)+texelFetch(uC,clampI(ij-ivec2(1,0)),0)
+          +texelFetch(uC,clampI(ij+ivec2(0,1)),0)+texelFetch(uC,clampI(ij-ivec2(0,1)),0)-4.*c0;
+  r+=uD*lap;
+  // inlets: fresh inked liquid displaces what was there
+  int wi; float q=cellQ(ij,wi);
+  if(q>0. && wi>=0){ r=mix(r, vec4(uInk[wi],1.), clamp(q*uDt,0.,1.)); }
+  r.a=clamp(r.a,0.,1.); r.rgb=max(r.rgb,vec3(0.));
+  o=r;
+}`;
+
+const FS_SHOW=COMMON+SAMPLE+`
+uniform sampler2D uC, uK; uniform vec2 uRes; uniform vec3 uOil, uLamp; uniform float uTime, uFade;
+in vec2 vUv; out vec4 o;
+float hash(vec2 p){ p=fract(p*vec2(443.897,441.423)); p+=dot(p,p.yx+19.19); return fract((p.x+p.y)*p.x); }
+void main(){
+  vec2 g=vUv*vec2(uN);
+  vec4 c=samp(uC,g);
+  float e=0.85;
+  vec4 cx=samp(uC,g+vec2(e,0.))-samp(uC,g-vec2(e,0.));
+  vec4 cy=samp(uC,g+vec2(0.,e))-samp(uC,g-vec2(0.,e));
+  vec2 ga=vec2(cx.a,cy.a)/(2.*e);
+  float dens=dot(c.rgb,vec3(0.333));
+  vec2 gd=vec2(dot(cx.rgb,vec3(.333)),dot(cy.rgb,vec3(.333)))/(2.*e);
+  // the light table: warm, brighter in the middle, faintly mottled by the uneven glass
+  vec2 q=vUv-0.5; q.x*=uRes.x/uRes.y;
+  float k=texelFetch(uK,clampI(ivec2(g)),0).r;
+  vec3 lamp=uLamp*(1.05-0.42*dot(q,q))*(0.99+0.14*(k-1.));
+  // the interface bends light a little (index of ink-water and honey differ): schlieren lines
+  vec2 n2=ga*3.2+gd*0.9;
+  float sch=clamp(1.-0.55*length(n2),0.25,1.)+0.16*clamp(dot(n2,normalize(vec2(-0.6,0.8))),-1.,1.);
+  vec3 A=uOil*(1.-c.a)+c.rgb*1.25;
+  vec3 col=lamp*exp(-A)*sch;
+  // a sheen on the glass where the surface tilts toward the light
+  vec3 nn=normalize(vec3(-n2*0.7,1.));
+  float sp=pow(max(dot(reflect(-normalize(vec3(-0.45,0.6,1.)),nn),vec3(0.,0.,1.)),0.),36.);
+  col+=vec3(1.,0.97,0.9)*sp*0.22*clamp(length(n2)*2.,0.,1.);
+  col*=1.-0.35*pow(length(q*vec2(0.9,1.1)),2.4);
+  col=mix(col,uLamp*1.05,uFade);
+  col=pow(max(col,0.),vec3(1./2.2));
+  col+=(hash(gl_FragCoord.xy+fract(uTime)*91.)-0.5)/180.;
+  o=vec4(col,1.);
+}`;
+
+function sh(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+function prog(fs){ const p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs));
+  gl.bindAttribLocation(p,0,'a'); gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(p));
+  const u={}; const n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){ const a=gl.getActiveUniform(p,i); const nm=a.name.replace(/\[0\]$/,''); u[nm]=gl.getUniformLocation(p,a.name); }
+  return {p,u}; }
+let P;
+try{ P={mob:prog(FS_MOB), sor:prog(FS_SOR), vel:prog(FS_VEL), adv1:prog(FS_ADV1), adv2:prog(FS_ADV2), show:prog(FS_SHOW)}; }
+catch(e){ console.error(e); fail(); return; }
+
+const vb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vb);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+
+// ---------- textures ----------
+function mkTex(w,h,ifmt,fmt,data){
+  const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,ifmt,w,h,0,fmt,gl.FLOAT,data||null);
+  for(const [a,b] of [[gl.TEXTURE_MIN_FILTER,gl.NEAREST],[gl.TEXTURE_MAG_FILTER,gl.NEAREST],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])
+    gl.texParameteri(gl.TEXTURE_2D,a,b);
+  return t;
+}
+function mkTarget(w,h,ifmt,fmt){
+  const t=mkTex(w,h,ifmt,fmt); const f=gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER,f); gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);
+  return {t,f};
+}
+let NX=0, NY=0, Pt=[], Ct=[], Ht=null, Vt=null, Mt=null, Kt=null, pi=0, ci=0;
+function freeAll(){
+  for(const o of [...Pt,...Ct,Ht,Vt,Mt]) if(o){ gl.deleteTexture(o.t); gl.deleteFramebuffer(o.f); }
+  if(Kt) gl.deleteTexture(Kt);
+}
+
+// ---------- the plates ----------
+// uOil: absorbance of the thick liquid; inks: absorbances the inlet cycles through; lamp colour
+const PLATES=[
+  {name:'indigo into honey', oil:[0.05,0.28,0.95], lamp:[1.0,0.95,0.84],
+   inks:[[2.1,1.35,0.22],[1.1,1.9,0.55],[2.2,0.55,0.75],[2.4,1.7,0.6]]},
+  {name:'madder into syrup of milk', oil:[0.07,0.09,0.13], lamp:[1.0,0.97,0.92],
+   inks:[[0.12,1.8,1.5],[0.25,1.1,2.1],[1.6,1.7,1.4],[0.1,2.1,2.4]]},
+  {name:'verdigris into rose glycerin', oil:[0.08,0.42,0.30], lamp:[1.0,0.96,0.9],
+   inks:[[1.9,0.32,0.95],[2.2,0.9,0.25],[1.0,0.35,1.9],[2.3,1.3,1.1]]},
+  {name:'sepia into amber oil', oil:[0.06,0.2,0.62], lamp:[1.0,0.94,0.82],
+   inks:[[0.9,1.4,1.9],[1.7,1.9,2.0],[0.4,1.5,2.2],[1.4,0.9,0.5]]},
+];
+const RATIOS=[{M:1/4,txt:'1 : 4 &nbsp;(the thicker liquid pushes &mdash; stable)'},{M:1,txt:'1 : 1 &nbsp;(no contrast &mdash; only the glass roughens the edge)'},
+  {M:6,txt:'6 : 1'},{M:24,txt:'24 : 1'},{M:90,txt:'90 : 1'}];
+let ratioI=3, mode=0, plateI=Math.floor(rnd()*PLATES.length), plateN=0;
+let wells=[], steps=0, volIn=0, fade=1, renewing=false, paused=false, showText=true;
+const CELLS=+(QS.get('cells')||220000);
+const D=0.004;            // diffusion, cells^2 per step
+const QW=22;              // inflow of a well, cells of area per step
+const CHAN_U=0.22;        // channel inflow speed, cells per step
+const SUB=+(QS.get('sub')||2), ITER=+(QS.get('iter')||12);
+
+function smoothNoise(w,h){
+  // a few octaves of blurred white noise: the glass is not quite flat
+  const out=new Float32Array(w*h).fill(0);
+  const tmp=new Float32Array(w*h), a=new Float32Array(w*h);
+  for(const [rad,amp] of [[1,0.35],[3,0.8],[7,0.8],[16,0.5]]){
+    for(let i=0;i<w*h;i++) a[i]=rnd()-0.5;
+    for(let pass=0;pass<2;pass++){
+      for(let y=0;y<h;y++){ let s=0; const o=y*w;
+        for(let x=-rad;x<w+rad;x++){ const xi=x+rad; if(xi<w) s+=a[o+xi]; const xo=x-rad-1; if(xo>=0) s-=a[o+xo]; if(x>=0&&x<w) tmp[o+x]=s/(2*rad+1); } }
+      for(let x=0;x<w;x++){ let s=0;
+        for(let y=-rad;y<h+rad;y++){ const yi=y+rad; if(yi<h) s+=tmp[yi*w+x]; const yo=y-rad-1; if(yo>=0) s-=tmp[yo*w+x]; if(y>=0&&y<h) a[y*w+x]=s/(2*rad+1); } }
+    }
+    let v=0; for(let i=0;i<w*h;i++) v+=a[i]*a[i]; v=Math.sqrt(v/(w*h))||1;
+    for(let i=0;i<w*h;i++) out[i]+=amp*a[i]/v;
+  }
+  for(let i=0;i<w*h;i++) out[i]=Math.exp(0.16*out[i]);
+  return out;
+}
+
+function newPlate(keepMode){
+  const asp=innerWidth/innerHeight;
+  const ny=Math.round(Math.sqrt(CELLS/asp)), nx=Math.round(ny*asp);
+  if(nx!==NX||ny!==NY||!Ht){
+    freeAll(); NX=nx; NY=ny;
+    Pt=[mkTarget(NX,NY,gl.R32F,gl.RED),mkTarget(NX,NY,gl.R32F,gl.RED)];
+    Ct=[mkTarget(NX,NY,gl.RGBA32F,gl.RGBA),mkTarget(NX,NY,gl.RGBA32F,gl.RGBA)];
+    Ht=mkTarget(NX,NY,gl.RGBA32F,gl.RGBA); Vt=mkTarget(NX,NY,gl.RG32F,gl.RG); Mt=mkTarget(NX,NY,gl.R32F,gl.RED);
+    Kt=mkTex(NX,NY,gl.R32F,gl.RED,null);
+  }
+  gl.bindTexture(gl.TEXTURE_2D,Kt);
+  gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,NX,NY,gl.RED,gl.FLOAT,smoothNoise(NX,NY));
+  gl.clearColor(0,0,0,0);
+  for(const t of [...Pt,...Ct,Ht,Vt]){ gl.bindFramebuffer(gl.FRAMEBUFFER,t.f); gl.clear(gl.COLOR_BUFFER_BIT); }
+  plateN++; plateI=(plateI+1)%PLATES.length;
+  wells=[]; steps=0; volIn=0;
+  if(mode===0) wells.push({x:NX*(0.5+(rnd()-0.5)*0.06), y:NY*(0.5+(rnd()-0.5)*0.06), q:QW, off:0});
+  relax(400);
+}
+
+function inkAt(t,off){
+  const ks=PLATES[plateI].inks, per=1500;
+  const u=(t/per+off)%ks.length, i=Math.floor(u), f=u-i;
+  const s=f*f*(3-2*f);
+  const a=ks[i], b=ks[(i+1)%ks.length];
+  // a short pulse every few seconds draws an isochrone
+  const ph=(t%210)/210, pulse=1+0.55*Math.exp(-Math.pow((ph-0.5)/0.035,2));
+  return [0,1,2].map(j=>(a[j]+(b[j]-a[j])*s)*pulse);
+}
+
+// ---------- stepping ----------
+function bindCommon(pr){
+  const u=pr.u;
+  gl.uniform2i(u.uN,NX,NY); gl.uniform1i(u.uMode,mode);
+  const W=new Float32Array(32);
+  wells.forEach((w,i)=>W.set([w.x,w.y,w.q,w.q<0?4.0:4.5],i*4));
+  gl.uniform4fv(u.uW,W); gl.uniform1i(u.uNW,wells.length);
+  gl.uniform1f(u.uChanQ,mode===1?CHAN_U:0);
+}
+function tex(unit,t){ gl.activeTexture(gl.TEXTURE0+unit); gl.bindTexture(gl.TEXTURE_2D,t); }
+const R=()=>Math.log(RATIOS[ratioI].M);
+function relax(n){
+  gl.viewport(0,0,NX,NY);
+  let pr=P.mob; gl.useProgram(pr.p); bindCommon(pr);
+  gl.uniform1i(pr.u.uC,0); gl.uniform1i(pr.u.uK,1); gl.uniform1f(pr.u.uR,R());
+  tex(0,Ct[ci].t); tex(1,Kt);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,Mt.f); gl.drawArrays(gl.TRIANGLES,0,3);
+  pr=P.sor; gl.useProgram(pr.p); bindCommon(pr);
+  gl.uniform1i(pr.u.uP,0); gl.uniform1i(pr.u.uM,1);
+  gl.uniform1f(pr.u.uOm,1.92);
+  tex(1,Mt.t);
+  for(let k=0;k<4*n;k++){
+    gl.uniform1i(pr.u.uPar,k&3);
+    tex(0,Pt[pi].t); gl.bindFramebuffer(gl.FRAMEBUFFER,Pt[1-pi].f);
+    gl.drawArrays(gl.TRIANGLES,0,3); pi=1-pi;
+  }
+}
+function step(){
+  relax(ITER);
+  gl.viewport(0,0,NX,NY);
+  let pr=P.vel; gl.useProgram(pr.p); bindCommon(pr);
+  gl.uniform1i(pr.u.uP,0); gl.uniform1i(pr.u.uM,1);
+  tex(0,Pt[pi].t); tex(1,Mt.t);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,Vt.f); gl.drawArrays(gl.TRIANGLES,0,3);
+
+  pr=P.adv1; gl.useProgram(pr.p); bindCommon(pr);
+  gl.uniform1i(pr.u.uC,0); gl.uniform1i(pr.u.uV,1); gl.uniform1f(pr.u.uDt,1);
+  tex(0,Ct[ci].t); tex(1,Vt.t);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,Ht.f); gl.drawArrays(gl.TRIANGLES,0,3);
+
+  pr=P.adv2; gl.useProgram(pr.p); bindCommon(pr);
+  gl.uniform1i(pr.u.uC,0); gl.uniform1i(pr.u.uH,1); gl.uniform1i(pr.u.uV,2);
+  gl.uniform1f(pr.u.uDt,1); gl.uniform1f(pr.u.uD,D);
+  const ink=new Float32Array(27);
+  wells.forEach((w,i)=>ink.set(inkAt(steps,w.off),i*3));
+  ink.set(inkAt(steps,0),24);
+  gl.uniform3fv(pr.u.uInk,ink);
+  tex(0,Ct[ci].t); tex(1,Ht.t); tex(2,Vt.t);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,Ct[1-ci].f); gl.drawArrays(gl.TRIANGLES,0,3); ci=1-ci;
+
+  steps++;
+  for(const w of wells) if(w.q>0) volIn+=w.q;
+  if(mode===1) volIn+=CHAN_U*NY;
+}
+
+// ---------- drawing ----------
+let CW=0, CH=0, DPR=1;
+function resize(){
+  DPR=Math.min(2,devicePixelRatio||1);
+  CW=Math.round(innerWidth*DPR); CH=Math.round(innerHeight*DPR);
+  cv.width=CW; cv.height=CH; ov.width=CW; ov.height=CH;
+}
+addEventListener('resize',resize); resize();
+
+function draw(t){
+  const pr=P.show; gl.useProgram(pr.p); bindCommon(pr);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,CW,CH);
+  gl.uniform1i(pr.u.uC,0); gl.uniform1i(pr.u.uK,1);
+  tex(0,Ct[ci].t); tex(1,Kt);
+  const pl=PLATES[plateI];
+  gl.uniform2f(pr.u.uRes,CW,CH); gl.uniform3f(pr.u.uOil,...pl.oil); gl.uniform3f(pr.u.uLamp,...pl.lamp);
+  gl.uniform1f(pr.u.uTime,t); gl.uniform1f(pr.u.uFade,fade);
+  gl.drawArrays(gl.TRIANGLES,0,3);
+
+  octx.clearRect(0,0,CW,CH);
+  if(!showText) return;
+  // brass fittings where the inlets and drains pierce the glass
+  for(const w of wells){
+    const X=w.x/NX*CW, Y=(1-w.y/NY)*CH, r=7*DPR;
+    octx.lineWidth=1.5*DPR;
+    octx.strokeStyle=w.q>0?'rgba(120,86,40,0.75)':'rgba(40,40,46,0.75)';
+    octx.beginPath(); octx.arc(X,Y,r,0,TAU); octx.stroke();
+    if(w.q<0){ octx.beginPath(); octx.moveTo(X-r*0.6,Y); octx.lineTo(X+r*0.6,Y); octx.stroke(); }
+  }
+}
+
+function hudText(){
+  if(!showText){ hud.innerHTML=''; return; }
+  const area=NX*NY, frac=Math.min(1,volIn/area);
+  let s='<b>EASIER WAY</b><br>';
+  s+='a thin liquid pushed into a thick one between two sheets of glass<br>';
+  s+='wherever the front gets ahead, the way on is shorter and easier &mdash; so it gets further ahead<br>';
+  s+='Darcy flow solved every step; nothing is drawn as a finger<br><br>';
+  s+=`${PLATES[plateI].name}<br>`;
+  s+=`viscosity, pushed : pushing &nbsp;${RATIOS[ratioI].txt}<br>`;
+  s+=(mode===0?'radial cell, open rim':'long channel, pushed from the left')+`<br>`;
+  s+=`inlets ${wells.filter(w=>w.q>0).length+(mode===1?' + the left edge':'')} &nbsp;drains ${wells.filter(w=>w.q<0).length}<br>`;
+  s+=`ink let in ${(frac*100).toFixed(0)}% of the plate &nbsp;&nbsp;plate ${plateN}`;
+  if(paused) s+='<br>paused';
+  hud.innerHTML=s;
+}
+
+// ---------- input ----------
+cv.addEventListener('pointerdown',e=>{
+  if(renewing) return;
+  const x=e.clientX/innerWidth*NX, y=(1-e.clientY/innerHeight)*NY;
+  if(wells.length>=8) wells.shift();
+  const drain=e.shiftKey||e.button===2;
+  wells.push({x,y,q:drain?-QW*1.4:QW, off:rnd()*4});
+  hudText();
+});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(k===' '){ paused=!paused; e.preventDefault(); }
+  else if(k==='h'){ showText=!showText; hint.style.display=showText?'':'none'; }
+  else if(k==='v'){ ratioI=(ratioI+1)%RATIOS.length; }
+  else if(k==='c'){ mode=1-mode; startRenew(); }
+  else if(k==='n'){ startRenew(); }
+  hudText();
+});
+
+function startRenew(){ if(!renewing){ renewing=true; } }
+
+// ---------- run ----------
+if(QS.get('channel')) mode=1;
+if(QS.get('ratio')) ratioI=clamp(+QS.get('ratio'),0,RATIOS.length-1);
+newPlate();
+fade=1;
+const WARM=+(QS.get('warm')||0);
+for(let i=0;i<WARM;i++) step();
+if(WARM) fade=0;
+window.__info=()=>({NX,NY,steps,volIn});
+window.__step=n=>{ for(let i=0;i<n;i++) step(); fade=0; gl.finish(); return steps; };
+let last=performance.now(), hudT=0, wallT=0;
+function frame(now){
+  const dtw=Math.min(0.1,(now-last)/1000); last=now; wallT+=dtw;
+  if(renewing){
+    fade=Math.min(1,fade+dtw/1.2);
+    if(fade>=1){ newPlate(); renewing=false; }
+  } else {
+    fade=Math.max(0,fade-dtw/1.8);
+  }
+  if(!paused && !renewing){
+    for(let s=0;s<SUB;s++) step();
+    const full=mode===0?0.34:0.42;
+    if(volIn>full*NX*NY) startRenew();
+  }
+  draw(wallT);
+  hudT-=dtw; if(hudT<=0){ hudText(); hudT=0.3; }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
