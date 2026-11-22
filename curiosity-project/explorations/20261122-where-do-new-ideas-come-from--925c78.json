@@ -1,0 +1,52 @@
+{
+  "id": "20261122-where-do-new-ideas-come-from--925c78",
+  "date": "2026-11-22T10:10:11.639421",
+  "title": "Where Do New Ideas Come From?",
+  "question": "Can minds generate genuinely new ideas, or is all creativity just recombination of what already exists?",
+  "summary": "From Koestler's bisociation to Boden's transformational creativity, Darwinian models of thought, and the debate over AI-generated novelty: an inquiry into whether anything is ever truly new.",
+  "content": "\n<p>Every new idea feels, from the inside, like it arrived from nowhere. A melody shows up in the shower; the structure of benzene comes to Kekul\u00e9 in a half-dream of a snake biting its tail. Yet a mind can only work with what it has: memories, concepts, perceptions. So where does novelty come from? Is creativity just clever recombination of old parts, or can a mind produce something that is new in a deeper sense?</p>\n\n<h2>The Recombination View</h2>\n<p>The most influential answer is that creativity is combination. Arthur Koestler called it \"bisociation\": the collision of two frames of reference that normally never meet. Darwin read Malthus on population pressure and saw it applied to every species. Gutenberg combined the wine press with coin-punching. On this view, novelty lives not in the parts but in the <em>connection</em>, and the space of possible connections is so vast that most of it has never been visited.</p>\n<p>This view has teeth. It predicts that creative people should have broad, loosely organized knowledge, and studies of scientific breakthroughs do find that high-impact papers tend to cite unusual combinations of otherwise conventional sources.</p>\n\n<h2>Why Recombination Isn't the Whole Story</h2>\n<p>Margaret Boden distinguished three kinds of creativity. <strong>Combinational</strong> creativity joins familiar ideas in unfamiliar ways. <strong>Exploratory</strong> creativity moves through an existing conceptual space, finding what its rules allow but no one has yet tried, like a composer discovering new possibilities within tonal harmony. <strong>Transformational</strong> creativity changes the rules of the space itself: non-Euclidean geometry dropping the parallel postulate, Schoenberg abandoning tonality, Einstein making simultaneity relative.</p>\n<p>Transformational novelty is the hard case. It isn't a new point in an old space; it's a new space. Some ideas that were literally unthinkable become thinkable. Whether this is \"genuinely new\" or merely recombination at a higher level of abstraction (combining rules instead of elements) is one of the deepest open questions about minds.</p>\n\n<h2>The Brain at Work</h2>\n<p>Neuroscience suggests creativity is a dance between two networks. The <strong>default mode network</strong>, active during mind-wandering, generates loose associations. The <strong>executive control network</strong> evaluates and selects. Creative people appear to couple these unusually well, letting wild ideas emerge and then pruning them. This fits the classic four-stage model from Graham Wallas: preparation, incubation, illumination, verification. The \"aha\" in the shower is the payoff of hours of conscious preparation followed by unconscious search.</p>\n\n<h2>Creativity as Variation and Selection</h2>\n<p>Donald Campbell proposed that creative thought is Darwinian: blind variation followed by selective retention. Evolution itself is the most prolific creator we know, producing eyes, wings, and brains with no foresight at all. If a mindless process can generate genuine novelty, then novelty does not require a mysterious spark. It requires a generator of variety and a filter that keeps what works. The interesting question becomes what makes the variation in human minds so much more productive than random mutation.</p>\n\n<h2>The Machine Question</h2>\n<p>Generative AI sharpens everything. Systems trained on vast corpora produce images, proofs, and prose that people find surprising and valuable. Critics say they only interpolate within their training distribution. Defenders reply that humans do too, and that AlphaGo's famous move 37, which professional players initially thought was a mistake, was exploratory creativity by any reasonable standard. The debate forces us to say what we actually mean by \"new\": statistically improbable? Surprising to experts? Valuable? Or does it require an intention to make something new?</p>\n\n<h2>A Working Answer</h2>\n<p>Perhaps novelty is not a property of ideas in isolation but of their relationship to a context. An idea is creative relative to what a person, a field, or a culture could previously reach. Recombination supplies the raw material; exploration maps the edges of the possible; and occasionally a mind discovers that the edges were self-imposed. That last move, noticing a constraint you didn't know you were obeying, may be the closest thing we have to creation from nothing.</p>\n",
+  "tags": [
+    "psychology",
+    "creativity",
+    "cognitive science",
+    "philosophy",
+    "artificial intelligence"
+  ],
+  "perspectives": [
+    {
+      "title": "Cognitive Psychology",
+      "description": "Creativity emerges from distant associations and the incubation of problems below conscious awareness; insight is the moment an unconscious search surfaces a solution."
+    },
+    {
+      "title": "Neuroscience",
+      "description": "The default mode network generates spontaneous associations while the executive network evaluates them. Creative cognition depends on flexible coupling between the two."
+    },
+    {
+      "title": "Evolutionary Epistemology",
+      "description": "Campbell's blind-variation-and-selective-retention model treats ideas like organisms: novelty comes from generating variety and filtering it, with no foresight required."
+    },
+    {
+      "title": "Philosophy of Mind",
+      "description": "Boden's distinction between combinational, exploratory, and transformational creativity asks whether changing the rules of a conceptual space is fundamentally different from rearranging its contents."
+    },
+    {
+      "title": "Artificial Intelligence",
+      "description": "Generative models challenge the line between interpolation and invention, forcing a sharper definition of novelty in terms of surprise, value, and context."
+    }
+  ],
+  "connections": [
+    "Emergence and complexity from simple rules",
+    "Kuhn's paradigm shifts in science",
+    "The incubation effect and sleep",
+    "Natural selection as a creative process",
+    "G\u00f6del and the limits of formal systems",
+    "Combinatorial explosion and search spaces",
+    "The adjacent possible (Stuart Kauffman)"
+  ],
+  "openQuestions": [
+    "Is transformational creativity reducible to recombination at a higher level of abstraction?",
+    "Why do mental leaps so often arrive during rest, sleep, or distraction?",
+    "Can a system be creative without intending to be, and does intention matter for the value of an idea?",
+    "Are there ideas that are permanently unreachable from a given starting set of concepts?"
+  ]
+}
