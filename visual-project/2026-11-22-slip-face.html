@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slip Face</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#2a160c; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#fff1de; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(40,16,4,0.95), 0 0 2px rgba(40,16,4,0.9);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#fff1de; opacity:.72; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(40,16,4,0.95); }
+  #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#f0e2cc;
+    font-family:'Courier New', monospace; font-size:14px; text-align:center; padding:24px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; tip out a heap of sand&nbsp;&nbsp;|&nbsp;&nbsp;shift-click &mdash; scour a hollow&nbsp;&nbsp;|&nbsp;&nbsp;S &mdash; sand supply&nbsp;&nbsp;|&nbsp;&nbsp;W &mdash; winds&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; faster&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; new desert&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="err">This piece needs WebGL2.</div>
+<script>
+(function(){
+"use strict";
+// Slip face. Seen from a light aircraft at the end of the day, a sand sea is not a heap of grains but
+// a handful of shapes repeated: long ridges across the wind where sand is plentiful, and where it is
+// scarce, crescents (barchans) walking over bare ground with their horns pointing downwind. The steep
+// side of each is a slip face. Sand is blown up the gentle windward slope, drops over the brink into
+// still air, piles up past the angle of repose and slides. The dune moves by eating its back and
+// rebuilding its front, and a small dune moves faster than a big one.
+//
+// Nothing here is drawn as a dune. This is Brad Werner's 1995 slab model. The desert is a grid of
+// stacks of sand slabs, each a third of a cell thick. Over and over, a random cell is picked. If it
+// has sand and is not sheltered, one slab is lifted and hops five cells downwind. Where it lands it
+// stays with some probability: more likely on sand than on bare ground, and always in the wind shadow,
+// the region behind anything taller that lies below a 15 degree line drawn down from it. Otherwise it
+// hops again. Any slope steeper than about 34 degrees avalanches. That is the whole rule. Ridges,
+// crescents, slip faces, the horns, the speed that falls with size, and the way dunes collide and
+// calve, all come out of it. The sun is low and moving, shadows are marched across the real heights,
+// and the fine wind ripples and the drifting sand off the crests are texture, not simulation.
+const cv=document.getElementById('c');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const fail=()=>{ document.getElementById('err').style.display='flex'; hint.style.display='none'; };
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false});
+if(!gl){ fail(); return; }
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+
+// ---------- the slab model ----------
+const W=288, H=192, N=W*H;
+const h=new Int16Array(N), sh=new Int32Array(N), ero=new Float32Array(N);
+const nb=new Int32Array(N*8), nxt=new Int32Array(N), hop=new Int32Array(N);
+const SL=5, DROP=4;   // heights in fifths of a slab; the shadow surface falls 0.8 slab (0.27 cell, 15 degrees) per cell
+const HOP=5;          // hop length in cells
+let PS=0.6, PNS=0.4;  // chance a slab stays put on sand, on bare ground
+let seed=(Math.random()*4294967295)>>>0||1;
+const rnd=()=>{ seed^=seed<<13; seed>>>=0; seed^=seed>>>17; seed^=seed<<5; seed>>>=0; return seed/4294967296; };
+const D8=[[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]];
+for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=y*W+x;
+  for(let k=0;k<8;k++) nb[i*8+k]=((y+D8[k][1]+H)%H)*W+((x+D8[k][0]+W)%W); }
+let wdx=1, wdy=0, lineLen=W;
+function setWind(dx,dy){
+  if(dx===wdx && dy===wdy && lineLen) { return; }
+  wdx=dx; wdy=dy; lineLen=dx!==0?W:H;
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const i=y*W+x;
+    nxt[i]=((y+dy+H)%H)*W+((x+dx+W)%W);
+    hop[i]=((y+HOP*dy+H*HOP)%H)*W+((x+HOP*dx+W*HOP)%W); }
+  fullShadow();
+}
+// the wind shadow, along each line of cells running downwind: sh = max(0, max(height, sh) of the
+// cell upwind, less the 15 degree fall). Two laps of each line settle the wrap-around.
+function fullShadow(){
+  sh.fill(0);
+  const nLines=wdx!==0?H:W;
+  for(let l=0;l<nLines;l++){
+    let p=wdx!==0?l*W:l;
+    for(let k=0;k<2*lineLen;k++){ const q=nxt[p]; const a=SL*h[p], b=sh[p]; const v=(a>b?a:b)-DROP; sh[q]=v>0?v:0; p=q; }
+  }
+}
+// after one cell's height changes, walk downwind until the shadow stops changing
+function shUpd(c){
+  let p=c;
+  for(let k=0;k<lineLen;k++){ const q=nxt[p]; const a=SL*h[p], b=sh[p]; let v=(a>b?a:b)-DROP; if(v<0)v=0; if(v===sh[q])break; sh[q]=v; p=q; }
+}
+// avalanches: more than 2 slabs (0.67 cell) of drop to a side neighbour, or 3 to a diagonal one, slides
+function settleDown(i){
+  for(let g=0;g<4000;g++){
+    const hi=h[i]; let best=-1, bd=0; const k0=(rnd()*8)|0;
+    for(let kk=0;kk<8;kk++){ const k=(kk+k0)&7; const n=nb[i*8+k]; const d=hi-h[n]-(k<4?2:3); if(d>bd){bd=d;best=n;} }
+    if(best<0) return; h[i]--; h[best]++; shUpd(i); shUpd(best); i=best;
+  }
+}
+function settleUp(i){
+  for(let g=0;g<4000;g++){
+    const hi=h[i]; let best=-1, bd=0; const k0=(rnd()*8)|0;
+    for(let kk=0;kk<8;kk++){ const k=(kk+k0)&7; const n=nb[i*8+k]; const d=h[n]-hi-(k<4?2:3); if(d>bd){bd=d;best=n;} }
+    if(best<0) return; h[i]++; h[best]--; shUpd(i); shUpd(best); i=best;
+  }
+}
+function event(){
+  const i=(rnd()*N)|0, hi=h[i];
+  if(hi===0 || sh[i]>SL*hi) return;          // nothing to lift, or sheltered
+  h[i]--; ero[i]+=1; shUpd(i); settleUp(i);
+  let j=i;
+  for(let g=0;g<20000;g++){
+    j=hop[j]; const hj=h[j];
+    if(sh[j]>SL*hj || rnd()<(hj>0?PS:PNS)){ h[j]++; shUpd(j); settleDown(j); return; }
+  }
+  h[j]++; shUpd(j);
+}
+function relaxAll(){
+  for(let pass=0;pass<60;pass++){ let moved=0;
+    for(let i=0;i<N;i++){ const hi=h[i];
+      for(let k=0;k<8;k++){ if(hi-h[nb[i*8+k]]>(k<4?2:3)){ settleDown(i); moved++; break; } } }
+    if(!moved) break; }
+  fullShadow();
+}
+
+// ---------- regimes ----------
+const SUPPLIES=[
+  {name:'scattered sand', note:'crescents (barchans) on bare ground', m:1.0, pns:0.2, warm:1400, pan:1},
+  {name:'a fair supply', note:'crescents fused into chains', m:2.6, pns:0.35, warm:600, pan:0.65},
+  {name:'a sand sea', note:'long ridges across the wind', m:7, pns:0.4, warm:400, pan:0.08},
+];
+const WINDS=[
+  {name:'one steady wind', seq:[[1,0,1]]},
+  {name:'two winds at right angles', seq:[[1,0,0.5],[0,1,0.5]]},
+  {name:'a wind that turns back', seq:[[1,0,0.68],[-1,0,0.32]]},
+  {name:'four seasons', seq:[[1,0,0.34],[0,1,0.24],[-1,0,0.2],[0,-1,0.22]]},
+];
+let supI=0, windI=0;
+let QS=new URLSearchParams(location.search);
+if(QS.has('s')) supI=clamp(+QS.get('s')|0,0,SUPPLIES.length-1); else supI=(Math.random()*3)|0;
+if(QS.has('w')) windI=clamp(+QS.get('w')|0,0,WINDS.length-1);
+let sweeps=0, warmTarget=0, segI=0, segLeft=0;
+function nextSeg(){
+  const seq=WINDS[windI].seq; segI=(segI+1)%seq.length;
+  const s=seq[segI]; setWind(s[0],s[1]); segLeft=Math.max(1,Math.round(s[2]*N*0.5));
+}
+function newDesert(){
+  h.fill(0); ero.fill(0);
+  const S=SUPPLIES[supI]; PNS=S.pns;
+  const total=Math.round(S.m*N);
+  for(let t=0;t<total;t++) h[(rnd()*N)|0]++;
+  lineLen=0; segI=-1; nextSeg(); relaxAll();
+  sweeps=0; warmTarget=S.warm; firstUpload=true;
+}
+function step(maxEvents, ms){
+  const t0=performance.now(); let done=0;
+  while(done<maxEvents){
+    const chunk=Math.min(4096, maxEvents-done, segLeft);
+    for(let e=0;e<chunk;e++) event();
+    done+=chunk; segLeft-=chunk; if(segLeft<=0) nextSeg();
+    if(performance.now()-t0>ms) break;
+  }
+  sweeps+=done/N;
+}
+function heap(cx,cy,dig){
+  const R=dig?9:11;
+  for(let dy=-R;dy<=R;dy++) for(let dx=-R;dx<=R;dx++){
+    const d=Math.hypot(dx,dy); if(d>R) continue;
+    const i=(((cy+dy)%H+H)%H)*W+(((cx+dx)%W+W)%W);
+    if(dig) h[i]=Math.max(0, Math.round(h[i]*Math.min(1,(d/R)**3)));
+    else h[i]+=Math.round(Math.max(0,(R-d)*2.2));
+  }
+  relaxAll();
+}
+
+// ---------- rendering ----------
+const VS=`#version 300 es
+in vec2 a; void main(){ gl_Position=vec4(a,0.,1.); }`;
+const FS=`#version 300 es
+precision highp float;
+uniform sampler2D uT;     // r height (cells), g bare, b sheltered, a lifted sand
+uniform vec2 uGrid, uRes, uOff, uWind;
+uniform float uScale, uTime, uEl, uAz, uPan;
+out vec4 o;
+float hgt(vec2 p){ return texture(uT, p/uGrid).r; }
+float hgtS(vec2 p){ return textureLod(uT, p/uGrid, 1.).r; }   // smoother heights for casting shadows
+float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(hash(i),hash(i+vec2(1,0)),f.x), mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x), f.y); }
+float fbm(vec2 p){ float s=0., a=.5; for(int k=0;k<4;k++){ s+=a*vnoise(p); p=p*2.03+17.1; a*=.5; } return s; }
+void main(){
+  vec2 frag=gl_FragCoord.xy; frag.y=uRes.y-frag.y;
+  vec2 p=frag/uScale+uOff;                       // position in cells
+  vec4 T=texture(uT, p/uGrid);
+  float z=T.r;
+  float e=0.8;
+  vec2 g=vec2(hgt(p+vec2(e,0))-hgt(p-vec2(e,0)), hgt(p+vec2(0,e))-hgt(p-vec2(0,e)))/(2.*e)*1.25;
+  float slope=length(g);
+  // wind ripples on exposed sand: crests across the wind, bent a little by noise; none on the slip faces
+  vec2 wd=normalize(uWind), wn=vec2(-wd.y,wd.x);
+  float along=dot(p,wd), across=dot(p,wn);
+  float warp=fbm(p*0.07)*6.;
+  float ph=(along+warp+0.35*sin(across*0.21))*TAU_RIP;
+  float px=1./uScale;                              // cells per pixel: fade ripples that would alias
+  float rAmp=0.015*(1.-T.g)*(1.-smoothstep(0.35,0.75,slope))*(1.-0.8*T.b)*smoothstep(0.55,0.25,px);
+  // asymmetric ripple profile: gentle stoss, steep lee
+  float rip=sin(ph)+0.3*sin(2.*ph);
+  float drip=(cos(ph)+0.6*cos(2.*ph))*TAU_RIP;
+  g+=wd*drip*rAmp;
+  // a little grain on everything
+  g+=(vec2(vnoise(p*3.1),vnoise(p*3.1+9.))-.5)*0.05;
+  vec3 n=normalize(vec3(-g.x,-g.y,1.));
+  // light
+  vec3 L=normalize(vec3(cos(uAz)*cos(uEl), sin(uAz)*cos(uEl), sin(uEl)));
+  float diff=max(dot(n,L),0.);
+  // shadows marched over the real heights
+  vec2 sd=normalize(L.xy); float tl=tan(uEl);
+  float sh=1., t=0.6;
+  for(int k=0;k<44;k++){
+    float hz=hgtS(p+sd*t); float rz=z+t*tl;
+    sh=min(sh, clamp((rz-hz)/(0.05*t+0.12),0.,1.));
+    t+=0.45+t*0.06;
+    if(sh<0.01 || rz>12.) break;
+  }
+  sh=smoothstep(0.,1.,sh);
+  // colours
+  float sunset=smoothstep(0.42,0.05,uEl);
+  vec3 sunC=mix(vec3(1.0,0.86,0.66), vec3(1.0,0.56,0.30), sunset)*mix(1.,0.75,sunset);
+  vec3 skyC=mix(vec3(0.30,0.40,0.62), vec3(0.40,0.33,0.50), sunset);
+  float var=fbm(p*0.045+3.);
+  vec3 sand=mix(vec3(0.80,0.42,0.20), vec3(0.88,0.55,0.30), var);
+  sand=mix(sand, sand*vec3(1.05,1.02,0.96), smoothstep(1.5,7.,z));   // crests a touch paler
+  vec3 flat_=mix(vec3(0.70,0.52,0.38), vec3(0.82,0.68,0.52), fbm(p*0.11));
+  // cracked clay pan between the dunes
+  vec2 q=p*0.55+fbm(p*0.3)*1.3; vec2 f=fract(q)-.5; float crack=smoothstep(0.47,0.5,max(abs(f.x),abs(f.y)));
+  flat_*=1.-0.12*crack;
+  flat_=mix(sand*vec3(0.86,0.84,0.86), flat_, uPan);
+  vec3 alb=mix(sand, flat_, smoothstep(0.15,0.85,T.g)*(1.-smoothstep(0.25,0.6,z)));
+  float amb=0.5+0.5*n.z;
+  vec3 col=alb*(sunC*diff*sh*2.3 + skyC*amb*0.42);
+  // blowing sand: streaks running downwind off the exposed crests
+  float st=fbm(vec2(along*0.16-uTime*2.2, across*1.7)) ;
+  st=smoothstep(0.6,0.85,st)*clamp(T.a*1.6,0.,1.)*(1.-T.b)*smoothstep(0.8,3.,z);
+  col+=sunC*vec3(0.9,0.62,0.4)*st*0.22*(0.4+0.6*sh);
+  // tone and grade
+  col=col/(1.+col*0.55);
+  col=pow(col, vec3(0.95,1.0,1.08));
+  vec2 uv=frag/uRes; float vig=1.-0.35*dot(uv-.5,uv-.5)*2.2;
+  col*=vig;
+  col+= (hash(frag+fract(uTime)*91.)-.5)/255.*2.;
+  o=vec4(pow(max(col,0.),vec3(1./2.2)),1.);
+}`.replace(/TAU_RIP/g,'(6.2831853/1.25)');
+function sh_(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+let prog;
+try{
+  prog=gl.createProgram(); gl.attachShader(prog,sh_(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh_(gl.FRAGMENT_SHADER,FS));
+  gl.bindAttribLocation(prog,0,'a'); gl.linkProgram(prog);
+  if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+}catch(err){ console.error(err); fail(); return; }
+const U={}; for(const n of ['uT','uGrid','uRes','uOff','uWind','uScale','uTime','uEl','uAz','uPan']) U[n]=gl.getUniformLocation(prog,n);
+const vb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vb);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+const tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.REPEAT);
+gl.texStorage2D(gl.TEXTURE_2D, 1+Math.floor(Math.log2(Math.max(W,H))), gl.RGBA16F, W, H);
+const buf=new Float32Array(N*4), tmp=new Float32Array(N), tmp2=new Float32Array(N), flux=new Float32Array(N);
+// heights are smoothed a little for display (a binomial 3x3), so the slab steps don't show
+function blur(src,dst){
+  for(let y=0;y<H;y++){ const r=y*W; for(let x=0;x<W;x++){
+    const xl=x?x-1:W-1, xr=x<W-1?x+1:0; tmp2[r+x]=src[r+xl]+2*src[r+x]+src[r+xr]; } }
+  for(let y=0;y<H;y++){ const ru=(y?y-1:H-1)*W, r=y*W, rd=(y<H-1?y+1:0)*W;
+    for(let x=0;x<W;x++) dst[r+x]=(tmp2[ru+x]+2*tmp2[r+x]+tmp2[rd+x])/16; }
+}
+let firstUpload=true; const tmp2b=new Float32Array(N);
+const hs=new Float32Array(N), bs=new Float32Array(N), ss=new Float32Array(N), fs=new Float32Array(N);
+function upload(){
+  // a stack of one or two slabs is drawn as a thin sheet, so loose sand reads as streaks, not pebbles
+  for(let i=0;i<N;i++){ const v=h[i]; tmp[i]=v>2? (v-1.4)/3 : v*0.2; } blur(tmp,tmp2b);
+  // and eased over a few frames, so single slabs landing and lifting don't flicker
+  const a=firstUpload?1:0.35; firstUpload=false;
+  for(let i=0;i<N;i++) hs[i]+=(tmp2b[i]-hs[i])*a;
+  for(let i=0;i<N;i++){ const v=h[i]; tmp[i]=v===0?1:(v===1?0.55:(v===2?0.25:0)); } blur(tmp,bs);
+  for(let i=0;i<N;i++) tmp[i]=(h[i]>0 && sh[i]>SL*h[i])?1:0; blur(tmp,ss);
+  for(let i=0;i<N;i++){ flux[i]=flux[i]*0.94+ero[i]; ero[i]=0; } blur(flux,fs);
+  for(let i=0,j=0;i<N;i++,j+=4){ buf[j]=hs[i]; buf[j+1]=bs[i]; buf[j+2]=ss[i]; buf[j+3]=fs[i]*0.6; }
+  gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,W,H,gl.RGBA,gl.FLOAT,buf);
+  gl.generateMipmap(gl.TEXTURE_2D);
+}
+
+// ---------- view ----------
+let dpr=1, scale=4, offX=0, offY=0;
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1, 2);
+  const w=Math.floor(innerWidth*dpr), hh=Math.floor(innerHeight*dpr);
+  cv.width=w; cv.height=hh; gl.viewport(0,0,w,hh);
+  // fill the screen with the grid; it wraps, so a wide screen just sees a little of it twice
+  scale=Math.max(w/W, hh/H)*1.0;
+  offX=(W-w/scale)/2; offY=(H-hh/scale)/2;
+}
+addEventListener('resize',resize); resize();
+
+let paused=false, fast=false, showText=true;
+let windVis=[1,0], panVis=1;
+let clock=QS.has('t')?+QS.get('t'):Math.random()*200;
+function hudText(){
+  if(!showText){ hud.innerHTML=''; hint.style.display='none'; return; }
+  hint.style.display='';
+  const S=SUPPLIES[supI], Wd=WINDS[windI];
+  const dirs={'1,0':'east','-1,0':'west','0,1':'south','0,-1':'north'};
+  const warming=sweeps<warmTarget;
+  hud.innerHTML='<b>slip face</b><br>'+
+    S.name+' &mdash; '+S.note+'<br>'+
+    Wd.name+', blowing '+dirs[wdx+','+wdy]+' now<br>'+
+    'every cell lifted from, on average, '+Math.floor(sweeps).toLocaleString()+' times'+(warming?' (the wind is hurrying)':'')+
+    (paused?'<br>paused':'')+(fast&&!warming?'<br>faster':'');
+}
+function cellAt(ev){
+  const x=ev.clientX*dpr/scale+offX, y=ev.clientY*dpr/scale+offY;
+  return [((Math.floor(x)%W)+W)%W, ((Math.floor(y)%H)+H)%H];
+}
+cv.addEventListener('pointerdown',ev=>{ const c=cellAt(ev); heap(c[0],c[1],ev.shiftKey); });
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='s'){ supI=(supI+1)%SUPPLIES.length; newDesert(); }
+  else if(k==='w'){ windI=(windI+1)%WINDS.length; segI=-1; nextSeg(); }
+  else if(k==='n'){ newDesert(); }
+  else if(k==='f'){ fast=!fast; }
+  else if(k==='h'){ showText=!showText; }
+  hudText();
+});
+
+newDesert();
+if(QS.has('bake')){ const b=+QS.get('bake'); while(sweeps<b) step(N,1e9); }
+let last=performance.now(), hudT=0;
+function frame(now){
+  const dt=Math.min(0.1,(now-last)/1000); last=now;
+  if(!paused){
+    clock+=dt;
+    if(sweeps<warmTarget) step(N*12, 38);
+    else step(fast? N*1.5 : N*0.13, fast? 28 : 12);   // a small crescent walks about three cells a second
+  }
+  // the wind direction the ripples and drifting sand follow eases toward the current wind
+  windVis[0]+=(wdx-windVis[0])*Math.min(1,dt*1.5); windVis[1]+=(wdy-windVis[1])*Math.min(1,dt*1.5);
+  panVis+=(SUPPLIES[supI].pan-panVis)*Math.min(1,dt*2);
+  if(Math.hypot(windVis[0],windVis[1])<0.05) windVis[0]+=0.05;
+  upload();
+  // a slow day: the sun stays low and wheels around, from a high afternoon down to a red dusk and back
+  const ph=clock*TAU/240;
+  const el=(7+17*(0.5+0.5*Math.cos(ph)))*Math.PI/180;
+  const az=2.6+clock*0.012;
+  gl.useProgram(prog);
+  gl.uniform1i(U.uT,0); gl.uniform2f(U.uGrid,W,H); gl.uniform2f(U.uRes,cv.width,cv.height);
+  gl.uniform2f(U.uOff,offX,offY); gl.uniform2f(U.uWind,windVis[0],windVis[1]);
+  gl.uniform1f(U.uScale,scale); gl.uniform1f(U.uTime,clock); gl.uniform1f(U.uEl,el); gl.uniform1f(U.uAz,az); gl.uniform1f(U.uPan,panVis);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  hudT-=dt; if(hudT<=0){ hudText(); hudT=0.3; }
+  requestAnimationFrame(frame);
+}
+hudText();
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

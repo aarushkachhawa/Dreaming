@@ -24,6 +24,35 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-22** — `2026-11-22-slip-face.html`: a hundred-and-ninth
+  technique, and the archive's first dune field. Last night's ink was pushed
+  through a film of honey. Tonight the grains are dry and the wind does the
+  pushing, seen from a light aircraft late in the day. A sand sea comes in a
+  few shapes: long ridges across the wind where sand is plentiful, and where
+  it is scarce, barchans, crescents walking over bare ground with their horns
+  pointing downwind. Sand climbs the gentle windward side, drops over the
+  brink into still air and slides down the slip face. A dune moves by eating
+  its back and rebuilding its front, so a small one outruns a big one. Nothing
+  is drawn as a dune. This is Werner's 1995 slab model. The desert is a
+  wrapping grid of stacks of slabs, each a third of a cell thick. A random
+  cell is picked, again and again. If it has sand and is not sheltered, one
+  slab lifts and hops five cells downwind. It stays where it lands with
+  probability 0.6 on sand, less on bare ground, and always inside the wind
+  shadow, which is everything below a 15-degree line falling from the ground
+  upwind. Otherwise it hops again. Any slope steeper than about 34 degrees
+  avalanches. The shadow is kept up to date incrementally along each downwind
+  line, so the browser runs a few million slab hops a second. The crescents,
+  their horns, the ridges, the sand streamers between them and the
+  collisions all come out of that rule. The low sun wheels slowly from
+  afternoon to red dusk and back, and shadows are marched across the real
+  heights. The wind ripples, the cracked clay of the pans and the sand
+  smoking off the crests are texture, not simulation. Click to tip out a heap
+  (it becomes a dune and walks away), shift-click to scour a hollow, S for
+  the sand supply (scattered: barchans; fair: chains; a sand sea: transverse
+  ridges), W for the winds (one, two at right angles, one that turns back,
+  four seasons), F to hurry the wind, N for a new desert, H to hide the text,
+  space to pause. Needs WebGL2; open the file directly in a browser.
+
 - **2026-11-21** — `2026-11-21-easier-way.html`: a hundred-and-eighth
   technique, and the archive's first viscous fingering. After a night on open
   water, the eye goes down to the thinnest water there is, a film squeezed
