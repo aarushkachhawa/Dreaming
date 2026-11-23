@@ -24,6 +24,41 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-23** — `2026-11-23-inner-walls.html`: a hundred-and-tenth
+  technique, and the archive's first Liesegang bands, with its first agate.
+  Last night the wind laid sand into dunes from outside. Tonight the layers
+  grow inward, in the dark, inside a stone. Cut an agate and polish the face
+  and you find walls inside walls. The bands follow the shape of the cavity
+  they grew in, ring inside ring, closing on a heart of quartz; collectors
+  call it fortification. One old account of how this happens comes from
+  Liesegang, 1896: a salt soaks into a gel that holds a second salt, and the
+  product comes out not evenly but in separate bands. The piece runs the
+  phase-separation version of that idea (Antal, Droz, Magnin and Racz, 1999).
+  Reagent A seeps in from the rock; the gel already holds B, which stays put;
+  where they meet they make C. C has two states it prefers, dissolved and
+  solid, and pays for every sharp edge between them, a Cahn-Hilliard free
+  energy. Just behind the reaction front C piles up past the point where a
+  uniform mix is stable and splits. Because the front sweeps in from one
+  side, the split comes out as a wall parallel to the front, not as spots.
+  Then comes the next wall. My first attempt used the textbook
+  nucleation-and-growth rule, and in two dimensions it broke every band into
+  beads: each nucleus starved its neighbours. The early bands, laid while the
+  front is still fast, tangle into a labyrinth at the rim. Further in they
+  close into clean rings. Five fields on a 640 by 640 grid, two shader passes
+  per step; the readout counts the bands along one radius and measures their
+  spacing. Each band's colour comes from when it formed. The faint laminae
+  between bands follow the moment the front passed. The quartz crystals at
+  the heart (six-sided pyramids seen end-on), the rind and the polish are
+  painted. Six colourings (Brazilian banded, carnelian, blue lace, Botswana,
+  onyx, an amethyst geode), and a second scene, the classic school
+  demonstration: a drop of silver nitrate on dichromate gelatin, red-brown
+  rings spreading on yellow. Move the cursor to tilt the slab in the light,
+  click to let a drop of reagent in and watch its rings shoulder through the
+  bands, N for a new stone, P for the colouring, D for stone or dish, F to
+  hurry, H to hide the text, space to pause. A finished stone is held for
+  forty seconds before the next one starts. Needs WebGL2 with float render
+  targets; open the file directly in a browser.
+
 - **2026-11-22** — `2026-11-22-slip-face.html`: a hundred-and-ninth
   technique, and the archive's first dune field. Last night's ink was pushed
   through a film of honey. Tonight the grains are dry and the wind does the

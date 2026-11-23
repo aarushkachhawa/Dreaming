@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inner Walls</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#0d0c0d; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#efe9e2; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95), 0 0 2px rgba(0,0,0,0.9);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#efe9e2; opacity:.66; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(0,0,0,0.95); }
+  #err { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#efe9e2;
+    font-family:'Courier New', monospace; font-size:14px; text-align:center; padding:24px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">move &mdash; tilt the stone in the light&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; let a drop of reagent in&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; new stone&nbsp;&nbsp;|&nbsp;&nbsp;P &mdash; colouring&nbsp;&nbsp;|&nbsp;&nbsp;D &mdash; stone / gel dish&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; faster&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="err">This piece needs WebGL2 with float render targets.</div>
+<script>
+(function(){
+"use strict";
+// Inner walls. Cut an agate in half and polish it and you find walls inside walls: bands that follow the
+// shape of the cavity they grew in, ring after ring, closing in on a heart of quartz. Collectors call
+// it fortification. One old idea of how it happens is Liesegang's, from 1896: a salt soaks into a gel
+// that holds a second salt, they react, and the product does not come out evenly but in separate bands,
+// each further from the last.
+//
+// What runs here is the phase-separation version of that idea (Antal, Droz, Magnin and Racz, 1999). A gel
+// fills a cavity in rock. Solution A seeps in from the wall; the gel already holds B, which stays put.
+// Where they meet they make C. C has two states it would rather be in, dissolved and solid, and a cost
+// for a sharp edge between them: a Cahn-Hilliard free energy. Just behind the reaction front, as C
+// builds up past the point where a uniform mix is unstable, it splits, and because the front is
+// sweeping in from one side the split comes out as a wall parallel to the front rather than as spots.
+// Then the next. The first bands, laid down while the front is still fast, tangle into a labyrinth;
+// further in they close up into clean rings that follow the shape of the cavity. Five fields on a
+// 640 x 640 grid, explicit steps, two shader passes a step. The colour of each band depends on when it
+// formed, the faint laminae between them follow the moment the front passed, and the quartz at the
+// heart, the rind and the polish are painted, not simulated.
+const cv=document.getElementById('c');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const fail=()=>{ document.getElementById('err').style.display='flex'; hint.style.display='none'; };
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false});
+if(!gl || !gl.getExtension('EXT_color_buffer_float')){ fail(); return; }
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const rr=(a,b)=>a+Math.random()*(b-a);
+
+const N=640;
+const DT=0.2;
+
+// ---------- colourings ----------
+const PALS=[
+ {name:'Brazilian banded', bands:[[.88,.86,.82],[.40,.44,.50],[.72,.56,.40],[.24,.22,.25]], ground:[.60,.62,.65], wet:[.20,.21,.24], quartz:[.86,.89,.93], rind:[.34,.27,.21]},
+ {name:'carnelian',        bands:[[.90,.42,.14],[.97,.87,.70],[.60,.16,.07],[.95,.63,.30]], ground:[.80,.50,.30], wet:[.30,.15,.09], quartz:[.96,.88,.78], rind:[.36,.24,.17]},
+ {name:'blue lace',        bands:[[.76,.85,.96],[.96,.97,.99],[.52,.62,.82],[.70,.70,.88]], ground:[.64,.72,.84], wet:[.18,.21,.29], quartz:[.88,.92,1.0], rind:[.40,.37,.35]},
+ {name:'Botswana',         bands:[[.88,.70,.67],[.54,.49,.52],[.96,.91,.86],[.50,.34,.30]], ground:[.72,.62,.60], wet:[.24,.20,.20], quartz:[.93,.90,.90], rind:[.31,.26,.24]},
+ {name:'onyx',             bands:[[.95,.94,.92],[.09,.09,.10],[.88,.87,.84],[.20,.19,.20]], ground:[.34,.34,.35], wet:[.09,.09,.10], quartz:[.90,.90,.93], rind:[.22,.20,.19]},
+ {name:'amethyst geode',   bands:[[.84,.82,.86],[.48,.44,.56],[.94,.93,.95],[.36,.32,.40]], ground:[.62,.60,.68], wet:[.18,.17,.22], quartz:[.62,.42,.86], rind:[.30,.27,.25]},
+];
+// silver nitrate into dichromate gelatin: the classic dish, red-brown silver dichromate rings on yellow
+const DISH={name:'silver dichromate in gelatin', bands:[[.50,.17,.08],[.62,.24,.10],[.44,.13,.07],[.56,.20,.09]], ground:[.96,.86,.52], wet:[.88,.62,.18], quartz:[1,1,1], rind:[.5,.5,.5]};
+
+// ---------- shaders ----------
+const VS=`#version 300 es
+in vec2 p; void main(){ gl_Position=vec4(p,0.,1.); }`;
+const COMMON=`
+uniform int uMode; uniform vec4 uA; uniform vec4 uP; uniform vec3 uG;
+float rhoOf(vec2 p){
+  if(uMode==1) return length(p)/uG.x;
+  float c=cos(uG.y), s=sin(uG.y);
+  vec2 q=vec2(c*p.x+s*p.y, -s*p.x+c*p.y); q.x/=uG.z; q.y*=uG.z;
+  float th=atan(q.y,q.x);
+  float r=1.+uA.x*cos(2.*th+uP.x)+uA.y*cos(3.*th+uP.y)+uA.z*cos(4.*th+uP.z)+uA.w*cos(6.*th+uP.w);
+  return length(q)/(uG.x*r);
+}
+float h21(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
+float fbm(vec2 p){ float s=0., a=.5; for(int i=0;i<5;i++){ s+=a*vnoise(p); p=p*2.03+vec2(1.7,9.2); a*=.5; } return s; }
+`;
+const INIT_FS=`#version 300 es
+precision highp float;
+uniform int uN; uniform float uB0, uSeedF;
+layout(location=0) out vec4 o0; layout(location=1) out vec4 o1;
+${COMMON}
+void main(){
+  vec2 p=(gl_FragCoord.xy)/float(uN)*2.-1.;
+  float rh=rhoOf(p);
+  float b=uB0*(1.+.12*(fbm(p*4.+uSeedF)-.5)+.06*(h21(gl_FragCoord.xy+uSeedF)-.5));
+  if(rh>1.){ o0=vec4(uMode==0?1.:0.,0.,0.,0.); o1=vec4(-1.,-1.,uB0,0.); return; }
+  o0=vec4(0.,b,0.,1.); o1=vec4(-1.,-1.,b,0.);
+}`;
+// chemical potential of the product: a double well (dissolved / solid) plus a cost for sharp edges
+const MU_FS=`#version 300 es
+precision highp float;
+uniform highp sampler2D uS; uniform int uN; uniform float uW, uKap;
+out vec4 o;
+void main(){
+  ivec2 ij=ivec2(gl_FragCoord.xy); ivec2 m=ivec2(uN-1);
+  vec4 s=texelFetch(uS,ij,0);
+  if(s.w<.5){ o=vec4(0.); return; }
+  vec4 L=texelFetch(uS,clamp(ij+ivec2(-1,0),ivec2(0),m),0), R=texelFetch(uS,clamp(ij+ivec2(1,0),ivec2(0),m),0);
+  vec4 D=texelFetch(uS,clamp(ij+ivec2(0,-1),ivec2(0),m),0), U=texelFetch(uS,clamp(ij+ivec2(0,1),ivec2(0),m),0);
+  float v=s.z;
+  float lap=(L.w>.5?L.z:v)+(R.w>.5?R.z:v)+(D.w>.5?D.z:v)+(U.w>.5?U.z:v)-4.*v;
+  o=vec4(uW*2.*v*(1.-v)*(1.-2.*v)-uKap*lap,0.,0.,0.);
+}`;
+const SIM_FS=`#version 300 es
+precision highp float; precision highp int;
+uniform highp sampler2D uS; uniform highp sampler2D uE; uniform highp sampler2D uM;
+uniform int uN; uniform float uT, uDt, uLam, uH;
+uniform vec4 uDrop[6];
+layout(location=0) out vec4 o0; layout(location=1) out vec4 o1;
+${COMMON}
+void main(){
+  ivec2 ij=ivec2(gl_FragCoord.xy); ivec2 m=ivec2(uN-1);
+  vec4 s=texelFetch(uS,ij,0), e=texelFetch(uE,ij,0);
+  if(s.w<.5){ o0=s; o1=e; return; }
+  vec2 p=(vec2(ij)+.5)/float(uN)*2.-1.;
+  ivec2 iL=clamp(ij+ivec2(-1,0),ivec2(0),m), iR=clamp(ij+ivec2(1,0),ivec2(0),m);
+  ivec2 iD=clamp(ij+ivec2(0,-1),ivec2(0),m), iU=clamp(ij+ivec2(0,1),ivec2(0),m);
+  vec4 L=texelFetch(uS,iL,0), R=texelFetch(uS,iR,0), D=texelFetch(uS,iD,0), U=texelFetch(uS,iU,0);
+  // A seeps in from the rock (held at 1 outside the cavity); the dish wall lets nothing through
+  float aL=(uMode==1&&L.w<.5)?s.x:L.x, aR=(uMode==1&&R.w<.5)?s.x:R.x, aD=(uMode==1&&D.w<.5)?s.x:D.x, aU=(uMode==1&&U.w<.5)?s.x:U.x;
+  float r=s.x*s.y;                                    // A + B -> C
+  float na=s.x+uDt*(aL+aR+aD+aU-4.*s.x-r);
+  float nb=s.y-uDt*r;
+  float mc=texelFetch(uM,ij,0).x;
+  float mL=L.w>.5?texelFetch(uM,iL,0).x:mc, mR=R.w>.5?texelFetch(uM,iR,0).x:mc;
+  float mD=D.w>.5?texelFetch(uM,iD,0).x:mc, mU=U.w>.5?texelFetch(uM,iU,0).x:mc;
+  float nu=s.z+uDt*(uLam*(mL+mR+mD+mU-4.*mc)+r/uH);  // C made here, and C moving down its potential
+  for(int k=0;k<6;k++){ vec4 d=uDrop[k]; if(d.w>0. && distance(p,d.xy)<d.z){ na=1.; nb=0.; } }
+  float tf=e.x; if(tf<0. && nu>.5) tf=uT;
+  float tp=e.y; if(tp<0. && nb<.5*e.z) tp=uT;
+  o0=vec4(max(na,0.),max(nb,0.),nu,1.);
+  o1=vec4(tf,tp,e.z,e.w);
+}`;
+const COL_FS=`#version 300 es
+precision highp float;
+uniform highp sampler2D uS; uniform highp sampler2D uE;
+uniform int uN; uniform float uK, uOff, uLam, uTs;
+uniform vec3 uPal[6];
+out vec4 o;
+${COMMON}
+float mOf(vec4 s){ return smoothstep(.3,.7,s.z); }
+vec3 bandCol(float f){
+  f=fract(f)*4.; float i=floor(f), t=smoothstep(.62,1.,fract(f));
+  vec3 a=uPal[0], b=uPal[1];
+  if(i==1.){a=uPal[1];b=uPal[2];} else if(i==2.){a=uPal[2];b=uPal[3];} else if(i==3.){a=uPal[3];b=uPal[0];}
+  return mix(a,b,t);
+}
+void main(){
+  ivec2 ij=ivec2(gl_FragCoord.xy); ivec2 m=ivec2(uN-1);
+  vec2 p=(vec2(ij)+.5)/float(uN)*2.-1.;
+  vec4 s=texelFetch(uS,ij,0), e=texelFetch(uE,ij,0);
+  float mc=mOf(s); float best=mc; float tf=e.x;
+  for(int k=0;k<4;k++){
+    ivec2 o2=ij+(k==0?ivec2(1,0):k==1?ivec2(-1,0):k==2?ivec2(0,1):ivec2(0,-1));
+    o2=clamp(o2,ivec2(0),m);
+    float mn=mOf(texelFetch(uS,o2,0));
+    if(tf<0. && mn>.05){ tf=texelFetch(uE,o2,0).x; }
+  }
+  float band=best;
+  float idx=log(1.+max(tf,0.)*uTs);
+  vec3 bc=bandCol(idx*uK+uOff+.12*(fbm(p*3.+uOff)-.5));
+  float pr=clamp(1.-s.y/max(e.z,1e-5),0.,1.);
+  float tp=e.y;
+  float lam=tp<0.?0.:sin(sqrt(tp)*uLam)*.5+sin(sqrt(tp)*uLam*2.71+1.3)*.5;
+  vec3 gr=mix(uPal[5], uPal[4]*(1.+.06*lam), smoothstep(.0,1.,pr));
+  vec3 col=mix(gr, bc*(.93+.07*lam), band);
+  if(rhoOf(p)>1.) { col=uPal[5]; band=0.; }
+  o=vec4(col, band);
+}`;
+const OUT_FS=`#version 300 es
+precision highp float;
+uniform sampler2D uC; uniform vec2 uRes; uniform float uScale, uTime, uQ;
+uniform vec3 uL; uniform vec3 uQuartz, uRind; uniform float uCut;
+out vec4 o;
+${COMMON}
+vec2 h22(vec2 p){ return vec2(h21(p), h21(p+17.31)); }
+vec3 quartz(vec2 p, float rh, vec3 L){
+  // a lining of small crystals, each seen end-on as a six-sided pyramid
+  float sc=20.+22.*smoothstep(.0,uQ,rh);
+  vec2 g=p*sc; vec2 i=floor(g), f=fract(g);
+  float d1=9., d2=9.; vec2 id=vec2(0), rv=vec2(0);
+  for(int y=-1;y<=1;y++) for(int x=-1;x<=1;x++){
+    vec2 c=vec2(x,y); vec2 r=c+.15+.7*h22(i+c)-f; float d=dot(r,r);
+    if(d<d1){ d2=d1; d1=d; id=i+c; rv=-r; } else if(d<d2) d2=d; }
+  float edge=smoothstep(0.,.07,sqrt(d2)-sqrt(d1));
+  float rot=h21(id+9.1)*6.2832;
+  float a=atan(rv.y,rv.x)-rot; float sec=floor(a/1.0472+.5)*1.0472+rot;
+  vec2 fd=vec2(cos(sec),sin(sec));
+  vec2 tilt=(h22(id+3.7)-.5)*.6;
+  vec3 n=normalize(vec3(fd*.75+tilt,.65));
+  float dif=.3+.7*max(dot(n,L),0.);
+  float sp=pow(max(dot(reflect(-L,n),vec3(0,0,1)),0.),60.);
+  float depth=smoothstep(-.1,1.,rh/uQ);
+  float tone=.8+.4*h21(id);
+  vec3 c=uQuartz*dif*tone*(.2+.8*depth);
+  c+=vec3(1.)*sp*1.6*depth;
+  c*=mix(.45,1.,edge);
+  return c;
+}
+void main(){
+  vec2 p=(gl_FragCoord.xy-.5*uRes)/uScale;
+  float rh=rhoOf(p);
+  vec3 L=normalize(uL);
+  vec2 uv=(p+1.)*.5;
+  float px=1./uScale;
+  // the table
+  float vig=1.-.55*length((gl_FragCoord.xy-.5*uRes)/uRes.y);
+  vec3 col=vec3(.050,.046,.050)*vig*(.9+.1*fbm(gl_FragCoord.xy*.004));
+  if(uMode==0){
+    float rind=1.075+.035*(fbm(p*7.)-.5);
+    float sh=smoothstep(rind+.12,rind,rhoOf(p-L.xy*.03));
+    col*=1.-.55*sh;
+    if(rh<rind){
+      float rn=fbm(p*38.);
+      vec3 rc=uRind*(.65+.6*rn)*(.85+.3*fbm(p*9.));
+      col=rc*(.7+.3*dot(normalize(vec3((rn-.5)*1.5,(fbm(p*38.+5.)-.5)*1.5,1.)),L));
+      col=mix(col, uRind*.35, smoothstep(rind-.012,rind,rh));
+    }
+    if(rh<1.){
+      vec4 t=texture(uC,uv);
+      float ax=texture(uC,uv+vec2(px,0)).a-texture(uC,uv-vec2(px,0)).a;
+      float ay=texture(uC,uv+vec2(0,px)).a-texture(uC,uv-vec2(0,px)).a;
+      vec3 n=normalize(vec3(-ax*.35,-ay*.35,1.));
+      vec3 deep=texture(uC,uv+L.xy*.006*(1.-t.a)).rgb;
+      vec3 c=mix(t.rgb, deep*1.05, .3*(1.-t.a));
+      float dif=.82+.18*dot(n,L);
+      float sp=pow(max(dot(reflect(-L,n),vec3(0,0,1)),0.),90.);
+      float sheen=.06*smoothstep(-.9,.9,dot(p,L.xy*1.4));
+      c=c*dif+sp*.35+sheen;
+      c=mix(c, uRind*.6, smoothstep(.985,1.,rh)*.6);
+      col=c;
+      if(uQ>0.){
+        float qe=uQ*(1.+.08*(fbm(p*6.)-.5));
+        if(rh<qe){ col=quartz(p,rh,L); }
+        else col=mix(col, vec3(.97,.96,.95), .85*smoothstep(qe+.03,qe,rh));
+      }
+      // a soft broad reflection of the room light on the polish
+      vec2 lc=L.xy*.5; float hl=exp(-dot(p-lc,p-lc)*5.);
+      col+=vec3(1.,.98,.95)*hl*.07;
+    }
+  } else {
+    float sh=smoothstep(1.16,1.02,length(p-L.xy*.03)/uG.x);
+    col*=1.-.4*sh;
+    if(rh<1.035){
+      vec4 t=texture(uC,uv);
+      vec3 c=rh<1.?t.rgb:vec3(.75);
+      float ax=texture(uC,uv+vec2(px,0)).a-texture(uC,uv-vec2(px,0)).a;
+      float ay=texture(uC,uv+vec2(0,px)).a-texture(uC,uv-vec2(0,px)).a;
+      vec3 n=normalize(vec3(-ax*.25,-ay*.25,1.));
+      c*=.86+.14*dot(n,L);
+      float rim=smoothstep(.985,1.0,rh)*smoothstep(1.035,1.01,rh);
+      vec2 dir=normalize(p+1e-5);
+      c=mix(c, vec3(.92,.95,.97)*(.5+.6*max(dot(dir,L.xy*1.5),0.)), rim*.8);
+      vec2 lc=L.xy*.45; float hl=exp(-dot(p-lc,p-lc)*6.);
+      c+=hl*.06;
+      col=c;
+    }
+  }
+  col=pow(clamp(col,0.,1.),vec3(1.));
+  col+=(h21(gl_FragCoord.xy+fract(uTime))-.5)/255.;
+  o=vec4(col,1.);
+}`;
+
+function sh(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(s)); return null; } return s; }
+function prog(fs){ const p=gl.createProgram(); const v=sh(gl.VERTEX_SHADER,VS), f=sh(gl.FRAGMENT_SHADER,fs);
+  if(!v||!f) return null; gl.attachShader(p,v); gl.attachShader(p,f); gl.bindAttribLocation(p,0,'p'); gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ console.error(gl.getProgramInfoLog(p)); return null; }
+  const u={}; const n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS);
+  for(let i=0;i<n;i++){ const a=gl.getActiveUniform(p,i); const nm=a.name.replace(/\[0\]$/,''); u[nm]=gl.getUniformLocation(p,a.name); }
+  return {p,u}; }
+const P={init:prog(INIT_FS), mu:prog(MU_FS), sim:prog(SIM_FS), col:prog(COL_FS), out:prog(OUT_FS)};
+if(!P.init||!P.mu||!P.sim||!P.col||!P.out){ fail(); return; }
+
+const vb=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vb);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+const vao=gl.createVertexArray(); gl.bindVertexArray(vao); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+
+function tex(internal,format,type,filter,w,h){ const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,internal,w,h,0,format,type,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,filter); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,filter);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; }
+const S=[0,1].map(()=>tex(gl.RGBA32F,gl.RGBA,gl.FLOAT,gl.NEAREST,N,N));
+const E=[0,1].map(()=>tex(gl.RGBA32F,gl.RGBA,gl.FLOAT,gl.NEAREST,N,N));
+const F=[0,1].map(i=>{ const f=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,f);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,S[i],0);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT1,gl.TEXTURE_2D,E[i],0);
+  gl.drawBuffers([gl.COLOR_ATTACHMENT0,gl.COLOR_ATTACHMENT1]); return f; });
+if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){ fail(); return; }
+const MT=tex(gl.R32F,gl.RED,gl.FLOAT,gl.NEAREST,N,N);
+const MF=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,MF);
+gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,MT,0);
+if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){ fail(); return; }
+const CT=tex(gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE,gl.LINEAR,N,N);
+const CF=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,CF);
+gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,CT,0);
+let cur=0;
+
+// ---------- a stone ----------
+let mode=0, palIdx=Math.floor(Math.random()*PALS.length), pal=PALS[palIdx];
+const st={A:[0,0,0,0], Ph:[0,0,0,0], G:[0.72,0,1], b0:.1, fill:.5, W:4, kap:2, mob:.04, Q:.25, K:.5, off:0, lam:3, seedF:0, seed:1};
+let T=0, steps=0, drops=[], doneHold=-1, fast=false, paused=false, showText=true;
+let readout={bands:0, ratio:0, gap:0, prog:0};
+
+function rhoJS(x,y){
+  if(mode===1) return Math.hypot(x,y)/st.G[0];
+  const c=Math.cos(st.G[1]), s=Math.sin(st.G[1]);
+  const qx=(c*x+s*y)/st.G[2], qy=(-s*x+c*y)*st.G[2];
+  const th=Math.atan2(qy,qx), A=st.A, P2=st.Ph;
+  const r=1+A[0]*Math.cos(2*th+P2[0])+A[1]*Math.cos(3*th+P2[1])+A[2]*Math.cos(4*th+P2[2])+A[3]*Math.cos(6*th+P2[3]);
+  return Math.hypot(qx,qy)/(st.G[0]*r);
+}
+function newStone(keepShape){
+  if(!keepShape){
+    if(mode===0){
+      st.A=[rr(.02,.07),rr(.0,.045),rr(.0,.03),rr(0,.012)];
+      st.Ph=[rr(0,TAU),rr(0,TAU),rr(0,TAU),rr(0,TAU)];
+      st.G=[rr(.70,.76), rr(0,TAU), rr(1.0,1.12)];
+      st.Q=Math.random()<.2?0:rr(.12,.36);
+    } else { st.A=[0,0,0,0]; st.G=[.9,0,1]; st.Q=0; }
+    st.b0=rr(.08,.12); st.fill=rr(.44,.54); st.W=rr(3.6,5); st.kap=rr(1.8,2.6); st.mob=.04;
+    st.K=rr(.35,.7); st.off=rr(0,1); st.lam=rr(2.2,4.2);
+    st.seedF=rr(0,100); st.seed=(Math.random()*1e9)>>>0;
+  }
+  T=0; steps=0; doneHold=-1; drops=[];
+  if(mode===1) drops.push({x:0,y:0,r:.07,life:Infinity});
+  const p=P.init; gl.useProgram(p.p);
+  setShape(p);
+  gl.uniform1i(p.u.uN,N); gl.uniform1f(p.u.uB0,st.b0); gl.uniform1f(p.u.uSeedF,st.seedF);
+  gl.viewport(0,0,N,N);
+  for(const i of [0,1]){ gl.bindFramebuffer(gl.FRAMEBUFFER,F[i]); gl.drawArrays(gl.TRIANGLES,0,3); }
+  cur=0; readout={bands:0,ratio:0,gap:0,prog:0};
+}
+function setShape(p){
+  gl.uniform1i(p.u.uMode,mode); gl.uniform4fv(p.u.uA,st.A); gl.uniform4fv(p.u.uP,st.Ph); gl.uniform3fv(p.u.uG,st.G);
+}
+const dropArr=new Float32Array(24);
+function simSteps(n){
+  const q=P.mu; gl.useProgram(q.p);
+  gl.uniform1i(q.u.uN,N); gl.uniform1f(q.u.uW,st.W); gl.uniform1f(q.u.uKap,st.kap); gl.uniform1i(q.u.uS,0);
+  const p=P.sim; gl.useProgram(p.p); setShape(p);
+  gl.uniform1i(p.u.uN,N); gl.uniform1f(p.u.uDt,DT); gl.uniform1f(p.u.uLam,st.mob); gl.uniform1f(p.u.uH,st.b0/st.fill);
+  gl.uniform1i(p.u.uS,0); gl.uniform1i(p.u.uE,1); gl.uniform1i(p.u.uM,2);
+  gl.viewport(0,0,N,N);
+  for(let k=0;k<n;k++){
+    gl.useProgram(q.p); gl.bindFramebuffer(gl.FRAMEBUFFER,MF);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,S[cur]);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    gl.useProgram(p.p);
+    gl.activeTexture(gl.TEXTURE2); gl.bindTexture(gl.TEXTURE_2D,MT);
+    dropArr.fill(0);
+    for(let i=0;i<drops.length && i<6;i++){ const d=drops[i]; dropArr.set([d.x,d.y,d.r,d.life>0?1:0],i*4); }
+    gl.uniform4fv(p.u.uDrop,dropArr); gl.uniform1f(p.u.uT,T);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,F[1-cur]);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,S[cur]);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,E[cur]);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    cur=1-cur; T+=DT; steps++;
+    for(const d of drops) d.life-=DT;
+  }
+  drops=drops.filter(d=>d.life>0);
+}
+function colourPass(){
+  const p=P.col; gl.useProgram(p.p); setShape(p);
+  const pl=mode===1?DISH:pal;
+  const arr=new Float32Array(18); pl.bands.forEach((c,i)=>arr.set(c,i*3)); arr.set(pl.ground,12); arr.set(pl.wet,15);
+  gl.uniform3fv(p.u.uPal,arr);
+  gl.uniform1i(p.u.uN,N); gl.uniform1f(p.u.uK,st.K); gl.uniform1f(p.u.uOff,st.off);
+  gl.uniform1f(p.u.uLam,st.lam); gl.uniform1f(p.u.uTs,.05);
+  gl.uniform1i(p.u.uS,0); gl.uniform1i(p.u.uE,1);
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,S[cur]);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,E[cur]);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,CF); gl.viewport(0,0,N,N); gl.drawArrays(gl.TRIANGLES,0,3);
+}
+let W=1,H=1,scale=1;
+function resize(){ const dpr=Math.min(devicePixelRatio||1,2); W=Math.floor(innerWidth*dpr); H=Math.floor(innerHeight*dpr);
+  cv.width=W; cv.height=H; scale=Math.min(W,H)*.47/(mode===0?.95:.96); }
+addEventListener('resize',resize); resize();
+let lx=.45, ly=.5, tlx=.45, tly=.5, lastMove=-1e9;
+function outPass(t){
+  const p=P.out; gl.useProgram(p.p); setShape(p);
+  const pl=mode===1?DISH:pal;
+  gl.uniform2f(p.u.uRes,W,H); gl.uniform1f(p.u.uScale,scale); gl.uniform1f(p.u.uTime,t);
+  gl.uniform1f(p.u.uQ,mode===0?st.Q:0);
+  gl.uniform3f(p.u.uL,lx,ly,1); gl.uniform3fv(p.u.uQuartz,pl.quartz); gl.uniform3fv(p.u.uRind,pl.rind);
+  gl.uniform1i(p.u.uC,0); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,CT);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,W,H); gl.drawArrays(gl.TRIANGLES,0,3);
+}
+
+// ---------- reading one radius ----------
+const row=new Float32Array((N/2)*4);
+function measure(){
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER,F[cur]); gl.readBuffer(gl.COLOR_ATTACHMENT0);
+  gl.readPixels(N/2,N/2,N/2,1,gl.RGBA,gl.FLOAT,row);
+  const cx=(i)=>((N/2+i)+.5)/N*2-1, cy=(N/2+.5)/N*2-1;
+  let wall=N/2-1; for(let i=0;i<N/2;i++){ if(rhoJS(cx(i),cy)>1){ wall=i; break; } }
+  let inner=0;
+  if(mode===0){ for(let i=0;i<wall;i++){ if(rhoJS(cx(i),cy)>=st.Q*1.06){ inner=i; break; } } }
+  else inner=Math.ceil(.07*N/2)+1;
+  const pos=[]; let run=-1, wsum=0, xsum=0;
+  for(let i=inner;i<wall;i++){ const d=row[i*4+2];
+    if(d>.5){ wsum+=d; xsum+=d*i; run=1; }
+    else if(run>0){ pos.push(xsum/wsum); wsum=0; xsum=0; run=-1; } }
+  if(run>0) pos.push(xsum/wsum);
+  // distance from where the reagent comes in
+  const dist=mode===0?pos.map(x=>wall-x):pos.map(x=>x-(.07*N/2));
+  dist.sort((a,b)=>a-b);
+  let front=0; const span=wall-inner;
+  for(let i=inner;i<wall;i++){ const b=row[i*4+1]; if(b<.5*st.b0){ front=mode===0?wall-i:i-inner; break; } }
+  if(mode===1){ front=0; for(let i=wall-1;i>=inner;i--){ if(row[i*4+1]<.5*st.b0){ front=i-inner; break; } } }
+  let ratio=0, gap=0, cnt=0;
+  const use=dist.filter(x=>x>6);
+  for(let i=Math.max(1,use.length-5);i<use.length;i++){ ratio+=use[i]/use[i-1]; gap+=use[i]-use[i-1]; cnt++; }
+  readout={bands:dist.length, ratio:cnt?ratio/cnt:0, gap:cnt?gap/cnt:0, prog:clamp(front/Math.max(span,1),0,1)};
+}
+
+// ---------- interaction ----------
+cv.addEventListener('pointermove',ev=>{ const r=cv.getBoundingClientRect();
+  tlx=((ev.clientX-r.left)/r.width-.5)*2.2; tly=-((ev.clientY-r.top)/r.height-.5)*2.2; lastMove=performance.now(); });
+cv.addEventListener('pointerdown',ev=>{ const r=cv.getBoundingClientRect(); const dpr=W/r.width;
+  const x=((ev.clientX-r.left)*dpr-.5*W)/scale, y=(-(ev.clientY-r.top)*dpr+.5*H)/scale;
+  if(rhoJS(x,y)>=1 || (mode===0 && rhoJS(x,y)<st.Q)) return;
+  const life=1600; if(drops.length>=6) drops.shift();
+  drops.push({x,y,r:.022,life}); doneHold=-1;
+});
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='n'){ newStone(false); }
+  else if(k==='p'){ if(mode===0){ palIdx=(palIdx+1)%PALS.length; pal=PALS[palIdx]; } }
+  else if(k==='d'){ mode=1-mode; resize(); newStone(false); }
+  else if(k==='f'){ fast=!fast; }
+  else if(k==='h'){ showText=!showText; hud.style.display=showText?'':'none'; hint.style.display=showText?'':'none'; }
+});
+
+// ---------- loop ----------
+newStone(false);
+let frame=0, lastT=performance.now();
+function tick(now){
+  const dtw=Math.min(.1,(now-lastT)/1000); lastT=now;
+  if(!paused){
+    simSteps(fast?36:7);
+    if(doneHold>=0){ doneHold+=dtw; if(doneHold>40){ if(mode===0){ palIdx=Math.floor(Math.random()*PALS.length); pal=PALS[palIdx]; } newStone(false); } }
+  }
+  if(now-lastMove>6000){ const t=now*.00007; tlx=.75*Math.cos(t*TAU)+.2; tly=.6*Math.sin(t*TAU*.8)+.25; }
+  lx+=(tlx-lx)*.04; ly+=(tly-ly)*.04;
+  colourPass(); outPass(now*.001);
+  if(frame%30===0){ measure();
+    if(readout.prog>.985 && doneHold<0 && drops.filter(d=>d.life!==Infinity).length===0) doneHold=0;
+    if(showText){
+      const pl=mode===1?DISH:pal;
+      const lines=[
+        '<b>Inner Walls</b>',
+        mode===0?'Liesegang bands in a gel-filled cavity, cut and polished':'Liesegang rings around a drop on a dish of gel',
+        (mode===0?'colouring: ':'')+pl.name,
+        'bands along one radius: '+readout.bands+(readout.gap>0?'&nbsp;&nbsp;latest spacing &asymp; '+readout.gap.toFixed(1)+' cells (&times;'+readout.ratio.toFixed(2)+' from the wall)':''),
+        'front: '+Math.round(readout.prog*100)+'%&nbsp;&nbsp;step '+steps.toLocaleString()+(fast?'&nbsp;&nbsp;(fast)':'')+(paused?'&nbsp;&nbsp;paused':''),
+      ];
+      if(doneHold>=0) lines.push('the stone is finished. another in '+Math.max(0,Math.ceil(40-doneHold))+' s');
+      hud.innerHTML=lines.join('<br>');
+    }
+  }
+  frame++;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+if(location.hash==='#test') window.__iw={run:n=>{ for(let i=0;i<n;i+=200) simSteps(Math.min(200,n-i)); measure(); return readout; }, key:k=>dispatchEvent(new KeyboardEvent('keydown',{key:k})), st};
+})();
+</script>
+</body>
+</html>
