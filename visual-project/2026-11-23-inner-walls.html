@@ -166,7 +166,8 @@ void main(){
     if(tf<0. && mn>.05){ tf=texelFetch(uE,o2,0).x; }
   }
   float band=best;
-  float idx=log(1.+max(tf,0.)*uTs);
+  float tp0=e.y<0.?tf:e.y;   // when the front passed: smooth, so a band keeps one colour along its length
+  float idx=log(1.+max(tp0,0.)*uTs);
   vec3 bc=bandCol(idx*uK+uOff+.12*(fbm(p*3.+uOff)-.5));
   float pr=clamp(1.-s.y/max(e.z,1e-5),0.,1.);
   float tp=e.y;
