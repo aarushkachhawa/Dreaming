@@ -449,7 +449,7 @@ let frame=0, lastT=performance.now();
 function tick(now){
   const dtw=Math.min(.1,(now-lastT)/1000); lastT=now;
   if(!paused){
-    simSteps(fast?36:7);
+    simSteps(mode===1?(fast?48:14):(fast?36:7));
     if(doneHold>=0){ doneHold+=dtw; if(doneHold>40){ if(mode===0){ palIdx=Math.floor(Math.random()*PALS.length); pal=PALS[palIdx]; } newStone(false); } }
   }
   if(now-lastMove>6000){ const t=now*.00007; tlx=.75*Math.cos(t*TAU)+.2; tly=.6*Math.sin(t*TAU*.8)+.25; }
