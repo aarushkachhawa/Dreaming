@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Long Way Round</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#1c2416; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#f4f0e2; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(10,16,6,0.95), 0 0 2px rgba(10,16,6,0.9);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#f4f0e2; opacity:.74; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(10,16,6,0.95); }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; shove the bank toward the cursor&nbsp;&nbsp;|&nbsp;&nbsp;P &mdash; season&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; faster&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; new valley&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Long way round. From a small plane over a wide valley, a lowland river is never straight. It swings
+// in loops, and the loops are not still: water runs fastest round the outside of each bend, so the
+// outer bank is cut away while sand is dropped on the inside, and the whole bend walks outward and
+// downstream. Each step the inner bank gains leaves a low ridge, so the inside of every bend fills
+// with curved bands, ridge and swale, like the growth lines of a shell. Bends grow until two of them
+// almost touch. Then a flood breaks through the narrow neck, the river takes the short cut, and the
+// loop it left behind is sealed off at both ends by silt: an oxbow lake, a crescent of still water
+// that slowly fills, goes to marsh, and ends as a dark curved swale under the trees.
+//
+// The river here is a line of points, the channel centreline, moved by the Howard and Knutson (1984)
+// rule. At each point the bank moves sideways at a rate set by the local curvature, plus a weighted
+// sum of the curvature upstream (the flow carries the memory of the bend it has just left, fading
+// over a few channel widths). The upstream memory is what makes bends lean and travel downstream
+// instead of just swelling in place. Points closer than a channel width and a bit, that are far apart
+// along the river, trigger a neck cutoff. The valley walls slow the river down as it nears them.
+// The floodplain remembers the year the channel last covered each spot; that age alone colours the
+// ground: wet sand, pale willow, young cottonwood, old forest. The scroll bars are a faint ripple in
+// that age. The trees, fields above the bluffs and cloud shadows are painted.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const QS=new URLSearchParams(location.search);
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const mix=(a,b,t)=>a+(b-a)*t;
+const sstep=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+let seed=(Math.random()*4294967295)>>>0||1;
+const rnd=()=>{ seed^=seed<<13; seed>>>=0; seed^=seed>>>17; seed^=seed<<5; seed>>>=0; return seed/4294967296; };
+
+// ---------- value noise ----------
+let perm=new Uint8Array(512), grad=new Float32Array(256);
+function reseedNoise(){ const p=[]; for(let i=0;i<256;i++){ p.push(i); grad[i]=rnd(); }
+  for(let i=255;i>0;i--){ const j=Math.floor(rnd()*(i+1)); const t=p[i]; p[i]=p[j]; p[j]=t; }
+  for(let i=0;i<512;i++) perm[i]=p[i&255]; }
+function vn(x,y){ const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi;
+  const u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const a=grad[perm[(xi&255)+perm[yi&255]]], b=grad[perm[((xi+1)&255)+perm[yi&255]]];
+  const c=grad[perm[(xi&255)+perm[(yi+1)&255]]], d=grad[perm[((xi+1)&255)+perm[(yi+1)&255]]];
+  return mix(mix(a,b,u),mix(c,d,u),v); }
+function fbm(x,y,o){ let s=0, a=0.5, f=1, n=0; for(let i=0;i<o;i++){ s+=a*vn(x*f,y*f); n+=a; a*=0.5; f*=2.03; } return s/n; }
+
+// ---------- seasons ----------
+// age stops in years since the channel last ran here
+const SEASONS=[
+  { name:'high summer', note:'a muddy river through a green floodplain',
+    ground:[[0,[150,136,104]],[1.5,[205,190,150]],[5,[176,186,118]],[14,[124,160,82]],[45,[78,122,58]],[150,[50,92,44]],[500,[36,70,36]]],
+    river:[[122,110,78],[150,136,98],[178,166,126]], bank:[96,86,62],
+    lake:[[64,92,84],[46,64,46],[40,58,38]], fields:[[148,156,84],[196,180,104],[112,140,66],[170,170,96],[90,120,58],[206,196,140]],
+    upTree:[38,64,34], bluff:[0.9,1.1], shadow:0.72, glint:[255,250,226], hud:'#f4f0e2', bg:'#1c2416' },
+  { name:'late autumn', note:'cottonwoods turned, willows going bare',
+    ground:[[0,[140,124,96]],[1.5,[200,182,144]],[5,[196,170,84]],[14,[214,152,52]],[45,[178,96,44]],[150,[118,74,40]],[500,[70,56,36]]],
+    river:[[88,98,96],[118,128,122],[160,164,150]], bank:[110,92,66],
+    lake:[[74,96,98],[86,74,44],[72,56,36]], fields:[[150,118,70],[178,150,92],[120,104,62],[196,170,118],[96,84,52],[164,136,84]],
+    upTree:[96,58,30], bluff:[0.88,1.12], shadow:0.7, glint:[255,236,200], hud:'#f6ecdc', bg:'#2a1e12' },
+  { name:'deep winter', note:'snow on the bars, the oxbows frozen',
+    ground:[[0,[170,170,166]],[1.5,[236,238,240]],[5,[222,224,226]],[14,[196,198,200]],[45,[156,160,164]],[150,[118,122,124]],[500,[96,100,100]]],
+    river:[[44,58,66],[58,74,82],[88,104,110]], bank:[120,118,110],
+    lake:[[200,214,224],[214,222,228],[170,176,176]], fields:[[236,238,240],[226,228,232],[244,244,246],[214,216,220],[230,232,236],[204,206,210]],
+    upTree:[86,90,88], bluff:[0.86,1.06], shadow:0.78, glint:[255,255,255], hud:'#ffffff', bg:'#5a6064' },
+  { name:'rainforest dusk', note:'white water in the channel, black water in the lakes, no fields above the bluffs',
+    ground:[[0,[128,104,72]],[1.5,[186,150,100]],[5,[110,140,60]],[14,[64,108,44]],[45,[38,82,36]],[150,[26,62,30]],[500,[18,48,26]]],
+    river:[[156,110,70],[196,146,92],[236,190,128]], bank:[120,88,56],
+    lake:[[22,20,22],[26,34,26],[28,44,28]], fields:[[22,58,30],[30,70,34],[18,50,26],[26,64,32],[34,76,38],[20,54,28]],
+    upTree:[16,44,24], forest:true, bluff:[0.9,1.05], shadow:0.62, glint:[255,214,150], hud:'#fbe9d0', bg:'#0e1a10' },
+];
+let seasonI=clamp(+(QS.get('season')||0),0,SEASONS.length-1)|0;
+
+// ---------- grid ----------
+let GW=760, GH=420, N=GW*GH;
+let T, band, up, tex, upCol, bluffY0, bluffY1;
+const B=9;             // channel width, cells
+const DS=B*0.5;        // node spacing
+let now=0;             // years
+let cuts=0;
+let xs=[], ys=[];
+let oxbows=[];
+let img, off, offCtx, cloudCv;
+
+function setupGrid(){
+  const asp=innerHeight/innerWidth;
+  GW=760; GH=Math.round(clamp(GW*asp,300,1100)); N=GW*GH;
+  T=new Float32Array(N); band=new Float32Array(N); up=new Uint8Array(N); tex=new Float32Array(N);
+  upCol=new Uint8ClampedArray(N*3);
+  bluffY0=new Float32Array(GW); bluffY1=new Float32Array(GW);
+  off=document.createElement('canvas'); off.width=GW; off.height=GH; offCtx=off.getContext('2d');
+  img=offCtx.createImageData(GW,GH);
+}
+
+function bandOf(t){ return Math.sin(t*TAU/2.6)+0.45*Math.sin(t*TAU/11+1.3); }
+
+function newValley(){
+  seed=(Math.random()*4294967295)>>>0||1; reseedNoise();
+  now=0; cuts=0; oxbows=[];
+  const yc=GH*0.5, half=Math.min(GH*0.34, GH*0.5-30);
+  for(let x=0;x<GW;x++){
+    bluffY0[x]=yc-half+(fbm(x*0.012,3.1,4)-0.5)*GH*0.16+(fbm(x*0.06,7.7,2)-0.5)*7;
+    bluffY1[x]=yc+half+(fbm(x*0.012,9.4,4)-0.5)*GH*0.16+(fbm(x*0.06,1.3,2)-0.5)*7;
+  }
+  for(let y=0;y<GH;y++) for(let x=0;x<GW;x++){
+    const i=y*GW+x;
+    // ancient floodplain: an old, smooth age field whose ripple reads as long-buried scroll bars
+    const t=-(260+fbm(x*0.008,y*0.008,4)*900);
+    T[i]=t; band[i]=bandOf(t+fbm(x*0.03,y*0.03,2)*40);
+    up[i]=(y<bluffY0[x]||y>bluffY1[x])?1:0;
+    tex[i]=fbm(x*0.55,y*0.55,2)*0.65+fbm(x*0.13,y*0.13,2)*0.35;
+  }
+  paintUpland();
+  // the starting river: nearly straight down the valley, with a faint wander
+  xs=[]; ys=[];
+  const x0=-16*B, x1=GW+12*B, n=Math.ceil((x1-x0)/DS);
+  const ph=[rnd()*TAU,rnd()*TAU,rnd()*TAU];
+  for(let k=0;k<=n;k++){
+    const x=x0+k*DS;
+    xs.push(x);
+    const env=sstep(x0,x0+14*B,x)*sstep(x1,x1-10*B,x);
+    ys.push(yc+env*((fbm(x*0.01+5,2.2,3)-0.5)*GH*0.16+Math.sin(x*0.045+ph[0])*2.2+Math.sin(x*0.09+ph[1])*1.2+Math.sin(x*0.17+ph[2])*0.5));
+  }
+  for(let i=0;i<xs.length;i++) stampNode(xs[i],ys[i]);
+}
+
+function paintUpland(){
+  const S=SEASONS[seasonI];
+  for(let y=0;y<GH;y++) for(let x=0;x<GW;x++){
+    const i=y*GW+x; if(!up[i]) continue;
+    // fields: a patchwork of rectangles, slightly skewed, with hedgerows of trees
+    const sx=x+y*0.18, sy=y-x*0.06;
+    const cw=34+fbm(Math.floor(sy/22)*0.7,1.1,1)*30, chh=22;
+    const fx=Math.floor(sx/cw), fy=Math.floor(sy/chh);
+    const h=perm[(fx&255)+perm[(fy*7)&255]];
+    const fc=S.fields[h%S.fields.length];
+    const ex=sx-fx*cw, ey=sy-fy*chh;
+    const hedge=(ex<1.6||ey<1.6)?1:0;
+    const wood=(S.forest||fbm(x*0.02+40,y*0.02,3)>0.6)?1:0;
+    const dB=Math.min(Math.abs(y-bluffY0[x]),Math.abs(y-bluffY1[x]));
+    const near=dB<7?1:0;                         // the bluff face is wooded
+    let r,g,b;
+    if(hedge||wood||near){ const s=0.75+tex[i]*0.5; r=S.upTree[0]*s; g=S.upTree[1]*s; b=S.upTree[2]*s; }
+    else { const s=0.9+tex[i]*0.2+(((ex*0.5)|0)&1)*0.03; r=fc[0]*s; g=fc[1]*s; b=fc[2]*s; }
+    // bluff lighting: the northern bluff faces the low sun and is lit, the southern one is in shade
+    if(dB<10){ const k=1-dB/10; const top=y<bluffY0[x]+1; const f=top?S.bluff[1]:S.bluff[0]; const m=mix(1,f,k); r*=m; g*=m; b*=m; }
+    upCol[i*3]=r; upCol[i*3+1]=g; upCol[i*3+2]=b;
+  }
+}
+
+// cloud shadows: a tile of soft noise drawn over everything with multiply
+function makeClouds(){
+  const s=256; cloudCv=document.createElement('canvas'); cloudCv.width=s; cloudCv.height=s;
+  const c=cloudCv.getContext('2d'), d=c.createImageData(s,s);
+  const S=SEASONS[seasonI];
+  for(let y=0;y<s;y++) for(let x=0;x<s;x++){
+    // tileable: blend four offset samples
+    const u=x/s, v=y/s;
+    const f=(a,b)=>fbm(a*6+100,b*6+100,5);
+    const n=f(u,v)*(1-u)*(1-v)+f(u-1,v)*u*(1-v)+f(u,v-1)*(1-u)*v+f(u-1,v-1)*u*v;
+    const k=sstep(0.52,0.66,n);
+    const m=mix(255,255*S.shadow,k);
+    const o=(y*s+x)*4; d.data[o]=m; d.data[o+1]=m; d.data[o+2]=m*1.04; d.data[o+3]=255;
+  }
+  c.putImageData(d,0,0);
+}
+
+// ---------- the river ----------
+const R=B*0.5;
+function stampNode(x,y){
+  const r=R+0.5, x0=Math.max(0,Math.floor(x-r)), x1=Math.min(GW-1,Math.ceil(x+r));
+  const y0=Math.max(0,Math.floor(y-r)), y1=Math.min(GH-1,Math.ceil(y+r));
+  if(x0>x1||y0>y1) return;
+  const bv=bandOf(now);
+  for(let yy=y0;yy<=y1;yy++){ const dy=yy+0.5-y;
+    for(let xx=x0;xx<=x1;xx++){ const dx=xx+0.5-x;
+      if(dx*dx+dy*dy<=r*r){ const i=yy*GW+xx; if(up[i]) continue; T[i]=now; band[i]=bv; } } }
+}
+
+// Howard-Knutson migration. R0 = K * B * curvature; R1 = OM*R0 + GA * (upstream-weighted mean of R0)
+const OM=-1, GA=2.5, ALPHA=1.45/B, K=2.6;
+let R0=[], R1=[];
+function migrate(dt){
+  const n=xs.length;
+  const C=new Float64Array(n), tx=new Float64Array(n), ty=new Float64Array(n);
+  for(let i=1;i<n-1;i++){
+    const dx=(xs[i+1]-xs[i-1])*0.5, dy=(ys[i+1]-ys[i-1])*0.5;
+    const ddx=xs[i+1]-2*xs[i]+xs[i-1], ddy=ys[i+1]-2*ys[i]+ys[i-1];
+    const l2=dx*dx+dy*dy, l=Math.sqrt(l2);
+    C[i]=(dx*ddy-dy*ddx)/(l2*l); tx[i]=dx/l; ty[i]=dy/l;
+  }
+  // a touch of smoothing on the curvature keeps node-scale wobble from growing
+  const Cs=new Float64Array(n);
+  for(let i=2;i<n-2;i++) Cs[i]=(C[i-1]+2*C[i]+C[i+1])*0.25;
+  const e=Math.exp(-ALPHA*DS);
+  let I=0;
+  const xN=new Float64Array(n), yN=new Float64Array(n);
+  const nIn=14*B/DS, nOut=10*B/DS;
+  for(let i=0;i<n;i++){
+    const r0=K*B*Cs[i]*sstep(2,nIn,i)*sstep(n-3,n-1-nOut,i);
+    I=I*e+r0*(1-e);
+    const r1=OM*r0+GA*I;
+    xN[i]=xs[i]; yN[i]=ys[i];
+    if(i<3||i>n-4) continue;
+    // move along the right-hand normal (dy,-dx): outward for a bend curving left
+    let mx=ty[i]*r1*dt, my=-tx[i]*r1*dt;
+    // the valley walls are hard rock and old clay: slow down any move toward them
+    const xi=clamp(Math.round(xs[i]),0,GW-1);
+    if(my<0){ const room=ys[i]-bluffY0[xi]-R; my*=sstep(0,B*2.2,room); mx*=mix(0.3,1,sstep(0,B*2.2,room)); }
+    else if(my>0){ const room=bluffY1[xi]-ys[i]-R; my*=sstep(0,B*2.2,room); mx*=mix(0.3,1,sstep(0,B*2.2,room)); }
+    xN[i]=xs[i]+mx; yN[i]=ys[i]+my;
+  }
+  for(let i=0;i<n;i++){ xs[i]=xN[i]; ys[i]=yN[i]; }
+}
+
+function resample(){
+  const n=xs.length, nx=[xs[0]], ny=[ys[0]];
+  let carry=0;
+  for(let i=1;i<n;i++){
+    const ax=xs[i-1], ay=ys[i-1], dx=xs[i]-ax, dy=ys[i]-ay, L=Math.hypot(dx,dy);
+    if(L<1e-9) continue;
+    let s=DS-carry;
+    while(s<=L){ nx.push(ax+dx*s/L); ny.push(ay+dy*s/L); s+=DS; }
+    carry=L-(s-DS);
+  }
+  if(carry>DS*0.3){ nx.push(xs[n-1]); ny.push(ys[n-1]); }
+  else { nx[nx.length-1]=xs[n-1]; ny[ny.length-1]=ys[n-1]; }
+  xs=nx; ys=ny;
+}
+
+// neck cutoffs: two stretches of river that are far apart along the channel but nearly touching
+const LAKE=200;                 // years an oxbow holds open water
+const CRD=B*1.25, GAP=Math.ceil(B*6/DS);
+function cutoffs(){
+  let any=false;
+  for(let pass=0;pass<4;pass++){
+    const n=xs.length, cs=CRD, hm=new Map();
+    const key=(x,y)=>(Math.floor(x/cs)+1000)*100000+(Math.floor(y/cs)+1000);
+    let found=null;
+    for(let i=0;i<n&&!found;i++){
+      const cx=Math.floor(xs[i]/cs), cy=Math.floor(ys[i]/cs);
+      for(let ox=-1;ox<=1&&!found;ox++) for(let oy=-1;oy<=1&&!found;oy++){
+        const l=hm.get((cx+ox+1000)*100000+(cy+oy+1000)); if(!l) continue;
+        for(const j of l){ if(i-j>GAP){ const dx=xs[i]-xs[j], dy=ys[i]-ys[j]; if(dx*dx+dy*dy<CRD*CRD){ found=[j,i]; break; } } }
+      }
+      const k=key(xs[i],ys[i]); let l=hm.get(k); if(!l){ l=[]; hm.set(k,l); } l.push(i);
+    }
+    if(!found) break;
+    const [a,b]=found;
+    // the abandoned loop, less its ends: those plug with silt almost at once
+    const plug=Math.ceil(B*1.1/DS);
+    const ox=xs.slice(a+plug,b-plug+1), oy=ys.slice(a+plug,b-plug+1);
+    if(ox.length>4) oxbows.push({x:ox,y:oy,born:now,len:ox.length});
+    xs=xs.slice(0,a+1).concat(xs.slice(b)); ys=ys.slice(0,a+1).concat(ys.slice(b));
+    // soften the new kink where the river now runs straight through the neck
+    for(let it=0;it<6;it++) for(let i=Math.max(3,a-6);i<Math.min(xs.length-3,a+7);i++){
+      xs[i]+=0.25*(xs[i-1]+xs[i+1]-2*xs[i]); ys[i]+=0.25*(ys[i-1]+ys[i+1]-2*ys[i]); }
+    cuts++; any=true;
+  }
+  if(any) resample();
+  // lakes fill: after a few centuries only a damp swale is left; keep the list bounded
+  oxbows=oxbows.filter(o=>now-o.born<LAKE*2);
+}
+
+const DT=0.05;                 // years per step
+let stepCount=0;
+function step(dt){
+  dt=dt||DT;
+  migrate(dt); resample();
+  now+=dt; stepCount++;
+  if(dt>DT||stepCount%3===0) cutoffs();
+  if(dt===DT||stepCount%2===0) for(let i=0;i<xs.length;i++) stampNode(xs[i],ys[i]);
+}
+
+function sinuosity(){
+  let L=0, x0=null, x1=null;
+  for(let i=1;i<xs.length;i++){
+    if(xs[i]<0||xs[i]>GW) continue;
+    L+=Math.hypot(xs[i]-xs[i-1],ys[i]-ys[i-1]);
+  }
+  return L/GW;
+}
+
+// ---------- drawing ----------
+let lut=new Uint8ClampedArray(256*3), lutMat=new Float32Array(256), lutBand=new Float32Array(256);
+const AMAX=600;
+function ageToIdx(a){ return a<=0?0:Math.min(255,Math.floor(Math.sqrt(a/AMAX)*255)); }
+function buildLut(){
+  const S=SEASONS[seasonI], st=S.ground;
+  for(let k=0;k<256;k++){
+    const a=(k/255)*(k/255)*AMAX;
+    let j=0; while(j<st.length-2&&st[j+1][0]<a) j++;
+    const t=clamp((a-st[j][0])/(st[j+1][0]-st[j][0]),0,1), s=t*t*(3-2*t);
+    for(let c=0;c<3;c++) lut[k*3+c]=mix(st[j][1][c],st[j+1][1][c],s);
+    lutMat[k]=sstep(2,60,a);                         // how much canopy texture shows
+    lutBand[k]=mix(0.02,0.13,sstep(1,8,a))*mix(1,0.6,sstep(80,600,a));   // the scroll-bar ripple
+  }
+}
+
+function paintGround(){
+  const d=img.data;
+  for(let i=0,o=0;i<N;i++,o+=4){
+    if(up[i]){ d[o]=upCol[i*3]; d[o+1]=upCol[i*3+1]; d[o+2]=upCol[i*3+2]; d[o+3]=255; continue; }
+    const k=ageToIdx(now-T[i]);
+    const m=lutMat[k], tx=tex[i];
+    const f=(1+band[i]*lutBand[k])*(1+m*(tx-0.5)*0.9);
+    d[o]=lut[k*3]*f; d[o+1]=lut[k*3+1]*f; d[o+2]=lut[k*3+2]*f; d[o+3]=255;
+  }
+  offCtx.putImageData(img,0,0);
+}
+
+let dpr=1, scale=1, offX=0, offY=0;
+function resize(){
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  cv.width=Math.floor(innerWidth*dpr); cv.height=Math.floor(innerHeight*dpr);
+  scale=Math.max(cv.width/GW, cv.height/GH);
+  offX=(cv.width-GW*scale)/2; offY=(cv.height-GH*scale)/2;
+}
+
+function rgb(c,a){ return a===undefined?`rgb(${c[0]|0},${c[1]|0},${c[2]|0})`:`rgba(${c[0]|0},${c[1]|0},${c[2]|0},${a})`; }
+function mixC(a,b,t){ return [mix(a[0],b[0],t),mix(a[1],b[1],t),mix(a[2],b[2],t)]; }
+function pathOf(X,Y,a,b){
+  ctx.beginPath(); ctx.moveTo(X[a],Y[a]); for(let i=a+1;i<=b;i++) ctx.lineTo(X[i],Y[i]);
+}
+
+let clock=0;
+function render(){
+  const S=SEASONS[seasonI];
+  paintGround();
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle=S.bg; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(scale,0,0,scale,offX,offY);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0);
+  ctx.lineCap='round'; ctx.lineJoin='round';
+
+  // oxbow lakes: open water, then a shrinking crescent ringed with marsh, then a dark wet swale
+  for(const o of oxbows){
+    const age=now-o.born;
+    const fill=sstep(0,LAKE,age);
+    const n=o.x.length;
+    // the lake silts from the ends inward
+    const trim=Math.floor(n*0.5*sstep(LAKE*0.15,LAKE*1.1,age)*0.92);
+    const a=trim, b=n-1-trim; if(b-a<2) continue;
+    const wet=mixC(S.lake[1],S.lake[2],sstep(LAKE*0.4,LAKE*1.6,age));
+    ctx.strokeStyle=rgb(wet,0.42*(1-sstep(LAKE*1.1,LAKE*1.9,age)));
+    ctx.lineWidth=B*mix(1.2,0.8,fill); pathOf(o.x,o.y,Math.max(0,a-2),Math.min(n-1,b+2)); ctx.stroke();
+    if(age<LAKE*1.2){
+      const w=B*mix(0.9,0.2,fill);
+      ctx.strokeStyle=rgb(mixC(S.lake[0],S.lake[1],sstep(LAKE*0.1,LAKE,age)),1-sstep(LAKE*0.9,LAKE*1.2,age));
+      ctx.lineWidth=w; pathOf(o.x,o.y,a,b); ctx.stroke();
+    }
+  }
+
+  // the river: a wet-mud rim, the water, a paler line where it shoals over the point bars
+  const n=xs.length;
+  ctx.strokeStyle=rgb(S.bank); ctx.lineWidth=B*1.12; pathOf(xs,ys,0,n-1); ctx.stroke();
+  const g=ctx.createLinearGradient(0,0,GW,GH);
+  g.addColorStop(0,rgb(S.river[0])); g.addColorStop(0.5,rgb(S.river[1])); g.addColorStop(1,rgb(S.river[0]));
+  ctx.strokeStyle=g; ctx.lineWidth=B*0.92; pathOf(xs,ys,0,n-1); ctx.stroke();
+  ctx.strokeStyle=rgb(S.river[2],0.22); ctx.lineWidth=B*0.36; pathOf(xs,ys,0,n-1); ctx.stroke();
+  // a sun glint sliding along the water
+  const gx=((clock*14)%(GW*1.6))-GW*0.3, gy=GH*0.32;
+  const gg=ctx.createRadialGradient(gx,gy,0,gx,gy,GH*0.35);
+  gg.addColorStop(0,rgb(S.glint,0.32)); gg.addColorStop(1,rgb(S.glint,0));
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  ctx.strokeStyle=gg; ctx.lineWidth=B*0.8; pathOf(xs,ys,0,n-1); ctx.stroke();
+  ctx.restore();
+
+  // cloud shadows drifting across
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.save(); ctx.globalCompositeOperation='multiply';
+  const cs=Math.max(cv.width,cv.height)*1.1;
+  const cx=-((clock*cs*0.006)%cs), cy=-((clock*cs*0.0025)%cs);
+  for(let i=0;i<3;i++) for(let j=0;j<3;j++) ctx.drawImage(cloudCv,cx+i*cs,cy+j*cs,cs,cs);
+  ctx.restore();
+  // vignette
+  const vg=ctx.createRadialGradient(cv.width/2,cv.height/2,Math.min(cv.width,cv.height)*0.35,cv.width/2,cv.height/2,Math.max(cv.width,cv.height)*0.75);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.38)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,cv.width,cv.height);
+}
+
+// ---------- controls ----------
+let paused=false, fast=false, showText=true;
+const WARM=+(QS.get('warm')||500);
+function hudText(){
+  if(!showText){ hud.innerHTML=''; hint.style.display='none'; return; }
+  hint.style.display='';
+  const S=SEASONS[seasonI];
+  const standing=oxbows.filter(o=>now-o.born<LAKE*1.1).length;
+  hud.style.color=S.hud; hint.style.color=S.hud;
+  hud.innerHTML='<b>long way round</b><br>'+
+    S.name+' &mdash; '+S.note+'<br>'+
+    Math.floor(now).toLocaleString()+' years of river'+(now<WARM?' (time is hurrying)':'')+'<br>'+
+    'the channel runs '+sinuosity().toFixed(2)+' times the length of its valley<br>'+
+    cuts+' neck cutoff'+(cuts===1?'':'s')+', '+standing+' oxbow lake'+(standing===1?'':'s')+' still holding water'+
+    (paused?'<br>paused':'')+(fast&&now>=WARM?'<br>faster':'');
+}
+function shove(ev){
+  const px=(ev.clientX*dpr-offX)/scale, py=(ev.clientY*dpr-offY)/scale;
+  let best=-1, bd=1e9;
+  for(let i=3;i<xs.length-3;i++){ const d=Math.hypot(xs[i]-px,ys[i]-py); if(d<bd){ bd=d; best=i; } }
+  if(best<0||bd>B*8) return;
+  const dx=px-xs[best], dy=py-ys[best], L=Math.hypot(dx,dy)||1, amt=Math.min(B*1.4,L);
+  const sig=B*2.2;
+  for(let i=3;i<xs.length-3;i++){
+    const d=Math.hypot(xs[i]-xs[best],ys[i]-ys[best]); const w=Math.exp(-d*d/(2*sig*sig));
+    if(w<0.01) continue; xs[i]+=dx/L*amt*w; ys[i]+=dy/L*amt*w;
+  }
+  resample();
+}
+cv.addEventListener('pointerdown',shove);
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='p'){ seasonI=(seasonI+1)%SEASONS.length; buildLut(); paintUpland(); makeClouds(); }
+  else if(k==='n'){ newValley(); }
+  else if(k==='f'){ fast=!fast; }
+  else if(k==='h'){ showText=!showText; }
+  hudText();
+});
+addEventListener('resize',()=>{ resize(); });
+
+setupGrid(); resize(); newValley(); buildLut(); makeClouds();
+// a head start, within a time budget, so the first look is already a river with a history
+{ const t0=performance.now(); const target=+(QS.get('bake')||WARM*0.55);
+  while(now<target&&performance.now()-t0<(QS.has('bake')?6e4:1800)) step(DT*3); }
+let last=performance.now(), hudT=0;
+function frame(t){
+  const dt=Math.min(0.1,(t-last)/1000); last=t;
+  if(!paused){
+    clock+=dt;
+    const t0=performance.now();
+    if(now<WARM){ while(performance.now()-t0<9) step(DT*2); }
+    else { const k=fast?40:6; for(let i=0;i<k;i++) step(); }   // about six years a second
+  }
+  render();
+  hudT-=dt; if(hudT<=0){ hudText(); hudT=0.3; }
+  requestAnimationFrame(frame);
+}
+hudText();
+requestAnimationFrame(frame);
+window.__lwr={ step, get xs(){return xs;}, get ys(){return ys;}, get oxl(){return oxbows;}, get now(){return now;}, get cuts(){return cuts;}, sin:sinuosity, get n(){return xs.length;}, get ox(){return oxbows.length;} };
+})();
+</script>
+</body>
+</html>

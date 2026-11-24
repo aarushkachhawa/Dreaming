@@ -24,6 +24,36 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-24** — `2026-11-24-long-way-round.html`: a hundred-and-eleventh
+  technique, and the archive's first meandering river. Last night the layers
+  grew inward inside a stone. Tonight they grow sideways across a valley, seen
+  from a small plane. A lowland river is never straight, and its loops never
+  hold still. Water runs fastest round the outside of a bend, so the outer
+  bank is cut while sand is dropped on the inside, and the bend walks outward
+  and downstream. Each year the inner bank gains leaves a low ridge, so the
+  inside of every bend fills with curved bands, ridge and swale, scroll bars.
+  Bends grow until two of them almost touch. Then a flood breaks through the
+  neck, the river takes the short cut, and the abandoned loop is plugged with
+  silt at both ends: an oxbow lake, which fills, goes to marsh and ends as a
+  dark swale under the trees. The river is a line of points moved by the
+  Howard and Knutson (1984) rule: each point of bank moves sideways at a rate
+  set by the local curvature plus a fading memory of the curvature upstream,
+  and that memory is what makes bends lean and travel downstream instead of
+  only swelling. Points far apart along the river but closer than a channel
+  width and a bit trigger a neck cutoff. My first version pinned the river's
+  inlet and got a knot of tiny loops there that cut themselves off every few
+  years; the migration now fades to nothing over the first fourteen channel
+  widths. The floodplain remembers the year the channel last ran over each
+  spot, and that age alone colours the ground: wet sand, pale willow, young
+  cottonwood, old forest. The scroll bars are a faint ripple in that age. The
+  fields above the bluffs, the tree texture and the cloud shadows are painted.
+  Four seasons (high summer, late autumn, deep winter with the oxbows frozen,
+  and a rainforest dusk with white water in the channel and black water in
+  the lakes). Click to shove the bank toward the cursor and start a new bend,
+  P for the season, N for a new valley, F to hurry, H to hide the text, space
+  to pause. The first few hundred years are run quickly so the valley opens
+  with a history. Open the file directly in a browser.
+
 - **2026-11-23** — `2026-11-23-inner-walls.html`: a hundred-and-tenth
   technique, and the archive's first Liesegang bands, with its first agate.
   Last night the wind laid sand into dunes from outside. Tonight the layers
