@@ -1,0 +1,14 @@
+{
+  "id": "20261124-benford-s-law-why-the-world-pr-babbcc",
+  "date": "2026-11-24T10:10:24.541681",
+  "title": "Benford's Law: Why the World Prefers the Digit 1",
+  "question": "Why do so many real-world numbers begin with 1, and almost none with 9?",
+  "summary": "In naturally occurring data, the digit 1 leads about 30% of the time. Exploring scale invariance, multiplicative growth, and how this odd law helps catch fraud.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "forensics",
+    "logarithms"
+  ]
+}
