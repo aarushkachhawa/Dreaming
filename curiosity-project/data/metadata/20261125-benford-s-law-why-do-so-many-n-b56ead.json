@@ -1,0 +1,14 @@
+{
+  "id": "20261125-benford-s-law-why-do-so-many-n-b56ead",
+  "date": "2026-11-25T10:10:33.217273",
+  "title": "Benford's Law: Why Do So Many Numbers Start With 1?",
+  "question": "Why do real-world numbers begin with the digit 1 nearly a third of the time, and what does that reveal about how nature builds quantities?",
+  "summary": "Across populations, prices, river lengths, and physical constants, leading digits follow a logarithmic law rather than a uniform one. Scale invariance, exponential growth, and the mixing of random processes all explain why, and the pattern has become a forensic tool for detecting fabricated data.",
+  "tags": [
+    "mathematics",
+    "statistics",
+    "probability",
+    "logarithms",
+    "forensics"
+  ]
+}
