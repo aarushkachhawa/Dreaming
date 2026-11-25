@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cloud Paper</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#1b1714; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#f6efe0; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(14,10,6,0.95), 0 0 2px rgba(14,10,6,0.9);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#f6efe0; opacity:.74; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(14,10,6,0.95); }
+  @media (max-width:640px){ #hud{ font-size:11px; } #hint{ font-size:10px; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; drop ink&nbsp;&nbsp;|&nbsp;&nbsp;drag &mdash; draw the stylus&nbsp;&nbsp;|&nbsp;&nbsp;C &mdash; ink colour&nbsp;&nbsp;|&nbsp;&nbsp;L &mdash; lay the paper&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; new pattern&nbsp;&nbsp;|&nbsp;&nbsp;P &mdash; palette&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; faster&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// Cloud paper. Marbling: drops of ink are laid on a bath of thickened water, where they float and
+// spread into discs, each new disc pushing the older ones aside into rings. Then the floating ink is
+// combed, raked and stirred with styluses, and a sheet of paper laid on the surface takes the whole
+// pattern off in one touch. The Turkish name, ebru, is usually traced to the Persian abri, cloudy.
+//
+// The surface is treated as what it nearly is: an incompressible film. Every motion of the ink is
+// a map of the plane that keeps area, and every colour boundary is a closed curve carried by those
+// maps. A drop of radius R at c moves each point p to c + (p - c) sqrt(1 + R^2/|p - c|^2), which
+// opens a disc of area pi R^2 and squeezes everything else outward by exactly that much (Jaffer,
+// Lu and others, "mathematical marbling", 2011-2012). A drop that spreads over a second is a run of
+// small such maps, and they compose exactly. A tine dragged through the bath moves each point
+// parallel to its path, by an amount that falls off with the distance from the path, so the
+// distance never changes and the map keeps area too. Here the tine travels: only the ink near its
+// tip moves, and ink right on the line is dragged along and left behind in long streaks. A point
+// stylus does the same around a point, for the spirals and for your drags.
+//
+// The boundaries are polygons, refined as they stretch: a segment that would grow longer than a
+// pixel and a half is split, and the new point is found by mapping the midpoint of the segment it
+// came from, not by guessing. Polygons are painted oldest first, so a drop's later neighbours sit
+// on top of it, which is right, because every map is one-to-one and nothing ever crosses. The
+// slightly darker rim on each colour, the grain of the size and of the paper, the gloss on the bath
+// and the paper itself are painted, not simulated.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const QS=new URLSearchParams(location.search);
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const mix=(a,b,t)=>a+(b-a)*t;
+const sstep=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+let seed=(Math.random()*4294967295)>>>0||1;
+const rnd=()=>{ seed^=seed<<13; seed>>>=0; seed^=seed>>>17; seed^=seed<<5; seed>>>=0; return seed/4294967296; };
+const rr=(a,b)=>a+(b-a)*rnd();
+const css=(c,a)=>a===undefined?'rgb('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+')':'rgba('+(c[0]|0)+','+(c[1]|0)+','+(c[2]|0)+','+a+')';
+const shade=(c,k)=>[c[0]*k,c[1]*k,c[2]*k];
+
+// ---------- palettes ----------
+// the last ink of each is the pale one, used sparingly as veins in the stone patterns
+const PALETTES=[
+  { name:'Istanbul', note:'indigo, oxblood, ochre and sea green on a pale size',
+    ground:[222,210,182], inks:[[36,54,98],[142,44,38],[206,154,54],[60,118,104],[240,230,206]] },
+  { name:'Venice', note:'rose, slate blue, gold and olive',
+    ground:[220,210,188], inks:[[186,88,106],[78,106,144],[218,178,78],[108,116,62],[244,239,226]] },
+  { name:'deep water', note:'night blue, teal, rust and foam',
+    ground:[22,40,58], inks:[[18,32,56],[34,106,118],[178,88,48],[112,170,172],[232,236,226]] },
+  { name:'lacquer', note:'black, vermilion, gold and bone',
+    ground:[30,26,24], inks:[[22,20,20],[194,56,40],[214,170,76],[112,28,26],[238,228,206]] },
+  { name:'spring', note:'cherry, leaf, lilac and primrose',
+    ground:[236,230,216], inks:[[222,140,154],[110,150,88],[150,128,182],[234,202,100],[250,247,240]] },
+  { name:'moss and slate', note:'the old bookbinders\' endpapers',
+    ground:[200,192,170], inks:[[64,78,92],[96,112,64],[150,110,70],[44,40,38],[226,218,196]] },
+];
+let palI=QS.has('pal')?(+QS.get('pal'))%PALETTES.length:Math.floor(rnd()*PALETTES.length);
+let PAL=PALETTES[palI];
+
+// ---------- canvas ----------
+let W=0,H=0,dpr=1,SC=1;
+const ink=document.createElement('canvas'), ictx=ink.getContext('2d');
+function resize(){
+  dpr=Math.min(2,window.devicePixelRatio||1); W=innerWidth; H=innerHeight;
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); ink.width=cv.width; ink.height=cv.height;
+  SC=clamp(Math.min(W,H)/860,0.45,1.7); inkDirty=true;
+}
+
+// grain: a tile of soft noise used for the size, the ink and the paper
+function makeTile(n,fn){ const c=document.createElement('canvas'); c.width=c.height=n; const g=c.getContext('2d');
+  const im=g.createImageData(n,n); fn(im.data,n); g.putImageData(im,0,0); return c; }
+let vgrid=new Float32Array(64*64); for(let i=0;i<vgrid.length;i++) vgrid[i]=rnd();
+function vnt(x,y,p){ const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const g=(i,j)=>vgrid[((j%p+p)%p)*64+((i%p+p)%p)];
+  return mix(mix(g(xi,yi),g(xi+1,yi),u),mix(g(xi,yi+1),g(xi+1,yi+1),u),v); }
+const grainTile=makeTile(256,(d,n)=>{ for(let y=0;y<n;y++) for(let x=0;x<n;x++){
+  const v=0.45*vnt(x/32,y/32,8)+0.3*vnt(x/8,y/8,32)+0.25*rnd(); const k=(y*n+x)*4; const g=200+55*v;
+  d[k]=g; d[k+1]=g; d[k+2]=g; d[k+3]=255; } });
+const paperTile=(()=>{ const c=document.createElement('canvas'); c.width=c.height=384; const g=c.getContext('2d');
+  g.fillStyle='#fff'; g.fillRect(0,0,384,384);
+  const im=g.getImageData(0,0,384,384), d=im.data;
+  for(let y=0;y<384;y++) for(let x=0;x<384;x++){ const v=0.6*vnt(x/24,y/24,16)+0.4*rnd(); const k=(y*384+x)*4; const q=236+19*v; d[k]=q; d[k+1]=q; d[k+2]=q; }
+  g.putImageData(im,0,0);
+  g.lineCap='round';
+  for(let i=0;i<520;i++){ let x=rnd()*384, y=rnd()*384, a=rnd()*TAU; const L=6+rnd()*22;
+    g.strokeStyle=rnd()<0.5?'rgba(150,140,120,0.16)':'rgba(255,255,255,0.4)'; g.lineWidth=0.4+rnd()*0.7;
+    g.beginPath(); g.moveTo(x,y); for(let s=0;s<L;s+=2){ a+=(rnd()-0.5)*0.5; x+=Math.cos(a)*2; y+=Math.sin(a)*2; g.lineTo(x,y); } g.stroke(); }
+  return c; })();
+let grainPat=null, paperPat=null;
+
+// ---------- the floating ink ----------
+// a polygon: one colour boundary, closed, painted oldest first
+let polys=[];
+// what needs repainting: everything, or only a rectangle around what moved
+let inkDirty=true, DR=null, totalV=0, MAXL=1.5, MAXL2=2.25;
+const MINL=0.45;
+const T2=[0,0];
+let outX=new Float64Array(1<<16), outY=new Float64Array(1<<16), outN=0;
+let txb=new Float64Array(1<<16), tyb=new Float64Array(1<<16);
+function markDirty(b){ if(!DR) DR=[b[0],b[1],b[2],b[3]]; else { if(b[0]<DR[0])DR[0]=b[0]; if(b[1]<DR[1])DR[1]=b[1]; if(b[2]>DR[2])DR[2]=b[2]; if(b[3]>DR[3])DR[3]=b[3]; } }
+function push(x,y){
+  if(outN>0){ const dx=x-outX[outN-1], dy=y-outY[outN-1]; if(dx*dx+dy*dy<MINL*MINL) return; }
+  if(outN>=outX.length){ const nx=new Float64Array(outX.length*2), ny=new Float64Array(outX.length*2); nx.set(outX); ny.set(outY); outX=nx; outY=ny; }
+  outX[outN]=x; outY[outN]=y; outN++;
+}
+const MARG=60;
+function outside(x,y){ return x<-MARG||y<-MARG||x>W+MARG||y>H+MARG; }
+let F=null;   // the current map, writes into T2
+function sub(ax,ay,AX,AY,bx,by,BX,BY,d){
+  const dx=BX-AX, dy=BY-AY;
+  if(dx*dx+dy*dy<=MAXL2||d>=13) return;
+  if(outside(AX,AY)&&outside(BX,BY)&&dx*dx+dy*dy<6400) return;
+  const mx=(ax+bx)*0.5, my=(ay+by)*0.5; F(mx,my); const MX=T2[0], MY=T2[1];
+  sub(ax,ay,AX,AY,mx,my,MX,MY,d+1); push(MX,MY); sub(mx,my,MX,MY,bx,by,BX,BY,d+1);
+}
+function newPoly(col,x,y,r,n){
+  const xs=new Float64Array(n), ys=new Float64Array(n);
+  for(let i=0;i<n;i++){ const a=i/n*TAU; xs[i]=x+r*Math.cos(a); ys[i]=y+r*Math.sin(a); }
+  const P={ col, x:xs, y:ys, n, bb:[x-r,y-r,x+r,y+r], path:null, pend:null, pb:0 };
+  polys.push(P); markDirty(P.bb); return P;
+}
+// The drops' far field is tiny but never zero. A boundary that a frame's drops would move by less
+// than a third of a pixel keeps them in a queue instead, and gets them, in order, the next time it
+// is touched. Every boundary still receives every map in the same order, so nothing is lost.
+function dropsFn(D){ const m=D.length;
+  return (x,y)=>{ for(let i=0;i<m;i+=3){ const dx=x-D[i], dy=y-D[i+1], d2=dx*dx+dy*dy;
+      if(d2>1e-12){ const s=Math.sqrt(1+D[i+2]/d2); x=D[i]+dx*s; y=D[i+1]+dy*s; } }
+    T2[0]=x; T2[1]=y; }; }
+// apply the map f (which writes T2) to every boundary whose box meets the influence box ib;
+// D, when given, is the list of drops that f is made of
+function applyMap(f,ib,D,reg){
+  // the region that visibly moves is repainted; boundaries reaching outside it move there by
+  // well under a pixel, and the whole layer is repainted every couple of seconds anyway
+  markDirty(reg||ib||[0,0,W,H]);
+  for(const P of polys){
+    if(ib&&(P.bb[2]<ib[0]||P.bb[0]>ib[2]||P.bb[3]<ib[1]||P.bb[1]>ib[3])) continue;
+    if(D){ let bnd=0; const b=P.bb;
+      for(let i=0;i<D.length;i+=3){ const cx=D[i], cy=D[i+1];
+        const dx=cx<b[0]?b[0]-cx:(cx>b[2]?cx-b[2]:0), dy=cy<b[1]?b[1]-cy:(cy>b[3]?cy-b[3]:0), d=Math.hypot(dx,dy);
+        bnd+=d>1?D[i+2]/(2*d):1e9; }
+      if(P.pb+bnd<0.33){ if(!P.pend) P.pend=[]; for(let i=0;i<D.length;i++) P.pend.push(D[i]); P.pb+=bnd; continue; }
+    }
+    if(P.pend){ const g=dropsFn(P.pend); P.pend=null; P.pb=0; F=(x,y)=>{ g(x,y); f(T2[0],T2[1]); }; } else F=f;
+    const fm=F;
+    const n=P.n, xs=P.x, ys=P.y;
+    if(txb.length<n){ txb=new Float64Array(n*2); tyb=new Float64Array(n*2); }
+    for(let i=0;i<n;i++){ fm(xs[i],ys[i]); txb[i]=T2[0]; tyb[i]=T2[1]; }
+    outN=0;
+    for(let i=0;i<n;i++){ const j=i+1<n?i+1:0;
+      push(txb[i],tyb[i]);
+      sub(xs[i],ys[i],txb[i],tyb[i],xs[j],ys[j],txb[j],tyb[j],0); }
+    if(outN<3){ outN=0; for(let i=0;i<n;i++){ outX[outN]=txb[i]; outY[outN]=tyb[i]; outN++; } }
+    if(outN===n){ xs.set(outX.subarray(0,n)); ys.set(outY.subarray(0,n)); }
+    else { P.x=outX.slice(0,outN); P.y=outY.slice(0,outN); P.n=outN; }
+    P.path=null;
+    let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+    for(let i=0;i<outN;i++){ const x=outX[i], y=outY[i]; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    P.bb[0]=x0; P.bb[1]=y0; P.bb[2]=x1; P.bb[3]=y1;
+  }
+}
+// drop nearly collinear points, and coarse points far outside the window
+function simplify(){
+  let tot=0;
+  const keep=[];
+  for(const P of polys){
+    const b=P.bb;
+    if(b[2]<-W*1.5||b[0]>W*2.5||b[3]<-H*1.5||b[1]>H*2.5) continue;   // pushed far out of the bath
+    const n=P.n, xs=P.x, ys=P.y;
+    if(n>12){
+      outN=0; let px=xs[n-1], py=ys[n-1];
+      for(let i=0;i<n;i++){
+        const x=xs[i], y=ys[i], j=i+1<n?i+1:0, nx=xs[j], ny=ys[j];
+        const cx=nx-px, cy=ny-py, L2=cx*cx+cy*cy;
+        let drop=false;
+        if(outside(x,y)&&outside(px,py)&&outside(nx,ny)) drop=L2<900;
+        else if(L2<MAXL2*0.8){ const cr=(x-px)*cy-(y-py)*cx; drop=cr*cr<0.012*L2; }
+        if(drop){ continue; }
+        outX[outN]=x; outY[outN]=y; outN++; px=x; py=y;
+        if(outN>=outX.length-2) break;
+      }
+      if(outN>=8&&outN<n){ P.x=outX.slice(0,outN); P.y=outY.slice(0,outN); P.n=outN; P.path=null; }
+    }
+    tot+=P.n; keep.push(P);
+  }
+  polys=keep; totalV=tot;
+  MAXL=totalV>900000?4.6:totalV>600000?3.4:totalV>340000?2.3:1.5; MAXL2=MAXL*MAXL;
+}
+
+// ---------- the maps ----------
+// all the drops spreading in one frame, applied in turn in one pass
+let pendingDrops=[], dropReg=null;
+function flushDrops(){
+  const D=pendingDrops; if(!D.length) return; pendingDrops=[];
+  const reg=dropReg; dropReg=null;
+  applyMap(dropsFn(D),null,D,reg);
+}
+function dropMap(cx,cy,dr2){
+  return (x,y)=>{ const dx=x-cx, dy=y-cy, d2=dx*dx+dy*dy;
+    if(d2<1e-12){ T2[0]=x; T2[1]=y; return; }
+    const s=Math.sqrt(1+dr2/d2); T2[0]=cx+dx*s; T2[1]=cy+dy*s; };
+}
+// a rake of parallel tines (or one), travelling along M; the tip sits at along-distance s
+function rakeMap(R,s0,ds,K){
+  const ox=R.ox, oy=R.oy, mx=R.mx, my=R.my, nx=R.nx, ny=R.ny, sp=R.sp, ph=R.ph, lam=R.lam, al=R.al, w=R.w, wa=R.wa, wk=R.wk, single=R.single;
+  const cut=3*w, w2=1/(w*w);
+  return (x,y)=>{
+    for(let k=0;k<K;k++){
+      const s=s0+ds*(k+0.5);
+      const rx=x-ox, ry=y-oy, l=rx*mx+ry*my, dl=l-s;
+      if(dl>cut||dl<-cut) continue;
+      let n=rx*nx+ry*ny, tx=mx, ty=my;
+      if(wa){ const ph2=wk*l; n-=wa*Math.sin(ph2); const sl=wa*wk*Math.cos(ph2); tx+=sl*nx; ty+=sl*ny; const tl=1/Math.hypot(tx,ty); tx*=tl; ty*=tl; }
+      let q=(n-ph)/sp; if(!single) q-=Math.round(q); const d=Math.abs(q)*sp;
+      const amt=ds*al*lam/(d+lam)*Math.exp(-dl*dl*w2);
+      x+=amt*tx; y+=amt*ty;
+    }
+    T2[0]=x; T2[1]=y;
+  };
+}
+// a point stylus moving through the list of substep positions
+function stylusMap(px,py,vx,vy,K,rho,al){
+  const r2=1/(rho*rho), R2=1/(16*rho*rho);
+  return (x,y)=>{
+    for(let k=0;k<K;k++){
+      const dx=x-px[k], dy=y-py[k], d2=dx*dx+dy*dy;
+      if(d2*R2>9) continue;
+      const g=al*Math.exp(-d2*r2)+0.22*Math.exp(-d2*R2);
+      x+=vx[k]*g; y+=vy[k]*g;
+    }
+    T2[0]=x; T2[1]=y;
+  };
+}
+
+// ---------- operations ----------
+let drops=0, strokes=0, ripples=[];
+function opDrop(o){
+  return { start(){ o.P=newPoly(o.col,o.x,o.y,0.6,16); o.E=0; o.age=0; drops++;
+      ripples.push({x:o.x,y:o.y,R:o.R,age:0}); },
+    step(dt){ o.age+=dt; const u=Math.min(1,o.age/o.dur), E=1-Math.pow(1-u,3);
+      const dr2=o.R*o.R*(E-o.E); o.E=E;
+      if(dr2>0){ pendingDrops.push(o.x,o.y,dr2); const r=o.R*Math.sqrt(E)+dr2/0.7+4;
+        if(!dropReg) dropReg=[o.x-r,o.y-r,o.x+r,o.y+r]; else { dropReg[0]=Math.min(dropReg[0],o.x-r); dropReg[1]=Math.min(dropReg[1],o.y-r); dropReg[2]=Math.max(dropReg[2],o.x+r); dropReg[3]=Math.max(dropReg[3],o.y+r); } }
+      return u>=1; } };
+}
+function opRake(o){
+  // o: ang, sp, ph (absolute normal offset through a point), lam, al, w, wa, wl, v, single
+  const R={ ox:W/2, oy:H/2, mx:Math.cos(o.ang), my:Math.sin(o.ang) };
+  R.nx=-R.my; R.ny=R.mx; R.sp=o.sp; R.lam=o.lam; R.al=o.al; R.w=o.w; R.wa=o.wa||0; R.wk=o.wl?TAU/o.wl:0; R.single=!!o.single;
+  R.ph=o.through?((o.through[0]-R.ox)*R.nx+(o.through[1]-R.oy)*R.ny):(o.ph||0);
+  let lmin=1e9,lmax=-1e9,nmin=1e9,nmax=-1e9;
+  for(const [x,y] of [[0,0],[W,0],[0,H],[W,H]]){ const l=(x-R.ox)*R.mx+(y-R.oy)*R.my, n=(x-R.ox)*R.nx+(y-R.oy)*R.ny;
+    lmin=Math.min(lmin,l); lmax=Math.max(lmax,l); nmin=Math.min(nmin,n); nmax=Math.max(nmax,n); }
+  if(o.from!==undefined){ lmin=o.from; lmax=o.to; }
+  const s1=lmax+3*R.w; let s=lmin-3*R.w;
+  const dsMax=0.42/(R.al*(1/R.lam+1.6/R.w+(R.wa?R.wa*R.wk*R.wk:0)));
+  return { start(){ strokes++; },
+    step(dt){
+      const ds=Math.min(o.v*dt,s1-s); if(ds<=0) return true;
+      const K=Math.max(1,Math.ceil(ds/dsMax));
+      // influence box: the band of along-distance [s-3w, s+ds+3w], drawn wide across
+      const a=s-3*R.w, b=s+ds+3*R.w+R.w*2, c=nmin-300, d=nmax+300;
+      let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+      for(const [l,n] of [[a,c],[a,d],[b,c],[b,d]]){ const x=R.ox+l*R.mx+n*R.nx, y=R.oy+l*R.my+n*R.ny;
+        x0=Math.min(x0,x); x1=Math.max(x1,x); y0=Math.min(y0,y); y1=Math.max(y1,y); }
+      applyMap(rakeMap(R,s,ds/K,K),[x0,y0,x1,y1]);
+      s+=ds; o.tip=s; o.R=R; return s>=s1; } };
+}
+function opPath(o){
+  // o: pts [[x,y]...], v, rho, al
+  const seg=[]; let L=0;
+  for(let i=1;i<o.pts.length;i++){ const a=o.pts[i-1], b=o.pts[i]; const l=Math.hypot(b[0]-a[0],b[1]-a[1]); seg.push(l); L+=l; }
+  let pos=0;
+  const at=(t)=>{ let i=0; while(i<seg.length-1&&t>seg[i]){ t-=seg[i]; i++; }
+    const a=o.pts[i], b=o.pts[i+1], u=seg[i]>0?clamp(t/seg[i],0,1):0; return [mix(a[0],b[0],u),mix(a[1],b[1],u)]; };
+  return { start(){ strokes++; },
+    step(dt){ const ds=Math.min(o.v*dt,L-pos); if(ds<=0) return true;
+      const K=Math.max(1,Math.ceil(ds/(0.38*o.rho)));
+      const px=new Float64Array(K), py=new Float64Array(K), vx=new Float64Array(K), vy=new Float64Array(K);
+      let prev=at(pos);
+      for(let k=0;k<K;k++){ const q=at(pos+ds*(k+1)/K); px[k]=(prev[0]+q[0])/2; py[k]=(prev[1]+q[1])/2; vx[k]=q[0]-prev[0]; vy[k]=q[1]-prev[1]; prev=q; }
+      const m=o.rho*13; let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+      for(let k=0;k<K;k++){ x0=Math.min(x0,px[k]); x1=Math.max(x1,px[k]); y0=Math.min(y0,py[k]); y1=Math.max(y1,py[k]); }
+      applyMap(stylusMap(px,py,vx,vy,K,o.rho,o.al),[x0-m,y0-m,x1+m,y1+m]);
+      pos+=ds; o.tip=prev; return pos>=L; } };
+}
+
+// ---------- the patterns ----------
+// each builds a timetable of operations
+let sched=[], active=[], clock=0, pattern=null, patI=-1;
+function at(t,op){ sched.push({t,op}); }
+function inkCols(){ return PAL.inks.length-1; }
+function pickCol(prev){ let c; do{ c=Math.floor(rnd()*inkCols()); } while(c===prev&&inkCols()>1); return c; }
+// a stone ground: big drops of every colour, the first colour widest, then a few pale veins
+function stoneBase(t,cover,big,veins){
+  // keep dropping until the drops' total area is `cover` times the bath's
+  const n=inkCols(), target=cover*(W+200)*(H+200); let prev=-1, area=0, i=0;
+  const est=target/(Math.PI*Math.pow(big*SC*0.7,2));
+  while(area<target){
+    const k=Math.min(n-1,Math.floor(i/est*n)); const c=rnd()<0.7?k:pickCol(prev); prev=c;
+    const R=big*SC*rr(0.5,1.1)/(1+0.22*k); area+=Math.PI*R*R; i++;
+    at(t,opDrop({x:rr(-0.06,1.06)*W,y:rr(-0.06,1.06)*H,R,col:c,dur:rr(0.5,0.9)})); t+=rr(0.03,0.1);
+  }
+  for(let i=0;i<veins;i++){ at(t,opDrop({x:rnd()*W,y:rnd()*H,R:SC*rr(8,22),col:n,dur:0.5})); t+=rr(0.05,0.14); }
+  return t+0.8;
+}
+// a fine even ground of small drops, the start of the combed patterns
+function gridBase(t,g){
+  g*=SC; const pts=[]; let prev=-1;
+  for(let y=-g*0.5;y<H+g;y+=g*0.87) for(let x=-g*0.5;x<W+g;x+=g) pts.push([x+rr(-0.3,0.3)*g+((y/g/0.87|0)%2?g/2:0),y+rr(-0.3,0.3)*g]);
+  // sprinkled in a sweep, as a marbler works across the tray, with a little disorder
+  const horiz=rnd()<0.5, sgn=rnd()<0.5?1:-1;
+  pts.sort((a,b)=>sgn*((horiz?a[0]-b[0]:a[1]-b[1])+rr(-1,1)*g*1.5));
+  const gap=clamp(26/pts.length,0.03,0.09);
+  for(const p of pts){ const c=rnd()<0.08?inkCols():pickCol(prev); prev=c;
+    at(t,opDrop({x:p[0],y:p[1],R:g*rr(0.5,0.64),col:c,dur:0.35})); t+=gap; }
+  return t+0.9;
+}
+function rake(t,o){ const op=opRake(o); at(t,op); return op; }
+function gelgit(t,sp){
+  sp*=SC; const v=230*SC;
+  const vert=rnd()<0.6, a=vert?Math.PI/2:0;
+  rake(t,{ang:a,sp,ph:0,lam:sp*0.12,al:0.72,w:sp*0.55,v});
+  const L=(vert?H:W)+sp*4; t+=L/v+0.7;
+  rake(t,{ang:a+Math.PI,sp,ph:sp/2,lam:sp*0.12,al:0.72,w:sp*0.55,v});
+  t+=L/v+0.9; return {t,vert};
+}
+const PATTERNS=[
+  { name:'stone', turkish:'battal', note:'drops only, each pushing the last aside',
+    build(){ let t=0.6; t=stoneBase(t,1.6,92,0); t=stoneBase(t,0.9,54,Math.round(40*clamp(W*H/(1280*800),0.5,1.6))); return t; } },
+  { name:'come and go', turkish:'gel-git', note:'a rake drawn down the bath, and back up between its own lines',
+    build(){ let t=0.6; t=stoneBase(t,1.3,120,0); t=gridBase(t,48); const g=gelgit(t,rr(46,62)); return g.t; } },
+  { name:'comb', turkish:'taraklı', note:'come and go, then a fine comb across it',
+    build(){ let t=0.6; t=stoneBase(t,1.3,120,0); t=gridBase(t,46); const g=gelgit(t,rr(48,60)); t=g.t;
+      const sp=rr(22,28)*SC, v=170*SC; rake(t,{ang:g.vert?0:Math.PI/2,sp,ph:0,lam:sp*0.16,al:0.7,w:sp*0.7,v});
+      return t+((g.vert?W:H)+sp*4)/v+0.5; } },
+  { name:'bouquet', turkish:'buketli', note:'come and go, a comb, then a comb with a wave in it',
+    build(){ let t=0.6; t=stoneBase(t,1.3,120,0); t=gridBase(t,46); const g=gelgit(t,rr(46,58)); t=g.t;
+      const sp=rr(30,40)*SC, v=150*SC;
+      rake(t,{ang:g.vert?0:Math.PI/2,sp,ph:0,lam:sp*0.14,al:0.72,w:sp*0.65,v,wa:sp*rr(0.35,0.55),wl:sp*rr(2.6,3.6)});
+      return t+((g.vert?W:H)+sp*4)/v+0.5; } },
+  { name:'nightingale’s nest', turkish:'bülbül yuvası', note:'come and go, then a small spiral stirred at every node',
+    build(){ let t=0.6; t=stoneBase(t,1.3,120,0); t=gridBase(t,46); const g=gelgit(t,rr(46,58)); t=g.t;
+      const gs=rr(112,132)*SC, rad=gs*0.42, v=1150*SC, turns=rr(1.6,2.3), dir=rnd()<0.5?1:-1;
+      const nodes=[];
+      for(let y=gs*0.5,r=0;y<H+gs*0.2;y+=gs*0.92,r++) for(let x=gs*(0.5+(r%2)*0.5);x<W+gs*0.2;x+=gs) nodes.push([x,y]);
+      for(const [cx,cy] of nodes){ const pts=[]; const N=Math.ceil(turns*40);
+        for(let i=0;i<=N;i++){ const u=i/N, a=dir*u*turns*TAU, r=rad*Math.sqrt(u); pts.push([cx+r*Math.cos(a),cy+r*Math.sin(a)]); }
+        let L=0; for(let i=1;i<pts.length;i++) L+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]);
+        at(t,opPath({pts,v,rho:6*SC,al:0.8})); t+=L/v+0.02; }
+      return t+0.5; } },
+  { name:'hearts', turkish:'', note:'rows of ringed drops, each column pulled through by one tine',
+    build(){ let t=0.6; t=stoneBase(t,1.3,120,0);
+      const gs=rr(92,118)*SC, rows=[], ring=[pickCol(-1)]; ring.push(pickCol(ring[0])); ring.push(inkCols()); ring.push(pickCol(ring[1]));
+      for(let y=gs*0.55,r=0;y<H+gs*0.3;y+=gs*0.9,r++) for(let x=gs*0.5;x<W+gs*0.3;x+=gs) rows.push([x+(r%2?0:0),y]);
+      const rb=gs*0.16;
+      for(let k=0;k<5;k++){ for(const p of rows){ at(t,opDrop({x:p[0],y:p[1],R:rb*(k===0?1.3:1),col:ring[k%ring.length],dur:0.5})); t+=0.012; } t+=0.55; }
+      t+=0.6; const v=150*SC, up=rnd()<0.5;
+      rake(t,{ang:up?-Math.PI/2:Math.PI/2,sp:gs,through:rows[0],lam:gs*0.09,al:0.74,w:gs*0.42,v});
+      return t+(H+gs*4)/v+0.5; } },
+];
+
+function newPattern(i){
+  polys=[]; sched=[]; active=[]; clock=0; drops=0; strokes=0; ripples=[]; totalV=0; inkDirty=true;
+  printPhase=null; lastUser=-99;
+  patI=i===undefined?(patI+1+Math.floor(rnd()*(PATTERNS.length-1)))%PATTERNS.length:i;
+  pattern=PATTERNS[patI];
+  endT=pattern.build();
+  sched.sort((a,b)=>a.t-b.t);
+}
+let endT=0;
+
+// ---------- the user's hand ----------
+let userCol=0, lastUser=-99, down=null, userPts=[];
+function eventPos(ev){ return [ev.clientX,ev.clientY]; }
+cv.addEventListener('pointerdown',ev=>{
+  if(printPhase){ if(printPhase.t>3.8) printPhase.t=Math.max(printPhase.t,printPhase.hold-1.2); return; }
+  cv.setPointerCapture(ev.pointerId);
+  const p=eventPos(ev); down={x:p[0],y:p[1],t:performance.now(),moved:false,last:p, shift:ev.shiftKey};
+});
+cv.addEventListener('pointermove',ev=>{
+  if(!down) return; const p=eventPos(ev);
+  if(!down.moved&&Math.hypot(p[0]-down.x,p[1]-down.y)>5){ down.moved=true; userPts.push([down.x,down.y]); }
+  if(down.moved){ userPts.push(p); lastUser=clock; }
+});
+cv.addEventListener('pointerup',ev=>{
+  if(!down) return;
+  if(down.moved) strokes++;
+  if(!down.moved){
+    const R=(down.shift?rr(9,16):rr(24,46))*SC;
+    active.push(Object.assign(opDrop({x:down.x,y:down.y,R,col:userCol,dur:0.7}),{}));
+    active[active.length-1].start(); lastUser=clock;
+  }
+  down=null;
+});
+function userStroke(){
+  if(userPts.length<2){ if(!down) userPts=[]; return; }
+  const pts=userPts; userPts=[pts[pts.length-1]];
+  if(!down) userPts=[];
+  const o=opPath({pts,v:1e9,rho:6*SC,al:0.82}); o.step(1);   // one long step: the whole drag since last frame
+}
+
+// ---------- the print ----------
+let printPhase=null, printNo=0;
+const LAY=1.5, SOAK=1.1, FLIP=1.2;
+function layPaper(){ if(printPhase) return; printNo++; printPhase={t:0, hold:LAY+SOAK+FLIP+(+QS.get('hold')||28)}; }
+
+// ---------- drawing ----------
+function polyPath(P){
+  if(P.path) return P.path;
+  const p=new Path2D(), xs=P.x, ys=P.y; p.moveTo(xs[0],ys[0]); for(let i=1;i<P.n;i++) p.lineTo(xs[i],ys[i]); p.closePath();
+  P.path=p; return p;
+}
+// the ink layer holds the size, the inks and their grain; only the part that moved is repainted
+function drawInk(){
+  let view;
+  if(inkDirty) view=[0,0,W,H];
+  else if(DR){ view=[Math.max(0,Math.floor(DR[0]-3)),Math.max(0,Math.floor(DR[1]-3)),Math.min(W,Math.ceil(DR[2]+3)),Math.min(H,Math.ceil(DR[3]+3))];
+    if(view[2]<=view[0]||view[3]<=view[1]){ DR=null; return; } }
+  else return;
+  inkDirty=false; DR=null;
+  const dx0=Math.floor(view[0]*dpr), dy0=Math.floor(view[1]*dpr), dx1=Math.ceil(view[2]*dpr), dy1=Math.ceil(view[3]*dpr);
+  ictx.save();
+  ictx.setTransform(1,0,0,1,0,0);
+  ictx.beginPath(); ictx.rect(dx0,dy0,dx1-dx0,dy1-dy0); ictx.clip();
+  ictx.fillStyle=css(PAL.ground); ictx.fillRect(dx0,dy0,dx1-dx0,dy1-dy0);
+  ictx.setTransform(dpr,0,0,dpr,0,0);
+  ictx.lineJoin='round';
+  for(const P of polys){
+    const b=P.bb; if(b[2]<view[0]||b[0]>view[2]||b[3]<view[1]||b[1]>view[3]) continue;
+    const c=PAL.inks[P.col], p=polyPath(P);
+    ictx.fillStyle=css(c); ictx.fill(p);
+    // the dispersant leaves a slightly darker, denser edge on each colour
+    ictx.strokeStyle=css(shade(c,P.col===inkCols()?0.78:0.62),0.55); ictx.lineWidth=1.15; ictx.stroke(p);
+  }
+  // a faint mottle in the pigment and the size
+  if(!grainPat) grainPat=ictx.createPattern(grainTile,'repeat');
+  ictx.setTransform(1,0,0,1,0,0);
+  ictx.globalCompositeOperation='multiply'; ictx.globalAlpha=0.5; ictx.fillStyle=grainPat; ictx.fillRect(dx0,dy0,dx1-dx0,dy1-dy0);
+  ictx.restore();
+}
+function drawBath(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.drawImage(ink,0,0);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // the gloss of the size: a soft window light drifting over the wet surface
+  const gx=W*(0.62+0.18*Math.sin(clock*0.05)), gy=H*(0.22+0.08*Math.cos(clock*0.037));
+  let g=ctx.createRadialGradient(gx,gy,0,gx,gy,Math.max(W,H)*0.55);
+  g.addColorStop(0,'rgba(255,255,250,0.11)'); g.addColorStop(0.5,'rgba(255,255,250,0.035)'); g.addColorStop(1,'rgba(255,255,250,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // ripples from falling drops
+  ctx.lineWidth=1.2;
+  for(const r of ripples){ const u=r.age/1.1; const rad=r.R*(0.4+1.4*u)+6*SC;
+    ctx.strokeStyle='rgba(255,255,248,'+(0.22*(1-u)*(1-u)).toFixed(3)+')';
+    ctx.beginPath(); ctx.arc(r.x,r.y,rad,0,TAU); ctx.stroke(); }
+  // the tray's edge in shadow
+  g=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.35,W/2,H/2,Math.hypot(W,H)*0.62);
+  g.addColorStop(0,'rgba(10,8,6,0)'); g.addColorStop(1,'rgba(10,8,6,0.34)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+}
+function paperRect(){ const m=Math.min(W,H)*0.065; return [m,m*0.8,W-2*m,H-1.8*m-(W<700?64:34)]; }
+function drawPaperSheet(x,y,w,h,face,seep){
+  if(!paperPat) paperPat=ctx.createPattern(paperTile,'repeat');
+  ctx.save();
+  ctx.fillStyle='#f3ead6'; ctx.fillRect(x,y,w,h);
+  ctx.globalCompositeOperation='multiply'; ctx.fillStyle=paperPat; ctx.fillRect(x,y,w,h);
+  ctx.beginPath(); ctx.rect(x,y,w,h); ctx.clip();
+  if(face){
+    // face up: the print is the mirror of the bath
+    ctx.globalAlpha=0.96;
+    ctx.save(); ctx.translate(x+w,y); ctx.scale(-w/W,h/H); ctx.drawImage(ink,0,0,ink.width,ink.height,0,0,W,H); ctx.restore();
+    ctx.globalAlpha=0.5; ctx.fillStyle=paperPat; ctx.fillRect(x,y,w,h);
+  } else if(seep>0){
+    ctx.globalAlpha=0.3*seep; ctx.drawImage(ink,0,0,ink.width,ink.height,x,y,w,h);
+  }
+  ctx.globalAlpha=1; ctx.globalCompositeOperation='source-over';
+  // a little light falling across the sheet
+  const g=ctx.createLinearGradient(x,y,x+w,y+h); g.addColorStop(0,'rgba(255,250,240,0.08)'); g.addColorStop(1,'rgba(40,30,20,0.08)');
+  ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+  ctx.restore();
+}
+function drawPrint(){
+  const P=printPhase, t=P.t; const [x,y,w,h]=paperRect();
+  if(t<LAY+SOAK){
+    // the sheet comes down onto the bath and the ink soaks through
+    drawBath(); ctx.setTransform(dpr,0,0,dpr,0,0);
+    const u=sstep(0,LAY,t), sw=W+(w-W)*0, sh=H;
+    const k=mix(1.08,1,u);
+    ctx.save(); ctx.translate(W/2,H/2); ctx.scale(k,k); ctx.translate(-W/2,-H/2);
+    ctx.globalAlpha=u;
+    ctx.shadowColor='rgba(0,0,0,'+(0.4*(1-u)).toFixed(3)+')'; ctx.shadowBlur=40*(1-u); ctx.shadowOffsetY=18*(1-u);
+    ctx.fillStyle='#f3ead6'; ctx.fillRect(0,0,sw,sh); ctx.shadowColor='transparent';
+    drawPaperSheet(0,0,sw,sh,false,sstep(LAY*0.5,LAY+SOAK,t));
+    ctx.restore(); return;
+  }
+  // lift, turn over, and lay it on the table
+  ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle='#1b1714'; ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const tf=t-LAY-SOAK, u=clamp(tf/FLIP,0,1);
+  const sx=Math.cos(Math.PI*sstep(0,1,u)), face=sx<0;
+  const shrink=mix(1,0,sstep(0,0.7,u)), lift=Math.sin(Math.PI*u)*0.04;
+  const rx=mix(x,0,shrink), ry=mix(y,0,shrink), rw=mix(w,W,shrink), rh=mix(h,H,shrink);
+  let fade=1; if(t>P.hold-1.2) fade=clamp((P.hold-t)/1.2,0,1);
+  ctx.save(); ctx.globalAlpha=fade;
+  ctx.translate(rx+rw/2,ry+rh/2-30*(1-fade)); ctx.scale(Math.abs(sx)*(1+lift)+0.001,1+lift);
+  ctx.shadowColor='rgba(0,0,0,0.55)'; ctx.shadowBlur=30+40*lift*20; ctx.shadowOffsetY=10;
+  ctx.fillStyle='#f3ead6'; ctx.fillRect(-rw/2,-rh/2,rw,rh); ctx.shadowColor='transparent';
+  drawPaperSheet(-rw/2,-rh/2,rw,rh,face,1);
+  ctx.restore();
+}
+
+// ---------- text ----------
+const HINT=hint.innerHTML;
+let showText=!QS.has('notext'), fast=false, paused=false;
+function hudText(){
+  if(!showText){ hud.innerHTML=''; hint.style.display='none'; return; }
+  hint.style.display=''; hint.innerHTML=HINT;
+  const dark=(PAL.ground[0]+PAL.ground[1]+PAL.ground[2])<300;
+  hud.style.color='#f6efe0';
+  let s='<b>cloud paper</b><br>';
+  if(printPhase&&printPhase.t>LAY+SOAK+FLIP*0.5){
+    hud.innerHTML='';
+    hint.innerHTML='print no. '+printNo+' &mdash; '+pattern.name+(pattern.turkish?' ('+pattern.turkish+')':'')+
+      ', '+PAL.name+' &mdash; '+drops.toLocaleString()+' drops, '+strokes.toLocaleString()+' strokes &mdash; the mirror image of the bath, taken off in one touch'+
+      (paused?' &mdash; paused':'')+'&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; next bath';
+    return;
+  } else {
+    const next=sched.length?'':(active.length?'':' &mdash; ready for the paper');
+    s+=pattern.name+(pattern.turkish?' ('+pattern.turkish+')':'')+' &mdash; '+pattern.note+'<br>'+
+      PAL.name+' &mdash; '+PAL.note+'<br>'+
+      drops.toLocaleString()+' drops, '+strokes.toLocaleString()+' strokes'+next+'<br>'+
+      polys.length.toLocaleString()+' colour boundaries, '+totalV.toLocaleString()+' points along them<br>'+
+      'your ink: <span style="display:inline-block;width:10px;height:10px;vertical-align:-1px;border:1px solid rgba(255,255,255,0.6);background:'+css(PAL.inks[userCol])+'"></span>';
+  }
+  if(paused) s+='<br>paused'; if(fast) s+='<br>faster';
+  hud.innerHTML=s; void dark;
+}
+
+// ---------- loop ----------
+let simpT=0, fullT=2;
+function update(dt){
+  clock+=dt;
+  if(printPhase){
+    printPhase.t+=dt;
+    if(printPhase.t>=printPhase.hold){ newPattern(); }
+    return;
+  }
+  while(sched.length&&sched[0].t<=clock){ const s=sched.shift(); s.op.start(); active.push(s.op); }
+  for(let i=active.length-1;i>=0;i--){ if(active[i].step(dt)) active.splice(i,1); }
+  flushDrops();
+  userStroke();
+  for(const r of ripples) r.age+=dt; ripples=ripples.filter(r=>r.age<1.1);
+  simpT-=dt; if(simpT<=0){ simplify(); simpT=0.4; }
+  fullT-=dt; if(fullT<=0){ if(active.length) inkDirty=true; fullT=1.5; }
+  if(!sched.length&&!active.length&&clock>endT+9&&clock>lastUser+12&&!down) layPaper();
+}
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='n'){ newPattern(); }
+  else if(k==='p'){ palI=(palI+1)%PALETTES.length; PAL=PALETTES[palI]; inkDirty=true; }
+  else if(k==='c'){ userCol=(userCol+1)%PAL.inks.length; }
+  else if(k==='l'){ if(printPhase) printPhase.t=Math.max(printPhase.t,printPhase.hold-1.2); else layPaper(); }
+  else if(k==='f'){ fast=!fast; }
+  else if(k==='h'){ showText=!showText; }
+  hudText();
+});
+addEventListener('resize',()=>{ resize(); });
+
+resize();
+newPattern(QS.has('p')?(+QS.get('p'))%PATTERNS.length:Math.floor(rnd()*PATTERNS.length));
+let last=performance.now(), hudT=0;
+function frame(t){
+  const dt=Math.min(0.05,(t-last)/1000); last=t;
+  if(!paused){ const k=fast?3:1; for(let i=0;i<k;i++) update(dt); }
+  if(printPhase) drawPrint(); else { drawInk(); drawBath(); }
+  hudT-=dt; if(hudT<=0){ hudText(); hudT=0.3; }
+  requestAnimationFrame(frame);
+}
+hudText();
+requestAnimationFrame(frame);
+window.__cp={ update, layPaper, newPattern, simplify, drawInk, get polys(){return polys;}, get totalV(){return totalV;}, get clock(){return clock;},
+  get endT(){return endT;}, get sched(){return sched.length;}, get active(){return active.length;}, get print(){return printPhase;},
+  frame:()=>{ if(printPhase) drawPrint(); else { drawInk(); drawBath(); } hudText(); } };
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,39 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-25** — `2026-11-25-cloud-paper.html`: a hundred-and-twelfth
+  technique, and the archive's first marbled paper. Last night the river laid
+  curved bands across a valley over centuries. Tonight the bands are laid in a
+  minute, by hand, on the surface of a tray of thickened water. Ink dropped on
+  the size floats and spreads into a disc, and every new disc pushes the older
+  ones aside into rings. The marbler then combs the floating colour, raking
+  it down the tray and back, stirring it in spirals, and lays a sheet of paper
+  on the surface, which takes the whole pattern off in one touch. The Turkish
+  name, ebru, is usually traced to the Persian abri, cloudy. The surface is
+  treated as what it nearly is: a film that keeps area. A drop of radius R at
+  c moves every point p to c + (p - c) sqrt(1 + R^2/|p - c|^2), opening a disc
+  of exactly pi R^2 and squeezing everything else outward by that much (the
+  "mathematical marbling" of Jaffer, Lu and others). A spreading drop is a run
+  of small such maps, and they compose exactly. A tine moves points parallel
+  to its own path by an amount that falls off with distance from it, so it
+  keeps area too; here the tine travels, and ink right on its line is dragged
+  along and left behind in streaks. Each colour boundary is a polygon carried
+  by these maps and refined as it stretches: a segment that would grow past a
+  pixel and a half is split, and the new point is found by mapping the
+  midpoint of the segment it came from. Painted oldest first, the polygons
+  never cross, because every map is one-to-one. Boundaries that a frame's
+  drops would move by less than a third of a pixel queue those drops and take
+  them later, in order, which is still exact and saves most of the work. Six
+  patterns from the craft's repertoire (stone, come and go, comb, bouquet,
+  nightingale's nest, and rows of ringed drops pulled into hearts), six
+  palettes. When the pattern is finished the paper comes down, the ink soaks
+  through, the sheet is turned over, and you see the print, which is the
+  mirror of the bath. The darker rim on each colour, the grain of size and
+  paper and the gloss are painted. Click to drop ink (shift for a small
+  drop), drag to draw a stylus through it, C for your ink colour, L to lay the
+  paper now, N for a new pattern, P for the palette, F to hurry, H to hide the
+  text, space to pause. Open the file directly in a browser.
+
 - **2026-11-24** — `2026-11-24-long-way-round.html`: a hundred-and-eleventh
   technique, and the archive's first meandering river. Last night the layers
   grew inward inside a stone. Tonight they grow sideways across a valley, seen
