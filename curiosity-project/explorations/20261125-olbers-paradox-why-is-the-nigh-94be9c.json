@@ -1,0 +1,48 @@
+{
+  "id": "20261125-olbers-paradox-why-is-the-nigh-94be9c",
+  "date": "2026-11-25T10:11:22.723441",
+  "title": "Olbers' Paradox: Why Is the Night Sky Dark?",
+  "question": "If the universe is vast and full of stars, why isn't every direction of the night sky blazing with starlight?",
+  "summary": "In an infinite, eternal, star-filled universe, every line of sight would end on a star and the sky would glow like the Sun. The darkness of night is evidence that the universe has a finite age and is expanding, and in microwaves the sky really does glow, with the afterglow of the Big Bang.",
+  "content": "\n<h2>The Most Obvious Question in Astronomy</h2>\n<p>Why is the night sky dark? It sounds like a question for a child, but it hides one of the most profound clues in cosmology. Suppose the universe were infinite, eternal, unchanging, and evenly filled with stars. Then every line of sight, extended far enough, would eventually end on the surface of a star. The whole sky would blaze as bright as the Sun's disk, day and night. Distance does not save us: a star twice as far away appears four times dimmer, but there are four times as many stars in a shell at that distance, so every shell contributes equally. This contradiction is known as Olbers' paradox, after Heinrich Olbers, who described it in 1823, though Kepler, Halley, and de Ch\u00e9seaux had puzzled over it earlier.</p>\n\n<h2>Explanations That Don't Work</h2>\n<p>The first instinct is that dust blocks the distant light. But in an eternal universe, the dust would absorb energy until it heated up and glowed as brightly as the stars themselves. Another idea was that stars are arranged in a hierarchical, fractal pattern with ever-larger voids, which can dilute the sky, but observations show the universe becomes smooth on the largest scales. Neither escape hatch survives scrutiny.</p>\n\n<h2>The Real Answer: A Universe With a History</h2>\n<p>Strikingly, the first essentially correct answer came from a poet. In 1848 Edgar Allan Poe, in his prose poem <em>Eureka</em>, suggested that the sky is dark because light from the most distant regions has not had time to reach us yet. Lord Kelvin later made the argument quantitative. The universe is not eternal: it is about 13.8 billion years old, so we can see only a finite volume of it, and stars have only existed for part of that time. Most lines of sight end not on a star but on the dim afterglow of the early universe.</p>\n<p>Expansion adds a second effect. As space stretches, light from distant galaxies is redshifted to longer wavelengths and lower energies. Edward Harrison's careful calculations showed that the finite age of the universe and the finite lifetimes of stars are the dominant reasons; there simply is not enough energy in all the stars that have ever shone to fill space with Sun-like brightness.</p>\n\n<h2>The Sky Is Not Actually Dark</h2>\n<p>Here is the beautiful twist. If you look in microwave wavelengths, the sky does glow uniformly in every direction. That glow is the cosmic microwave background, light released when the universe cooled enough to become transparent, about 380,000 years after the Big Bang. At that time the whole universe was as hot as a star's surface. In a sense, Olbers was right: every line of sight does end on a glowing surface. That surface has simply been redshifted by a factor of about 1,100, from yellow-orange heat to faint microwaves invisible to our eyes.</p>\n\n<h2>Darkness as Evidence</h2>\n<p>The darkness between the stars is one of the simplest observations anyone can make, yet it carries a cosmological message: the universe had a beginning and has been changing ever since. Anyone stepping outside at night is looking at evidence for the Big Bang. Olbers' paradox is a model of how careful reasoning about the obvious can reveal the deepest truths.</p>\n",
+  "tags": [
+    "cosmology",
+    "physics",
+    "astronomy",
+    "history-of-science",
+    "big-bang"
+  ],
+  "perspectives": [
+    {
+      "title": "Cosmological Perspective",
+      "description": "The finite age of the universe limits how far we can see, and the finite lifetimes of stars limit how much light exists. Together they make the sky dark, while cosmic expansion further redshifts distant light."
+    },
+    {
+      "title": "Historical Perspective",
+      "description": "The paradox puzzled Kepler, Halley, and Olbers for centuries. Its resolution was anticipated by Edgar Allan Poe and formalized by Kelvin, showing how a simple observation challenged the assumption of a static, eternal cosmos."
+    },
+    {
+      "title": "Thermodynamic Perspective",
+      "description": "A dark sky means the universe is far from thermal equilibrium. If it were in equilibrium, matter and radiation would share one temperature everywhere; the contrast between hot stars and cold space is what allows complexity and life."
+    },
+    {
+      "title": "Philosophical Perspective",
+      "description": "The paradox shows how assumptions about infinity and eternity can be tested by everyday observation. It is a case study in reasoning from the obvious to the profound."
+    }
+  ],
+  "connections": [
+    "The cosmic microwave background",
+    "Cosmic expansion and redshift",
+    "The inverse-square law",
+    "Thermodynamic disequilibrium and the arrow of time",
+    "The observable universe and cosmic horizons",
+    "Edgar Allan Poe's Eureka",
+    "Steady-state versus Big Bang cosmology"
+  ],
+  "openQuestions": [
+    "How much of the extragalactic background light comes from galaxies we have not yet detected?",
+    "Would the night sky look different to observers in the far future as accelerating expansion carries galaxies beyond our horizon?",
+    "What does the observable universe's finite size imply about what lies beyond it, if anything?",
+    "Could thermodynamic disequilibrium, the very thing that makes the sky dark, be the root explanation for why time has a direction?"
+  ]
+}
