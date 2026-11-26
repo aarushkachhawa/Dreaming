@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>World Nail</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04050a; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:pointer; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#e9ecf4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95), 0 0 2px rgba(0,0,0,0.9);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#e9ecf4; opacity:.7; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(0,0,0,0.95); }
+  @media (max-width:640px){ #hud{ font-size:11px; } #hint{ font-size:10px; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">click &mdash; open the shutter again&nbsp;&nbsp;|&nbsp;&nbsp;&larr; &rarr; &mdash; turn the camera&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; another night, somewhere else&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; faster&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<script>
+(function(){
+"use strict";
+// World nail. A camera on a tripod, pointed at the night, shutter left open for three hours. The
+// earth turns under the sky and every star draws its part of a circle round the celestial pole.
+// In Finnish the pole star is taivaannaula, the sky nail: the nail the heavens turn on.
+//
+// Nothing here is drawn as an arc. Each star is a direction on the celestial sphere (right
+// ascension, declination); each frame the hour angle of every star advances by the sidereal rate,
+// 15.04 degrees an hour, the direction is turned into altitude and azimuth for the observer's
+// latitude, and projected through a rectilinear lens. The light a star delivers during that step,
+// its flux times the time, is laid along the short segment it moved, into a floating-point
+// exposure. That is the whole photograph: a slow star near the pole leaves its light on few
+// pixels and burns a short bright arc, a star on the celestial equator spreads the same light over
+// a long faint line. Developing is a filmic curve, 1 - exp(-exposure), so cores clip to white and
+// colour survives only in the shoulders, as it does in real trails.
+//
+// The bright stars are real (positions, magnitudes and B-V colour indices, rounded); the rest are
+// drawn from the star-count law, a third of them crowded toward the galactic plane, and fifty
+// thousand fainter grains smear into the Milky Way with its dark rift. Colour comes from the B-V
+// index through a blackbody temperature, white-balanced to the sun. The air is there too: light
+// passes through more of it near the horizon (airmass), blue suffers most, so setting trails dim
+// and redden. Meteors, aircraft (strobes and wingtip lights) and satellites cross now and then and
+// are kept at roughly honest brightness: a meteor lasts a second against hours, so only bright ones
+// register at all.
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const QS=new URLSearchParams(location.search);
+const TAU=Math.PI*2, D=Math.PI/180;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const mix=(a,b,t)=>a+(b-a)*t;
+let seed=(QS.has('seed')?+QS.get('seed'):(Math.random()*4294967295))>>>0||1;
+const rnd=()=>{ seed^=seed<<13; seed>>>=0; seed^=seed>>>17; seed^=seed<<5; seed>>>=0; return seed/4294967296; };
+const rr=(a,b)=>a+(b-a)*rnd();
+const gauss=()=>{ let u=0; while(u===0) u=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*rnd()); };
+
+// ---------- the sky ----------
+// bright stars: name, RA deg, Dec deg, V mag, B-V
+const NAMED=[
+  ['Sirius',101.29,-16.72,-1.46,0.00],['Canopus',95.99,-52.70,-0.74,0.15],['Rigil Kentaurus',219.90,-60.83,-0.27,0.71],
+  ['Arcturus',213.92,19.18,-0.05,1.23],['Vega',279.23,38.78,0.03,0.00],['Capella',79.17,46.00,0.08,0.80],
+  ['Rigel',78.63,-8.20,0.13,-0.03],['Procyon',114.83,5.22,0.34,0.42],['Achernar',24.43,-57.24,0.46,-0.16],
+  ['Betelgeuse',88.79,7.41,0.50,1.85],['Hadar',210.96,-60.37,0.61,-0.23],['Altair',297.70,8.87,0.77,0.22],
+  ['Acrux',186.65,-63.10,0.77,-0.24],['Aldebaran',68.98,16.51,0.86,1.54],['Antares',247.35,-26.43,1.06,1.83],
+  ['Spica',201.30,-11.16,1.04,-0.23],['Pollux',116.33,28.03,1.14,1.00],['Fomalhaut',344.41,-29.62,1.16,0.09],
+  ['Deneb',310.36,45.28,1.25,0.09],['Mimosa',191.93,-59.69,1.25,-0.23],['Regulus',152.09,11.97,1.35,-0.11],
+  ['Adhara',104.66,-28.97,1.50,-0.21],['Castor',113.65,31.89,1.58,0.03],['Gacrux',187.79,-57.11,1.59,1.60],
+  ['Shaula',263.40,-37.10,1.62,-0.22],['Bellatrix',81.28,6.35,1.64,-0.22],['Elnath',81.57,28.61,1.65,-0.13],
+  ['Miaplacidus',138.30,-69.72,1.67,0.07],['Alnilam',84.05,-1.20,1.69,-0.18],['Alnair',332.06,-46.96,1.73,-0.07],
+  ['Alnitak',85.19,-1.94,1.77,-0.20],['Alioth',193.51,55.96,1.77,-0.02],['Dubhe',165.93,61.75,1.79,1.07],
+  ['Mirfak',51.08,49.86,1.79,0.48],['Wezen',107.10,-26.39,1.83,0.68],['Kaus Australis',276.04,-34.38,1.85,-0.03],
+  ['Avior',125.63,-59.51,1.86,1.28],['Alkaid',206.89,49.31,1.86,-0.19],['Sargas',264.33,-43.00,1.87,0.40],
+  ['Menkalinan',89.88,44.95,1.90,0.08],['Atria',252.17,-69.03,1.91,1.44],['Alhena',99.43,16.40,1.93,0.00],
+  ['Peacock',306.41,-56.74,1.94,-0.20],['Polaris',37.95,89.26,1.98,0.60],['Mirzam',95.67,-17.96,1.98,-0.24],
+  ['Alphard',141.90,-8.66,1.99,1.44],['Hamal',31.79,23.46,2.00,1.15],['Diphda',10.90,-17.99,2.04,1.02],
+  ['Nunki',283.82,-26.30,2.05,-0.13],['Menkent',211.67,-36.37,2.06,1.01],['Alpheratz',2.10,29.09,2.06,-0.11],
+  ['Mirach',17.43,35.62,2.06,1.58],['Saiph',86.94,-9.67,2.09,-0.17],['Kochab',222.68,74.16,2.08,1.47],
+  ['Rasalhague',263.73,12.56,2.08,0.15],['Algol',47.04,40.96,2.09,-0.05],['Almach',30.97,42.33,2.10,1.37],
+  ['Denebola',177.26,14.57,2.13,0.09],['Gamma Cassiopeiae',14.18,60.72,2.15,-0.15],['Mintaka',83.00,-0.30,2.23,-0.22],
+  ['Schedar',10.13,56.54,2.24,1.17],['Eltanin',269.15,51.49,2.24,1.52],['Mizar',200.98,54.93,2.27,0.02],
+  ['Caph',2.29,59.15,2.28,0.34],['Sadr',305.56,40.26,2.23,0.67],['Merak',165.46,56.38,2.37,-0.02],
+  ['Enif',326.05,9.88,2.39,1.53],['Phecda',178.46,53.69,2.44,0.00],['Scheat',345.94,28.08,2.42,1.67],
+  ['Markab',346.19,15.21,2.49,-0.04],['Ruchbah',21.45,60.24,2.68,0.13],['Megrez',183.86,57.03,3.31,0.08],
+  ['Segin',28.60,63.67,3.35,-0.15],['Pherkad',230.18,71.83,3.00,0.05],['Yildun',263.05,86.59,4.36,0.02],
+  ['Errai',354.84,77.63,3.21,1.03],['Alderamin',319.64,62.59,2.45,0.22],['Thuban',211.10,64.38,3.65,-0.05],
+  ['Sigma Octantis',317.20,-88.96,5.45,0.27],['Alcyone',56.87,24.11,2.87,-0.09],['Atlas',57.29,24.05,3.62,-0.07],
+  ['Electra',56.22,24.11,3.70,-0.11],['Maia',56.46,24.37,3.87,-0.07],['Merope',56.58,23.95,4.18,-0.06],
+];
+// galactic to equatorial (J2000): the rows below take equatorial to galactic, so use the transpose
+const GM=[[-0.0548755604,-0.8734370902,-0.4838350155],[0.4941094279,-0.4448296300,0.7469822445],[-0.8676661490,-0.1980763734,0.4559837762]];
+function galToEq(l,b){ const gx=Math.cos(b)*Math.cos(l), gy=Math.cos(b)*Math.sin(l), gz=Math.sin(b);
+  return [GM[0][0]*gx+GM[1][0]*gy+GM[2][0]*gz, GM[0][1]*gx+GM[1][1]*gy+GM[2][1]*gz, GM[0][2]*gx+GM[1][2]*gy+GM[2][2]*gz]; }
+// colour: B-V -> temperature (Ballesteros 2012) -> three-wavelength Planck, white-balanced to the sun
+function planck3(T){ const f=l=>1/(Math.pow(l,5)*(Math.exp(1.4388e-2/(l*T))-1)); return [f(610e-9),f(550e-9),f(465e-9)]; }
+const SUN=planck3(5778);
+function bvRGB(bv){
+  bv=clamp(bv,-0.4,2.0); const T=4600*(1/(0.92*bv+1.7)+1/(0.92*bv+0.62));
+  const p=planck3(T); let r=p[0]/SUN[0], g=p[1]/SUN[1], b=p[2]/SUN[2];
+  let L=0.2126*r+0.7152*g+0.0722*b; r/=L; g/=L; b/=L;
+  const m=(r+g+b)/3, S=1.55; r=Math.max(0.03,m+(r-m)*S); g=Math.max(0.03,m+(g-m)*S); b=Math.max(0.03,m+(b-m)*S);
+  L=0.2126*r+0.7152*g+0.0722*b; return [r/L,g/L,b/L];
+}
+// value noise for the dark rift and the land
+const NG=new Float32Array(256*256); for(let i=0;i<NG.length;i++) NG[i]=rnd();
+function vn(x,y){ const xi=Math.floor(x), yi=Math.floor(y), xf=x-xi, yf=y-yi, u=xf*xf*(3-2*xf), v=yf*yf*(3-2*yf);
+  const g=(i,j)=>NG[(j&255)*256+(i&255)];
+  return mix(mix(g(xi,yi),g(xi+1,yi),u),mix(g(xi,yi+1),g(xi+1,yi+1),u),v); }
+const fbm=(x,y)=>0.5*vn(x,y)+0.27*vn(x*2.1+17,y*2.1)+0.15*vn(x*4.3,y*4.3+9)+0.08*vn(x*8.9+3,y*8.9);
+const wrapPi=a=>{ a=(a+Math.PI)%TAU; if(a<0) a+=TAU; return a-Math.PI; };
+
+const NS=46000, NDUST=52000, NN=NAMED.length, NT=NN+NS+NDUST;
+const SD=new Float64Array(NT), CD=new Float64Array(NT), RA=new Float64Array(NT);
+const FR=new Float32Array(NT), FG=new Float32Array(NT), FB=new Float32Array(NT), WIDE=new Uint8Array(NT);
+const CH=new Float64Array(NT), SH=new Float64Array(NT), PX=new Float32Array(NT), PY=new Float32Array(NT), PV=new Uint8Array(NT);
+function setStar(i,ra,dec,mag,bv,wide){
+  SD[i]=Math.sin(dec); CD[i]=Math.cos(dec); RA[i]=ra;
+  const f=Math.pow(10,-0.4*mag), c=bvRGB(bv); FR[i]=f*c[0]; FG[i]=f*c[1]; FB[i]=f*c[2]; WIDE[i]=wide;
+}
+function setStarVec(i,v,mag,bv,wide){ setStar(i,Math.atan2(v[1],v[0]),Math.asin(clamp(v[2],-1,1)),mag,bv,wide); }
+function sampleL(spread){ for(;;){ const l=rnd()*TAU-Math.PI; const w=0.3+0.7*Math.exp(-Math.pow(l/(spread*D),2)); if(rnd()<w) return l; } }
+function rift(l,b){
+  // the Great Rift and the Coalsack-like lanes: dust just above the plane, strongest toward the centre
+  const lw=Math.exp(-Math.pow(wrapPi(l-25*D)/(55*D),2)), bw=Math.exp(-Math.pow((b-1.2*D)/(2.6*D),2));
+  const n=fbm(l*9,b*30+4); return clamp(lw*bw*1.6*(n-0.25),0,0.95)+0.55*clamp((n-0.62)*3,0,1)*Math.exp(-Math.pow(b/(6*D),2));
+}
+(function buildSky(){
+  let i=0;
+  for(const s of NAMED){ setStar(i++,s[1]*D,s[2]*D,s[3],s[4],s[3]<0.6?2:(s[3]<2.3?1:0)); }
+  for(let k=0;k<NS;k++){
+    let m=8.7+Math.log10(1-rnd())/0.47; if(m<2.4) m=2.4+rnd()*1.8;
+    const t=rnd(); const bv=t<0.3?0.02+gauss()*0.18:(t<0.72?0.62+gauss()*0.25:1.2+gauss()*0.22);
+    let v;
+    if(rnd()<0.34){ const l=sampleL(70), b=gauss()*11*D; v=galToEq(l,b); }
+    else { const z=rnd()*2-1, a=rnd()*TAU, q=Math.sqrt(1-z*z); v=[q*Math.cos(a),q*Math.sin(a),z]; }
+    setStarVec(i++,v,m,bv,m<3.2?1:0);
+  }
+  for(let k=0;k<NDUST;k++){
+    let l,b;
+    for(;;){ l=sampleL(48); b=gauss()*(3.2+2.4*Math.exp(-Math.pow(l/(40*D),2)))*D; if(rnd()>rift(l,b)) break; }
+    const m=8.8+rnd()*1.3, bv=0.85+gauss()*0.28;
+    setStarVec(i++,galToEq(l,b),m,bv,0);
+  }
+})();
+
+// ---------- places ----------
+const SCENES=[
+  { name:'a hill farm', lat:56.1, face:'pole', land:'hills', dome:0.35, air:0.55, domeAz:150 },
+  { name:'a pine ridge', lat:47.3, face:'pole', land:'pines', dome:0.18, air:0.4, domeAz:220 },
+  { name:'the high desert', lat:36.4, face:90, land:'mesas', dome:0.12, air:0.25, domeAz:250 },
+  { name:'a fjord', lat:62.6, face:'pole', land:'mountains', dome:0.05, air:1.0, domeAz:40 },
+  { name:'a beach on the equator', lat:0.6, face:0, land:'sea', dome:0.08, air:0.5, domeAz:200 },
+  { name:'a sheep station', lat:-34.2, face:'pole', land:'hills', dome:0.1, air:0.5, domeAz:20 },
+  { name:'a western island', lat:20.8, face:270, land:'sea', dome:0.18, air:0.45, domeAz:90 },
+  { name:'a mountain pass', lat:44.5, face:180, land:'mountains', dome:0.22, air:0.3, domeAz:200 },
+  { name:'a southern coast', lat:-41.5, face:90, land:'sea', dome:0.06, air:0.6, domeAz:300 },
+  { name:'a forest clearing', lat:52.2, face:270, land:'pines', dome:0.3, air:0.35, domeAz:270 },
+];
+const FACE_NAMES={0:'north',90:'east',180:'south',270:'west'};
+let sceneI=QS.has('scene')?(+QS.get('scene'))%SCENES.length:Math.floor(rnd()*SCENES.length);
+let S=SCENES[sceneI], camAz=0, lst0=0, sinPhi=0, cosPhi=1;
+
+// ---------- buffers ----------
+let W=0,H=0,BW=0,BH=0,bs=1;
+let AR=null,AG=null,AB=null, BGR=null,BGG=null,BGB=null, VG=null, img=null, LUT=null;
+let F=800,cx=0,cy=0,yh=0, fx=0,fy=0,fz=0, rx=0,ry=0, ux=0,uy=0,uz=0, gain=1;
+const fgc=document.createElement('canvas'), fgx=fgc.getContext('2d');
+const tmpc=document.createElement('canvas'), tmpx=tmpc.getContext('2d');
+function resize(){
+  W=innerWidth; H=innerHeight;
+  const dpr=window.devicePixelRatio||1; bs=Math.min(dpr,1.5,Math.sqrt(2.4e6/(W*H)));
+  BW=Math.max(64,Math.round(W*bs)); BH=Math.max(64,Math.round(H*bs));
+  cv.width=BW; cv.height=BH; fgc.width=BW; fgc.height=BH; tmpc.width=BW; tmpc.height=BH;
+  const n=BW*BH;
+  AR=new Float32Array(n); AG=new Float32Array(n); AB=new Float32Array(n);
+  BGR=new Float32Array(n); BGG=new Float32Array(n); BGB=new Float32Array(n); VG=new Float32Array(n);
+  img=ctx.createImageData(BW,BH);
+  for(let k=3;k<img.data.length;k+=4) img.data[k]=255;
+  if(!LUT){ LUT=new Uint8ClampedArray(4097); for(let i=0;i<=4096;i++){ const v=i/256, c=1-Math.exp(-v);
+    LUT[i]=Math.round(255*(c<=0.0031308?12.92*c:1.055*Math.pow(c,1/2.4)-0.055)); } }
+  startNight(false);
+}
+
+function facesPole(){ return (S.lat>=0&&camAz===0)||(S.lat<0&&camAz===180); }
+function setupCamera(){
+  const P=Math.abs(S.lat)*D; cy=BH/2; cx=BW/2;
+  const yH=BH*0.79; let a;
+  const Fmin=(Math.max(BW,BH)/2)/Math.tan(58*D), Fmax=(Math.max(BW,BH)/2)/Math.tan(28*D);
+  if(facesPole()&&P>3*D){
+    const yp=BH*0.25, ratio=(cy-yp)/(yH-cy);
+    let lo=0.0005, hi=P-0.0005;
+    for(let k=0;k<60;k++){ const m=(lo+hi)/2; if(Math.tan(P-m)/Math.tan(m)>ratio) lo=m; else hi=m; }
+    a=(lo+hi)/2; F=(yH-cy)/Math.tan(a);
+    if(F<Fmin){ F=Fmin; a=P-Math.atan((cy-yp)/F); }
+    if(F>Fmax){ F=Fmax; a=Math.atan((yH-cy)/F); }
+  } else {
+    F=Math.min((BW/2)/Math.tan(42*D),(BH/2)/Math.tan(27*D)); F=clamp(F,Fmin,Fmax*2);
+    a=Math.atan((yH-cy)/F);
+  }
+  const A=camAz*D, ca=Math.cos(a), sa=Math.sin(a);
+  fx=Math.sin(A)*ca; fy=Math.cos(A)*ca; fz=sa;
+  rx=Math.cos(A); ry=-Math.sin(A);
+  ux=-Math.sin(A)*sa; uy=-Math.cos(A)*sa; uz=ca;
+  yh=cy+F*Math.tan(a); camAlt=a;
+  gain=3300*F/1000;
+}
+let camAlt=0;
+// direction of a pixel: [e,n,u]
+function pixDir(x,y){ const px=(x-cx)/F, py=-(y-cy)/F;
+  let e=fx+px*rx+py*ux, n=fy+px*ry+py*uy, u=fz+py*uz; const L=Math.hypot(e,n,u); return [e/L,n/L,u/L]; }
+
+function buildBackground(){
+  const zen=[0.0011,0.0016,0.0034], A=S.air, Dm=S.dome, dAz=S.domeAz*D;
+  for(let y=0;y<BH;y+=2) for(let x=0;x<BW;x+=2){
+    const d=pixDir(x+0.5,y+0.5), h=Math.asin(clamp(d[2],-1,1)), az=Math.atan2(d[0],d[1]);
+    const ox=(x+0.5-cx)/F, oy=(y+0.5-cy)/F, c=1/Math.sqrt(1+ox*ox+oy*oy), vig=c*c*c*0.85+0.15;
+    let r,g,b;
+    if(h<0){ r=0.0006; g=0.0007; b=0.0010; }
+    else {
+      const hz=Math.exp(-h/(14*D)), ag=Math.exp(-Math.pow((h-9*D)/(6*D),2))*A;
+      const dome=Dm*Math.exp(-Math.pow(wrapPi(az-dAz)/(38*D),2))*Math.exp(-h/(11*D));
+      r=zen[0]+0.0034*hz+0.0016*ag+0.030*dome;
+      g=zen[1]+0.0042*hz+0.0060*ag+0.017*dome;
+      b=zen[2]+0.0062*hz+0.0015*ag+0.0065*dome;
+    }
+    for(let j=0;j<2;j++) for(let i=0;i<2;i++){ const X=x+i, Y=y+j; if(X>=BW||Y>=BH) continue; const k=Y*BW+X;
+      const nz=0.00055;
+      BGR[k]=Math.max(0,(r+(rnd()-0.5)*nz)*vig); BGG[k]=Math.max(0,(g+(rnd()-0.5)*nz)*vig); BGB[k]=Math.max(0,(b+(rnd()-0.5)*nz*1.3)*vig);
+      VG[k]=gain*vig; }
+  }
+}
+
+// ---------- the land ----------
+const LANDCOL='rgb(3,4,7)';
+function ridgeLine(fn){ const pts=[]; for(let x=-4;x<=BW+4;x+=2) pts.push([x,fn(x)]); return pts; }
+function fillRidge(g,pts,col){ g.fillStyle=col; g.beginPath(); g.moveTo(-4,BH+4); for(const p of pts) g.lineTo(p[0],p[1]); g.lineTo(BW+4,BH+4); g.closePath(); g.fill(); }
+function conifer(g,x,y,h){
+  const w=h*rr(0.17,0.26), n=Math.max(5,Math.round(h/(5*bs))); g.beginPath(); g.moveTo(x,y-h);
+  for(let i=1;i<=n;i++){ const t=i/n, yy=y-h+h*t*0.94, ww=w*Math.pow(t,0.9)*rr(0.75,1.2); g.lineTo(x-ww,yy); g.lineTo(x-ww*rr(0.3,0.5),yy-h*0.02); }
+  g.lineTo(x-w*0.08,y-h*0.06); g.lineTo(x-w*0.08,y+2); g.lineTo(x+w*0.08,y+2); g.lineTo(x+w*0.08,y-h*0.06);
+  for(let i=n;i>=1;i--){ const t=i/n, yy=y-h+h*t*0.94, ww=w*Math.pow(t,0.9)*rr(0.75,1.2); g.lineTo(x+ww*rr(0.3,0.5),yy-h*0.02); g.lineTo(x+ww,yy); }
+  g.closePath(); g.fill();
+}
+function branch(g,x,y,ang,len,w,d){
+  const x2=x+Math.cos(ang)*len, y2=y+Math.sin(ang)*len;
+  g.lineWidth=Math.max(0.5,w); g.beginPath(); g.moveTo(x,y); g.lineTo(x2,y2); g.stroke();
+  if(d<=0||len<1.5*bs) return;
+  const k=rnd()<0.3?3:2;
+  for(let j=0;j<k;j++){ const sp=k===3?(j-1)*0.5:(j-0.5)*0.75; branch(g,x2,y2,ang+sp+rr(-0.25,0.25)+(-Math.PI/2-ang)*0.12,len*rr(0.66,0.8),w*0.66,d-1); }
+}
+function buildLand(){
+  const g=fgx; g.clearRect(0,0,BW,BH); g.fillStyle=LANDCOL; g.strokeStyle=LANDCOL; g.lineCap='round';
+  const U=BH/100, o=rnd()*50;
+  const L=S.land;
+  if(L==='hills'||L==='pines'){
+    const amp=L==='hills'?4.5:3;
+    const pts=ridgeLine(x=>yh-U*(0.6+amp*fbm(x/BW*2.2+o,o)+(L==='hills'?2.2*Math.sin(x/BW*2.6+o):0)));
+    fillRidge(g,pts,LANDCOL);
+    const at=x=>pts[clamp(Math.round((x+4)/2),0,pts.length-1)][1];
+    if(L==='pines'){
+      let x=-6; while(x<BW+6){ const dens=fbm(x/BW*5+o*2,3); if(dens>0.36){ const h=U*(3+10*fbm(x/BW*13,o)*rr(0.6,1.25)); conifer(g,x,at(x)+1,h); }
+        x+=rr(2.5,9)*bs*(dens>0.5?0.7:1.6); }
+    } else {
+      // a lone tree and a farmhouse with a light still on
+      const tx=BW*rr(0.62,0.8), ty=at(tx)+1, th=U*rr(7,10);
+      g.lineWidth=U*0.5; branch(g,tx,ty,-Math.PI/2+rr(-0.06,0.06),th*0.36,U*0.55,8);
+      const hx=BW*rr(0.16,0.3), hy=at(hx)+U*0.4, hw=U*4.2, hhh=U*2.2;
+      g.fillStyle=LANDCOL; g.fillRect(hx,hy-hhh,hw,hhh+2);
+      g.beginPath(); g.moveTo(hx-U*0.4,hy-hhh); g.lineTo(hx+hw*0.5,hy-hhh-U*1.9); g.lineTo(hx+hw+U*0.4,hy-hhh); g.fill();
+      g.fillRect(hx+hw*0.72,hy-hhh-U*1.9,U*0.5,U*1.2);
+      const wx=hx+hw*0.25, wy=hy-hhh*0.62, ws=U*0.7;
+      const glow=g.createRadialGradient(wx+ws/2,wy+ws/2,0,wx+ws/2,wy+ws/2,U*5);
+      glow.addColorStop(0,'rgba(255,170,80,0.18)'); glow.addColorStop(1,'rgba(255,170,80,0)');
+      g.fillStyle=glow; g.fillRect(wx-U*5,wy-U*5,U*10.7,U*10.7);
+      g.fillStyle='rgb(255,196,120)'; g.fillRect(wx,wy,ws,ws*1.1);
+      g.fillStyle=LANDCOL; g.fillRect(wx+ws*0.45,wy,ws*0.1,ws*1.1);
+      // a fence running off down the slope
+      g.lineWidth=Math.max(1,U*0.12);
+      for(let x=hx+hw+U*3;x<BW*0.55;x+=U*2.3){ const y=at(x)+U*0.8; g.beginPath(); g.moveTo(x,y); g.lineTo(x,y-U*1.1); g.stroke(); }
+    }
+  } else if(L==='mountains'){
+    for(let layer=0;layer<2;layer++){
+      const N=513, a=new Float32Array(N); a[0]=rnd(); a[N-1]=rnd();
+      for(let step=N-1,amp=0.9;step>1;step>>=1,amp*=0.56) for(let i=step>>1;i<N;i+=step) a[i]=(a[i-(step>>1)]+a[i+(step>>1)])/2+(rnd()-0.5)*amp;
+      let mn=1e9,mx=-1e9; for(let i=0;i<N;i++){ mn=Math.min(mn,a[i]); mx=Math.max(mx,a[i]); }
+      const top=layer===0?18:7, base=layer===0?1.2:0.2;
+      const pts=ridgeLine(x=>{ const t=clamp((x+4)/(BW+8),0,1)*(N-1), i=Math.floor(t), f=t-i;
+        return yh-U*(base+top*(mix(a[i],a[Math.min(N-1,i+1)],f)-mn)/(mx-mn)); });
+      fillRidge(g,pts,layer===0?'rgb(6,7,11)':LANDCOL);
+    }
+  } else if(L==='mesas'){
+    // flat-topped buttes far off, a low rubbly rise near by, and a few spiny plants against the sky
+    const sstep=(e0,e1,x)=>{ const t=clamp((x-e0)/(e1-e0),0,1); return t*t*(3-2*t); };
+    const buttes=[]; for(let k=0;k<4;k++) buttes.push({c:rr(0,1)*BW,w:rr(0.08,0.26)*BW,h:rr(5,13),e:rr(0.01,0.03)*BW});
+    const far=ridgeLine(x=>{ let h=0.8+0.8*fbm(x/BW*3+o,2);
+      for(const b of buttes){ const d=Math.abs(x-b.c)-b.w/2; h=Math.max(h,b.h*(1-sstep(0,b.e,d))*(0.97+0.03*vn(x*0.05,b.h))+(d<b.e*2?0.6*sstep(b.e*2,0,d)*fbm(x*0.02,b.c):0)); }
+      return yh-U*h; });
+    fillRidge(g,far,'rgb(6,7,11)');
+    const near=ridgeLine(x=>yh-U*(-0.2+1.6*fbm(x/BW*6+o,7)+0.25*vn(x*0.2,3)));
+    fillRidge(g,near,LANDCOL);
+    const at=x=>near[clamp(Math.round((x+4)/2),0,near.length-1)][1];
+    for(let k=0;k<7;k++){ const x=BW*rr(0.02,0.98), y=at(x)+1, h=U*rr(0.8,2.4);
+      g.lineWidth=Math.max(0.6,U*0.1);
+      for(let j=0;j<11;j++){ const an=-Math.PI/2+(j/10-0.5)*rr(1.6,2.2); g.beginPath(); g.moveTo(x,y); g.lineTo(x+Math.cos(an)*h*rr(0.6,1),y+Math.sin(an)*h*rr(0.6,1)); g.stroke(); } }
+  } else if(L==='sea'){
+    // a headland on one side; the water is left for the reflection
+    const side=rnd()<0.5?0:1, w=BW*rr(0.25,0.4);
+    const pts=[]; for(let x=0;x<=w;x+=2){ const t=x/w; pts.push([side?BW-x:x, yh-U*(6*Math.pow(1-t,1.6)+1.2*fbm(t*6+o,1))*(t<0.98?1:0)+U*0.3]); }
+    g.fillStyle=LANDCOL; g.beginPath(); g.moveTo(side?BW:0,BH);
+    for(const p of pts) g.lineTo(p[0],p[1]); g.lineTo(pts[pts.length-1][0],BH); g.closePath(); g.fill();
+    // foreground rocks
+    for(let k=0;k<5;k++){ const x=BW*rr(0,1), y=BH*rr(0.9,1.02), r=U*rr(2,6); g.beginPath(); g.ellipse(x,y,r*1.6,r,0,Math.PI,0); g.fill(); }
+  }
+}
+// the water: a sheet of tiny horizontal ripples, made once
+const rip=document.createElement('canvas'), ripx=rip.getContext('2d');
+function buildRipples(){
+  rip.width=BW; rip.height=BH; ripx.clearRect(0,0,BW,BH);
+  for(let y=Math.floor(yh)+1;y<BH;y++){ const t=(y-yh)/(BH-yh);
+    for(let x=0;x<BW;){ const l=rr(4,30)*(0.3+t*2)*bs; ripx.fillStyle='rgba(2,3,6,'+(0.35+0.45*rnd()*t+0.25*t).toFixed(3)+')'; ripx.fillRect(x,y,l,1); x+=l+rr(0,10)*t*bs; } }
+}
+
+// ---------- exposure ----------
+const SID=15.0411*D;           // radians per hour
+const EXP_H=3, RATE=1/15;      // three hours, fifteen seconds of yours per hour of the camera's
+let simH=0, shutter=true, hold=0, meteors=[], planes=[], sats=[], caught={m:0,p:0,s:0}, inFrame=0;
+function startNight(next){
+  if(next){ let k; do{ k=Math.floor(rnd()*SCENES.length); }while(k===sceneI&&SCENES.length>1); sceneI=k; S=SCENES[sceneI];
+    camAz=S.face==='pole'?(S.lat>=0?0:180):S.face; }
+  if(camAz===undefined||next===false&&!startNight.done){ camAz=S.face==='pole'?(S.lat>=0?0:180):S.face; startNight.done=true; }
+  sinPhi=Math.sin(S.lat*D); cosPhi=Math.cos(S.lat*D);
+  lst0=QS.has('lst')?(+QS.get('lst'))*D:rnd()*TAU;
+  setupCamera(); buildBackground(); buildLand(); if(S.land==='sea') buildRipples();
+  openShutter();
+}
+function openShutter(){
+  AR.fill(0); AG.fill(0); AB.fill(0); simH=0; shutter=true; hold=0; meteors=[]; planes=[]; sats=[]; caught={m:0,p:0,s:0};
+  for(let i=0;i<NT;i++){ const h=lst0-RA[i]; CH[i]=Math.cos(h); SH[i]=Math.sin(h); PV[i]=0; }
+  advance(0,false);
+}
+function dep(x,y,r,g,b){
+  if(x<0||y<0) return; const xi=x|0, yi=y|0; if(xi>=BW-1||yi>=BH-1) return;
+  const fx_=x-xi, fy_=y-yi, w00=(1-fx_)*(1-fy_), w10=fx_*(1-fy_), w01=(1-fx_)*fy_, w11=fx_*fy_, k=yi*BW+xi, k2=k+BW;
+  AR[k]+=r*w00; AR[k+1]+=r*w10; AR[k2]+=r*w01; AR[k2+1]+=r*w11;
+  AG[k]+=g*w00; AG[k+1]+=g*w10; AG[k2]+=g*w01; AG[k2+1]+=g*w11;
+  AB[k]+=b*w00; AB[k+1]+=b*w10; AB[k2]+=b*w01; AB[k2+1]+=b*w11;
+}
+function depWide(x,y,r,g,b,w){
+  const s=w===2?1.5:0.95, c=w===2?0.4:0.56, e=(1-c)/4;
+  dep(x,y,r*c,g*c,b*c); dep(x-s,y,r*e,g*e,b*e); dep(x+s,y,r*e,g*e,b*e); dep(x,y-s,r*e,g*e,b*e); dep(x,y+s,r*e,g*e,b*e);
+  if(w===2){ const q=0.05, t=2.6*bs; dep(x-t,y,r*q,g*q,b*q); dep(x+t,y,r*q,g*q,b*q); dep(x,y-t,r*q,g*q,b*q); dep(x,y+t,r*q,g*q,b*q); }
+}
+function segment(x0,y0,x1,y1,r,g,b,w){
+  const dx=x1-x0, dy=y1-y0, L=Math.sqrt(dx*dx+dy*dy); if(L>400) return;
+  const n=Math.max(1,Math.ceil(L/0.7)), ir=r/n, ig=g/n, ib=b/n;
+  for(let s=0;s<n;s++){ const t=(s+0.5)/n; if(w) depWide(x0+dx*t,y0+dy*t,ir,ig,ib,w); else dep(x0+dx*t,y0+dy*t,ir,ig,ib); }
+}
+// air: magnitudes of extinction per airmass in three bands
+const KR=0.10, KG=0.17, KB=0.30;
+function project(e,n,u,out){
+  const z=e*fx+n*fy+u*fz; if(z<0.06) return false;
+  out[0]=cx+F*(e*rx+n*ry)/z; out[1]=cy-F*(e*ux+n*uy+u*uz)/z; return true;
+}
+const P2=[0,0];
+function advance(dtH,lay){
+  const th=dtH*SID, c=Math.cos(th), s=Math.sin(th), sp=sinPhi, cp=cosPhi;
+  let cnt=0;
+  for(let i=0;i<NT;i++){
+    const ch0=CH[i], sh0=SH[i], ch=ch0*c-sh0*s, sh=sh0*c+ch0*s; CH[i]=ch; SH[i]=sh;
+    const sd=SD[i], cd=CD[i], u=sp*sd+cp*cd*ch;
+    if(u<=0){ PV[i]=0; continue; }
+    const n=cp*sd-sp*cd*ch, e=-cd*sh, z=e*fx+n*fy+u*fz;
+    if(z<0.06){ PV[i]=0; continue; }
+    const X=cx+F*(e*rx+n*ry)/z, Y=cy-F*(e*ux+n*uy+u*uz)/z;
+    if(X<-3||X>BW+3||Y<-3||Y>BH+3){ PV[i]=0; continue; }
+    if(i<NN+NS) cnt++;
+    if(lay&&PV[i]){
+      let am=1/(u+0.025*Math.exp(-11*u)); if(am>38) am=38; const ex=am-1;
+      const tR=Math.exp(-0.921*KR*ex), tG=Math.exp(-0.921*KG*ex), tB=Math.exp(-0.921*KB*ex);
+      segment(PX[i],PY[i],X,Y,FR[i]*dtH*tR,FG[i]*dtH*tG,FB[i]*dtH*tB,WIDE[i]);
+    }
+    PX[i]=X; PY[i]=Y; PV[i]=1;
+  }
+  inFrame=cnt;
+}
+// ---------- visitors ----------
+function skyPoint(){ for(let k=0;k<40;k++){ const x=rr(0.05,0.95)*BW, y=rr(0.04,1)*Math.min(yh-BH*0.06,BH*0.9); if(y>0) return [x,y]; } return [BW/2,BH/3]; }
+function spawn(dtH){
+  if(rnd()<dtH*1.1){ // a bright meteor, magnitude -2 to -7; it lasts about a second
+    const p=skyPoint(), a=rnd()*TAU, Lm=rr(60,320)*bs, mag=rr(-7,-2);
+    meteors.push({x:p[0],y:p[1],dx:Math.cos(a)*Lm,dy:Math.abs(Math.sin(a))*Lm*(rnd()<0.75?1:-1),f:Math.pow(10,-0.4*mag),t:0,T:rr(0.25,0.6),done:0}); caught.m++; }
+  if(rnd()<dtH*0.35){ // an aircraft: steady red and green, white strobes; crosses in a few minutes
+    const fromL=rnd()<0.5, y0=rr(0.08,0.65)*yh, y1=y0+rr(-0.25,0.25)*yh;
+    planes.push({x0:fromL?-20:BW+20,y0,x1:fromL?BW+20:-20,y1:clamp(y1,20,yh*0.9),t:0,T:rr(2.5,6)/60,strobe:rr(1,1.5)/3600,next:0,sep:rr(1.2,2.4)*bs}); caught.p++; }
+  if(rnd()<dtH*0.8){ // a satellite, steady, sometimes vanishing into the earth's shadow
+    const p=skyPoint(), a=rnd()*TAU, Ls=Math.max(BW,BH)*1.3;
+    sats.push({x0:p[0]-Math.cos(a)*Ls/2,y0:p[1]-Math.sin(a)*Ls/2,dx:Math.cos(a)*Ls,dy:Math.sin(a)*Ls,t:0,T:rr(5,10)/60,
+      f:Math.pow(10,-0.4*rr(0.5,2.5)),cut:rnd()<0.5?rr(0.3,0.8):2}); caught.s++; }
+}
+function visitors(dtH,dtReal){
+  // a meteor's light is its flux times a second or so, laid down over the fraction of a second you watch it
+  for(const m of meteors){
+    const t0=m.t; m.t=Math.min(m.T,m.t+dtReal); const a=t0/m.T, b=m.t/m.T;
+    const n=Math.max(1,Math.ceil(Math.hypot(m.dx,m.dy)*(b-a)/0.6));
+    for(let k=0;k<n;k++){ const t=a+(b-a)*(k+0.5)/n, prof=Math.sin(Math.PI*Math.pow(t,0.7))*1.5, e=m.f*(1/3600)/n*prof*(b-a)*1.0;
+      const hot=1-t; dep(m.x+m.dx*t,m.y+m.dy*t,e*(0.7+0.5*t),e*(1.1-0.2*t),e*(0.9+0.4*hot)*(1-0.6*t)); }
+    if(m.t>=m.T) m.done=1;
+  }
+  meteors=meteors.filter(m=>!m.done);
+  for(const p of planes){
+    const t0=p.t; p.t+=dtH; const a=t0/p.T, b=Math.min(1,p.t/p.T);
+    const dx=p.x1-p.x0, dy=p.y1-p.y0, L=Math.hypot(dx,dy), nx=-dy/L*p.sep, ny=dx/L*p.sep;
+    // wingtip lights about magnitude 0, on for the whole crossing
+    const segL=(b-a)*L, e=p.T*(b-a), n=Math.max(1,Math.ceil(segL/0.7));
+    for(let k=0;k<n;k++){ const t=a+(b-a)*(k+0.5)/n, x=p.x0+dx*t, y=p.y0+dy*t;
+      dep(x+nx,y+ny,e/n*1.0,e/n*0.12,e/n*0.08); dep(x-nx,y-ny,e/n*0.12,e/n*0.9,e/n*0.35); }
+    while(p.next<=p.t&&p.next<=p.T){ const t=p.next/p.T, x=p.x0+dx*t, y=p.y0+dy*t, f=Math.pow(10,-0.4*-4.5)*(0.05/3600);
+      depWide(x,y,f,f,f*1.05,1); p.next+=p.strobe; }
+    if(p.t>=p.T) p.done=1;
+  }
+  planes=planes.filter(p=>!p.done);
+  for(const s of sats){
+    const t0=s.t; s.t+=dtH; const a=t0/s.T, b=Math.min(1,s.t/s.T);
+    const fade=t=>t<s.cut-0.08?1:clamp((s.cut-t)/0.08,0,1);
+    const e=s.f*(b-a)*s.T, n=Math.max(1,Math.ceil(Math.hypot(s.dx,s.dy)*(b-a)/0.7));
+    for(let k=0;k<n;k++){ const t=a+(b-a)*(k+0.5)/n, q=e/n*fade(t); dep(s.x0+s.dx*t,s.y0+s.dy*t,q,q,q*1.05); }
+    if(s.t>=s.T) s.done=1;
+  }
+  sats=sats.filter(s=>!s.done);
+}
+
+// ---------- developing ----------
+function develop(){
+  const d=img.data, n=BW*BH;
+  for(let k=0,j=0;k<n;k++,j+=4){
+    const g=VG[k];
+    let v=(AR[k]*g+BGR[k])*256; d[j]=LUT[v>4096?4096:v|0];
+    v=(AG[k]*g+BGG[k])*256; d[j+1]=LUT[v>4096?4096:v|0];
+    v=(AB[k]*g+BGB[k])*256; d[j+2]=LUT[v>4096?4096:v|0];
+  }
+  ctx.putImageData(img,0,0);
+  if(S.land==='sea'){
+    // the water mirrors the sky above the horizon, broken by ripples
+    const hh=Math.max(1,Math.min(BH-yh,yh)), Y=Math.floor(yh);
+    tmpx.clearRect(0,0,BW,BH); tmpx.drawImage(cv,0,Y-hh,BW,hh,0,0,BW,hh);
+    ctx.save(); ctx.globalAlpha=0.34; ctx.translate(0,Y+1); ctx.scale(1,-1);
+    ctx.drawImage(tmpc,0,0,BW,hh,0,-hh,BW,hh); ctx.restore();
+    ctx.globalAlpha=1; ctx.drawImage(rip,0,0);
+  }
+  ctx.drawImage(fgc,0,0);
+}
+
+// ---------- text ----------
+const HINT=hint.innerHTML;
+let showText=!QS.has('notext'), fast=false, paused=false;
+function fmtH(h){ const m=Math.round(h*60); return Math.floor(m/60)+' h '+String(m%60).padStart(2,'0')+' m'; }
+function hudText(){
+  if(!showText){ hud.innerHTML=''; hint.style.display='none'; return; }
+  hint.style.display=''; hint.innerHTML=HINT;
+  const lat=Math.abs(S.lat).toFixed(1)+'&deg; '+(S.lat>=0?'N':'S');
+  const mm=Math.round(36*F/Math.max(BW,BH)), fov=Math.round(2*Math.atan(Math.max(BW,BH)/2/F)/D);
+  const turned=(simH*15.0411).toFixed(1);
+  let s='<b>world nail</b><br>'+S.name+', '+lat+' &mdash; facing '+FACE_NAMES[camAz]+(facesPole()?', toward the pole':'')+', '+mm+' mm lens ('+fov+'&deg; across)<br>';
+  s+=(shutter?'shutter open ':'shutter closed after ')+fmtH(simH)+' &mdash; the sky has turned '+turned+'&deg;<br>';
+  s+=inFrame.toLocaleString()+' stars above the horizon in frame';
+  const ex=[]; if(caught.m) ex.push(caught.m+' meteor'+(caught.m>1?'s':'')); if(caught.p) ex.push(caught.p+' aircraft'); if(caught.s) ex.push(caught.s+' satellite'+(caught.s>1?'s':''));
+  if(ex.length) s+=' &middot; '+ex.join(', ');
+  if(paused) s+='<br>paused'; if(fast) s+='<br>faster';
+  hud.innerHTML=s;
+}
+
+// ---------- loop ----------
+function update(dt){
+  if(shutter){
+    let dtH=dt*RATE; if(simH+dtH>EXP_H) dtH=EXP_H-simH;
+    if(dtH>0){ advance(dtH,true); spawn(dtH); visitors(dtH,dt); simH+=dtH; }
+    if(simH>=EXP_H-1e-9){ shutter=false; hold=0; }
+  } else {
+    visitors(0,dt); hold+=dt; if(hold>16&&!QS.has('stay')) startNight(true);
+  }
+}
+cv.addEventListener('pointerdown',()=>{ if(!shutter&&hold>0.5) startNight(true); else openShutter(); hudText(); });
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='n'){ startNight(true); }
+  else if(k==='arrowleft'||k==='arrowright'){ camAz=(camAz+(k==='arrowleft'?270:90))%360; setupCamera(); buildBackground(); buildLand(); if(S.land==='sea') buildRipples(); openShutter(); }
+  else if(k==='f'){ fast=!fast; }
+  else if(k==='h'){ showText=!showText; }
+  hudText();
+});
+let rT=null; addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(resize,200); });
+
+resize();
+let last=performance.now(), hudT=0;
+function frame(t){
+  const dt=Math.min(0.05,(t-last)/1000); last=t;
+  if(!paused){ const k=fast?4:1; for(let i=0;i<k;i++) update(dt); }
+  develop();
+  hudT-=dt; if(hudT<=0){ hudText(); hudT=0.25; }
+  requestAnimationFrame(frame);
+}
+hudText();
+requestAnimationFrame(frame);
+window.__wn={ run:(hours,step)=>{ step=step||1/240; while(shutter&&simH<hours) update(step/RATE); develop(); hudText(); },
+  night:i=>{ sceneI=i; S=SCENES[i]; camAz=S.face==='pole'?(S.lat>=0?0:180):S.face; startNight(false); },
+  get simH(){return simH;}, get scene(){return S;}, get inFrame(){return inFrame;}, develop };
+})();
+</script>
+</body>
+</html>

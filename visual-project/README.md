@@ -24,6 +24,40 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-26** — `2026-11-26-world-nail.html`: a hundred-and-thirteenth
+  technique, and the archive's first star trails. Last night a sheet of paper
+  took a pattern off a bath in one touch. Tonight a camera takes the sky in one
+  very long one: a tripod, a wide lens, the shutter left open for three hours
+  while the earth turns, so every star draws its part of a circle round the
+  celestial pole. In Finnish the pole star is taivaannaula, the sky nail, the
+  nail the heavens turn on. Nothing is drawn as an arc. Each star is a
+  direction on the celestial sphere; each frame its hour angle advances at the
+  sidereal rate, 15.04 degrees an hour, it is turned into altitude and azimuth
+  for the observer's latitude and projected through a rectilinear lens, and
+  the light it delivered in that step, flux times time, is laid along the
+  short segment it moved, into a floating-point exposure. That alone is the
+  photograph: a slow star near the pole spends its light on a few pixels and
+  burns a short bright arc, a star on the celestial equator spreads the same
+  light into a long faint line. Developing is a filmic 1 - exp(-exposure), so
+  cores clip to white and colour lives only in the shoulders, as in real
+  trails. About ninety bright stars are real (positions, magnitudes and B-V
+  colours, rounded: the Plough, Cassiopeia, Orion, the Cross, the Pleiades,
+  Polaris and the faint sigma Octantis at the other pole); forty-six thousand
+  more follow the star-count law, a third crowded toward the galactic plane,
+  and fifty thousand fainter grains smear into the Milky Way with a dusty
+  rift. Colour runs from B-V through a blackbody temperature, white-balanced
+  to the sun. Near the horizon the light crosses more air, blue loses most,
+  and setting trails dim and redden. Ten places: hill farm, pine ridge, high
+  desert facing east (where the trails are nearly straight), a fjord at 63
+  degrees with a 116-degree lens, a beach on the equator where the pole sits
+  on the sea and the circles become half circles mirrored in the water, a
+  sheep station facing the empty southern pole, and others. Meteors,
+  aircraft (wingtip lights and strobes) and satellites pass at roughly honest
+  brightness: a meteor lasts a second against three hours, so only bright
+  ones register. Click to open the shutter again, left and right to turn the
+  camera, N for another night somewhere else, F to hurry, H to hide the text,
+  space to pause. Open the file directly in a browser.
+
 - **2026-11-25** — `2026-11-25-cloud-paper.html`: a hundred-and-twelfth
   technique, and the archive's first marbled paper. Last night the river laid
   curved bands across a valley over centuries. Tonight the bands are laid in a
