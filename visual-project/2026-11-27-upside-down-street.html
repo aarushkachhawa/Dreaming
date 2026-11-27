@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Upside-Down Street</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#05060a; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:crosshair; touch-action:none; }
+  #hud { position:fixed; top:14px; left:16px; color:#eef0f4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.95), 0 0 2px rgba(0,0,0,0.9);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#eef0f4; opacity:.7; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(0,0,0,0.95); }
+  #nogl { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#ccd; font-family:'Courier New', monospace; }
+  @media (max-width:640px){ #hud{ font-size:11px; } #hint{ font-size:10px; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">drag &mdash; wipe the glass with a finger&nbsp;&nbsp;|&nbsp;&nbsp;click &mdash; knock on the pane&nbsp;&nbsp;|&nbsp;&nbsp;B &mdash; breathe on it&nbsp;&nbsp;|&nbsp;&nbsp;R &mdash; heavier / lighter rain&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; another window&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="nogl">this piece needs WebGL</div>
+<script>
+(function(){
+"use strict";
+// Upside-down street. A window at night, in the rain, with the street outside out of focus: every
+// lamp, window and headlight is a soft disc, because the eye is resting on the glass. And on the
+// glass, hundreds of drops, each one a tiny lens holding the whole street, small, sharp and upside
+// down.
+//
+// The drops are simulated, not drawn. Each is a volume of water sitting on glass, held in place by
+// contact-angle hysteresis: its contact line resists moving with a force of about
+// surface tension x width x (cos receding - cos advancing), against gravity on its mass. Weight
+// grows as r^3 and the grip only as r, so there is a critical radius (Furmidge), about one and a
+// half millimetres on ordinary glass, past which a drop lets go. The grip varies from place to place
+// (the glass is never clean), so drops stall and start, and a sliding drop picks the easier side as
+// it goes. Where water has already run, the glass is wet and the grip is weaker, so new drops
+// follow old tracks: rivulets. A drop that slides fast enough sheds a string of small beads behind
+// it and swallows every drop in its path, volumes adding as r^3, which makes it heavier still.
+// New rain lands at random and coalesces with whatever it touches. Behind it all, fine
+// condensation fogs the glass, and every running drop wipes a clean track through the fog that
+// slowly mists over again.
+//
+// Rendering: the street is drawn twice, once as the eye sees it through the glass (each light a
+// bokeh disc the size of the circle of confusion) and once sharp. The drops are drawn as a field of
+// surface normals; a shader looks through each drop at the sharp street, offset against the normal,
+// which is what a short ball lens does: it inverts and shrinks the view behind it. Steep edges go
+// dark (light there is refracted away or totally internally reflected), and each drop catches a
+// highlight from the lamp above.
+const cv=document.getElementById('c');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const QS=new URLSearchParams(location.search);
+const gl=cv.getContext('webgl',{antialias:false,alpha:false,premultipliedAlpha:false,preserveDrawingBuffer:QS.has('shot')});
+if(!gl){ document.getElementById('nogl').style.display='flex'; return; }
+const TAU=Math.PI*2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+let seed=(QS.has('seed')?+QS.get('seed'):(Math.random()*4294967295))>>>0||1;
+const rnd=()=>{ seed^=seed<<13; seed>>>=0; seed^=seed>>>17; seed^=seed<<5; seed>>>=0; return seed/4294967296; };
+const rr=(a,b)=>a+(b-a)*rnd();
+const gauss=()=>{ let u=0; while(u===0) u=rnd(); return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*rnd()); };
+const pick=a=>a[Math.floor(rnd()*a.length)];
+
+// ---------- windows onto the street ----------
+const PLACES=[
+  { name:'a café window, old town', lamp:[255,150,60], glow:[70,38,20], sky:[6,6,10],
+    win:[[255,190,110],[255,170,90],[255,210,150],[230,235,255]], signs:[[255,90,60],[255,200,90]],
+    nSigns:2, lamps:7, cars:0.25, density:0.55, horizon:0.54, hi:0 },
+  { name:'a launderette on the high street', lamp:[225,235,255], glow:[30,34,48], sky:[5,6,11],
+    win:[[255,215,160],[200,220,255],[255,245,230],[150,190,255]], signs:[[60,220,255],[255,60,140],[255,240,120],[90,255,140]],
+    nSigns:5, lamps:8, cars:0.45, density:0.5, horizon:0.5, hi:0 },
+  { name:'the back seat of a taxi, neon quarter', lamp:[255,120,200], glow:[50,18,46], sky:[7,4,12],
+    win:[[255,120,220],[90,200,255],[255,200,120],[160,120,255]], signs:[[255,40,170],[40,230,255],[180,80,255],[255,230,60],[255,70,70]],
+    nSigns:9, lamps:5, cars:0.55, density:0.65, horizon:0.56, hi:0 },
+  { name:'a hotel room, third floor, over the ring road', lamp:[255,160,70], glow:[60,34,22], sky:[5,5,9],
+    win:[[255,190,120],[255,230,190],[210,225,255]], signs:[[255,70,50],[90,170,255]],
+    nSigns:2, lamps:11, cars:1.1, density:0.35, horizon:0.38, hi:1 },
+  { name:'a ferry terminal, the harbour road', lamp:[255,175,90], glow:[26,26,36], sky:[4,6,10],
+    win:[[255,200,130],[220,230,255]], signs:[[60,255,120],[255,50,50]],
+    nSigns:2, lamps:6, cars:0.18, density:0.2, horizon:0.52, hi:0, harbour:1 }
+];
+const RAIN=[ {name:'drizzle',rate:45,big:0.5,mm:1}, {name:'rain',rate:120,big:1,mm:4}, {name:'a downpour',rate:440,big:1.12,mm:16}, {name:'the rain easing off',rate:0,big:1,mm:0} ];
+let place=QS.has('place')?(+QS.get('place'))%PLACES.length:Math.floor(rnd()*PLACES.length), P=PLACES[place];
+let rainI=QS.has('rain')?+QS.get('rain'):1;
+
+// ---------- sizes ----------
+let DPR, W, H, PX, WMM, HMM, SW, SH, FW, FH;
+const sharpC=document.createElement('canvas'), sx=sharpC.getContext('2d');
+const blurC=document.createElement('canvas'), bx=blurC.getContext('2d');
+const baseS=document.createElement('canvas'), bsx=baseS.getContext('2d');
+const baseB=document.createElement('canvas'), bbx=baseB.getContext('2d');
+const dropC=document.createElement('canvas'), dx=dropC.getContext('2d');
+const fogC=document.createElement('canvas'), fx=fogC.getContext('2d');
+
+// the drop sprite: a spherical cap encoded as its surface normal (R,G), height (B), coverage (A)
+const SPR=64, spr=document.createElement('canvas'); spr.width=spr.height=SPR;
+(function(){ const c=spr.getContext('2d'), im=c.createImageData(SPR,SPR), d=im.data, h=SPR/2, R=h-1.5;
+  for(let y=0;y<SPR;y++) for(let x=0;x<SPR;x++){
+    const u=(x+0.5-h)/R, v=(y+0.5-h)/R, l=Math.hypot(u,v), j=(y*SPR+x)*4;
+    const a=clamp((1-l)*R+0.5,0,1); if(a<=0) continue;
+    const s=Math.min(l,1)/Math.max(l,1e-6);
+    d[j]=Math.round((u*s*0.5+0.5)*255); d[j+1]=Math.round((v*s*0.5+0.5)*255);
+    d[j+2]=Math.round(clamp(1-l*l,0,1)*255); d[j+3]=Math.round(a*255);
+  }
+  c.putImageData(im,0,0); })();
+
+// ---------- the glass ----------
+const GC=1.5; // mm per grid cell
+let GW, GH, PIN, WET;
+function buildGlass(){
+  GW=Math.ceil(WMM/GC)+2; GH=Math.ceil(HMM/GC)+2;
+  PIN=new Float32Array(GW*GH); WET=new Float32Array(GW*GH);
+  // hysteresis (cos theta_r - cos theta_a) varies across the pane: octaves of value noise plus a few smudges
+  const oct=[[24,0.12],[9,0.07],[3.5,0.05]];
+  for(const [cell,amp] of oct){
+    const nx=Math.ceil(WMM/cell)+2, ny=Math.ceil(HMM/cell)+2, g=new Float32Array(nx*ny).map(()=>rnd()*2-1);
+    for(let j=0;j<GH;j++) for(let i=0;i<GW;i++){
+      const fx_=i*GC/cell, fy=j*GC/cell, x0=Math.floor(fx_), y0=Math.floor(fy), tx=fx_-x0, ty=fy-y0;
+      const sx_=tx*tx*(3-2*tx), sy=ty*ty*(3-2*ty);
+      const a=g[y0*nx+x0], b=g[y0*nx+x0+1], c=g[(y0+1)*nx+x0], e=g[(y0+1)*nx+x0+1];
+      PIN[j*GW+i]+=amp*((a*(1-sx_)+b*sx_)*(1-sy)+(c*(1-sx_)+e*sx_)*sy);
+    }
+  }
+  const sm=[]; for(let k=0;k<5;k++) sm.push([rr(0,WMM),rr(0,HMM),rr(12,40),rr(-0.12,0.16)]);
+  for(let j=0;j<GH;j++) for(let i=0;i<GW;i++){
+    let v=0.36+PIN[j*GW+i]; const x=i*GC, y=j*GC;
+    for(const s of sm){ const d=Math.hypot(x-s[0],y-s[1])/s[2]; if(d<1) v+=s[3]*(1-d*d); }
+    PIN[j*GW+i]=clamp(v,0.12,0.75);
+  }
+}
+const gidx=(x,y)=>{ const i=clamp((x/GC)|0,0,GW-1), j=clamp((y/GC)|0,0,GH-1); return j*GW+i; };
+let knock=0;
+// Furmidge: rho g V = gamma w dcos, V ~ (2/3) pi r^3, w = 2r  =>  r_c = sqrt(3 gamma dcos / (pi rho g))
+const RC0=Math.sqrt(3*0.072/(Math.PI*1000*9.81))*1000; // mm per sqrt(dcos)
+function pinAt(x,y){ const k=gidx(x,y); return PIN[k]*(1-0.62*WET[k])*(1-0.35*knock); }
+const rcAt=(x,y)=>RC0*Math.sqrt(pinAt(x,y));
+
+// ---------- drops ----------
+let drops=[];
+const mk=(x,y,r)=>({x,y,r,vx:0,vy:0,mov:false,dist:0,gap:0,dead:false,str:1});
+const CS=7; let HW,HH,head,next;
+function buildHash(){
+  HW=Math.ceil(WMM/CS)+3; HH=Math.ceil(HMM/CS)+3;
+  if(!head||head.length!==HW*HH) head=new Int32Array(HW*HH);
+  head.fill(-1); if(!next||next.length<drops.length) next=new Int32Array(drops.length*2+64);
+  for(let i=0;i<drops.length;i++){ const d=drops[i]; if(d.dead) continue;
+    const k=cellOf(d.x,d.y); next[i]=head[k]; head[k]=i; }
+}
+const cellOf=(x,y)=>clamp(Math.floor(y/CS)+1,0,HH-1)*HW+clamp(Math.floor(x/CS)+1,0,HW-1);
+function absorb(a,b){ // a swallows b
+  const va=a.r*a.r*a.r, vb=b.r*b.r*b.r, v=va+vb, w=a.mov?0.85:va/v;
+  a.x=a.x*w+b.x*(1-w); a.y=a.y*w+b.y*(1-w);
+  if(b.mov&&b.vy>a.vy){ a.vy=(a.vy*va+b.vy*vb)/v; a.mov=true; }
+  a.r=Math.cbrt(v); b.dead=true;
+}
+function touch(d,maxR){ // merge d with any drop it overlaps
+  const gx=Math.floor(d.x/CS)+1, gy=Math.floor(d.y/CS)+1, reach=Math.ceil((d.r+maxR)/CS);
+  for(let j=gy-reach;j<=gy+reach;j++){ if(j<0||j>=HH) continue;
+    for(let i=gx-reach;i<=gx+reach;i++){ if(i<0||i>=HW) continue;
+      for(let k=head[j*HW+i];k>=0;k=next[k]){ const o=drops[k]; if(o===d||o.dead) continue;
+        const dd=Math.hypot(o.x-d.x,o.y-d.y); if(dd<(o.r+d.r)*0.92){ if(o.r>d.r&&!d.mov){ absorb(o,d); return o; } absorb(d,o); }
+      }
+    }
+  }
+  return d;
+}
+
+// fog: condensation, drawn at a quarter of the resolution
+let fogAcc=0, fogAmt=0.7;
+function clearFog(x,y,r){ fx.beginPath(); fx.arc(x*PX/4,y*PX/4,Math.max(0.6,r*PX/4),0,TAU); fx.fill(); }
+
+let stats={sliding:0,maxR:0,rc:1.6,rcWet:1.1}, totalRan=0;
+function step(dt){
+  const R=RAIN[rainI];
+  knock=Math.max(0,knock-dt*2.2);
+  // wet glass dries slowly
+  const dry=Math.exp(-dt/70); for(let k=0;k<WET.length;k++) WET[k]*=dry;
+  fx.globalCompositeOperation='destination-out'; fx.fillStyle='#fff';
+  let maxR=0, sliding=0;
+  for(const d of drops){ if(d.dead) continue;
+    if(rainI===3){ d.r-=dt*0.0009/Math.max(d.r,0.05); if(d.r<0.05){ d.dead=true; continue; } }
+    const rc=rcAt(d.x,d.y+d.r*0.5);
+    if(!d.mov){ if(d.r>rc){ d.mov=true; d.vy=Math.max(d.vy,2); } else continue; }
+    // terminal sliding speed grows with the excess of weight over grip: v ~ k (r^2 - r_c^2)
+    const ex=d.r*d.r-rc*rc;
+    if(ex<=0){ d.vy*=Math.exp(-dt*14); if(d.vy<1.5){ d.mov=false; d.vy=0; d.vx=0; continue; } }
+    else { const vt=Math.min(260,22*ex); d.vy+=(vt-d.vy)*(1-Math.exp(-dt*7)); }
+    // pick the easier side: compare the grip just ahead and to either side
+    const pl=pinAt(d.x-d.r*0.9,d.y+d.r*1.2), pr=pinAt(d.x+d.r*0.9,d.y+d.r*1.2);
+    d.vx+=((pl-pr)*d.vy*7+gauss()*d.vy*0.5)*dt; d.vx*=Math.exp(-dt*3); d.vx=clamp(d.vx,-0.45*d.vy,0.45*d.vy);
+    const sy=d.vy*dt, sxm=d.vx*dt, n=Math.max(1,Math.ceil(Math.hypot(sxm,sy)/(Math.max(d.r,0.4)*0.8)));
+    for(let s=0;s<n;s++){
+      d.x+=sxm/n; d.y+=sy/n;
+      const k=gidx(d.x,d.y); WET[k]=Math.min(1,WET[k]+0.5);
+      if(d.r>1.4){ WET[gidx(d.x-GC,d.y)]=Math.min(1,WET[gidx(d.x-GC,d.y)]+0.25); WET[gidx(d.x+GC,d.y)]=Math.min(1,WET[gidx(d.x+GC,d.y)]+0.25); }
+      clearFog(d.x,d.y,d.r*1.05);
+    }
+    d.dist+=Math.hypot(sxm,sy); totalRan+=Math.hypot(sxm,sy);
+    // pearling: a fast drop leaves beads behind it
+    if(d.gap<=0) d.gap=d.r*rr(1.4,3.2);
+    if(d.vy>14&&d.dist>d.gap){
+      d.dist=0; d.gap=0;
+      const rt=d.r*rr(0.13,0.3); d.r=Math.cbrt(Math.max(0.001,d.r*d.r*d.r-rt*rt*rt));
+      drops.push(mk(d.x+rr(-0.25,0.25)*d.r,d.y-d.r*1.35-rt,rt));
+    }
+    sliding++;
+  }
+  buildHash();
+  for(const d of drops) if(!d.dead&&d.r>maxR) maxR=d.r;
+  for(const d of drops) if(d.mov&&!d.dead) touch(d,maxR);
+  // rain lands
+  if(R.rate>0){
+    let n=0; const lam=R.rate*dt*(WMM*HMM)/(300*170);
+    let L=Math.exp(-lam), p=1; for(;;){ p*=rnd(); if(p<L||n>50) break; n++; }
+    for(let k=0;k<n&&drops.length<5200;k++){
+      const x=rr(-2,WMM+2), y=rr(-2,HMM+2);
+      let r=(0.22+1.15*Math.pow(rnd(),1.7)+(rnd()<0.06*R.big?rr(0.5,1.1):0))*R.big;
+      if(r<0.3&&rnd()<0.4) r*=0.5;
+      const d=mk(x,y,r); drops.push(d); if(r>0.6) clearFog(x,y,r*0.9);
+      const m=touch(d,maxR); if(m.r>maxR) maxR=m.r;
+      if(r>0.7&&rnd()<0.35){ // a splash throws a few satellites
+        const ns=1+Math.floor(rnd()*4); for(let s=0;s<ns;s++){ const a=rnd()*TAU, q=r*rr(1.8,4); drops.push(mk(x+Math.cos(a)*q,y+Math.sin(a)*q,r*rr(0.1,0.22))); }
+      }
+    }
+  }
+  drops=drops.filter(d=>!d.dead&&d.y-d.r<HMM+3&&d.x>-6&&d.x<WMM+6);
+  // fog creeps back over the wiped tracks
+  fogAcc+=dt*(rainI===3?0.008:0.02);
+  if(fogAcc>0.03){ fx.globalCompositeOperation='source-over'; fx.fillStyle='rgba(255,255,255,'+fogAcc.toFixed(3)+')'; fx.fillRect(0,0,FW,FH); fogAcc=0; }
+  stats.sliding=sliding; stats.maxR=maxR;
+}
+
+// ---------- the street ----------
+let lights=[], cars=[], signal=null, clock0=0, vpX=0.5, HY=0.5;
+function lp(x,y,col,I,sz,gy,kind){ return {x,y,col,I,sz,gy,kind,ph:rnd()*TAU,fl:0}; }
+function buildStreet(){
+  lights=[]; cars=[]; P=PLACES[place];
+  HY=P.horizon+rr(-0.03,0.03); vpX=rr(0.38,0.62);
+  const A=SW/SH;
+  const c=bsx; c.globalCompositeOperation='source-over';
+  // sky and city glow
+  let g=c.createLinearGradient(0,0,0,HY*SH);
+  g.addColorStop(0,'rgb('+P.sky+')'); g.addColorStop(1,'rgb('+P.glow+')');
+  c.fillStyle=g; c.fillRect(0,0,SW,SH);
+  // buildings, far row
+  const fac=[]; let x=-rr(0,0.05);
+  while(x<1.05){
+    const w=rr(0.04,0.14)*(P.hi?0.7:1), top=HY-rr(0.04,0.3)*(P.hi?0.6:1)*(P.harbour&&Math.abs(x-vpX)<0.25?0.25:1), base=HY+0.025;
+    const s=8+Math.floor(rnd()*10); c.fillStyle='rgb('+s+','+s+','+(s+3)+')';
+    c.fillRect(x*SW,top*SH,w*SW+1,(base-top)*SH);
+    fac.push([x,w,top,base]); x+=w+(rnd()<0.2?rr(0,0.03):0);
+  }
+  // ground: wet asphalt (or water in the harbour)
+  g=c.createLinearGradient(0,HY*SH,0,SH);
+  g.addColorStop(0,'rgb(14,13,15)'); g.addColorStop(1,P.harbour?'rgb(6,9,12)':'rgb(9,9,10)');
+  c.fillStyle=g; c.fillRect(0,(HY+0.025)*SH,SW,SH);
+  // windows
+  for(const [fx0,w,top,base] of fac){
+    const cw=rr(0.008,0.014), ch=cw*rr(1.1,1.6)*A, cols=Math.max(1,Math.floor(w/(cw*1.9))), rows=Math.floor((base-top-0.03)/(ch*1.7));
+    const tint=pick(P.win), floor0=rnd();
+    for(let rI=0;rI<rows;rI++) for(let cI=0;cI<cols;cI++){
+      if(rnd()>P.density*(0.6+0.4*floor0)) continue;
+      const wx=fx0+w*(cI+0.5)/cols, wy=top+0.02+rI*ch*1.7;
+      const col=rnd()<0.7?tint:pick(P.win);
+      const L=lp(wx,wy,col,rr(0.25,0.7),cw*0.45,base,'win'); L.wh=ch*0.5;
+      if(rnd()<0.05) L.fl=1; // a television
+      lights.push(L);
+    }
+  }
+  // street lamps receding to the vanishing point
+  for(const side of [-1,1]){
+    for(let k=0;k<P.lamps;k++){
+      const z=1.2+k*rr(0.8,1.3)*1.2, sxp=vpX+side*0.55/z, gy=HY+(P.hi?0.6:0.42)/z;
+      if(sxp<-0.1||sxp>1.1) continue;
+      lights.push(lp(sxp,gy-0.55/z,P.lamp,2.2/Math.sqrt(z),0.012/Math.sqrt(z),gy,'lamp'));
+    }
+  }
+  // signs at street level
+  for(let k=0;k<P.nSigns;k++){
+    const s=lp(rr(0.03,0.97),HY+rr(-0.06,0.015),pick(P.signs),rr(0.8,1.4),rr(0.008,0.02),HY+0.03,'sign');
+    s.w=rr(0.02,0.07); s.fl=rnd()<0.3?2:0; lights.push(s);
+  }
+  if(P.harbour){ for(let k=0;k<5;k++) lights.push(lp(rr(0.1,0.9),HY-rr(0,0.02),pick([[60,255,120],[255,60,50],[255,240,200]]),rr(0.6,1.2),0.004,HY+0.01,'buoy')); }
+  // a traffic signal
+  if(!P.harbour){ const sxp=vpX+(rnd()<0.5?-1:1)*rr(0.18,0.3), gy=HY+0.12;
+    signal={x:sxp,y:gy-0.16,gy,t:rr(0,30)}; }
+  else signal=null;
+  // the base, blurred once: what an out-of-focus eye makes of the dark shapes
+  const B=Math.max(2,SH*0.02);
+  bbx.globalCompositeOperation='source-over'; bbx.fillStyle='#000'; bbx.fillRect(0,0,SW,SH);
+  if('filter' in bbx){ bbx.filter='blur('+B.toFixed(1)+'px)'; bbx.drawImage(baseS,-B,-B,SW+2*B,SH+2*B); bbx.filter='none'; }
+  if(!('filter' in bbx)||bbx.filter!=='none'){ const t=document.createElement('canvas'); t.width=Math.ceil(SW/16); t.height=Math.ceil(SH/16);
+    t.getContext('2d').drawImage(baseS,0,0,t.width,t.height); bbx.imageSmoothingEnabled=true; bbx.drawImage(t,0,0,SW,SH); }
+  // clock
+  clock0=(22*60+rr(0,110))*60;
+}
+function spawnCar(warm){
+  const dir=rnd()<0.5?1:-1; // 1: coming towards us (headlights), -1: going away (tail lights)
+  const lane=dir>0?rr(0.06,0.16):-rr(0.06,0.16);
+  const z=dir>0?rr(14,22):rr(1.1,1.6);
+  cars.push({dir,lane,z,v:rr(5,9)*(P.hi?1.6:1),bus:rnd()<0.08,ph:rnd()*TAU});
+  if(warm) cars[cars.length-1].z=rr(1.2,20);
+}
+function carLights(){
+  const out=[];
+  for(const c of cars){
+    const z=c.z, gy=HY+(P.hi?0.6:0.42)/z, cx=vpX+c.lane/z*(c.dir>0?1:1), sep=0.035/z, h=0.03/z;
+    const I=clamp(3.2/(z*0.6),0.15,4.5);
+    const col=c.dir>0?[255,246,228]:[255,40,30];
+    const s=0.007/Math.sqrt(z);
+    out.push(lp(cx-sep,gy-h,col,c.dir>0?I:I*0.55,s,gy,'car'),lp(cx+sep,gy-h,col,c.dir>0?I:I*0.55,s,gy,'car'));
+    if(c.bus) out.push(lp(cx,gy-h*3,[255,170,60],I*0.4,s*2.5,gy,'car'));
+  }
+  return out;
+}
+function signalLights(t){
+  if(!signal) return [];
+  const ph=(signal.t+t)%34, st=ph<15?2:(ph<18?1:0); // 2 green, 1 amber, 0 red
+  const cols=[[255,40,30],[255,170,20],[60,255,150]], out=[];
+  for(let k=0;k<3;k++) if(k===2-st) out.push(lp(signal.x,signal.y+k*0.018,cols[st],2.4,0.006,signal.gy,'sig'));
+  return out;
+}
+
+// draw the street both ways
+function rgba(c,a){ return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a.toFixed(3)+')'; }
+function drawStreet(t){
+  const all=lights.concat(carLights(),signalLights(t));
+  sx.globalCompositeOperation='source-over'; sx.drawImage(baseS,0,0);
+  bx.globalCompositeOperation='source-over'; bx.drawImage(baseB,0,0);
+  sx.globalCompositeOperation='lighter'; bx.globalCompositeOperation='lighter';
+  const CoC=SH*0.034;
+  for(const L of all){
+    let I=L.I;
+    if(L.fl===1) I*=0.7+0.3*Math.sin(t*7+L.ph)*Math.sin(t*2.3+L.ph*2);
+    if(L.fl===2) I*=(Math.sin(t*1.3+L.ph)>-0.6||Math.sin(t*17)>0)?1:0.05;
+    const x=L.x*SW, y=L.y*SH, s=Math.max(1,L.sz*SH);
+    // sharp: what a drop sees
+    if(L.kind==='win'){ sx.fillStyle=rgba(L.col,clamp(I,0,1)); sx.fillRect(x-s,y-L.wh*SH*0.5,2*s,L.wh*SH); }
+    else if(L.kind==='sign'){ sx.fillStyle=rgba(L.col,0.9); sx.fillRect(x-L.w*SW/2,y-s*0.4,L.w*SW,s*0.8); sx.fillStyle=rgba(L.col,0.15); sx.fillRect(x-L.w*SW/2-s,y-s*1.4,L.w*SW+2*s,s*2.8); }
+    else { sx.fillStyle=rgba(L.col,clamp(I*0.12,0,0.5)); sx.beginPath(); sx.arc(x,y,s*3.5,0,TAU); sx.fill();
+      sx.fillStyle=rgba([255,255,255].map((v,i)=>Math.round((v+L.col[i])/2)),clamp(I,0,1)); sx.beginPath(); sx.arc(x,y,s*1.8,0,TAU); sx.fill(); }
+    // the reflection in the wet road, a long vertical streak
+    const gy=L.gy*SH, ry=2*gy-y, len=Math.max(4,(ry-gy))*(P.harbour?1.6:1.1);
+    if(ry>gy&&ry<SH*1.3){
+      const ra=clamp(I*(L.kind==='win'?0.035:0.25),0,0.6);
+      let g=sx.createLinearGradient(0,gy,0,gy+len*1.8); g.addColorStop(0,rgba(L.col,0)); g.addColorStop(0.35,rgba(L.col,ra)); g.addColorStop(1,rgba(L.col,0));
+      sx.fillStyle=g; sx.fillRect(x-s*0.9,gy,s*1.8,len*1.8);
+      g=bx.createLinearGradient(0,gy,0,gy+len*1.8+CoC); g.addColorStop(0,rgba(L.col,0)); g.addColorStop(0.4,rgba(L.col,ra*0.35)); g.addColorStop(1,rgba(L.col,0));
+      bx.fillStyle=g; bx.fillRect(x-CoC*0.9,gy,CoC*1.8,len*1.8+CoC);
+    }
+    // blurred: a bokeh disc, the size of the circle of confusion, with a slightly brighter rim
+    const R=CoC*(L.kind==='lamp'||L.kind==='car'?(0.85+0.25*L.sz*60):1)*(L.kind==='sign'?1.1:1);
+    const a=clamp(I*(L.kind==='win'?0.16:0.2),0.02,0.75);
+    if(L.kind==='sign'){ bx.fillStyle=rgba(L.col,a*0.5); const w=L.w*SW; bx.beginPath(); bx.arc(x-w/2,y,R,Math.PI/2,Math.PI*1.5); bx.arc(x+w/2,y,R,-Math.PI/2,Math.PI/2); bx.fill(); continue; }
+    bx.fillStyle=rgba(L.col,a); bx.beginPath(); bx.arc(x,y,R,0,TAU); bx.fill();
+    bx.strokeStyle=rgba(L.col,a*0.5); bx.lineWidth=Math.max(1,R*0.07); bx.beginPath(); bx.arc(x,y,R*0.96,0,TAU); bx.stroke();
+  }
+}
+
+// ---------- GL ----------
+const VS='attribute vec2 p; varying vec2 vUv; void main(){ vUv=p*0.5+0.5; gl_Position=vec4(p,0.,1.); }';
+const FS=`precision mediump float;
+uniform sampler2D uSharp,uBlur,uDrops,uFog; uniform vec2 uRes; uniform float uK,uFogAmt,uTime;
+varying vec2 vUv;
+float hash(vec2 p){ return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453); }
+vec3 haze(vec2 uv){
+  vec2 s=vec2(uRes.y*0.022)/uRes; vec3 c=texture2D(uBlur,uv).rgb*0.2;
+  c+=(texture2D(uBlur,uv+vec2(s.x,0.)).rgb+texture2D(uBlur,uv-vec2(s.x,0.)).rgb+texture2D(uBlur,uv+vec2(0.,s.y)).rgb+texture2D(uBlur,uv-vec2(0.,s.y)).rgb)*0.12;
+  c+=(texture2D(uBlur,uv+s*0.7).rgb+texture2D(uBlur,uv-s*0.7).rgb+texture2D(uBlur,uv+vec2(s.x,-s.y)*0.7).rgb+texture2D(uBlur,uv+vec2(-s.x,s.y)*0.7).rgb)*0.08;
+  return c;
+}
+void main(){
+  vec3 bg=texture2D(uBlur,vUv).rgb;
+  float f=texture2D(uFog,vUv).a*uFogAmt;
+  vec3 hz=haze(vUv);
+  vec3 col=mix(bg,hz*0.95+vec3(0.05,0.055,0.062)+hz*hz*0.6,f);
+  vec4 d=texture2D(uDrops,vUv);
+  float cov=smoothstep(0.1,0.9,d.a);
+  if(cov>0.001){
+    vec2 n=d.rg*2.0-1.0; float l=min(1.0,length(n));
+    vec2 off=vec2(-n.x,n.y)*uK/uRes;
+    vec3 refr=texture2D(uSharp,vUv+off).rgb*0.95+texture2D(uBlur,vUv+off*0.5).rgb*0.35;
+    float rim=smoothstep(0.55,0.97,l);
+    vec3 dc=refr*(1.0-rim*0.93)+vec3(0.006,0.007,0.009);
+    vec3 N=normalize(vec3(n.x,-n.y,sqrt(max(0.0,1.0-l*l))*1.4));
+    vec3 L=normalize(vec3(-0.3,0.6,0.75));
+    float sp=pow(max(0.0,dot(reflect(-L,N),vec3(0.,0.,1.))),32.0);
+    dc+=vec3(1.0,0.93,0.82)*sp*0.8;
+    dc+=hz*smoothstep(0.7,0.95,l)*smoothstep(0.1,0.9,n.y)*0.9;
+    col=mix(col,dc,cov);
+  }
+  vec2 q=vUv-0.5; col*=1.0-dot(q,q)*0.55;
+  col+=(hash(vUv*uRes+fract(uTime)*91.0)-0.5)*0.018;
+  col=pow(max(col,0.0),vec3(0.95));
+  gl_FragColor=vec4(col,1.0);
+}`;
+function sh(t,s){ const o=gl.createShader(t); gl.shaderSource(o,s); gl.compileShader(o); if(!gl.getShaderParameter(o,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(o)); return o; }
+const prog=gl.createProgram(); gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS)); gl.linkProgram(prog); gl.useProgram(prog);
+const buf=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,buf); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const aP=gl.getAttribLocation(prog,'p'); gl.enableVertexAttribArray(aP); gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
+const U={}; for(const n of ['uSharp','uBlur','uDrops','uFog','uRes','uK','uFogAmt','uTime']) U[n]=gl.getUniformLocation(prog,n);
+const TEX=[sharpC,blurC,dropC,fogC].map((c,i)=>{ const t=gl.createTexture(); gl.activeTexture(gl.TEXTURE0+i); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; });
+gl.uniform1i(U.uSharp,0); gl.uniform1i(U.uBlur,1); gl.uniform1i(U.uDrops,2); gl.uniform1i(U.uFog,3);
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
+
+function drawDrops(){
+  dx.setTransform(1,0,0,1,0,0); dx.clearRect(0,0,W,H);
+  // still drops first, running ones over them
+  for(let pass=0;pass<2;pass++) for(const d of drops){
+    if(d.mov!==(pass===1)) continue;
+    const rp=d.r*PX; if(rp<0.45) continue;
+    let ry=rp, rx=rp, cy=d.y*PX;
+    if(d.mov){ const e=Math.min(0.7,d.vy/140); ry=rp*(1+e); rx=rp*(1-e*0.18); cy-=rp*e*0.6; }
+    else if(d.r>0.8){ ry=rp*0.94; rx=rp*1.03; cy+=rp*0.04; }
+    dx.drawImage(spr,d.x*PX-rx,cy-ry,2*rx,2*ry);
+  }
+}
+function render(t){
+  drawStreet(t); drawDrops();
+  gl.viewport(0,0,W,H);
+  [sharpC,blurC,dropC,fogC].forEach((c,i)=>{ gl.activeTexture(gl.TEXTURE0+i); gl.bindTexture(gl.TEXTURE_2D,TEX[i]); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c); });
+  gl.uniform2f(U.uRes,W,H); gl.uniform1f(U.uK,H*0.11); gl.uniform1f(U.uFogAmt,fogAmt); gl.uniform1f(U.uTime,t);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+}
+
+// ---------- setup ----------
+function resize(keep){
+  DPR=Math.min(window.devicePixelRatio||1,1.25);
+  W=Math.max(2,Math.round(innerWidth*DPR)); H=Math.max(2,Math.round(innerHeight*DPR));
+  cv.width=W; cv.height=H;
+  PX=Math.min(W,H)/125; WMM=W/PX; HMM=H/PX;
+  SW=Math.ceil(W/2); SH=Math.ceil(H/2); FW=Math.ceil(W/4); FH=Math.ceil(H/4);
+  for(const [c,w,h] of [[sharpC,SW,SH],[blurC,SW,SH],[baseS,SW,SH],[baseB,SW,SH],[dropC,W,H],[fogC,FW,FH]]){ c.width=w; c.height=h; }
+  newWindow(false);
+}
+function newWindow(next){
+  if(next) place=(place+1)%PLACES.length;
+  buildGlass(); buildStreet(); drops=[];
+  for(let k=0;k<4;k++) spawnCar(true);
+  fx.globalCompositeOperation='source-over'; fx.fillStyle='rgba(255,255,255,0.85)'; fx.fillRect(0,0,FW,FH);
+  // it has been raining for a while already
+  const keepI=rainI; if(rainI===3) rainI=1;
+  for(let k=0;k<(QS.has('warm')?+QS.get('warm'):900);k++){ step(1/30); }
+  rainI=keepI; simT=0;
+}
+let simT=0, carT=0;
+function update(dt){
+  simT+=dt; step(dt);
+  for(const c of cars) c.z+=-c.dir*c.v*dt*0.12*c.z*(c.dir>0?1:1);
+  cars=cars.filter(c=>c.z>0.9&&c.z<26);
+  carT-=dt; if(carT<=0){ spawnCar(false); carT=rr(1,5)/P.cars; }
+}
+
+// ---------- hands on the glass ----------
+let down=null, moved=0;
+function wipe(x0,y0,x1,y1){
+  const w=7, L=Math.hypot(x1-x0,y1-y0), n=Math.max(1,Math.ceil(L/2));
+  fx.globalCompositeOperation='destination-out'; fx.fillStyle='#fff';
+  for(let s=0;s<=n;s++){ const x=x0+(x1-x0)*s/n, y=y0+(y1-y0)*s/n;
+    clearFog(x,y,w*1.1); const k=gidx(x,y); WET[k]=1;
+    for(const d of drops) if(!d.dead&&Math.hypot(d.x-x,d.y-y)<w+d.r*0.3) d.dead=true;
+  }
+  // the finger leaves a thin film, which beads up into small drops along the edges of the stroke
+  const nx=-(y1-y0)/(L||1), ny=(x1-x0)/(L||1);
+  for(let s=0;s<n*1.6;s++){ const t=rnd(), x=x0+(x1-x0)*t, y=y0+(y1-y0)*t, q=w*(0.85+rnd()*0.3)*(rnd()<0.5?-1:1);
+    drops.push(mk(x+nx*q,y+ny*q,rr(0.12,0.5))); }
+  drops=drops.filter(d=>!d.dead);
+}
+const toMM=e=>{ const r=cv.getBoundingClientRect(); return [(e.clientX-r.left)*DPR/PX,(e.clientY-r.top)*DPR/PX]; };
+let mouse=null;
+cv.addEventListener('pointerdown',e=>{ down=toMM(e); moved=0; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove',e=>{ mouse=toMM(e); if(!down) return; const p=toMM(e), L=Math.hypot(p[0]-down[0],p[1]-down[1]);
+  if(L>1.5){ wipe(down[0],down[1],p[0],p[1]); moved+=L; down=p; } });
+const up=()=>{ if(down&&moved<3){ knock=1; } down=null; };
+cv.addEventListener('pointerup',up); cv.addEventListener('pointercancel',up);
+function breathe(){
+  const [x,y]=mouse||[WMM/2,HMM*0.6], R=rr(30,45)*PX/4;
+  fx.globalCompositeOperation='source-over';
+  const g=fx.createRadialGradient(x*PX/4,y*PX/4,0,x*PX/4,y*PX/4,R); g.addColorStop(0,'rgba(255,255,255,1)'); g.addColorStop(0.6,'rgba(255,255,255,0.7)'); g.addColorStop(1,'rgba(255,255,255,0)');
+  fx.fillStyle=g; fx.fillRect(0,0,FW,FH); breath=1.2;
+}
+let breath=0;
+
+// ---------- text ----------
+const HINT=hint.innerHTML;
+let showText=!QS.has('notext'), paused=false;
+function hudText(){
+  if(!showText){ hud.innerHTML=''; hint.style.display='none'; return; }
+  hint.style.display=''; hint.innerHTML=HINT;
+  const R=RAIN[rainI], m=Math.floor((clock0+simT)/60)%1440;
+  const clock=String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+  let s='<b>upside-down street</b><br>'+P.name+' &mdash; '+clock+', '+R.name+(R.mm?', about '+R.mm+' mm an hour':'')+'<br>';
+  const vis=drops.filter(d=>d.r*PX>=0.45).length;
+  s+=vis.toLocaleString()+' drops on the glass &middot; '+stats.sliding+' running &middot; the biggest '+(stats.maxR*2).toFixed(1)+' mm across<br>';
+  // typical critical radius on dry and on wet glass
+  let a=0,b=0,na=0; for(let k=0;k<PIN.length;k+=7){ a+=PIN[k]; na++; } a/=na; b=a*(1-0.62);
+  s+='a drop lets go at about '+(2*RC0*Math.sqrt(a)).toFixed(1)+' mm across on dry glass, '+(2*RC0*Math.sqrt(b)).toFixed(1)+' mm where water has run';
+  if(knock>0.05) s+='<br>knock';
+  if(paused) s+='<br>paused';
+  hud.innerHTML=s;
+}
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='n'){ newWindow(true); }
+  else if(k==='r'){ rainI=(rainI+1)%RAIN.length; }
+  else if(k==='b'){ breathe(); }
+  else if(k==='h'){ showText=!showText; }
+  hudText();
+});
+let rT=null; addEventListener('resize',()=>{ clearTimeout(rT); rT=setTimeout(()=>resize(true),200); });
+
+resize(false);
+let last=performance.now(), hudT=0, wall=0;
+function frame(t){
+  const dt=Math.min(0.05,(t-last)/1000); last=t;
+  if(!paused){ update(dt); wall+=dt; }
+  breath=Math.max(0,breath-dt*0.25);
+  render(wall);
+  hudT-=dt; if(hudT<=0){ hudText(); hudT=0.3; }
+  requestAnimationFrame(frame);
+}
+hudText();
+requestAnimationFrame(frame);
+window.__uds={ run:(sec)=>{ for(let k=0;k<sec*30;k++) update(1/30); wall+=sec; render(wall); hudText(); },
+  get drops(){return drops;}, get stats(){return stats;}, place:i=>{ place=(i+PLACES.length-1)%PLACES.length; newWindow(true); }, knock:()=>{knock=1;} };
+})();
+</script>
+</body>
+</html>

@@ -24,6 +24,42 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-27** — `2026-11-27-upside-down-street.html`: a
+  hundred-and-fourteenth technique, and the archive's first rain on a window.
+  Last night a camera stared through the air at stars three hours long.
+  Tonight the eye rests a few centimetres away, on a pane of glass at night,
+  and the street beyond it falls out of focus: every lamp, lit window, sign,
+  headlight and traffic signal becomes a soft disc the size of the circle of
+  confusion, with a faintly brighter rim, and the wet road under them pulls
+  each one down into a long streak. On the glass sit a few thousand drops,
+  and each is a short ball lens holding the whole street, small, sharp and
+  upside down. The drops are simulated, not drawn. A drop is held by
+  contact-angle hysteresis, a grip of about surface tension times width
+  times (cos receding - cos advancing), against gravity on its mass; weight
+  grows as r cubed and grip only as r, so past a critical radius (Furmidge,
+  about one and a half millimetres here) it lets go. The grip varies across
+  the pane in octaves of noise and a few greasy smudges, so drops stall and
+  start and a running drop leans toward the easier side. Glass where water
+  has already run grips less, so later drops follow earlier ones into
+  rivulets. A running drop sheds beads behind it, swallows every drop it
+  touches (volumes adding as r cubed, so it grows heavier still), and wipes a
+  clean track through the fine mist that then fogs slowly back. Rain lands
+  at random and coalesces where it falls; a heavy drop throws satellites.
+  The street is drawn twice, blurred as the eye sees it and sharp; the drops
+  are drawn as a field of surface normals, and a shader looks through each
+  one at the sharp street, offset against its normal, which is what a tiny
+  ball lens does: it shrinks and inverts the view. Steep edges go dark where
+  light is refracted away, the lower rim gathers light, and each drop
+  catches a highlight from the lamp above. Five windows: a café in the old
+  town under sodium lamps, a launderette on an LED high street, the back
+  seat of a taxi in a neon quarter, a hotel room over the ring road, a ferry
+  terminal on the harbour. Drag to wipe the glass with a finger (the film it
+  leaves beads up along the edges of the stroke), click to knock on the pane
+  and shake loose the drops near the edge of letting go, B to breathe on
+  it, R to step through drizzle, rain, a downpour and the rain easing off
+  (when the drops slowly evaporate), N for another window, H to hide the
+  text, space to pause. Open the file directly in a browser.
+
 - **2026-11-26** — `2026-11-26-world-nail.html`: a hundred-and-thirteenth
   technique, and the archive's first star trails. Last night a sheet of paper
   took a pattern off a bath in one touch. Tonight a camera takes the sky in one
