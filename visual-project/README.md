@@ -24,6 +24,53 @@ When you are done, someone should want to look. Longer than they meant to.
 
 ## Nights
 
+- **2026-11-28** — `2026-11-28-rising-shadow.html`: a
+  hundred-and-fifteenth technique, and the archive's first sky computed by
+  atmospheric scattering. Last night the eye rested on a wet pane a few
+  centimetres away. Tonight it goes out over open sea at dusk and looks at
+  the air itself. Nothing in the sky is painted. For every direction the
+  line of sight is walked out through a spherical atmosphere sixty
+  kilometres deep over a planet 6360 km in radius; at each step air
+  molecules (Rayleigh, scattering as one over wavelength to the fourth, scale
+  height 8 km) and haze (Mie, grey and strongly forward, scale height about
+  a kilometre) send some of the sunlight that reaches that point toward the
+  eye. That sunlight has crossed the atmosphere on its own slanted path,
+  whose optical depth is the Chapman grazing-incidence integral, here in
+  Schuler's closed form (checked against brute force to within a few per
+  cent), plus a march through the ozone layer, whose Chappuis band takes out
+  orange and red and is why the sky stays blue after sunset instead of
+  going grey. The result is stored as a panorama of in-scattered light and
+  of transmittance, and the sea, the sun, the full moon and the stars are
+  composited through it. Nothing else is put in by hand: when the sun goes
+  down, the low air over the eastern sea stops being lit, because the
+  sunlight that would reach it would have to pass through the solid earth.
+  What rises there is the planet's own shadow, a blue-grey band on the
+  horizon, and above it the air still lit by light that skimmed the horizon
+  thousands of kilometres off, reddened by the trip: the Belt of Venus. The
+  full moon comes up inside it, orange, a few degrees off the anti-solar
+  point. A faint isotropic glow stands in for light scattered more than
+  once, so the shadow is blue and not black; after dark the sky keeps its
+  own airglow and the moon's scattered light, about a 450,000th of the
+  day's. The sea is eighteen trains of wind waves spread about the wind,
+  wavelengths thirty metres down to twelve centimetres, slopes on a
+  Cox-Munk budget; trains too short to resolve at a given distance fold
+  into roughness, so the sun's and moon's glitter paths widen toward the
+  horizon on their own. Stars come out at the brightness they always had
+  (counts growing as ten to the half magnitude), as the eye adapts slowly to
+  the dark and the sky behind them fails. A headland twenty-five kilometres
+  off goes blue with the air between, and its lighthouse starts flashing,
+  two every ten seconds, once the sun is down. Five evenings: clear air over
+  open sea; a hazy end of summer; the second autumn after a great eruption,
+  with a stratospheric aerosol layer at twenty kilometres and its purple
+  light; a summit 3,400 metres above the sea, where the shadow edge is
+  sharp and continues below the horizon; and the scrubbed air after a cold
+  front. The evening runs at about sixty times real speed from the sun seven
+  degrees up to fifteen below, then runs back. The gaze wanders on its own
+  from the sunset to the rising shadow; drag to turn your head, left and
+  right for earlier and later, A to let the gaze wander again, N for another
+  evening, F to hurry, H to hide the text, space to pause. Open the file
+  directly in a browser (it needs WebGL 2).
+
 - **2026-11-27** — `2026-11-27-upside-down-street.html`: a
   hundred-and-fourteenth technique, and the archive's first rain on a window.
   Last night a camera stared through the air at stars three hours long.

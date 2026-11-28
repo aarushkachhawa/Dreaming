@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rising Shadow</title>
+<style>
+  html, body { margin:0; padding:0; overflow:hidden; background:#04060b; height:100%; width:100%; }
+  canvas { display:block; position:fixed; inset:0; width:100%; height:100%; cursor:grab; touch-action:none; }
+  canvas:active { cursor:grabbing; }
+  #hud { position:fixed; top:14px; left:16px; color:#eef0f4; font-family:'Courier New', monospace;
+    font-size:12.5px; line-height:1.55; text-shadow:0 0 6px rgba(0,0,0,0.9), 0 0 2px rgba(0,0,0,0.8);
+    pointer-events:none; user-select:none; max-width:calc(100% - 32px); }
+  #hint { position:fixed; bottom:14px; left:16px; right:16px; color:#eef0f4; opacity:.7; font-family:'Courier New', monospace;
+    font-size:11.5px; pointer-events:none; user-select:none; text-shadow:0 0 6px rgba(0,0,0,0.95); }
+  #nogl { position:fixed; inset:0; display:none; align-items:center; justify-content:center; color:#ccd; font-family:'Courier New', monospace; }
+  @media (max-width:640px){ #hud{ font-size:11px; } #hint{ font-size:10px; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"></div>
+<div id="hint">drag &mdash; turn your head&nbsp;&nbsp;|&nbsp;&nbsp;&larr; &rarr; &mdash; earlier / later&nbsp;&nbsp;|&nbsp;&nbsp;A &mdash; let your gaze wander again&nbsp;&nbsp;|&nbsp;&nbsp;N &mdash; another evening&nbsp;&nbsp;|&nbsp;&nbsp;F &mdash; hurry&nbsp;&nbsp;|&nbsp;&nbsp;H &mdash; hide text&nbsp;&nbsp;|&nbsp;&nbsp;space &mdash; pause</div>
+<div id="nogl">this piece needs WebGL 2</div>
+<script>
+(function(){
+"use strict";
+// Rising shadow. A calm sea at dusk, and the sky over it computed, not painted.
+//
+// The sky is sunlight scattered once by the air on its way to the eye. For every direction we walk
+// out along the line of sight through a spherical atmosphere 60 km deep over a planet 6360 km in
+// radius. At each step, air molecules (Rayleigh: scattering as 1/wavelength^4, so blue far more than
+// red, density falling off with an 8 km scale height) and haze droplets (Mie: grey, strongly
+// forward, scale height a kilometre or so) scatter some of the sunlight arriving there toward us.
+// That sunlight has itself crossed the atmosphere from the sun to the point, and lost light on the
+// way; the optical depth of that long slanted path is the Chapman grazing-incidence integral, here
+// in Schuler's closed-form approximation, plus a short march through the ozone layer, which absorbs
+// orange and red (Chappuis band) and is the reason the sky stays blue after sunset instead of going
+// grey. Then what is scattered toward us is dimmed again on its way in.
+//
+// Nothing else is put in by hand. When the sun goes below the horizon, the low air in the east
+// stops being lit: the sunlight that would reach it must pass through the solid earth. What you see
+// rising over the eastern sea is the planet's own shadow cast on its atmosphere: a blue-grey band
+// sitting on the horizon. Above it, the air still lit by sunlight that has skimmed the horizon
+// thousands of kilometres away, reddened by that long path, glows pink: the Belt of Venus, the
+// anti-twilight arch. In the west the sun's last light reddens and the sky over it turns gold,
+// green-white, then a deep blue. The shadow climbs as the sun sinks, its edge blurs, and the belt
+// fades into it; stars come out at the brightness they always had, as the sky behind them fails.
+//
+// A small part of skylight has been scattered more than once; that is approximated by a faint
+// isotropic glow that follows the sun's height at each point, so the shadow is blue rather than
+// black. Exposure follows an eye adapting slowly to the dark, never quite all the way.
+const cv=document.getElementById('c');
+const hud=document.getElementById('hud'), hint=document.getElementById('hint');
+const QS=new URLSearchParams(location.search);
+const gl=cv.getContext('webgl2',{antialias:false,alpha:false,premultipliedAlpha:false,preserveDrawingBuffer:QS.has('shot')});
+if(!gl){ document.getElementById('nogl').style.display='flex'; return; }
+const PI=Math.PI, TAU=PI*2, DEG=PI/180, LN2=Math.LN2;
+const clamp=(x,a,b)=>x<a?a:(x>b?b:x);
+const smooth=(a,b,x)=>{ const t=clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); };
+
+// ---------- evenings ----------
+// mie: haze scattering coefficient at sea level (per km), hm: its scale height, g: its forward bias,
+// aer: a stratospheric aerosol layer near 20 km (volcanic), h: eye height above the sea (km).
+const EVENINGS=[
+  { name:'a clear evening over open sea', h:0.025, mie:0.0045, hm:1.2, g:0.78, aer:0, oz:1, ms:0.30, wind:1.0, sunAz:284, isl:1 },
+  { name:'a hazy evening at the end of summer, warm and still', h:0.02, mie:0.016, hm:1.6, g:0.80, aer:0, oz:1, ms:0.34, wind:0.45, sunAz:292, isl:1 },
+  { name:'the second autumn after a great eruption', h:0.025, mie:0.005, hm:1.2, g:0.78, aer:0.011, oz:1, ms:0.30, wind:0.8, sunAz:262, isl:0 },
+  { name:'from a summit, 3,400 metres above the sea', h:3.4, mie:0.0045, hm:1.0, g:0.78, aer:0, oz:1, ms:0.26, wind:1.0, sunAz:276, isl:0 },
+  { name:'after a cold front, the air scrubbed clean', h:0.03, mie:0.0014, hm:0.9, g:0.76, aer:0, oz:1.15, ms:0.28, wind:1.7, sunAz:248, isl:1 },
+];
+let evI=QS.has('ev')?(+QS.get('ev'))%EVENINGS.length:0;
+let EV=EVENINGS[evI];
+
+// ---------- physics shared by shader and CPU ----------
+const R=6360, RA=6420, HR=8;
+const BR=[5.802e-3,13.558e-3,33.1e-3];      // Rayleigh scattering, per km, at 680/550/440 nm
+const BO=[0.650e-3,1.881e-3,0.085e-3];      // ozone absorption, per km at peak
+const E_SUN=20;                              // solar irradiance, arbitrary units
+const SUN_R=0.00465, MOON_R=0.00452;
+
+const v3=(x,y,z)=>[x,y,z];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const len=a=>Math.sqrt(dot(a,a));
+const nrm=a=>{ const l=len(a); return [a[0]/l,a[1]/l,a[2]/l]; };
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const dirAE=(az,el)=>[Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el)];
+
+function chap(X,h,c){ // Schuler: Ch(X+h, chi) * 2^-h, X and h in units of the half-height
+  const s=Math.sqrt(X+h);
+  if(c>=0) return s/(s*c+1)*Math.pow(2,-h);
+  const x0=Math.sqrt(1-c*c)*(X+h), c0=Math.sqrt(x0);
+  return 2*c0*Math.pow(2,X-x0)-s/(1-s*c)*Math.pow(2,-h);
+}
+const ozD=h=>Math.max(0,1-Math.abs(h-25)/15);
+const aeD=h=>{ const x=(h-20)/4; return Math.exp(-x*x); };
+function sunT(p,s){ // transmittance from point p toward direction s
+  const r=len(p), c=dot(p,s)/r, sn=Math.sqrt(Math.max(0,1-c*c));
+  let fade=1;
+  if(c<0){ const hg=r*sn-R; if(hg<-1.5) return [0,0,0]; fade=smooth(-1.5,1.5,hg); }
+  const h=r-R;
+  const dr=HR*LN2*chap(R/(HR*LN2),h/(HR*LN2),c)/LN2;
+  const hm=EV.hm, dm=hm*LN2*chap(R/(hm*LN2),h/(hm*LN2),c)/LN2;
+  const b=r*c, t=-b+Math.sqrt(b*b-(r*r-RA*RA));
+  let doz=0,da=0; for(let k=0;k<8;k++){ const tt=t*(k+0.5)/8; const q=[p[0]+s[0]*tt,p[1]+s[1]*tt,p[2]+s[2]*tt]; const hq=len(q)-R; doz+=ozD(hq); da+=aeD(hq); }
+  doz*=t/8; da*=t/8;
+  const out=[0,0,0];
+  for(let i=0;i<3;i++){ const tau=BR[i]*dr+EV.mie*1.11*dm+BO[i]*EV.oz*doz+aerB(i)*1.05*da; out[i]=Math.exp(-tau)*fade; }
+  return out;
+}
+const AER_TINT=[0.85,1.0,1.12];
+const aerB=i=>EV.aer*AER_TINT[i];
+
+// CPU estimate of sky radiance in a few directions, for the eye's adaptation
+function skyCPU(d,s){
+  const o=[0,R+EV.h,0], b=dot(o,d), cA=(R+EV.h)*(R+EV.h)-RA*RA;
+  const tmax=-b+Math.sqrt(b*b-cA), N=20, mu=dot(d,s);
+  const pr=3/(16*PI)*(1+mu*mu), g=EV.g, pm=1.5/(4*PI)*(1-g*g)*(1+mu*mu)/((2+g*g)*Math.pow(1+g*g-2*g*mu,1.5));
+  const L=[0,0,0], od=[0,0,0];
+  for(let i=0;i<N;i++){
+    const t0=tmax*(i/N)*(i/N), t1=tmax*((i+1)/N)*((i+1)/N), tm=(t0+t1)/2, ds=t1-t0;
+    const p=[o[0]+d[0]*tm,o[1]+d[1]*tm,o[2]+d[2]*tm], h=len(p)-R;
+    const dr=Math.exp(-h/HR), dm=Math.exp(-h/EV.hm), dz=ozD(h), da=aeD(h);
+    const Ts=sunT(p,s), muS=dot(p,s)/len(p), amb=ambF(muS);
+    for(let k=0;k<3;k++){
+      const ext=BR[k]*dr+EV.mie*1.11*dm+BO[k]*EV.oz*dz+aerB(k)*1.05*da;
+      const Tv=Math.exp(-(od[k]+ext*ds*0.5)); od[k]+=ext*ds;
+      const sr=BR[k]*dr, sm=EV.mie*dm, sa=aerB(k)*da;
+      L[k]+=Tv*(Ts[k]*(sr*pr+sm*pm+sa*pm)+(sr+sm+sa)*amb*AMB_TINT[k])*ds;
+    }
+  }
+  return [L[0]*E_SUN,L[1]*E_SUN,L[2]*E_SUN];
+}
+const AMB_TINT=[0.42,0.62,1.0];
+function ambF(muS){ const a=smooth(-0.22,0.35,muS); return EV.ms*a*a/(4*PI); }
+
+// ---------- GL ----------
+const hasCBF=!!gl.getExtension('EXT_color_buffer_float');
+const PW=512, PH=256;
+function sh(type,src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){ console.error(gl.getShaderInfoLog(s)); throw new Error('shader'); } return s; }
+function prog(fs){ const p=gl.createProgram(); gl.attachShader(p,sh(gl.VERTEX_SHADER,VS)); gl.attachShader(p,sh(gl.FRAGMENT_SHADER,fs)); gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)){ console.error(gl.getProgramInfoLog(p)); throw new Error('link'); }
+  const u={}; const n=gl.getProgramParameter(p,gl.ACTIVE_UNIFORMS); for(let i=0;i<n;i++){ const a=gl.getActiveUniform(p,i); u[a.name.replace('[0]','')]=gl.getUniformLocation(p,a.name); }
+  return {p,u}; }
+const VS=`#version 300 es
+in vec2 a; void main(){ gl_Position=vec4(a,0.,1.); }`;
+
+const COMMON=`#version 300 es
+precision highp float;
+const float PI=3.14159265, R=6360., RA=6420., HR=8., LN2=0.6931472;
+const float ELMIN=-0.12;
+uniform float uEnc;
+vec3 enc(vec3 x){ return uEnc>0.5? x/(x+0.02) : x; }
+vec3 dec(vec3 e){ return uEnc>0.5? 0.02*e/max(1.-e,1e-4) : e; }
+`;
+
+const SKY_FS=COMMON+`
+uniform vec3 uSun; uniform float uH;
+uniform vec3 uBR, uBO, uBA; uniform float uBM, uHm, uG, uMS, uOz, uE;
+uniform vec2 uRes;
+layout(location=0) out vec4 oS;
+layout(location=1) out vec4 oT;
+float chap(float X,float h,float c){
+  float s=sqrt(X+h);
+  if(c>=0.) return s/(s*c+1.)*exp2(-h);
+  float x0=sqrt(1.-c*c)*(X+h), c0=sqrt(x0);
+  return 2.*c0*exp2(X-x0)-s/(1.-s*c)*exp2(-h);
+}
+float ozD(float h){ return max(0.,1.-abs(h-25.)/15.); }
+float aeD(float h){ float x=(h-20.)/4.; return exp(-x*x); }
+vec3 sunT(vec3 p){
+  float r=length(p), c=dot(p,uSun)/r, sn=sqrt(max(0.,1.-c*c));
+  float fade=1.;
+  if(c<0.){ float hg=r*sn-R; if(hg<-1.5) return vec3(0.); fade=smoothstep(-1.5,1.5,hg); }
+  float h=r-R;
+  float dr=HR*chap(R/(HR*LN2),h/(HR*LN2),c);
+  float dm=uHm*chap(R/(uHm*LN2),h/(uHm*LN2),c);
+  float b=r*c, t=-b+sqrt(max(b*b-(r*r-RA*RA),0.));
+  float doz=0., da=0.;
+  for(int k=0;k<8;k++){ vec3 q=p+uSun*(t*(float(k)+.5)/8.); float hq=length(q)-R; doz+=ozD(hq); da+=aeD(hq); }
+  doz*=t/8.; da*=t/8.;
+  return exp(-(uBR*dr+uBM*1.11*dm+uBO*uOz*doz+uBA*1.05*da))*fade;
+}
+void main(){
+  vec2 uv=gl_FragCoord.xy/uRes;
+  float az=uv.x*2.*PI, el=ELMIN+(PI*.5-ELMIN)*uv.y*uv.y;
+  vec3 d=vec3(sin(az)*cos(el),sin(el),cos(az)*cos(el));
+  vec3 o=vec3(0.,R+uH,0.);
+  float b=dot(o,d);
+  float cA=(R+uH)*(R+uH)-RA*RA;
+  float tmax=-b+sqrt(b*b-cA);
+  float cG=uH*(2.*R+uH), dg=b*b-cG;
+  if(b<0. && dg>0.){ float tg=-b-sqrt(dg); if(tg>0.) tmax=tg; }
+  float mu=dot(d,uSun);
+  float pr=3./(16.*PI)*(1.+mu*mu);
+  float g=uG; float pm=1.5/(4.*PI)*(1.-g*g)*(1.+mu*mu)/((2.+g*g)*pow(1.+g*g-2.*g*mu,1.5));
+  vec3 L=vec3(0.), od=vec3(0.);
+  const int N=40;
+  const vec3 AMB=vec3(0.42,0.62,1.0);
+  for(int i=0;i<N;i++){
+    float f0=float(i)/float(N), f1=float(i+1)/float(N);
+    float t0=tmax*f0*f0, t1=tmax*f1*f1, tm=.5*(t0+t1), ds=t1-t0;
+    vec3 p=o+d*tm; float h=length(p)-R;
+    float dr=exp(-h/HR), dm=exp(-h/uHm), dz=ozD(h), da=aeD(h);
+    vec3 ext=uBR*dr+vec3(uBM*1.11*dm)+uBO*uOz*dz+uBA*1.05*da;
+    vec3 Tv=exp(-(od+ext*ds*.5)); od+=ext*ds;
+    vec3 sr=uBR*dr, sm=vec3(uBM*dm), sa=uBA*da;
+    vec3 Ts=sunT(p);
+    float muS=dot(p,uSun)/length(p);
+    float a=smoothstep(-0.22,0.35,muS);
+    vec3 amb=uMS*a*a/(4.*PI)*AMB;
+    L+=Tv*(Ts*(sr*pr+(sm+sa)*pm)+(sr+sm+sa)*amb)*ds;
+  }
+  oS=vec4(enc(L*uE),1.);
+  oT=vec4(enc(exp(-od)),1.);
+}`;
+
+const COMP_FS=COMMON+`
+uniform sampler2D uS, uT;
+uniform vec2 uRes; uniform vec3 uCF, uCR, uCU; uniform float uTan;
+uniform vec3 uSun, uSunC, uMoon, uMoonC, uSunIrr, uMoonIrr;
+uniform vec3 uNight;
+uniform float uExp, uTime, uH, uDip, uWind, uStar;
+uniform vec4 uIsl; uniform vec3 uLHd; uniform float uLH;
+uniform vec3 uBR; uniform float uBM, uHm;
+out vec4 fc;
+float h13(vec3 p){ p=fract(p*vec3(.1031,.1030,.0973)); p+=dot(p,p.yxz+33.33); return fract((p.x+p.y)*p.z); }
+vec3 h33(vec3 p){ p=fract(p*vec3(.1031,.1030,.0973)); p+=dot(p,p.yxz+33.33); return fract((p.xxy+p.yxx)*p.zyx); }
+float h12(vec2 p){ vec3 q=fract(vec3(p.xyx)*.1031); q+=dot(q,q.yzx+33.33); return fract((q.x+q.y)*q.z); }
+float n1(float x){ float i=floor(x), f=fract(x); float u=f*f*(3.-2.*f); return mix(h12(vec2(i,7.)),h12(vec2(i+1.,7.)),u); }
+vec2 azv(vec3 d, float elLo, float elHi){
+  float az=atan(d.x,d.z); if(az<0.) az+=2.*PI;
+  float el=clamp(asin(clamp(d.y,-1.,1.)),elLo,elHi);
+  return vec2(az/(2.*PI), sqrt(clamp((el-ELMIN)/(PI*.5-ELMIN),0.,1.)));
+}
+// sky lookups never blend across the horizon: sky directions stay above it, sea directions below it
+const float HT=0.006;
+vec3 skyS(vec3 d){ return dec(texture(uS,azv(d,-uDip+HT,PI*.5)).rgb); }
+vec3 skyT(vec3 d){ return dec(texture(uT,azv(d,-uDip+HT,PI*.5)).rgb); }
+vec3 seaS(vec3 d){ return dec(texture(uS,azv(d,ELMIN,-uDip-HT)).rgb); }
+vec3 seaT(vec3 d){ return dec(texture(uT,azv(d,ELMIN,-uDip-HT)).rgb); }
+float islandTop(float az){
+  float x=(az-uIsl.x)/uIsl.y;
+  x=x-floor((x+PI/uIsl.y)/(2.*PI/uIsl.y))*(2.*PI/uIsl.y);
+  if(abs(x)>1.) return -1.;
+  float s=pow(max(0.,1.-x*x),0.6)*(0.7+0.3*n1(x*9.+3.)+0.12*n1(x*31.))*(1.-0.35*smoothstep(0.1,0.7,x));
+  return uIsl.z*s;
+}
+vec3 stars(vec3 d, float pxA){
+  const float K=150.;
+  vec3 g=d*K, c=floor(g), col=vec3(0.);
+  for(int dx=0;dx<2;dx++) for(int dy=0;dy<2;dy++) for(int dz=0;dz<2;dz++){
+    vec3 cc=c+vec3(dx,dy,dz)-0.5+step(0.5,fract(g))-0.5;
+    cc=floor(cc+0.5);
+    float h=h13(cc);
+    if(h>0.05) continue;
+    vec3 sp=normalize((cc+0.5+0.38*(h33(cc)-0.5))/K);
+    float a=length(d-sp)/pxA;
+    if(a>3.) continue;
+    float m=h13(cc+17.1);              // magnitude: many faint, few bright
+    float mag=max(6.5+2.*log(max(m,1e-4))/log(10.),-1.2);   // N(<m) grows about 10^(m/2)
+    float b=pow(10.,-0.4*mag);
+    float bv=h13(cc+3.7);
+    vec3 tint=mix(vec3(0.8,0.9,1.12),vec3(1.2,0.95,0.72),bv*bv*bv);
+    float tw=1.+0.35*sin(uTime*(3.+5.*h)+h*60.)*sin(uTime*(1.7+2.*m)+m*40.);
+    col+=tint*b*tw*exp(-a*a*1.1);
+  }
+  return col;
+}
+float acesL(float x){ return clamp((x*(2.51*x+0.03))/(x*(2.43*x+0.59)+0.14),0.,1.); }
+vec3 tone(vec3 c){
+  // tone map luminance, keep a little more saturation in the highlights than per-channel would
+  float l=dot(c,vec3(0.2126,0.7152,0.0722));
+  vec3 pc=vec3(acesL(c.r),acesL(c.g),acesL(c.b));
+  vec3 pl=c*(acesL(l)/max(l,1e-6));
+  vec3 m=mix(pc,pl,0.45);
+  float lm=dot(m,vec3(0.2126,0.7152,0.0722)); m=lm+(m-lm)*1.12;
+  return clamp(m,0.,1.);
+}
+vec3 srgb(vec3 c){ return mix(c*12.92,1.055*pow(c,vec3(1./2.4))-0.055,step(0.0031308,c)); }
+float glintD(vec3 hv, vec3 n, float s2){
+  float c=max(dot(hv,n),1e-3), c2=c*c, t2=(1.-c2)/c2;
+  return exp(-t2/s2)/(PI*s2*c2*c2);
+}
+void main(){
+  float M=max(uRes.x,uRes.y);
+  vec2 q=(gl_FragCoord.xy*2.-uRes)/M;
+  vec3 d=normalize(uCF+q.x*uTan*uCR+q.y*uTan*uCU);
+  float pxA=2.*uTan/M;
+  vec3 o=vec3(0.,R+uH,0.);
+  float b=o.y*d.y, cG=uH*(2.*R+uH), dg=b*b-cG;
+  bool sea=b<0. && dg>0.;
+  float az=atan(d.x,d.z); if(az<0.) az+=2.*PI;
+  float el=asin(clamp(d.y,-1.,1.));
+  vec3 col, gS=vec3(0.), gM=vec3(0.);
+  float isTop=islandTop(az);
+  bool isl=isTop>0. && el<-uDip+isTop && el>-uDip-0.004;
+  if(isl){
+    // a low headland, about 25 km off: dark land seen through the air between
+    vec3 hor=skyS(vec3(d.x,0.,d.z)+vec3(0.,0.002,0.));
+    float D=uIsl.w;
+    vec3 ext=uBR*exp(-uH/HR)+vec3(uBM*1.11*exp(-uH/uHm));
+    vec3 f=1.-exp(-ext*D);
+    vec3 land=vec3(0.010,0.011,0.010)*(skyS(vec3(0.,1.,0.))*4.+uSunIrr*0.002);
+    col=land*(1.-f)+hor*f*0.92;
+    // the lighthouse
+    float a=length(d-uLHd)/pxA;
+    col+=vec3(1.,0.86,0.62)*uLH*(exp(-a*a*0.8)*0.9+0.05*exp(-a*0.25));
+  } else if(!sea){
+    col=skyS(d);
+    vec3 T=skyT(d);
+    // stars and the night glow behind everything
+    col+=T*stars(d,pxA)*uStar + uNight*(1.+1.6*exp(-max(el,0.)*7.));
+    // sun
+    float as=length(d-uSun);
+    if(as<SUNR){ float mu=sqrt(max(0.,1.-(as*as)/(SUNR*SUNR))); col+=uSunC*(0.4+0.6*mu)*(0.93+0.07*mu); }
+    // moon
+    float am=length(d-uMoon);
+    if(am<MOONR){
+      vec3 rr=normalize(cross(uMoon,vec3(0.,1.,0.))), uu=cross(rr,uMoon);
+      vec2 mp=vec2(dot(d-uMoon,rr),dot(d-uMoon,uu))/MOONR;
+      float mare=smoothstep(0.55,0.2,length(mp-vec2(-0.25,0.25)))*0.5+smoothstep(0.35,0.1,length(mp-vec2(0.2,0.3)))*0.4
+               +smoothstep(0.3,0.05,length(mp-vec2(0.3,-0.1)))*0.35+smoothstep(0.5,0.25,length(mp-vec2(-0.35,-0.25)))*0.3;
+      float tex=1.-0.45*clamp(mare,0.,1.)+0.08*(n1(mp.x*13.+mp.y*29.)-.5);
+      float edge=smoothstep(1.,0.92,am/MOONR);
+      col=mix(col,col+uMoonC*tex,edge);
+    }
+    // a soft halo of glare around the brightest things, sized to what the eye is adapted to
+    gS=uSunC*0.00000013/(as*as+0.00012)*1.6;
+    float ml=dot(uMoonC,vec3(0.3,0.6,0.1))*uExp;
+    gM=uMoonC/max(ml,1e-6)*min(ml,3.)*0.0000055/(am*am+0.00006);
+  } else {
+    float tg=-b-sqrt(dg);
+    vec2 x=d.xz*tg*1000.;              // metres on the sea
+    float foot=tg*1000.*pxA/max(-d.y,1e-4);
+    vec2 sl=vec2(0.); float var=0.0006*uWind;
+    float w=uWind;
+    // a wind sea: many trains, wavelengths 30 m down to 12 cm, directions spread about the wind,
+    // slopes from a Cox-Munk budget; trains too short to resolve at this distance fold into roughness
+    float wa=0.9;
+    for(int i=0;i<18;i++){
+      float fi=float(i);
+      float lam=30.*pow(0.72,fi)*(0.85+0.3*h12(vec2(fi,1.)));
+      float ang=wa+(h12(vec2(fi,2.))-0.5)*2.2*(0.6+0.4*fi/18.);
+      vec2 dir=vec2(cos(ang),sin(ang));
+      float k=2.*PI/lam, om=sqrt(9.81*k*(1.+pow(0.017/lam,2.)*4.));
+      float s=0.042*sqrt(w)*(0.7+0.6*h12(vec2(fi,3.)));
+      float res=clamp(1.-foot*1.7/lam,0.,1.);
+      sl+=res*s*cos(dot(dir,x)*k-om*uTime+6.283*h12(vec2(fi,4.)))*dir;
+      var+=(1.-res*res)*s*s*0.5;
+    }
+    // patches where the wind touches the water and where it doesn't (cat's paws and slicks)
+    float pch=0.55+0.9*n1(x.x*0.004+x.y*0.0013+uTime*0.01)*n1(x.y*0.006-x.x*0.002+7.);
+    sl*=pch; var*=pch*pch;
+    vec3 n=normalize(vec3(-sl.x,1.,-sl.y));
+    vec3 r=reflect(d,n); if(r.y<0.01) r.y=0.01+abs(r.y)*0.3; r=normalize(r);
+    float cv=max(dot(-d,n),0.);
+    float F=0.02+0.98*pow(1.-cv,5.);
+    vec3 refl=skyS(r);
+    vec3 sR=refl*F;
+    // glitter paths of sun, moon and lighthouse, through a slope distribution of width var
+    float s2=2.*var;
+    if(uSun.y>-0.02){ vec3 hv=normalize(uSun-d); float Fh=0.02+0.98*pow(1.-max(dot(uSun,hv),0.),5.); sR+=uSunIrr*glintD(hv,n,s2)*Fh/(4.*max(cv,0.05)); }
+    { vec3 hv=normalize(uMoon-d); float Fh=0.02+0.98*pow(1.-max(dot(uMoon,hv),0.),5.); sR+=uMoonIrr*step(-0.01,uMoon.y)*glintD(hv,n,s2)*Fh/(4.*max(cv,0.05)); }
+    { vec3 hv=normalize(uLHd-d); float Fh=0.02+0.98*pow(1.-max(dot(uLHd,hv),0.),5.); sR+=vec3(1.,0.86,0.62)*uLH*pxA*pxA*glintD(hv,n,s2*1.3)*Fh/(4.*max(cv,0.05))*3.; }
+    vec3 body=(1.-F)*vec3(0.004,0.012,0.016)*(skyS(vec3(0.,1.,0.))*3.+uSunIrr*0.004+uNight*4.);
+    sR+=F*uNight*1.5;
+    col=(sR+body)*seaT(d)+seaS(d);
+  }
+  col*=uExp; col+=gS*uExp+gM;
+  vec3 m=srgb(tone(col));
+  m+=(h12(gl_FragCoord.xy+fract(uTime)*91.)-0.5)/255.*1.5;
+  fc=vec4(m,1.);
+}`.replace(/SUNR/g,SUN_R.toFixed(5)).replace(/MOONR/g,MOON_R.toFixed(5));
+
+const pSky=prog(SKY_FS), pComp=prog(COMP_FS);
+const quad=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,quad); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const vao=gl.createVertexArray(); gl.bindVertexArray(vao); gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0);
+gl.bindAttribLocation(pSky.p,0,'a'); gl.bindAttribLocation(pComp.p,0,'a');
+function mkTex(){ const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  if(hasCBF) gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA16F,PW,PH,0,gl.RGBA,gl.HALF_FLOAT,null);
+  else gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,PW,PH,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.REPEAT); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE); return t; }
+const texS=mkTex(), texT=mkTex();
+const fb=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,fb);
+gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,texS,0);
+gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT1,gl.TEXTURE_2D,texT,0);
+gl.drawBuffers([gl.COLOR_ATTACHMENT0,gl.COLOR_ATTACHMENT1]);
+const ENC=(gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE&&hasCBF)?0:1;
+if(ENC&&hasCBF){ // half float not renderable after all: fall back to encoded bytes
+  for(const t of [texS,texT]){ gl.bindTexture(gl.TEXTURE_2D,t); gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,PW,PH,0,gl.RGBA,gl.UNSIGNED_BYTE,null); }
+}
+gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+
+let W=0,H=0;
+function resize(){ const dpr=Math.min(window.devicePixelRatio||1,1.5); W=Math.floor(innerWidth*dpr); H=Math.floor(innerHeight*dpr); cv.width=W; cv.height=H; }
+resize(); addEventListener('resize',resize);
+
+// ---------- the evening ----------
+// sunEl runs from +7 degrees down to -15, then the evening runs back the other way.
+const EL_HI=7, EL_LO=-15;
+let phase=QS.has('el')?(EL_HI-(+QS.get('el')))/(EL_HI-EL_LO):0.0, dirT=1, speed=1, paused=false;
+const RATE=1/140;                          // a full dusk in about 140 s
+let yaw=0, pitch=7*DEG, autoGaze=!QS.has('yaw'), gazeT=0, userYaw=QS.has('yaw')?(+QS.get('yaw'))*DEG:null;
+let expo=null, wall=0;
+function sunElDeg(){ return EL_HI+(EL_LO-EL_HI)*phase; }
+function bodies(){
+  const se=sunElDeg()*DEG, sAz=EV.sunAz*DEG;
+  const sun=dirAE(sAz,se);
+  // the full moon, a little off the anti-solar point (exactly opposite, it would be eclipsed)
+  const moon=dirAE(sAz-PI+5*DEG,-se+2.2*DEG);
+  return {sun,moon,se,sAz};
+}
+// the sky's own faint light once the sun has gone: airglow, starlight, zodiacal light, and the
+// full moon's light scattered by the air (about 1/450,000 of the daylit sky, and bluer)
+function nightGlow(sun){
+  const me=-Math.asin(sun[1])+2.2*DEG, mup=smooth(-1*DEG,4*DEG,me);
+  const k=2.2e-6, m=1.1e-5*mup;
+  return [0.38*k+0.30*m, 0.50*k+0.48*m, 0.85*k+1.0*m];
+}
+function lum(c){ return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2]; }
+function adapt(sun,sAz,dt){
+  // the eye: a few directions sampled on the CPU, a log average, a slow drift toward it
+  const ds=[dirAE(sAz+PI*0.5,0.25),dirAE(sAz-PI*0.5,0.25),dirAE(sAz+PI,0.12),dirAE(sAz,0.15),dirAE(0,1.3)];
+  const nl=lum(nightGlow(sun));
+  let s=0; for(const d of ds) s+=Math.log(lum(skyCPU(d,sun))+nl);
+  const avg=Math.exp(s/ds.length);
+  const target=Math.min(0.093/Math.pow(avg,0.82),2600);
+  if(expo===null||dt<0) expo=target; else expo=Math.exp(Math.log(expo)+(Math.log(target)-Math.log(expo))*Math.min(1,dt*0.9));
+  return avg;
+}
+let avgL=0;
+function islandParams(sAz){
+  // a headland to the north-east of the view's middle, 25 km off; height in radians above the horizon
+  if(!EV.isl) return [0,0.001,-1,25];
+  return [sAz-PI+38*DEG, 9*DEG, 0.0095, 26];
+}
+function render(dt){
+  const {sun,moon,se,sAz}=bodies();
+  avgL=adapt(sun,sAz,dt);
+  // sky panorama
+  gl.bindFramebuffer(gl.FRAMEBUFFER,fb); gl.viewport(0,0,PW,PH);
+  gl.useProgram(pSky.p); const u=pSky.u;
+  gl.uniform3fv(u.uSun,sun); gl.uniform1f(u.uH,EV.h);
+  gl.uniform3fv(u.uBR,BR); gl.uniform3fv(u.uBO,BO); gl.uniform3fv(u.uBA,[aerB(0),aerB(1),aerB(2)]);
+  gl.uniform1f(u.uBM,EV.mie); gl.uniform1f(u.uHm,EV.hm); gl.uniform1f(u.uG,EV.g); gl.uniform1f(u.uMS,EV.ms); gl.uniform1f(u.uOz,EV.oz);
+  gl.uniform1f(u.uE,E_SUN); gl.uniform2f(u.uRes,PW,PH); gl.uniform1f(u.uEnc,ENC);
+  gl.bindVertexArray(vao); gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+  // composite
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null); gl.viewport(0,0,W,H);
+  gl.useProgram(pComp.p); const c=pComp.u;
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D,texS); gl.uniform1i(c.uS,0);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D,texT); gl.uniform1i(c.uT,1);
+  const f=dirAE(yaw,pitch), up=[0,1,0], rt=nrm(cross(up,f)), cu=cross(f,rt);
+  const hfov=(W/H<1?70:62)*DEG;     // across the longer side of the screen
+  gl.uniform2f(c.uRes,W,H); gl.uniform3fv(c.uCF,f); gl.uniform3fv(c.uCR,rt); gl.uniform3fv(c.uCU,cu); gl.uniform1f(c.uTan,Math.tan(hfov/2));
+  const o=[0,R+EV.h,0];
+  const Ts=sunT(o,sun), Tm=sunT(o,moon);
+  const sunRad=E_SUN/(PI*SUN_R*SUN_R);
+  gl.uniform3fv(c.uSun,sun); gl.uniform3fv(c.uMoon,moon);
+  gl.uniform3fv(c.uSunC,Ts.map(x=>x*sunRad*0.0006));         // disc, dimmed so it reads as a disc not a hole
+  gl.uniform3fv(c.uSunIrr,Ts.map(x=>x*E_SUN));
+  // full moon: about 1/450,000 of the sun's surface brightness, slightly warm
+  const moonRad=sunRad/450000;
+  const mt=[1.06,1.0,0.9];
+  gl.uniform3fv(c.uMoonC,Tm.map((x,i)=>x*moonRad*mt[i]));
+  gl.uniform3fv(c.uMoonIrr,Tm.map((x,i)=>x*moonRad*mt[i]*PI*MOON_R*MOON_R));
+  gl.uniform1f(c.uExp,expo); gl.uniform1f(c.uTime,wall); gl.uniform1f(c.uH,EV.h);
+  gl.uniform1f(c.uDip,Math.sqrt(2*EV.h/R)); gl.uniform1f(c.uWind,EV.wind);
+  gl.uniform1f(c.uStar,0.0016); gl.uniform3fv(c.uNight,nightGlow(sun)); gl.uniform1f(c.uEnc,ENC);
+  const ip=islandParams(sAz); gl.uniform4fv(c.uIsl,ip);
+  const lhAz=ip[0]+0.55*ip[1], dip=Math.sqrt(2*EV.h/R);
+  const lhEl=-dip+0.62*ip[2]*0.95;
+  gl.uniform3fv(c.uLHd,dirAE(lhAz,lhEl));
+  // Fl(2) 10s: two flashes, then dark; lit once the sun is down a little
+  const tt=wall%10, fl=Math.exp(-Math.pow((tt-0.6)/0.18,2))+Math.exp(-Math.pow((tt-2.0)/0.18,2));
+  gl.uniform1f(c.uLH,EV.isl?fl*0.0016*smooth(2,-2,se/DEG):0);
+  gl.uniform3fv(c.uBR,BR); gl.uniform1f(c.uBM,EV.mie); gl.uniform1f(c.uHm,EV.hm);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+}
+
+// ---------- gaze ----------
+function updateGaze(dt){
+  const {sAz}=bodies();
+  if(userYaw!==null&&!autoGaze){ yaw=userYaw; return; }
+  // a slow look round: start toward the sunset, turn to the east as the shadow rises, look back now and then
+  gazeT+=dt;
+  const s=sunElDeg();
+  const toEast=smooth(3,-1.5,s);
+  const wander=Math.sin(gazeT*TAU/95)*0.5+0.5;
+  const w=clamp(toEast*(0.35+0.65*wander)+(1-toEast)*0.15*wander,0,1);
+  const target=sAz+w*(PI-0.18)+(1-w)*0.0;
+  if(yaw===0&&gazeT<0.1) yaw=target;
+  let dY=target-yaw; dY=Math.atan2(Math.sin(dY),Math.cos(dY));
+  yaw+=dY*Math.min(1,dt*0.6);
+}
+let drag=null;
+cv.addEventListener('pointerdown',e=>{ drag={x:e.clientX,y:e.clientY,yaw,pitch}; cv.setPointerCapture(e.pointerId); autoGaze=false; userYaw=yaw; });
+cv.addEventListener('pointermove',e=>{ if(!drag) return; const k=1.1/Math.max(innerWidth,1);
+  userYaw=drag.yaw-(e.clientX-drag.x)*k; pitch=clamp(drag.pitch+(e.clientY-drag.y)*k,-4*DEG,40*DEG); });
+const upE=()=>{ drag=null; }; cv.addEventListener('pointerup',upE); cv.addEventListener('pointercancel',upE);
+
+// ---------- text ----------
+const HINT=hint.innerHTML;
+let showText=!QS.has('notext');
+function twilightName(s){
+  if(s>0.5) return 'the sun '+s.toFixed(1)+'&deg; up';
+  if(s>-0.8) return 'sunset';
+  if(s>-6) return 'civil twilight';
+  if(s>-12) return 'nautical twilight';
+  return 'astronomical twilight';
+}
+function hudText(){
+  if(!showText){ hud.innerHTML=''; hint.style.display='none'; return; }
+  hint.style.display=''; hint.innerHTML=HINT;
+  const s=sunElDeg();
+  let t='<b>rising shadow</b><br>'+EV.name+'<br>';
+  t+=(s>0.5?twilightName(s):twilightName(s)+', the sun '+(-s).toFixed(1)+'&deg; below the horizon')+(dirT<0?' &mdash; running back':'')+'<br>';
+  if(s<0.3){
+    // height of the shadow's edge: where a sunlight ray tangent to the planet reaches the anti-solar sky
+    t+='the earth&rsquo;s shadow is cast on the air over the eastern sea; above it, the Belt of Venus';
+  } else {
+    t+='turn round: opposite the sun, the eastern sky is waiting for the earth&rsquo;s shadow';
+  }
+  if(paused) t+='<br>paused';
+  hud.innerHTML=t;
+}
+addEventListener('keydown',ev=>{
+  const k=ev.key.toLowerCase();
+  if(k===' '){ paused=!paused; ev.preventDefault(); }
+  else if(k==='arrowleft'){ phase=clamp(phase-0.03,0,1); }
+  else if(k==='arrowright'){ phase=clamp(phase+0.03,0,1); }
+  else if(k==='a'){ autoGaze=true; userYaw=null; }
+  else if(k==='n'){ evI=(evI+1)%EVENINGS.length; EV=EVENINGS[evI]; phase=0; dirT=1; expo=null; }
+  else if(k==='f'){ speed=speed===1?6:1; }
+  else if(k==='h'){ showText=!showText; }
+  hudText();
+});
+
+let last=performance.now(), hudT=0;
+function step(dt){
+  if(!paused){
+    wall+=dt;
+    phase+=dirT*RATE*speed*dt;
+    if(phase>1.12){ phase=1.12; dirT=-1; }        // linger in the dark a moment, then run back
+    if(phase<-0.05){ phase=-0.05; dirT=1; }
+  }
+  updateGaze(dt);
+}
+function frame(t){
+  const dt=Math.min(0.05,(t-last)/1000); last=t;
+  step(dt);
+  const ph=phase; phase=clamp(phase,0,1); render(dt); phase=ph;
+  hudT-=dt; if(hudT<=0){ hudText(); hudT=0.4; }
+  requestAnimationFrame(frame);
+}
+if(userYaw!==null){ autoGaze=false; yaw=userYaw; }
+else { updateGaze(0.01); }
+hudText();
+requestAnimationFrame(frame);
+window.__rs={ set:(el,yawDeg,pitchDeg)=>{ phase=(EL_HI-el)/(EL_HI-EL_LO); if(yawDeg!==undefined){ autoGaze=false; userYaw=yawDeg*DEG; yaw=userYaw; } if(pitchDeg!==undefined) pitch=pitchDeg*DEG; expo=null; render(-1); hudText(); },
+  ev:i=>{ evI=i%EVENINGS.length; EV=EVENINGS[evI]; expo=null; }, get sunAz(){return EV.sunAz;}, get expo(){return expo;}, get avg(){return avgL;}, paused:p=>{paused=p;} };
+})();
+</script>
+</body>
+</html>
