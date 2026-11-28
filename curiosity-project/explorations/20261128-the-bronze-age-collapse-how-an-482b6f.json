@@ -1,0 +1,52 @@
+{
+  "id": "20261128-the-bronze-age-collapse-how-an-482b6f",
+  "date": "2026-11-28T10:11:26.209235",
+  "title": "The Bronze Age Collapse: How an Interconnected World Fell Apart",
+  "question": "Why did so many powerful civilisations of the eastern Mediterranean collapse within a few decades around 1200 BCE?",
+  "summary": "Drought, earthquakes, invasions, revolts, and broken trade routes combined to bring down the Late Bronze Age world \u2014 a case study in how tightly coupled systems fail, and in what grows from the rubble.",
+  "content": "\n<p>Around 1200 BCE, the eastern Mediterranean held one of the most interconnected worlds antiquity had yet produced. Egypt, the Hittite empire, Mycenaean Greece, Babylon, Assyria, and wealthy trading cities like Ugarit exchanged letters, princesses, gold, and above all copper and tin, the two ingredients of bronze. Within roughly fifty years much of it was gone. Palaces burned, writing systems vanished from Greece for centuries, the Hittite capital was abandoned, and Ugarit was destroyed so suddenly that clay tablets were left baking in a kiln. What could bring down so many powerful states at once?</p>\n\n<h2>The Usual Suspects</h2>\n<p>Egyptian inscriptions blame invaders from the sea \u2014 the \"Sea Peoples\" \u2014 whom Ramesses III claimed to have defeated around 1177 BCE. For a long time they were the headline explanation. But there are many other candidates. Pollen cores and lake sediments point to a prolonged drought across the region. Earthquake damage appears at several sites. Texts mention famine: a Hittite king pleads for grain shipments, and Ugarit's last letters describe enemy ships while its own forces are elsewhere. Some historians stress internal revolt, as overtaxed populations turned on palace elites.</p>\n\n<h2>Collapse as a System Failure</h2>\n<p>The historian Eric Cline and others argue that no single cause is sufficient. Instead, the Late Bronze Age world was a tightly coupled system. Bronze required tin, which came from far away \u2014 possibly Afghanistan \u2014 and moved through long trade chains. Palace economies centrally controlled grain, labour, and craft. When drought reduced harvests, migrations and raiding increased; when raids disrupted shipping, tin and grain stopped moving; when the palaces could not deliver, their legitimacy and their armies faltered. Shocks that each state might have survived alone cascaded through the network. The Sea Peoples may have been as much a symptom \u2014 displaced, hungry populations on the move \u2014 as a cause.</p>\n<p>This \"perfect storm\" model echoes ideas from complex-systems science: highly efficient, interdependent networks can be fragile, because the links that spread prosperity also spread failure.</p>\n\n<h2>What Came After</h2>\n<p>The following centuries are sometimes called a dark age, especially in Greece, where literacy disappeared until the alphabet was adopted from the Phoenicians. But collapse was also reorganisation. Iron, which did not depend on scarce tin, spread widely. Smaller, more decentralised societies emerged \u2014 Phoenician city-states, the kingdoms of Israel and Judah, and eventually the Greek poleis. The collapse cleared ground on which alphabetic writing, new forms of politics, and the classical world would grow.</p>\n\n<h2>Why It Still Matters</h2>\n<p>The episode is studied today partly because it feels uncomfortably familiar: a globalised economy dependent on long supply chains, climate stress, migration, and interlocking political alliances. The Bronze Age offers no simple warning, since the evidence remains fragmentary and contested. But it suggests that resilience may depend less on the strength of any single state than on redundancy, diversity of supply, and the ability of a system to absorb several shocks at once.</p>\n",
+  "tags": [
+    "history",
+    "archaeology",
+    "complex-systems",
+    "climate",
+    "civilisation"
+  ],
+  "perspectives": [
+    {
+      "title": "Archaeological Perspective",
+      "description": "Destruction layers, abandoned palaces, and tablets like those left in Ugarit's kiln show a rapid, widespread collapse, though its timing and causes vary from site to site."
+    },
+    {
+      "title": "Climate Science Perspective",
+      "description": "Pollen records and sediment cores indicate a multi-decade drought across the region, likely contributing to famine, migration, and instability."
+    },
+    {
+      "title": "Complex Systems Perspective",
+      "description": "Interdependent palace economies and long tin supply chains made the network efficient but fragile, allowing local shocks to cascade into systemic failure."
+    },
+    {
+      "title": "Economic Perspective",
+      "description": "Bronze relied on scarce tin traded over vast distances. When trade broke down, cheaper and more widely available iron took over, reshaping economies and power."
+    },
+    {
+      "title": "Political Perspective",
+      "description": "Centralised palace states depended on delivering grain and security. When they failed, internal revolts and the rise of smaller polities transformed how societies were governed."
+    }
+  ],
+  "connections": [
+    "The Sea Peoples and Ramesses III",
+    "The transition to the Iron Age",
+    "The Phoenician alphabet",
+    "Joseph Tainter and the collapse of complex societies",
+    "Cascading failures in networks",
+    "Climate change and historical societies",
+    "Modern supply-chain fragility"
+  ],
+  "openQuestions": [
+    "Who exactly were the Sea Peoples, and were they a cause or a consequence of the collapse?",
+    "How much did climate drive the collapse compared with political and economic factors?",
+    "Was the collapse truly simultaneous, or a slower chain of regional crises that looks sudden in hindsight?",
+    "What, if anything, can modern globalised societies learn from it about resilience?"
+  ]
+}
